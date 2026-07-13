@@ -73,5 +73,9 @@ max_frequency = "1m"
 otp_length = 6
 otp_expiry = 3600
 
+[auth.email.template.magic_link]
+subject = "Your MENDAKI Volunteer Portal sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
 [analytics]
 enabled = false
