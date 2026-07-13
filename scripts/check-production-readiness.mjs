@@ -11,6 +11,12 @@ const required = [
   "YMHUB_VOLUNTEER_UPDATED_AT_FIELD_API",
 ];
 
+const secureUrlSettings = [
+  "NEXT_PUBLIC_APP_URL",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "YMHUB_BASE_URL",
+];
+
 const errors = [];
 
 if (process.env.APP_ENV !== "production") {
@@ -30,6 +36,25 @@ for (const name of required) {
 
   if (/PROTO|PLACEHOLDER|\[[A-Z0-9_]+\]/i.test(value)) {
     errors.push(`${name} still contains a prototype or placeholder value.`);
+  }
+}
+
+for (const name of secureUrlSettings) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    continue;
+  }
+
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") {
+      errors.push(`${name} must use HTTPS in production.`);
+    }
+    if (["localhost", "127.0.0.1", "::1"].includes(url.hostname)) {
+      errors.push(`${name} cannot use a local hostname in production.`);
+    }
+  } catch {
+    errors.push(`${name} must be a valid absolute URL.`);
   }
 }
 
