@@ -3,6 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { signOut } from "@/app/dashboard/actions";
+import { PortalHeader } from "@/components/portal-header";
+import { hasContentManagerRole } from "@/lib/auth/content-access";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -11,7 +13,27 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+const dashboardErrors: Record<string, string> = {
+  cms_access_denied: "Your account does not have permission to manage content.",
+  cms_authorization_unavailable:
+    "Content-management permissions could not be checked. No content was changed.",
+};
+
+function readParameter(
+  parameters: Record<string, string | string[] | undefined>,
+  name: string,
+): string | undefined {
+  const value = parameters[name];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
@@ -46,44 +68,53 @@ export default async function DashboardPage() {
   const account = accountResult.data;
   const volunteer = volunteerResult.data;
   const roles = rolesResult.data?.map(({ role }) => role) ?? [];
+  const canManageContent = hasContentManagerRole(roles);
   const hasReadError = Boolean(
     accountResult.error || volunteerResult.error || rolesResult.error,
   );
+  const parameters = await searchParams;
+  const errorCode = readParameter(parameters, "error");
+  const errorMessage = errorCode ? dashboardErrors[errorCode] : undefined;
 
   return (
     <div className="site-shell">
-      <header className="site-header">
-        <Link className="brand-lockup" href="/">
-          <span className="brand-mark" aria-hidden="true">
-            MV
-          </span>
-          <span>MENDAKI Volunteer Portal</span>
-        </Link>
-        <p className="header-status">Authenticated foundation view</p>
-      </header>
+      <PortalHeader status="Authenticated volunteer view" dashboard />
 
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Volunteer account</p>
-            <h1>Foundation dashboard</h1>
+            <h1>Volunteer dashboard prototype</h1>
             <p className="muted">
-              This screen verifies authentication, identity isolation, and
-              row-level database access before engagement features are added.
+              The current build verifies secure identity access and provides the
+              first app-owned volunteer content modules.
             </p>
           </div>
-          <form action={signOut}>
-            <button className="button button-secondary" type="submit">
-              Sign out
-            </button>
-          </form>
+          <div className="actions">
+            {canManageContent ? (
+              <Link className="button button-primary" href="/admin/content">
+                Manage content
+              </Link>
+            ) : null}
+            <form action={signOut}>
+              <button className="button button-secondary" type="submit">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
 
+        {errorMessage ? (
+          <div className="notice notice-error" role="alert">
+            {errorMessage}
+          </div>
+        ) : null}
+
         {hasReadError ? (
-          <div className="notice" role="status">
+          <div className="notice notice-error" role="status">
             <h2>Database setup is incomplete</h2>
             <p>
-              Apply the Phase 1 Supabase migration, expose the core schema, and
+              Apply the Supabase migrations, expose the required schemas, and
               refresh this page.
             </p>
           </div>
@@ -124,25 +155,58 @@ export default async function DashboardPage() {
           <section className="section notice" aria-labelledby="link-title">
             <h2 id="link-title">Volunteer identity not linked</h2>
             <p>
-              This is expected for a newly created Phase 1 account. A later
-              linking workflow will match the authenticated account to the
-              authoritative YM Hub volunteer ID without allowing users to claim
-              an ID directly.
+              A controlled linking workflow will match this authenticated account
+              to the authoritative YM Hub volunteer ID. Volunteers cannot claim an
+              ID by entering it directly.
             </p>
           </section>
         ) : null}
 
-        <section className="section" aria-labelledby="next-title">
-          <p className="eyebrow">Next delivery slices</p>
-          <h2 id="next-title">Ready for feature modules</h2>
+        <section className="section" aria-labelledby="available-title">
+          <p className="eyebrow">Available modules</p>
+          <h2 id="available-title">Volunteer content</h2>
           <div className="card-grid">
             <article className="card">
-              <h3>Opportunity and news CMS</h3>
+              <h3>Opportunity discovery</h3>
               <p className="muted">
-                App-owned publishing, revisions, approvals, and YM Hub
-                registration link-outs.
+                Browse app-managed listings and continue to YM Hub when ready to
+                register.
               </p>
+              <Link className="text-link" href="/opportunities">
+                Browse opportunities
+              </Link>
             </article>
+            <article className="card">
+              <h3>Volunteer news</h3>
+              <p className="muted">
+                Read portal announcements managed independently of official CRM
+                records.
+              </p>
+              <Link className="text-link" href="/news">
+                Read news
+              </Link>
+            </article>
+            <article className="card">
+              <h3>Native CMS</h3>
+              <p className="muted">
+                Editors prepare drafts. Publishers schedule, publish, and archive
+                content with revision history.
+              </p>
+              {canManageContent ? (
+                <Link className="text-link" href="/admin/content">
+                  Open content management
+                </Link>
+              ) : (
+                <span className="muted">Staff permission required</span>
+              )}
+            </article>
+          </div>
+        </section>
+
+        <section className="section" aria-labelledby="next-title">
+          <p className="eyebrow">Next delivery slices</p>
+          <h2 id="next-title">Attendance and verified rewards</h2>
+          <div className="card-grid">
             <article className="card">
               <h3>Attendance capture</h3>
               <p className="muted">
@@ -153,13 +217,24 @@ export default async function DashboardPage() {
             <article className="card">
               <h3>Verified rewards</h3>
               <p className="muted">
-                On-demand downstream attendance checks and idempotent points
-                from verified YM Hub records.
+                On-demand downstream attendance checks and idempotent points from
+                verified YM Hub records.
+              </p>
+            </article>
+            <article className="card">
+              <h3>Referrals</h3>
+              <p className="muted">
+                Random referral codes with rewards only after a referred volunteer
+                reaches a verified milestone.
               </p>
             </article>
           </div>
         </section>
       </main>
+
+      <footer className="site-footer">
+        Official registration and verified attendance remain in YM Hub.
+      </footer>
     </div>
   );
 }
