@@ -5,6 +5,8 @@ import { updateOpportunity } from "@/app/admin/content/actions";
 import { OpportunityForm } from "@/app/admin/content/opportunity-form";
 import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
+import { isUuid } from "@/lib/content/identifiers";
+import type { ContentStatus } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Edit opportunity",
@@ -15,13 +17,22 @@ type EditOpportunityPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const publisherStatuses = new Set(["scheduled", "published", "archived"]);
+const publisherStatuses = new Set<ContentStatus>([
+  "scheduled",
+  "published",
+  "archived",
+]);
 
 export default async function EditOpportunityPage({
   params,
   searchParams,
 }: EditOpportunityPageProps) {
   const { id } = await params;
+
+  if (!isUuid(id)) {
+    notFound();
+  }
+
   const { supabase, access } = await requireContentManager({
     next: `/admin/content/opportunities/${id}/edit`,
   });
