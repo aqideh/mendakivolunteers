@@ -5,6 +5,7 @@ import { updateNewsPost } from "@/app/admin/content/actions";
 import { NewsForm } from "@/app/admin/content/news-form";
 import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
+import { isUuid } from "@/lib/content/identifiers";
 import type { ContentStatus } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -27,6 +28,11 @@ export default async function EditNewsPage({
   searchParams,
 }: EditNewsPageProps) {
   const { id } = await params;
+
+  if (!isUuid(id)) {
+    notFound();
+  }
+
   const { supabase, access } = await requireContentManager({
     next: `/admin/content/news/${id}/edit`,
   });
