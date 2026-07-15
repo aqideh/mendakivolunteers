@@ -1,49 +1,47 @@
 import Link from "next/link";
 
+import { PortalHeader } from "@/components/portal-header";
+
 const foundations = [
   {
     title: "Secure identity boundary",
     body: "Supabase Auth identities remain separate from the authoritative YM Hub volunteer identifier until a controlled link is made.",
   },
   {
-    title: "Replaceable YM Hub gateway",
-    body: "Application code uses canonical volunteer fields. Placeholder Salesforce labels are isolated to one adapter configuration.",
+    title: "App-owned content",
+    body: "Opportunity discovery and volunteer news are managed in the portal without taking ownership of YM Hub registration records.",
   },
   {
     title: "Database-enforced access",
-    body: "Role checks, row-level security, immutable audit records, and server-only integration credentials are built into the foundation.",
+    body: "Role checks, row-level security, immutable revisions, and server-only integration credentials are enforced below the interface.",
   },
 ];
 
 export default function Home() {
   return (
     <div className="site-shell">
-      <header className="site-header">
-        <Link className="brand-lockup" href="/">
-          <span className="brand-mark" aria-hidden="true">
-            MV
-          </span>
-          <span>MENDAKI Volunteer Portal</span>
-        </Link>
-        <p className="header-status">Phase 1 foundation build</p>
-      </header>
+      <PortalHeader status="Web application prototype" />
 
       <main className="page-frame">
         <section className="hero">
           <div>
-            <p className="eyebrow">Web application prototype</p>
+            <p className="eyebrow">MENDAKI volunteer web portal</p>
             <h1>A secure engagement layer for volunteers.</h1>
             <p className="lede">
-              This application supplements YM Hub. It does not replace the CRM,
-              official registration records, or verified attendance records.
+              Browse opportunities and volunteer news in this portal. Official
+              registration, attendance verification, and verified hours remain
+              in YM Hub.
             </p>
             <div className="actions">
-              <Link className="button button-primary" href="/login">
+              <Link className="button button-primary" href="/opportunities">
+                Browse opportunities
+              </Link>
+              <Link className="button button-secondary" href="/news">
+                Read volunteer news
+              </Link>
+              <Link className="button button-secondary" href="/login">
                 Volunteer sign in
               </Link>
-              <a className="button button-secondary" href="#foundation">
-                Review foundation
-              </a>
             </div>
           </div>
 
@@ -59,9 +57,46 @@ export default function Home() {
           </aside>
         </section>
 
+        <section className="section" aria-labelledby="available-title">
+          <p className="eyebrow">Current prototype capability</p>
+          <h2 id="available-title">Volunteer content and secure account access</h2>
+          <div className="card-grid">
+            <article className="card">
+              <h3>Opportunity discovery</h3>
+              <p className="muted">
+                App-managed listings provide clear descriptions and link to the
+                official YM Hub registration destination.
+              </p>
+              <Link className="text-link" href="/opportunities">
+                View opportunities
+              </Link>
+            </article>
+            <article className="card">
+              <h3>Volunteer news</h3>
+              <p className="muted">
+                Staff-managed updates and announcements are published separately
+                from volunteer records in YM Hub.
+              </p>
+              <Link className="text-link" href="/news">
+                View news
+              </Link>
+            </article>
+            <article className="card">
+              <h3>Authenticated dashboard</h3>
+              <p className="muted">
+                Supabase authentication and row-level policies isolate volunteer
+                accounts and staff permissions.
+              </p>
+              <Link className="text-link" href="/dashboard">
+                Open dashboard
+              </Link>
+            </article>
+          </div>
+        </section>
+
         <section className="section" id="foundation">
-          <p className="eyebrow">Phase 1 scope</p>
-          <h2>Platform and identity foundations</h2>
+          <p className="eyebrow">Platform principles</p>
+          <h2>Designed to supplement YM Hub</h2>
           <div className="card-grid">
             {foundations.map((foundation) => (
               <article className="card" key={foundation.title}>
