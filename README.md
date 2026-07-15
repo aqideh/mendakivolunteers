@@ -113,7 +113,7 @@ npm run check:production
 
 The check fails if required settings are missing, insecure, or use development
 registration hosts. Phase 0 also blocks every production deployment until the
-real read-only Salesforce YM Hub adapter is implemented and verified in Phase 1.
+real read-only Salesforce YM Hub adapter is implemented and verified in Phase 3.
 
 ## Project structure
 
