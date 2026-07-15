@@ -1,6 +1,6 @@
 begin;
 
-select plan(18);
+select plan(19);
 
 select has_schema('ymhub', 'YM Hub read-model schema exists');
 select has_table('ymhub', 'registration_snapshots', 'registration snapshots table exists');
