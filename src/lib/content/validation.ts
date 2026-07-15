@@ -59,8 +59,29 @@ const commonContentSchema = z.object({
   expiresAt: optionalLocalDateTimeSchema,
 });
 
-export const opportunityInputSchema = commonContentSchema
-  .extend({
+function isAllowedRegistrationHost(
+  value: string,
+  allowedHosts: ReadonlySet<string>,
+): boolean {
+  try {
+    return allowedHosts.has(new URL(value).hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+export function createOpportunityInputSchema(
+  allowedRegistrationHosts: readonly string[],
+) {
+  if (allowedRegistrationHosts.length === 0) {
+    throw new Error("At least one YM Hub registration host is required");
+  }
+
+  const allowedHosts = new Set(
+    allowedRegistrationHosts.map((host) => host.toLowerCase()),
+  );
+
+  return commonContentSchema.extend({
     category: z.string().trim().min(2).max(80),
     locationName: optionalText(180),
     isRemote: z.boolean(),
@@ -74,10 +95,20 @@ export const opportunityInputSchema = commonContentSchema
       .max(2048)
       .refine((value) => value.startsWith("https://"), {
         message: "Registration links must use HTTPS.",
+      })
+      .refine((value) => isAllowedRegistrationHost(value, allowedHosts), {
+        message: "Registration links must use an approved YM Hub host.",
       }),
     ymhubActivityId: optionalText(128),
-  })
-  .superRefine((value, context) => {
+  }).superRefine((value, context) => {
+    if (!value.isRemote && !value.locationName) {
+      context.addIssue({
+        code: "custom",
+        path: ["locationName"],
+        message: "In-person opportunities require a location.",
+      });
+    }
+
     if (value.endsAt && value.endsAt < value.startsAt) {
       context.addIssue({
         code: "custom",
@@ -113,6 +144,7 @@ export const opportunityInputSchema = commonContentSchema
       });
     }
   });
+}
 
 export const newsInputSchema = commonContentSchema.superRefine(
   (value, context) => {
@@ -139,8 +171,11 @@ function readText(formData: FormData, name: string): string {
   return typeof value === "string" ? value : "";
 }
 
-export function parseOpportunityForm(formData: FormData) {
-  return opportunityInputSchema.safeParse({
+export function parseOpportunityForm(
+  formData: FormData,
+  allowedRegistrationHosts: readonly string[],
+) {
+  return createOpportunityInputSchema(allowedRegistrationHosts).safeParse({
     slug: readText(formData, "slug"),
     title: readText(formData, "title"),
     summary: readText(formData, "summary"),
@@ -160,6 +195,21 @@ export function parseOpportunityForm(formData: FormData) {
   });
 }
 
+export function getOpportunityLocation(
+  isRemote: boolean,
+  locationName: string | null,
+): string {
+  if (isRemote) {
+    return "Online";
+  }
+
+  if (!locationName) {
+    throw new Error("In-person opportunity is missing its required location");
+  }
+
+  return locationName;
+}
+
 export function parseNewsForm(formData: FormData) {
   return newsInputSchema.safeParse({
     slug: readText(formData, "slug"),
@@ -174,5 +224,11 @@ export function parseNewsForm(formData: FormData) {
 }
 
 export function getValidationMessage(error: z.ZodError): string {
-  return error.issues[0]?.message ?? "Review the submitted content fields.";
+  const issue = error.issues[0];
+
+  if (!issue) {
+    throw new Error("Validation failed without a reported issue");
+  }
+
+  return issue.message;
 }

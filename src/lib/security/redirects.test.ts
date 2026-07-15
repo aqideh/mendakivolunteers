@@ -18,7 +18,7 @@ describe("getSafeRedirectPath", () => {
     expect(getSafeRedirectPath(candidate)).toBe("/dashboard");
   });
 
-  it("uses a supplied fallback", () => {
+  it("uses the caller's safe default path", () => {
     expect(getSafeRedirectPath(null, "/login")).toBe("/login");
   });
 });

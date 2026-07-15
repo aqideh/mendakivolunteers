@@ -65,13 +65,32 @@ export default async function DashboardPage({
       .order("role"),
   ]);
 
-  const account = accountResult.data;
-  const volunteer = volunteerResult.data;
-  const roles = rolesResult.data?.map(({ role }) => role) ?? [];
-  const canManageContent = hasContentManagerRole(roles);
   const hasReadError = Boolean(
     accountResult.error || volunteerResult.error || rolesResult.error,
   );
+
+  if (hasReadError) {
+    console.error("Unable to load volunteer dashboard", {
+      accountCode: accountResult.error?.code,
+      volunteerCode: volunteerResult.error?.code,
+      rolesCode: rolesResult.error?.code,
+    });
+    throw new Error("Volunteer dashboard data could not be loaded");
+  }
+
+  if (!rolesResult.data) {
+    throw new Error("Volunteer roles query returned no result set");
+  }
+
+  const account = accountResult.data;
+  const volunteer = volunteerResult.data;
+  const roles = rolesResult.data.map(({ role }) => role);
+
+  if (!account || roles.length === 0) {
+    throw new Error("Volunteer account invariants are incomplete");
+  }
+
+  const canManageContent = hasContentManagerRole(roles);
   const parameters = await searchParams;
   const errorCode = readParameter(parameters, "error");
   const errorMessage = errorCode ? dashboardErrors[errorCode] : undefined;
@@ -84,10 +103,9 @@ export default async function DashboardPage({
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Volunteer account</p>
-            <h1>Volunteer dashboard prototype</h1>
+            <h1>Volunteer dashboard</h1>
             <p className="muted">
-              The current build verifies secure identity access and provides the
-              first app-owned volunteer content modules.
+              Review your portal identity link and access volunteer services.
             </p>
           </div>
           <div className="actions">
@@ -110,16 +128,6 @@ export default async function DashboardPage({
           </div>
         ) : null}
 
-        {hasReadError ? (
-          <div className="notice notice-error" role="status">
-            <h2>Database setup is incomplete</h2>
-            <p>
-              Apply the Supabase migrations, expose the required schemas, and
-              refresh this page.
-            </p>
-          </div>
-        ) : null}
-
         <section className="panel" aria-labelledby="identity-title">
           <p className="eyebrow">Identity boundary</p>
           <h2 id="identity-title">Account and YM Hub link</h2>
@@ -132,7 +140,7 @@ export default async function DashboardPage({
               <dt>Account status</dt>
               <dd>
                 <span className="status-pill">
-                  {account?.status ?? "pending setup"}
+                  {account.status}
                 </span>
               </dd>
             </div>
@@ -146,7 +154,7 @@ export default async function DashboardPage({
             </div>
             <div className="data-row">
               <dt>Application roles</dt>
-              <dd>{roles.length > 0 ? roles.join(", ") : "volunteer"}</dd>
+              <dd>{roles.join(", ")}</dd>
             </div>
           </dl>
         </section>

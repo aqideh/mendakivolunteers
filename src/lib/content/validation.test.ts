@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createOpportunityInputSchema,
+  getOpportunityLocation,
   newsInputSchema,
-  opportunityInputSchema,
 } from "@/lib/content/validation";
+
+const opportunityInputSchema = createOpportunityInputSchema(["example.invalid"]);
 
 const validOpportunity = {
   slug: "community-learning-support",
@@ -41,6 +44,24 @@ describe("opportunityInputSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("requires an approved registration host", () => {
+    const result = opportunityInputSchema.safeParse({
+      ...validOpportunity,
+      registrationUrl: "https://untrusted.example/register",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("requires a location for in-person opportunities", () => {
+    const result = opportunityInputSchema.safeParse({
+      ...validOpportunity,
+      locationName: "",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("rejects registration deadlines after the activity starts", () => {
     const result = opportunityInputSchema.safeParse({
       ...validOpportunity,
@@ -58,6 +79,20 @@ describe("opportunityInputSchema", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+});
+
+describe("getOpportunityLocation", () => {
+  it("returns the stored location for an in-person opportunity", () => {
+    expect(getOpportunityLocation(false, "MENDAKI premises")).toBe(
+      "MENDAKI premises",
+    );
+  });
+
+  it("rejects an invalid in-person record instead of substituting text", () => {
+    expect(() => getOpportunityLocation(false, null)).toThrow(
+      "missing its required location",
+    );
   });
 });
 

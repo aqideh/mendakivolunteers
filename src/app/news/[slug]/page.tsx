@@ -17,12 +17,17 @@ export async function generateMetadata({
 }: NewsPageProps): Promise<Metadata> {
   const { slug } = await params;
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .schema("content")
     .from("news_posts")
     .select("title, summary")
     .eq("slug", slug)
     .maybeSingle();
+
+  if (error) {
+    console.error("Unable to load news metadata", { code: error.code, slug });
+    throw new Error("News metadata could not be loaded");
+  }
 
   return data
     ? { title: data.title, description: data.summary }
@@ -41,6 +46,7 @@ export default async function NewsPostPage({ params }: NewsPageProps) {
 
   if (error) {
     console.error("Unable to load news post", { code: error.code, slug });
+    throw new Error("News post could not be loaded");
   }
 
   if (!post) {

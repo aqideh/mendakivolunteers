@@ -4,7 +4,8 @@
   "private": true,
   "description": "Volunteer-facing web application for MENDAKI, backed by Supabase and downstream YM Hub data.",
   "engines": {
-    "node": ">=20.9.0"
+    "node": "22.x",
+    "npm": ">=10 <12"
   },
   "scripts": {
     "dev": "next dev",

@@ -213,31 +213,6 @@ h3 {
   box-shadow: var(--shadow);
 }
 
-.prototype-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.prototype-card::before {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 0.35rem;
-  background: var(--accent);
-  content: "";
-}
-
-.prototype-id {
-  display: inline-flex;
-  border-radius: 999px;
-  margin: 0.25rem 0 1rem;
-  padding: 0.4rem 0.7rem;
-  color: var(--brand);
-  background: var(--accent-soft);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-
 .muted {
   color: var(--muted);
 }

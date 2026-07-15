@@ -128,7 +128,7 @@ The release checks include:
 - Vitest validation and identifier tests.
 - Next.js production build.
 - Dependency vulnerability audit.
-- Supabase migration reset and prototype seed.
+- Supabase migration reset and explicit local fixture seed.
 - pgTAP tests for RLS, grants, revision triggers, and publisher-only edits.
 
 ## Deferred work

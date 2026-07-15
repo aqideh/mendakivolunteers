@@ -48,6 +48,7 @@ export default async function EditNewsPage({
       code: loadError.code,
       id,
     });
+    throw new Error("News post could not be loaded for editing");
   }
 
   if (!post) {

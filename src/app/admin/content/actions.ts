@@ -10,6 +10,7 @@ import {
   parseNewsForm,
   parseOpportunityForm,
 } from "@/lib/content/validation";
+import { getRegistrationAllowedHosts } from "@/lib/env";
 import type { ContentStatus } from "@/types/database";
 
 function encode(value: string): string {
@@ -39,8 +40,12 @@ function revalidateContentRoutes() {
   revalidatePath("/admin/content");
 }
 
+function parseOpportunity(formData: FormData) {
+  return parseOpportunityForm(formData, getRegistrationAllowedHosts());
+}
+
 export async function createOpportunity(formData: FormData) {
-  const parsed = parseOpportunityForm(formData);
+  const parsed = parseOpportunity(formData);
 
   if (!parsed.success) {
     redirect(
@@ -90,7 +95,7 @@ export async function updateOpportunity(formData: FormData) {
     formData,
     "Invalid opportunity identifier.",
   );
-  const parsed = parseOpportunityForm(formData);
+  const parsed = parseOpportunity(formData);
 
   if (!parsed.success) {
     redirect(

@@ -16,7 +16,7 @@
 2. Next.js server runtime to Supabase.
 3. Future integration runtime to YM Hub.
 4. Staff administration interface to privileged server operations.
-5. Development mock data to staging and production deployment boundaries.
+5. Local database fixtures to staging and production deployment boundaries.
 
 ## Principal threats and controls
 
@@ -27,8 +27,8 @@
 | An attacker grants a staff role | No browser write grants or RLS policy on roles; role-change audit trigger |
 | A leaked publishable key bypasses access control | Publishable keys are treated as public; authorization remains in RLS |
 | A leaked service or Salesforce secret exposes data | Secrets remain server-side, environment separated, and excluded from source control |
-| Prototype data reaches production | Explicit `APP_ENV`, production readiness script, mock connector production rejection |
-| Placeholder Salesforce labels remain active | Production mapping validation rejects placeholder tokens |
+| Local fixture data reaches production | Explicit `APP_ENV`, no runtime fixture adapter, and a closed production deployment gate |
+| An incomplete Salesforce integration is enabled | Production deployment remains blocked until the real adapter and mappings are reviewed |
 | Open redirect through authentication callback | Internal-path allowlist and redirect unit tests |
 | Account enumeration through sign-in | Generic response for eligible and ineligible email addresses |
 | Session cookie spoofing | Server and proxy authorization uses `auth.getClaims()` rather than trusting a local session object |
@@ -48,7 +48,7 @@
 - Define retention and deletion schedules with MENDAKI's DPO.
 - Review Content Security Policy against the selected deployment platform and analytics tools.
 - Run cross-account RLS tests using real JWTs in staging.
-- Generate and commit an npm lockfile from a trusted build environment.
+- Review and approve every lockfile change through dependency CI.
 
 ## Logging rules
 

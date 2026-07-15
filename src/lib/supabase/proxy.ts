@@ -4,9 +4,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getPublicConfig } from "@/lib/env";
 import type { Database } from "@/types/database";
 
-export async function updateSession(request: NextRequest) {
+export async function updateSession(
+  request: NextRequest,
+  requestHeaders: Headers,
+) {
   const { supabaseUrl, supabasePublishableKey } = getPublicConfig();
-  let response = NextResponse.next({ request });
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient<Database>(
     supabaseUrl,
@@ -21,7 +24,7 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value);
           }
 
-          response = NextResponse.next({ request });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
 
           for (const { name, value, options } of cookiesToSet) {
             response.cookies.set(name, value, options);

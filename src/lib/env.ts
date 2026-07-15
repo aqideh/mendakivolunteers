@@ -13,6 +13,16 @@ const appEnvironmentSchema = z.enum([
   "production",
 ]);
 
+const booleanSettingSchema = z.enum(["true", "false"]);
+const hostnameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(
+    /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/,
+    "Registration hosts must be plain DNS hostnames without schemes, ports, or paths.",
+  );
+
 export type AppEnvironment = z.infer<typeof appEnvironmentSchema>;
 export type Environment = Readonly<Record<string, string | undefined>>;
 
@@ -28,12 +38,26 @@ export function getPublicConfig() {
 export function getAppEnvironment(
   environment: Environment = process.env,
 ): AppEnvironment {
-  const fallback = environment.NODE_ENV === "test" ? "test" : "development";
-  return appEnvironmentSchema.parse(environment.APP_ENV ?? fallback);
+  return appEnvironmentSchema.parse(environment.APP_ENV);
 }
 
 export function isAuthSignUpAllowed(
   environment: Environment = process.env,
 ): boolean {
-  return environment.AUTH_ALLOW_SIGN_UP === "true";
+  return booleanSettingSchema.parse(environment.AUTH_ALLOW_SIGN_UP) === "true";
+}
+
+export function getRegistrationAllowedHosts(
+  environment: Environment = process.env,
+): readonly string[] {
+  const value = z.string().trim().min(1).parse(
+    environment.YMHUB_REGISTRATION_ALLOWED_HOSTS,
+  );
+  const hosts = value.split(",").map((host) => hostnameSchema.parse(host));
+
+  if (new Set(hosts).size !== hosts.length) {
+    throw new Error("YMHUB_REGISTRATION_ALLOWED_HOSTS contains duplicate hosts");
+  }
+
+  return hosts;
 }

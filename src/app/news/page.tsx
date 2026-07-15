@@ -24,6 +24,7 @@ export default async function NewsPage() {
 
   if (error) {
     console.error("Unable to load public news", { code: error.code });
+    throw new Error("Public news could not be loaded");
   }
 
   return (
@@ -39,11 +40,7 @@ export default async function NewsPage() {
           </p>
         </section>
 
-        {error ? (
-          <div className="notice notice-error" role="alert">
-            News is temporarily unavailable.
-          </div>
-        ) : posts && posts.length > 0 ? (
+        {posts.length > 0 ? (
           <section className="content-grid" aria-label="Volunteer news">
             {posts.map((post) => (
               <article

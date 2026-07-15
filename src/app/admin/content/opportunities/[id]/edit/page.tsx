@@ -48,6 +48,7 @@ export default async function EditOpportunityPage({
       code: loadError.code,
       id,
     });
+    throw new Error("Opportunity could not be loaded for editing");
   }
 
   if (!opportunity) {

@@ -62,7 +62,15 @@ export default async function ContentAdminPage({
       opportunitiesCode: opportunitiesResult.error?.code,
       newsCode: newsResult.error?.code,
     });
+    throw new Error("CMS content could not be loaded");
   }
+
+  if (!opportunitiesResult.data || !newsResult.data) {
+    throw new Error("CMS content query returned no result set");
+  }
+
+  const opportunities = opportunitiesResult.data;
+  const newsPosts = newsResult.data;
 
   return (
     <div className="site-shell">
@@ -100,12 +108,6 @@ export default async function ContentAdminPage({
             {errorMessage}
           </div>
         ) : null}
-        {hasLoadError ? (
-          <div className="notice notice-error" role="alert">
-            Some CMS records could not be loaded. No content was changed.
-          </div>
-        ) : null}
-
         <section className="section" aria-labelledby="opportunities-title">
           <div className="section-header">
             <div>
@@ -128,7 +130,7 @@ export default async function ContentAdminPage({
                 </tr>
               </thead>
               <tbody>
-                {(opportunitiesResult.data ?? []).map((opportunity) => (
+                {opportunities.map((opportunity) => (
                   <tr key={opportunity.id}>
                     <td>
                       <strong>{opportunity.title}</strong>
@@ -151,7 +153,7 @@ export default async function ContentAdminPage({
                     </td>
                   </tr>
                 ))}
-                {(opportunitiesResult.data ?? []).length === 0 ? (
+                {opportunities.length === 0 ? (
                   <tr>
                     <td colSpan={5}>No opportunity records.</td>
                   </tr>
@@ -183,7 +185,7 @@ export default async function ContentAdminPage({
                 </tr>
               </thead>
               <tbody>
-                {(newsResult.data ?? []).map((post) => (
+                {newsPosts.map((post) => (
                   <tr key={post.id}>
                     <td>
                       <strong>{post.title}</strong>
@@ -208,7 +210,7 @@ export default async function ContentAdminPage({
                     </td>
                   </tr>
                 ))}
-                {(newsResult.data ?? []).length === 0 ? (
+                {newsPosts.length === 0 ? (
                   <tr>
                     <td colSpan={5}>No news records.</td>
                   </tr>

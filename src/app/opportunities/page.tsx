@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
+import { getOpportunityLocation } from "@/lib/content/validation";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default async function OpportunitiesPage() {
 
   if (error) {
     console.error("Unable to load public opportunities", { code: error.code });
+    throw new Error("Public opportunities could not be loaded");
   }
 
   return (
@@ -42,12 +44,7 @@ export default async function OpportunitiesPage() {
           </p>
         </section>
 
-        {error ? (
-          <div className="notice notice-error" role="alert">
-            Opportunities are temporarily unavailable. No registration data has
-            been changed.
-          </div>
-        ) : opportunities && opportunities.length > 0 ? (
+        {opportunities.length > 0 ? (
           <section className="content-grid" aria-label="Available opportunities">
             {opportunities.map((opportunity) => (
               <article
@@ -74,9 +71,10 @@ export default async function OpportunitiesPage() {
                   <div>
                     <dt>Location</dt>
                     <dd>
-                      {opportunity.is_remote
-                        ? "Online"
-                        : opportunity.location_name ?? "To be confirmed"}
+                      {getOpportunityLocation(
+                        opportunity.is_remote,
+                        opportunity.location_name,
+                      )}
                     </dd>
                   </div>
                 </dl>

@@ -6,7 +6,7 @@ Volunteer-facing web application for MENDAKI. The application supplements YM Hub
 
 ### Phase 1: platform and identity foundation
 
-The `phase-1-foundation` implementation establishes:
+The platform and identity foundation establishes:
 
 - Next.js 16 and TypeScript web application shell.
 - Supabase SSR authentication with one-time email links.
@@ -15,14 +15,14 @@ The `phase-1-foundation` implementation establishes:
 - Role-based authorization and forced Row Level Security.
 - Account-link case model for ambiguous YM Hub matches.
 - Append-only audit event foundation.
-- Replaceable `YmHubGateway` interface and development mock adapter.
-- Prototype IDs such as `PROTO-VOL-000001`.
-- Production checks that reject mock mode and placeholder mappings.
+- Explicit runtime configuration with no implicit environment or connector mode.
+- A production deployment gate that remains closed until the real read-only YM
+  Hub adapter is implemented and verified.
 - Unit, migration, RLS, dependency, and production-build CI checks.
 
 ### Phase 2: opportunity and news CMS
 
-The `phase-2-cms` implementation adds:
+The opportunity and news CMS adds:
 
 - Public opportunity discovery and detail routes.
 - YM Hub registration link-outs without app-owned registration records.
@@ -36,7 +36,10 @@ The `phase-2-cms` implementation adds:
 - Prototype content records for local development.
 - pgTAP tests covering RLS, grants, revisions, and publisher-only operations.
 
-The Salesforce YM Hub gateway is deliberately not implemented yet. Salesforce mode fails closed until the exact object and field API names are supplied and the integration is reviewed.
+The Salesforce YM Hub gateway is deliberately not implemented yet. No mock
+gateway is present in the application runtime, and production deployment remains
+blocked until the exact object and field API names are supplied and the real
+adapter is reviewed.
 
 ## Technology
 
@@ -50,11 +53,11 @@ The Salesforce YM Hub gateway is deliberately not implemented yet. Salesforce mo
 
 Requirements:
 
-- Node.js 20.9 or later.
+- Node.js 22.
 - Docker-compatible runtime for the local Supabase stack.
 
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
 npm run db:start
 npm run db:reset
@@ -72,7 +75,10 @@ Open:
 - Local email inbox: `http://127.0.0.1:54324`
 - Supabase Studio: `http://127.0.0.1:54323`
 
-After creating a local account, update the email in `supabase/snippets/link_mock_volunteer.sql` and run the snippet in the local SQL editor to link it to `PROTO-VOL-000001`.
+After creating a local account, update the email in
+`supabase/snippets/link_local_volunteer.sql` and run the snippet in the local SQL
+editor. The `PROTO-*` records are explicit local database fixtures; application
+runtime code does not substitute them for missing YM Hub data.
 
 To use the CMS locally, grant the linked test account `content_editor`, `publisher`, or `admin` in `core.user_roles`. Role changes are server-side administrative operations and are not exposed to the browser.
 
@@ -91,11 +97,12 @@ npm run db:test
 
 ## Production guard
 
-Deployment configuration must explicitly use:
+Runtime configuration must always set:
 
 ```text
 APP_ENV=production
-YMHUB_CONNECTOR_MODE=salesforce
+AUTH_ALLOW_SIGN_UP=false
+YMHUB_REGISTRATION_ALLOWED_HOSTS=<approved-registration-host>
 ```
 
 Before a production deployment, run:
@@ -104,7 +111,9 @@ Before a production deployment, run:
 npm run check:production
 ```
 
-The check fails if required settings are missing or still contain `PROTO`, `PLACEHOLDER`, or bracketed field tokens. The runtime also rejects the mock connector in production.
+The check fails if required settings are missing, insecure, or use development
+registration hosts. Phase 0 also blocks every production deployment until the
+real read-only Salesforce YM Hub adapter is implemented and verified in Phase 1.
 
 ## Project structure
 
@@ -114,7 +123,6 @@ src/components             Shared portal interface components
 src/lib/auth               Server-side authorization helpers
 src/lib/content            Content validation and Singapore-time utilities
 src/lib/supabase           Browser, server, and session proxy clients
-src/lib/ymhub              Canonical gateway, mock adapter, and placeholders
 src/lib/security           Shared security validation
 src/types/database.ts      Generated-style Supabase schema types
 supabase/migrations        Versioned database schema and RLS
@@ -132,4 +140,11 @@ YM Hub remains authoritative for:
 - Official attendance verification.
 - Verified volunteer hours.
 
-The web application owns its authentication, opportunity and news content, attendance capture and staff handoff records, points, badges, and referrals. Attendance-based rewards will only be issued after the app reads a verified downstream YM Hub record in a later phase.
+The current web application owns its authentication plus opportunity and news
+content. Attendance capture, staff handoff records, points, badges, and referrals
+are future modules and are not represented as implemented capabilities. Any
+attendance-based reward will only be issued after the app reads a verified
+downstream YM Hub record in a later phase.
+
+See [the development roadmap](docs/development-roadmap.md) for phased delivery,
+dependencies, release gates, and exit criteria.

@@ -2,19 +2,13 @@ const required = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-  "YMHUB_BASE_URL",
-  "YMHUB_CLIENT_ID",
-  "YMHUB_CLIENT_SECRET",
-  "YMHUB_VOLUNTEER_OBJECT_API",
-  "YMHUB_VOLUNTEER_ID_FIELD_API",
-  "YMHUB_VOLUNTEER_STATUS_FIELD_API",
-  "YMHUB_VOLUNTEER_UPDATED_AT_FIELD_API",
+  "AUTH_ALLOW_SIGN_UP",
+  "YMHUB_REGISTRATION_ALLOWED_HOSTS",
 ];
 
 const secureUrlSettings = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
-  "YMHUB_BASE_URL",
 ];
 
 const errors = [];
@@ -23,8 +17,8 @@ if (process.env.APP_ENV !== "production") {
   errors.push("APP_ENV must be production.");
 }
 
-if (process.env.YMHUB_CONNECTOR_MODE !== "salesforce") {
-  errors.push("YMHUB_CONNECTOR_MODE must be salesforce.");
+if (!["true", "false"].includes(process.env.AUTH_ALLOW_SIGN_UP ?? "")) {
+  errors.push("AUTH_ALLOW_SIGN_UP must be explicitly set to true or false.");
 }
 
 for (const name of required) {
@@ -38,6 +32,35 @@ for (const name of required) {
     errors.push(`${name} still contains a prototype or placeholder value.`);
   }
 }
+
+const registrationHosts = process.env.YMHUB_REGISTRATION_ALLOWED_HOSTS
+  ?.split(",")
+  .map((host) => host.trim().toLowerCase())
+  .filter(Boolean);
+
+if (registrationHosts) {
+  for (const host of registrationHosts) {
+    if (
+      !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(
+        host,
+      )
+    ) {
+      errors.push(
+        "YMHUB_REGISTRATION_ALLOWED_HOSTS must contain DNS hostnames only.",
+      );
+    }
+
+    if (host === "example.invalid" || /proto|placeholder/i.test(host)) {
+      errors.push(
+        "YMHUB_REGISTRATION_ALLOWED_HOSTS must not contain development hosts.",
+      );
+    }
+  }
+}
+
+errors.push(
+  "Production deployment is blocked until the read-only Salesforce YM Hub adapter is implemented and verified.",
+);
 
 for (const name of secureUrlSettings) {
   const value = process.env[name]?.trim();

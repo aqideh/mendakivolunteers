@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - phase-1-foundation
 
 permissions:
   contents: read
@@ -25,7 +24,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
       APP_ENV: test
       AUTH_ALLOW_SIGN_UP: "true"
-      YMHUB_CONNECTOR_MODE: mock
+      YMHUB_REGISTRATION_ALLOWED_HOSTS: example.invalid
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -36,7 +35,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Lint
         run: npm run lint
@@ -67,7 +66,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Start local Supabase
         run: npx supabase start

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
+import { getOpportunityLocation } from "@/lib/content/validation";
 import { createClient } from "@/lib/supabase/server";
 
 type OpportunityPageProps = {
@@ -17,12 +18,17 @@ export async function generateMetadata({
 }: OpportunityPageProps): Promise<Metadata> {
   const { slug } = await params;
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .schema("content")
     .from("opportunities")
     .select("title, summary")
     .eq("slug", slug)
     .maybeSingle();
+
+  if (error) {
+    console.error("Unable to load opportunity metadata", { code: error.code, slug });
+    throw new Error("Opportunity metadata could not be loaded");
+  }
 
   return data
     ? { title: data.title, description: data.summary }
@@ -43,6 +49,7 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
 
   if (error) {
     console.error("Unable to load opportunity", { code: error.code, slug });
+    throw new Error("Opportunity details could not be loaded");
   }
 
   if (!opportunity) {
@@ -83,9 +90,10 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
             <div>
               <dt>Location</dt>
               <dd>
-                {opportunity.is_remote
-                  ? "Online"
-                  : opportunity.location_name ?? "To be confirmed"}
+                {getOpportunityLocation(
+                  opportunity.is_remote,
+                  opportunity.location_name,
+                )}
               </dd>
             </div>
             <div>

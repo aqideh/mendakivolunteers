@@ -60,7 +60,7 @@ export async function requireContentManager(options?: {
     redirect("/dashboard?error=cms_authorization_unavailable");
   }
 
-  const roles = rolesResult.data?.map(({ role }) => role) ?? [];
+  const roles = rolesResult.data.map(({ role }) => role);
   const access: ContentAccess = {
     userId,
     roles,

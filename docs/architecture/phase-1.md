@@ -15,7 +15,7 @@ Next.js web application
   |
   +-- Server Components and Server Actions
   +-- Supabase SSR session refresh through proxy.ts
-  +-- Canonical YM Hub gateway interface
+  +-- No YM Hub runtime adapter until the reviewed Salesforce integration exists
   |
   v
 Supabase
@@ -25,9 +25,6 @@ Supabase
   +-- core.user_roles
   +-- core.account_link_cases
   +-- audit.events
-
-Development only:
-Next.js -> MockYmHubGateway -> PROTO-VOL-* records
 
 Future production path:
 Next.js server process -> SalesforceYmHubGateway -> YM Hub
@@ -62,7 +59,7 @@ Support officers and auditors receive narrowly defined read access. No browser r
 
 ## YM Hub adapter boundary
 
-Application features consume canonical fields:
+The future Salesforce adapter will expose canonical fields:
 
 ```ts
 externalVolunteerId
@@ -70,9 +67,11 @@ status
 sourceUpdatedAt
 ```
 
-The current `MockYmHubGateway` supplies development data. Salesforce API names are isolated in environment-backed adapter configuration. Production rejects mock mode and values containing `PROTO`, `PLACEHOLDER`, or bracketed placeholder tokens.
-
-The Salesforce gateway is intentionally not implemented in Phase 1. Selecting Salesforce mode currently fails closed.
+No development gateway is present in the application runtime. Local Supabase seed
+records are explicit database fixtures and are never substituted for an
+unavailable integration. Production deployment remains blocked until the real
+Salesforce adapter, API mappings, permission contract, and health checks are
+implemented and reviewed.
 
 ## Audit model
 

@@ -20,7 +20,7 @@ const foundations = [
 export default function Home() {
   return (
     <div className="site-shell">
-      <PortalHeader status="Web application prototype" />
+      <PortalHeader status="Volunteer portal" />
 
       <main className="page-frame">
         <section className="hero">
@@ -44,21 +44,10 @@ export default function Home() {
               </Link>
             </div>
           </div>
-
-          <aside className="panel prototype-card" aria-labelledby="prototype-title">
-            <p className="eyebrow">Development data</p>
-            <h2 id="prototype-title">Mock YM Hub identity</h2>
-            <p className="prototype-id">PROTO-VOL-000001</p>
-            <p className="muted">
-              Prototype identifiers are limited to development and staging.
-              Production configuration rejects mock mode and placeholder field
-              mappings.
-            </p>
-          </aside>
         </section>
 
         <section className="section" aria-labelledby="available-title">
-          <p className="eyebrow">Current prototype capability</p>
+          <p className="eyebrow">Available services</p>
           <h2 id="available-title">Volunteer content and secure account access</h2>
           <div className="card-grid">
             <article className="card">
@@ -109,7 +98,8 @@ export default function Home() {
       </main>
 
       <footer className="site-footer">
-        Prototype environment. Do not use prototype identifiers in production.
+        Official registration, attendance verification, and verified hours remain
+        in YM Hub.
       </footer>
     </div>
   );

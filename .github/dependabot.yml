@@ -8,6 +8,18 @@ updates:
       time: "02:00"
       timezone: Asia/Singapore
     open-pull-requests-limit: 5
+    ignore:
+      # Keep major tooling versions aligned with the Node runtime and the
+      # versions supported by the current Next.js lint stack.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
     groups:
       production-dependencies:
         dependency-type: production
