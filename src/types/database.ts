@@ -28,6 +28,15 @@ export type LinkCaseStatus =
   | "resolved"
   | "closed";
 
+export type ContentStatus =
+  | "draft"
+  | "in_review"
+  | "scheduled"
+  | "published"
+  | "archived";
+
+export type ContentKind = "opportunity" | "news";
+
 export type Database = {
   public: {
     Tables: Record<never, never>;
@@ -154,11 +163,166 @@ export type Database = {
         Args: { required_role: AppRole };
         Returns: boolean;
       };
+      is_current_account_active: {
+        Args: Record<never, never>;
+        Returns: boolean;
+      };
+      can_support_volunteers: {
+        Args: Record<never, never>;
+        Returns: boolean;
+      };
     };
     Enums: {
       app_role: AppRole;
       account_status: AccountStatus;
       link_case_status: LinkCaseStatus;
+    };
+    CompositeTypes: Record<never, never>;
+  };
+  content: {
+    Tables: {
+      opportunities: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          summary: string;
+          body: string;
+          category: string;
+          location_name: string | null;
+          is_remote: boolean;
+          starts_at: string;
+          ends_at: string | null;
+          registration_deadline: string | null;
+          registration_url: string;
+          ymhub_activity_id: string | null;
+          featured: boolean;
+          status: ContentStatus;
+          publish_at: string | null;
+          published_at: string | null;
+          expires_at: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          summary: string;
+          body: string;
+          category: string;
+          location_name?: string | null;
+          is_remote?: boolean;
+          starts_at: string;
+          ends_at?: string | null;
+          registration_deadline?: string | null;
+          registration_url: string;
+          ymhub_activity_id?: string | null;
+          featured?: boolean;
+          status?: ContentStatus;
+          publish_at?: string | null;
+          published_at?: string | null;
+          expires_at?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          slug?: string;
+          title?: string;
+          summary?: string;
+          body?: string;
+          category?: string;
+          location_name?: string | null;
+          is_remote?: boolean;
+          starts_at?: string;
+          ends_at?: string | null;
+          registration_deadline?: string | null;
+          registration_url?: string;
+          ymhub_activity_id?: string | null;
+          featured?: boolean;
+          status?: ContentStatus;
+          publish_at?: string | null;
+          published_at?: string | null;
+          expires_at?: string | null;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      news_posts: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          summary: string;
+          body: string;
+          featured: boolean;
+          status: ContentStatus;
+          publish_at: string | null;
+          published_at: string | null;
+          expires_at: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          summary: string;
+          body: string;
+          featured?: boolean;
+          status?: ContentStatus;
+          publish_at?: string | null;
+          published_at?: string | null;
+          expires_at?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          slug?: string;
+          title?: string;
+          summary?: string;
+          body?: string;
+          featured?: boolean;
+          status?: ContentStatus;
+          publish_at?: string | null;
+          published_at?: string | null;
+          expires_at?: string | null;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      revisions: {
+        Row: {
+          id: number;
+          content_kind: ContentKind;
+          content_id: string;
+          revision_number: number;
+          operation: "insert" | "update";
+          status: ContentStatus;
+          snapshot: Json;
+          actor_user_id: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+    };
+    Views: Record<never, never>;
+    Functions: Record<never, never>;
+    Enums: {
+      content_status: ContentStatus;
+      content_kind: ContentKind;
     };
     CompositeTypes: Record<never, never>;
   };

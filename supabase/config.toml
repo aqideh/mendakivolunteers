@@ -3,8 +3,8 @@ project_id = "mendakivolunteers"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "graphql_public", "core"]
-extra_search_path = ["public", "extensions", "core"]
+schemas = ["public", "graphql_public", "core", "content"]
+extra_search_path = ["public", "extensions", "core", "content"]
 max_rows = 1000
 
 [api.tls]
