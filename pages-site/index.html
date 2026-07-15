@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Static preview of the MENDAKI Volunteer Portal." />
+  <title>MENDAKI Volunteer Portal</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true">MV</span>
+      <span>MENDAKI Volunteer Portal</span>
+    </a>
+    <span class="status">GitHub Pages preview</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Volunteer web portal prototype</p>
+        <h1>A focused engagement layer for MENDAKI volunteers.</h1>
+        <p class="lede">
+          Browse volunteer opportunities, read updates, and preview the planned volunteer experience. Official registration, attendance verification, and verified hours remain in YM Hub.
+        </p>
+        <div class="actions">
+          <a class="button primary" href="#opportunities">Browse opportunities</a>
+          <a class="button secondary" href="#news">Read volunteer news</a>
+        </div>
+      </div>
+      <aside class="panel">
+        <p class="eyebrow">Development data</p>
+        <h2>Mock YM Hub identity</h2>
+        <p class="prototype-id">PROTO-VOL-000001</p>
+        <p class="muted">Prototype identifiers are limited to development and staging.</p>
+      </aside>
+    </section>
+
+    <section id="opportunities" class="section">
+      <p class="eyebrow">Opportunity discovery</p>
+      <h2>Current prototype listings</h2>
+      <div class="grid">
+        <article class="card featured">
+          <span class="tag">Education</span>
+          <h3>Community Learning Support</h3>
+          <p>Support learners and facilitators during a community learning session.</p>
+          <dl>
+            <div><dt>Date</dt><dd>25 July 2026</dd></div>
+            <div><dt>Location</dt><dd>MENDAKI premises</dd></div>
+          </dl>
+          <span class="disabled-link">Registration managed in YM Hub</span>
+        </article>
+        <article class="card">
+          <span class="tag">Community</span>
+          <h3>National Day Community Event</h3>
+          <p>Assist with guest support and activity stations at a community event.</p>
+          <dl>
+            <div><dt>Date</dt><dd>9 August 2026</dd></div>
+            <div><dt>Location</dt><dd>Singapore</dd></div>
+          </dl>
+          <span class="disabled-link">Registration managed in YM Hub</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="news" class="section">
+      <p class="eyebrow">News and announcements</p>
+      <h2>Volunteer updates</h2>
+      <article class="card news-card">
+        <span class="tag">Featured</span>
+        <h3>Welcome to the volunteer portal</h3>
+        <p>The prototype includes app-managed opportunity listings and volunteer news while preserving YM Hub as the system of record.</p>
+      </article>
+    </section>
+
+    <section class="section">
+      <p class="eyebrow">Platform principles</p>
+      <h2>Designed to supplement YM Hub</h2>
+      <div class="grid three">
+        <article class="card"><h3>Secure identity boundary</h3><p>Portal accounts remain separate from the authoritative YM Hub volunteer identifier until controlled linking occurs.</p></article>
+        <article class="card"><h3>App-owned content</h3><p>Opportunity discovery and volunteer news are managed in the portal without taking ownership of registration records.</p></article>
+        <article class="card"><h3>Database-enforced access</h3><p>Role checks, row-level security, audit history, and server-only credentials underpin the full application.</p></article>
+      </div>
+    </section>
+
+    <section class="notice">
+      <strong>Preview limitation:</strong> GitHub Pages only hosts this static public preview. Authentication, Supabase data, CMS actions, and protected dashboard routes require a server-capable deployment.
+    </section>
+  </main>
+
+  <footer>Prototype environment. Do not use prototype identifiers in production.</footer>
+</body>
+</html>
