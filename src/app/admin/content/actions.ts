@@ -4,15 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireContentManager } from "@/lib/auth/content-access";
+import { readRequiredUuid } from "@/lib/content/identifiers";
 import {
   getValidationMessage,
   parseNewsForm,
   parseOpportunityForm,
 } from "@/lib/content/validation";
 import type { ContentStatus } from "@/types/database";
-
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function encode(value: string): string {
   return encodeURIComponent(value);
@@ -22,14 +20,15 @@ function requiresPublisher(status: ContentStatus): boolean {
   return ["scheduled", "published", "archived"].includes(status);
 }
 
-function getSubmittedId(formData: FormData): string {
-  const value = formData.get("id");
-
-  if (typeof value !== "string" || !uuidPattern.test(value)) {
-    throw new Error("Invalid content identifier.");
+function getContentIdOrRedirect(
+  formData: FormData,
+  errorMessage: string,
+): string {
+  try {
+    return readRequiredUuid(formData, "id");
+  } catch {
+    redirect(`/admin/content?error=${encode(errorMessage)}`);
   }
-
-  return value;
 }
 
 function revalidateContentRoutes() {
@@ -87,14 +86,10 @@ export async function createOpportunity(formData: FormData) {
 }
 
 export async function updateOpportunity(formData: FormData) {
-  let id: string;
-
-  try {
-    id = getSubmittedId(formData);
-  } catch {
-    redirect(`/admin/content?error=${encode("Invalid opportunity identifier.")}`);
-  }
-
+  const id = getContentIdOrRedirect(
+    formData,
+    "Invalid opportunity identifier.",
+  );
   const parsed = parseOpportunityForm(formData);
 
   if (!parsed.success) {
@@ -108,7 +103,7 @@ export async function updateOpportunity(formData: FormData) {
     next: `/admin/content/opportunities/${id}/edit`,
   });
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .schema("content")
     .from("opportunities")
     .update({
@@ -130,12 +125,18 @@ export async function updateOpportunity(formData: FormData) {
       expires_at: parsed.data.expiresAt,
       updated_by: access.userId,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
-    console.error("Unable to update opportunity", { code: error.code, id });
+  if (error || !updated) {
+    console.error("Unable to update opportunity", {
+      code: error?.code,
+      id,
+      found: Boolean(updated),
+    });
     redirect(
-      `/admin/content/opportunities/${id}/edit?error=${encode("Opportunity could not be updated. Publishing changes require publisher access.")}`,
+      `/admin/content/opportunities/${id}/edit?error=${encode("Opportunity could not be updated. It may no longer exist, or publisher access may be required.")}`,
     );
   }
 
@@ -182,14 +183,7 @@ export async function createNewsPost(formData: FormData) {
 }
 
 export async function updateNewsPost(formData: FormData) {
-  let id: string;
-
-  try {
-    id = getSubmittedId(formData);
-  } catch {
-    redirect(`/admin/content?error=${encode("Invalid news post identifier.")}`);
-  }
-
+  const id = getContentIdOrRedirect(formData, "Invalid news post identifier.");
   const parsed = parseNewsForm(formData);
 
   if (!parsed.success) {
@@ -203,7 +197,7 @@ export async function updateNewsPost(formData: FormData) {
     next: `/admin/content/news/${id}/edit`,
   });
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .schema("content")
     .from("news_posts")
     .update({
@@ -217,12 +211,18 @@ export async function updateNewsPost(formData: FormData) {
       expires_at: parsed.data.expiresAt,
       updated_by: access.userId,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
-    console.error("Unable to update news post", { code: error.code, id });
+  if (error || !updated) {
+    console.error("Unable to update news post", {
+      code: error?.code,
+      id,
+      found: Boolean(updated),
+    });
     redirect(
-      `/admin/content/news/${id}/edit?error=${encode("News post could not be updated. Publishing changes require publisher access.")}`,
+      `/admin/content/news/${id}/edit?error=${encode("News post could not be updated. It may no longer exist, or publisher access may be required.")}`,
     );
   }
 
