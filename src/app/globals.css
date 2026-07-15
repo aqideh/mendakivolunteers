@@ -355,6 +355,85 @@ h3 {
   margin-bottom: 0;
 }
 
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.metric-card {
+  display: grid;
+  align-content: space-between;
+  min-height: 8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  padding: 1.2rem;
+  background: var(--surface);
+}
+
+.metric-value {
+  color: var(--brand);
+  font-size: clamp(1.75rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.metric-value-date {
+  font-size: 1rem;
+  letter-spacing: -0.015em;
+}
+
+.metric-label,
+.record-meta,
+.record-kicker {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.read-model-section {
+  margin-top: 2rem;
+}
+
+.record-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.record-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  padding: 1rem 1.2rem;
+  background: var(--surface);
+}
+
+.record-card h3,
+.record-card p {
+  margin-bottom: 0.25rem;
+}
+
+.record-kicker {
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.status-pill[data-state="waitlisted"],
+.status-pill[data-state="pending"] {
+  color: #745400;
+  background: var(--warning-soft);
+}
+
+.status-pill[data-state="cancelled"],
+.status-pill[data-state="rejected"] {
+  color: var(--danger);
+  background: #fff0f0;
+}
+
 .site-footer {
   margin-top: auto;
   padding: 1.5rem clamp(1.25rem, 4vw, 4rem);
@@ -365,7 +444,8 @@ h3 {
 
 @media (max-width: 760px) {
   .hero,
-  .card-grid {
+  .card-grid,
+  .metric-grid {
     grid-template-columns: 1fr;
   }
 
@@ -378,6 +458,11 @@ h3 {
   .data-row {
     grid-template-columns: 1fr;
     gap: 0.25rem;
+  }
+
+  .record-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

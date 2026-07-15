@@ -45,8 +45,9 @@ and Row Level Security remain enforced by PostgreSQL and covered by tests.
 
 ## Phase 3: read-only YM Hub integration
 
-Status: next delivery phase; discovery work exists separately and requires
-review before it is integrated.
+Status: in progress. The secure database projection, sync-state model, RLS, and
+volunteer dashboard read path are implemented. Salesforce connectivity remains
+blocked on reviewed API mappings and non-production tenant access.
 
 - Obtain reviewed Salesforce object and field API names, permission scopes,
   record volumes, and change semantics.
@@ -54,6 +55,8 @@ review before it is integrated.
 - Reconcile volunteer identity and status into the existing projection tables.
 - Add idempotency, freshness indicators, observability, health checks, and
   explicit unavailable states.
+- Deploy a staging environment for UI acceptance testing after the hosting
+  project and staging Supabase project are provisioned.
 - Remove the production deployment block only after integration, security,
   failure-mode, and reconciliation tests pass against a non-production tenant.
 

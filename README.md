@@ -36,6 +36,19 @@ The opportunity and news CMS adds:
 - Prototype content records for local development.
 - pgTAP tests covering RLS, grants, revisions, and publisher-only operations.
 
+### Phase 3: read-only YM Hub activity foundation
+
+The first Phase 3 slice adds:
+
+- Read-only registration and attendance projection tables.
+- Per-volunteer sync status that distinguishes a confirmed empty result from an
+  unavailable or failed integration.
+- Volunteer-only and support-role Row Level Security.
+- Dashboard registration, attendance, verified-hours, and sync-status views.
+- Explicit local database fixtures for UI testing without a runtime mock
+  connector.
+- Database and unit tests for projection integrity and access control.
+
 The Salesforce YM Hub gateway is deliberately not implemented yet. No mock
 gateway is present in the application runtime, and production deployment remains
 blocked until the exact object and field API names are supplied and the real
@@ -124,6 +137,7 @@ src/lib/auth               Server-side authorization helpers
 src/lib/content            Content validation and Singapore-time utilities
 src/lib/supabase           Browser, server, and session proxy clients
 src/lib/security           Shared security validation
+src/lib/ymhub              Active read-model presentation invariants
 src/types/database.ts      Generated-style Supabase schema types
 supabase/migrations        Versioned database schema and RLS
 supabase/tests/database    pgTAP database security tests
@@ -141,10 +155,12 @@ YM Hub remains authoritative for:
 - Verified volunteer hours.
 
 The current web application owns its authentication plus opportunity and news
-content. Attendance capture, staff handoff records, points, badges, and referrals
-are future modules and are not represented as implemented capabilities. Any
-attendance-based reward will only be issued after the app reads a verified
-downstream YM Hub record in a later phase.
+content. The Phase 3 schema and dashboard can display read-only registration and
+attendance projections, but no production Salesforce synchronisation is enabled
+yet. Attendance capture, staff handoff records, points, badges, and referrals are
+future modules and are not represented as implemented capabilities. Any
+attendance-based reward will only be issued from a verified downstream YM Hub
+record.
 
 See [the development roadmap](docs/development-roadmap.md) for phased delivery,
 dependencies, release gates, and exit criteria.

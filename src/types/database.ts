@@ -37,6 +37,17 @@ export type ContentStatus =
 
 export type ContentKind = "opportunity" | "news";
 
+export type YmHubRegistrationState =
+  | "registered"
+  | "waitlisted"
+  | "cancelled";
+
+export type YmHubAttendanceState =
+  | "pending"
+  | "verified"
+  | "rejected"
+  | "cancelled";
+
 export type Database = {
   public: {
     Tables: Record<never, never>;
@@ -323,6 +334,77 @@ export type Database = {
     Enums: {
       content_status: ContentStatus;
       content_kind: ContentKind;
+    };
+    CompositeTypes: Record<never, never>;
+  };
+  ymhub: {
+    Tables: {
+      volunteer_sync_status: {
+        Row: {
+          volunteer_id: string;
+          registrations_synced_at: string | null;
+          attendance_synced_at: string | null;
+          last_attempted_at: string;
+          last_successful_at: string | null;
+          last_failed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      registration_snapshots: {
+        Row: {
+          id: string;
+          volunteer_id: string;
+          ymhub_registration_id: string;
+          ymhub_activity_id: string;
+          activity_title: string;
+          activity_category: string | null;
+          activity_starts_at: string;
+          activity_ends_at: string | null;
+          registered_at: string | null;
+          state: YmHubRegistrationState;
+          source_status: string;
+          source_updated_at: string;
+          last_synced_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      attendance_snapshots: {
+        Row: {
+          id: string;
+          volunteer_id: string;
+          ymhub_attendance_id: string;
+          ymhub_activity_id: string;
+          activity_title: string;
+          activity_category: string | null;
+          activity_starts_at: string;
+          activity_ends_at: string | null;
+          state: YmHubAttendanceState;
+          source_status: string;
+          verified_hours: number | null;
+          verified_at: string | null;
+          source_updated_at: string;
+          last_synced_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+    };
+    Views: Record<never, never>;
+    Functions: Record<never, never>;
+    Enums: {
+      registration_state: YmHubRegistrationState;
+      attendance_state: YmHubAttendanceState;
     };
     CompositeTypes: Record<never, never>;
   };
