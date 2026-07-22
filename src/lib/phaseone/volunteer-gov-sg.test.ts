@@ -22,7 +22,7 @@ describe("parseVolunteerGovSgListings", () => {
               "postalCode": "457056"
             }
           },
-          "url": "https://volunteer.gov.sg/volunteer/opportunity/details/example"
+          "url": "https://www.volunteer.gov.sg/volunteer/opportunity/details/example"
         }
       </script>
     `;
@@ -36,15 +36,29 @@ describe("parseVolunteerGovSgListings", () => {
     expect(result[0]).toMatchObject({
       title: "MENDAKI Community Volunteer Day",
       summary: "Support community outreach.",
-      image_url: "https://volunteer.gov.sg/images/opportunity.jpg",
+      image_url: "https://www.volunteer.gov.sg/images/opportunity.jpg",
       starts_at: "2026-07-25T01:00:00.000Z",
       ends_at: "2026-07-25T05:00:00.000Z",
       venue: "MENDAKI · 51 Kee Sun Avenue, Singapore, 457056",
       source_url:
-        "https://volunteer.gov.sg/volunteer/opportunity/details/example",
+        "https://www.volunteer.gov.sg/volunteer/opportunity/details/example",
       imported_at: "2026-07-22T01:00:00.000Z",
       is_active: true,
     });
+  });
+
+  it("accepts the bare Volunteer.gov.sg hostname", () => {
+    const html = `
+      <script type="application/ld+json">
+        {
+          "@type":"Event",
+          "name":"Bare host event",
+          "url":"https://volunteer.gov.sg/volunteer/opportunity/details/example"
+        }
+      </script>
+    `;
+
+    expect(parseVolunteerGovSgListings(html)).toHaveLength(1);
   });
 
   it("rejects non-event records and off-domain URLs", () => {
