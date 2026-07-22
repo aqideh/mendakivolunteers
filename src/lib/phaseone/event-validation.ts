@@ -5,10 +5,11 @@ const optionalUrl = z.preprocess(
   z.string().url().nullable(),
 );
 
-const optionalDateTime = z.preprocess(
-  (value) => (typeof value === "string" && value.trim() ? new Date(value).toISOString() : null),
-  z.string().datetime().nullable(),
-);
+const optionalDateTime = z.preprocess((value) => {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}, z.string().datetime().nullable());
 
 export const eventFormSchema = z.object({
   id: z.string().uuid().optional(),
