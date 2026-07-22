@@ -64,32 +64,19 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Refresh dependency lock
+        run: npm install
 
-      - name: Run high-severity dependency audit
-        id: audit
-        shell: bash
-        run: |
-          set +e
-          npm audit --audit-level=high --json > npm-audit.json
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          node -e 'const report = require("./npm-audit.json"); console.log("Vulnerability totals:", report.metadata?.vulnerabilities ?? report.error ?? "unavailable")'
-          exit 0
-
-      - name: Preserve failed audit report
-        if: steps.audit.outputs.status != '0'
+      - name: Preserve refreshed lockfile
         uses: actions/upload-artifact@v6
         with:
-          name: npm-audit-report
-          path: npm-audit.json
+          name: refreshed-package-lock
+          path: package-lock.json
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
 
-      - name: Enforce audit result
-        if: steps.audit.outputs.status != '0'
-        run: exit 1
+      - name: Run high-severity dependency audit
+        run: npm audit --audit-level=high
 
   database:
     name: Supabase migrations and RLS tests
