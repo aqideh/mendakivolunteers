@@ -26,5 +26,5 @@ export function getPhaseOneAdminClient(): SupabaseClient {
 }
 
 export function getPhaseOneServerSecret(): string {
-  return z.string().min(32).parse(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return z.string().min(32).parse(process.env.PIN_COOKIE_SECRET);
 }
