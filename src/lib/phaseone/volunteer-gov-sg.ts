@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 
 const volunteerGovHost = "volunteer.gov.sg";
+const volunteerGovBaseUrl = `https://www.${volunteerGovHost}`;
 
 const listingSchema = z.object({
   name: z.string().trim().min(1),
@@ -53,6 +54,10 @@ function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isVolunteerGovSgHost(hostname: string): boolean {
+  return hostname === volunteerGovHost || hostname === `www.${volunteerGovHost}`;
+}
+
 function flattenJsonLd(value: unknown): JsonRecord[] {
   if (Array.isArray(value)) {
     return value.flatMap(flattenJsonLd);
@@ -73,8 +78,11 @@ function readJsonLd(html: string): JsonRecord[] {
   const records: JsonRecord[] = [];
 
   for (const match of scripts) {
+    const payload = match[1];
+    if (!payload) continue;
+
     try {
-      records.push(...flattenJsonLd(JSON.parse(match[1])));
+      records.push(...flattenJsonLd(JSON.parse(payload)));
     } catch {
       // Ignore malformed third-party JSON-LD and continue with valid records.
     }
@@ -94,8 +102,10 @@ function normaliseImage(image: string | string[] | undefined): string | null {
   if (!value) return null;
 
   try {
-    const url = new URL(value, `https://${volunteerGovHost}`);
-    return url.protocol === "https:" ? url.toString() : null;
+    const url = new URL(value, volunteerGovBaseUrl);
+    return url.protocol === "https:" && isVolunteerGovSgHost(url.hostname)
+      ? url.toString()
+      : null;
   } catch {
     return null;
   }
@@ -118,8 +128,8 @@ function normaliseVenue(location: z.infer<typeof listingSchema>["location"]): st
 
 function normaliseSourceUrl(value: string): string | null {
   try {
-    const url = new URL(value, `https://${volunteerGovHost}`);
-    if (url.protocol !== "https:" || url.hostname !== volunteerGovHost) return null;
+    const url = new URL(value, volunteerGovBaseUrl);
+    if (url.protocol !== "https:" || !isVolunteerGovSgHost(url.hostname)) return null;
     url.hash = "";
     return url.toString();
   } catch {
@@ -176,8 +186,10 @@ export async function fetchMendakiVolunteerGovSgListings(
   sourceUrl: string,
 ): Promise<ImportedOpportunity[]> {
   const url = new URL(sourceUrl);
-  if (url.protocol !== "https:" || url.hostname !== volunteerGovHost) {
-    throw new Error("VOLUNTEER_GOV_SG_MENDAKI_URL must use volunteer.gov.sg over HTTPS");
+  if (url.protocol !== "https:" || !isVolunteerGovSgHost(url.hostname)) {
+    throw new Error(
+      "VOLUNTEER_GOV_SG_MENDAKI_URL must use volunteer.gov.sg over HTTPS",
+    );
   }
 
   const response = await fetch(url, {
