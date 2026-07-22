@@ -13,6 +13,7 @@ const appEnvironmentSchema = z.enum([
   "production",
 ]);
 
+const vercelEnvironmentSchema = z.enum(["development", "preview", "production"]);
 const booleanSettingSchema = z.enum(["true", "false"]);
 const hostnameSchema = z
   .string()
@@ -38,6 +39,18 @@ export function getPublicConfig() {
 export function getAppEnvironment(
   environment: Environment = process.env,
 ): AppEnvironment {
+  if (environment.APP_ENV) {
+    return appEnvironmentSchema.parse(environment.APP_ENV);
+  }
+
+  const vercelEnvironment = vercelEnvironmentSchema.safeParse(
+    environment.VERCEL_ENV,
+  );
+  if (vercelEnvironment.success) {
+    if (vercelEnvironment.data === "preview") return "staging";
+    return vercelEnvironment.data;
+  }
+
   return appEnvironmentSchema.parse(environment.APP_ENV);
 }
 
