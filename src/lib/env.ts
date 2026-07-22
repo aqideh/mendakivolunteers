@@ -24,15 +24,35 @@ const hostnameSchema = z
     "Registration hosts must be plain DNS hostnames without schemes, ports, or paths.",
   );
 
+const vercelSupabaseUrl = "https://glpdougaxlgaipqlzcbq.supabase.co";
+const vercelSupabasePublishableKey =
+  "sb_publishable_H4hkv5q-5cSz_rlEqligFA_0fUMrzVL";
+
 export type AppEnvironment = z.infer<typeof appEnvironmentSchema>;
 export type Environment = Readonly<Record<string, string | undefined>>;
 
-export function getPublicConfig() {
+function inferVercelAppUrl(environment: Environment): string | undefined {
+  const hostname =
+    environment.VERCEL_ENV === "production"
+      ? environment.VERCEL_PROJECT_PRODUCTION_URL ?? environment.VERCEL_URL
+      : environment.VERCEL_URL;
+
+  return hostname ? `https://${hostname}` : undefined;
+}
+
+export function getPublicConfig(environment: Environment = process.env) {
+  const isVercel = vercelEnvironmentSchema.safeParse(environment.VERCEL_ENV).success;
+
   return publicConfigSchema.parse({
-    appUrl: process.env.NEXT_PUBLIC_APP_URL,
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    appUrl:
+      environment.NEXT_PUBLIC_APP_URL ??
+      (isVercel ? inferVercelAppUrl(environment) : undefined),
+    supabaseUrl:
+      environment.NEXT_PUBLIC_SUPABASE_URL ??
+      (isVercel ? vercelSupabaseUrl : undefined),
     supabasePublishableKey:
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+      (isVercel ? vercelSupabasePublishableKey : undefined),
   });
 }
 
