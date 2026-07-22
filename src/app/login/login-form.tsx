@@ -36,7 +36,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
           aria-describedby="email-help"
         />
         <span className="form-help" id="email-help">
-          Use the email address associated with your volunteer account.
+          Use the email address associated with your staff account.
         </span>
       </div>
 
