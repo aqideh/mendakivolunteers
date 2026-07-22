@@ -17,9 +17,9 @@ function parseCsvLine(line: string): string[] {
   let quoted = false;
 
   for (let index = 0; index < line.length; index += 1) {
-    const character = line[index];
+    const character = line.charAt(index);
     if (character === '"') {
-      if (quoted && line[index + 1] === '"') {
+      if (quoted && line.charAt(index + 1) === '"') {
         value += '"';
         index += 1;
       } else {
@@ -40,7 +40,7 @@ function parseRosterCsv(text: string): RosterRow[] {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
   if (lines.length < 2) throw new Error("CSV must include a header and at least one volunteer.");
 
-  const headers = parseCsvLine(lines[0]).map((header) => header.toLowerCase().replace(/[\s-]+/g, "_"));
+  const headers = parseCsvLine(lines[0]!).map((header) => header.toLowerCase().replace(/[\s-]+/g, "_"));
   const aliases: Record<string, string[]> = {
     volunteer_key: ["volunteer_key", "volunteer_id", "id"],
     volunteer_name: ["volunteer_name", "name", "full_name"],
@@ -49,7 +49,7 @@ function parseRosterCsv(text: string): RosterRow[] {
   };
 
   const column = (name: keyof typeof aliases): number =>
-    headers.findIndex((header) => aliases[name].includes(header));
+    headers.findIndex((header) => aliases[name]!.includes(header));
 
   const keyIndex = column("volunteer_key");
   const nameIndex = column("volunteer_name");
