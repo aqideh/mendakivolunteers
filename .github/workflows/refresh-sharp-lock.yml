@@ -5,6 +5,7 @@ on:
     branches:
       - phaseone
     paths:
+      - package.json
       - .github/workflows/refresh-sharp-lock.yml
   workflow_dispatch:
 
