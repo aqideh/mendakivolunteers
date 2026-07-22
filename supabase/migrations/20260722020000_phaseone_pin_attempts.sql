@@ -1,0 +1,22 @@
+create table public.phaseone_pin_attempts (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null references public.phaseone_events(id) on delete cascade,
+  client_key text not null,
+  attempted_at timestamptz not null default now(),
+  was_successful boolean not null default false,
+  constraint phaseone_pin_attempts_client_key_format
+    check (client_key ~ '^[a-f0-9]{64}$')
+);
+
+create index phaseone_pin_attempts_rate_limit_idx
+  on public.phaseone_pin_attempts (event_id, client_key, attempted_at desc)
+  where was_successful = false;
+
+alter table public.phaseone_pin_attempts enable row level security;
+
+revoke all on public.phaseone_pin_attempts from anon, authenticated;
+
+comment on table public.phaseone_pin_attempts is
+  'Server-only audit and rate-limit records for phase-one event PIN verification.';
+comment on column public.phaseone_pin_attempts.client_key is
+  'HMAC-SHA256 fingerprint of request network and user-agent signals; never stores a raw IP address.';
