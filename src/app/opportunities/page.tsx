@@ -16,7 +16,7 @@ export default async function OpportunitiesPage() {
 
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Community volunteers" />
+      <PortalHeader status="Community volunteers" lite />
       <main className="phaseone-frame">
         <section className="phaseone-intro">
           <p className="eyebrow">MENDAKI volunteer opportunities</p>
