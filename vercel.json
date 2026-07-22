@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/phaseone/sync-opportunities",
-      "schedule": "17 */6 * * *"
+      "schedule": "17 0 * * *"
     }
   ]
 }
