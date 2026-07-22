@@ -9,7 +9,7 @@ Volunteer-facing web application for MENDAKI. The application supplements YM Hub
 The platform and identity foundation establishes:
 
 - Next.js 16 and TypeScript web application shell.
-- Supabase SSR authentication with one-time email links.
+- Supabase SSR authentication with staff email addresses and passwords.
 - Protected volunteer dashboard.
 - Internal account and volunteer identity separation.
 - Role-based authorization and forced Row Level Security.

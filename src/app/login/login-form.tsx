@@ -2,19 +2,27 @@
 
 import { useActionState } from "react";
 
-import {
-  initialLoginState,
-  requestMagicLink,
-} from "@/app/login/actions";
+import { signInWithPassword, type LoginState } from "@/app/login/actions";
 
-export function LoginForm() {
+const initialLoginState: LoginState = {
+  status: "idle",
+  message: "",
+};
+
+type LoginFormProps = Readonly<{
+  nextPath: string;
+}>;
+
+export function LoginForm({ nextPath }: LoginFormProps) {
   const [state, formAction, pending] = useActionState(
-    requestMagicLink,
+    signInWithPassword,
     initialLoginState,
   );
 
   return (
     <form action={formAction} noValidate>
+      <input name="next" type="hidden" value={nextPath} />
+
       <div className="form-field">
         <label htmlFor="email">Email address</label>
         <input
@@ -28,12 +36,24 @@ export function LoginForm() {
           aria-describedby="email-help"
         />
         <span className="form-help" id="email-help">
-          Use the email address associated with your volunteer account.
+          Use the email address associated with your staff account.
         </span>
       </div>
 
+      <div className="form-field">
+        <label htmlFor="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          maxLength={128}
+          required
+        />
+      </div>
+
       <button className="button button-primary" type="submit" disabled={pending}>
-        {pending ? "Requesting link..." : "Email me a sign-in link"}
+        {pending ? "Signing in..." : "Sign in"}
       </button>
 
       <p

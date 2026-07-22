@@ -20,7 +20,7 @@ export function buildContentSecurityPolicy({
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${developmentScriptSource}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: ${supabaseOrigin}`,
+    `img-src 'self' data: blob: ${supabaseOrigin} https://volunteer.gov.sg https://www.volunteer.gov.sg`,
     "font-src 'self' data:",
     `connect-src 'self' ${supabaseOrigin} ${websocketOrigin}`,
     "frame-ancestors 'none'",

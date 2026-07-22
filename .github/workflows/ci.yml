@@ -33,6 +33,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -46,11 +47,49 @@ jobs:
       - name: Run unit tests
         run: npm run test
 
-      - name: Audit high-severity dependencies
-        run: npm run security:audit
-
       - name: Build production bundle
         run: npm run build
+
+  security:
+    name: Dependency security audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run high-severity dependency audit
+        id: audit
+        shell: bash
+        run: |
+          set +e
+          npm audit --audit-level=high --json > npm-audit.json
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          node -e 'const report = require("./npm-audit.json"); console.log("Vulnerability totals:", report.metadata?.vulnerabilities ?? report.error ?? "unavailable")'
+          exit 0
+
+      - name: Preserve failed audit report
+        if: steps.audit.outputs.status != '0'
+        uses: actions/upload-artifact@v6
+        with:
+          name: npm-audit-report
+          path: npm-audit.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Enforce audit result
+        if: steps.audit.outputs.status != '0'
+        run: exit 1
 
   database:
     name: Supabase migrations and RLS tests
@@ -64,6 +103,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm ci

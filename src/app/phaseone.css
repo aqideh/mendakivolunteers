@@ -1,0 +1,373 @@
+.phaseone-shell {
+  background: #f5f7f8;
+}
+
+.phaseone-frame {
+  width: min(48rem, calc(100% - 1.5rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.phaseone-intro {
+  margin-bottom: 1.5rem;
+}
+
+.phaseone-intro h1 {
+  max-width: 13ch;
+  margin-bottom: 0.9rem;
+  font-size: clamp(2.25rem, 10vw, 4rem);
+  line-height: 0.98;
+}
+
+.phaseone-intro .lede {
+  margin-bottom: 0;
+}
+
+.phaseone-opportunity-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.phaseone-opportunity-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(20, 43, 56, 0.09);
+}
+
+.phaseone-opportunity-image {
+  display: grid;
+  min-height: 12rem;
+  place-items: center;
+  overflow: hidden;
+  color: #ffffff;
+  background: var(--brand);
+  font-size: 1.1rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.phaseone-opportunity-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 12rem;
+  max-height: 20rem;
+  object-fit: cover;
+}
+
+.phaseone-opportunity-body {
+  padding: 1.25rem;
+}
+
+.phaseone-opportunity-date {
+  margin-bottom: 0.45rem;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phaseone-opportunity-card h2 {
+  margin-bottom: 0.65rem;
+  font-size: clamp(1.4rem, 6vw, 1.85rem);
+  line-height: 1.12;
+}
+
+.phaseone-opportunity-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  color: var(--muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.phaseone-opportunity-details {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1rem 0 1.15rem;
+}
+
+.phaseone-opportunity-details div {
+  display: grid;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.7rem;
+}
+
+.phaseone-opportunity-details dt {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.phaseone-opportunity-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.phaseone-opportunity-cta {
+  width: 100%;
+  min-height: 3.25rem;
+}
+
+.phaseone-empty-state {
+  margin-top: 2rem;
+}
+
+.phaseone-event-card {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(20, 43, 56, 0.09);
+}
+
+.phaseone-event-card h1 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(2rem, 9vw, 3.4rem);
+  line-height: 1;
+}
+
+.phaseone-pin-form,
+.phaseone-event-actions {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.phaseone-pin-form {
+  margin-top: 1rem;
+}
+
+.phaseone-pin-form label {
+  font-weight: 800;
+}
+
+.phaseone-pin-form input {
+  width: 100%;
+  min-height: 3.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding: 0 0.9rem;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 1.2rem;
+  letter-spacing: 0.16em;
+}
+
+.phaseone-event-actions .button,
+.phaseone-pin-form .button {
+  width: 100%;
+  min-height: 3.25rem;
+}
+
+.phaseone-form-error {
+  margin: 0.9rem 0 0;
+  color: #a22b2b;
+  font-weight: 750;
+}
+
+.phaseone-access-note {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.phaseone-admin-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.phaseone-admin-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.phaseone-admin-form input,
+.phaseone-admin-form select {
+  width: 100%;
+  min-height: 2.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.8rem;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+
+.phaseone-admin-fieldset {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 1rem;
+}
+
+.phaseone-admin-fieldset legend {
+  padding: 0 0.35rem;
+  font-weight: 850;
+}
+
+.phaseone-admin-section {
+  overflow: hidden;
+}
+
+.phaseone-roster-preview {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.phaseone-roster-preview .content-table {
+  min-width: 42rem;
+}
+
+.phaseone-admin-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.phaseone-attendance-metrics {
+  margin: 1.5rem 0;
+}
+
+.phaseone-attendance-filters,
+.phaseone-attendance-correction {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.phaseone-attendance-filters {
+  margin: 1rem 0 1.5rem;
+  align-items: end;
+}
+
+.phaseone-attendance-filters input,
+.phaseone-attendance-filters select,
+.phaseone-attendance-correction input,
+.phaseone-attendance-correction select {
+  width: 100%;
+  min-height: 2.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+
+.phaseone-attendance-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.phaseone-attendance-card {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 1rem;
+  background: var(--surface);
+}
+
+.phaseone-attendance-card[data-status="anomaly"] {
+  border-color: #a22b2b;
+}
+
+.phaseone-attendance-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.phaseone-attendance-summary h3,
+.phaseone-attendance-summary p {
+  margin-bottom: 0.25rem;
+}
+
+.phaseone-attendance-times {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.phaseone-attendance-times div {
+  border-top: 1px solid var(--border);
+  padding-top: 0.65rem;
+}
+
+.phaseone-attendance-times dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.phaseone-attendance-times dd {
+  margin: 0.2rem 0 0;
+}
+
+.phaseone-attendance-reason {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 680px) {
+  .phaseone-frame {
+    padding-top: 3rem;
+  }
+
+  .phaseone-opportunity-card {
+    display: grid;
+    grid-template-columns: minmax(14rem, 0.42fr) minmax(0, 0.58fr);
+  }
+
+  .phaseone-opportunity-image,
+  .phaseone-opportunity-image img {
+    min-height: 100%;
+  }
+
+  .phaseone-opportunity-body {
+    padding: 1.6rem;
+  }
+
+  .phaseone-event-card {
+    padding: 1.75rem;
+  }
+
+  .phaseone-event-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .phaseone-access-note {
+    grid-column: 1 / -1;
+  }
+
+  .phaseone-admin-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .phaseone-attendance-filters {
+    grid-template-columns: minmax(16rem, 1fr) minmax(10rem, 0.35fr) auto;
+  }
+
+  .phaseone-attendance-times {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .phaseone-attendance-correction {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .phaseone-attendance-correction .button {
+    justify-self: start;
+  }
+}

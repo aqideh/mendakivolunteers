@@ -13,6 +13,7 @@ const appEnvironmentSchema = z.enum([
   "production",
 ]);
 
+const vercelEnvironmentSchema = z.enum(["development", "preview", "production"]);
 const booleanSettingSchema = z.enum(["true", "false"]);
 const hostnameSchema = z
   .string()
@@ -26,18 +27,42 @@ const hostnameSchema = z
 export type AppEnvironment = z.infer<typeof appEnvironmentSchema>;
 export type Environment = Readonly<Record<string, string | undefined>>;
 
-export function getPublicConfig() {
+function inferVercelAppUrl(environment: Environment): string | undefined {
+  const hostname =
+    environment.VERCEL_ENV === "production"
+      ? environment.VERCEL_PROJECT_PRODUCTION_URL ?? environment.VERCEL_URL
+      : environment.VERCEL_URL;
+
+  return hostname ? `https://${hostname}` : undefined;
+}
+
+export function getPublicConfig(environment: Environment = process.env) {
+  const isVercel = vercelEnvironmentSchema.safeParse(environment.VERCEL_ENV).success;
+
   return publicConfigSchema.parse({
-    appUrl: process.env.NEXT_PUBLIC_APP_URL,
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    supabasePublishableKey:
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    appUrl:
+      environment.NEXT_PUBLIC_APP_URL ??
+      (isVercel ? inferVercelAppUrl(environment) : undefined),
+    supabaseUrl: environment.NEXT_PUBLIC_SUPABASE_URL,
+    supabasePublishableKey: environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   });
 }
 
 export function getAppEnvironment(
   environment: Environment = process.env,
 ): AppEnvironment {
+  if (environment.APP_ENV) {
+    return appEnvironmentSchema.parse(environment.APP_ENV);
+  }
+
+  const vercelEnvironment = vercelEnvironmentSchema.safeParse(
+    environment.VERCEL_ENV,
+  );
+  if (vercelEnvironment.success) {
+    if (vercelEnvironment.data === "preview") return "staging";
+    return vercelEnvironment.data;
+  }
+
   return appEnvironmentSchema.parse(environment.APP_ENV);
 }
 

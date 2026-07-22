@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
 import "./content.css";
+import "./phaseone.css";
 
 export const metadata: Metadata = {
   title: {
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s | MENDAKI Volunteer Portal",
   },
   description:
-    "Volunteer-facing web portal for opportunities, attendance support, engagement, and downstream YM Hub information.",
+    "Mobile-first MENDAKI volunteer opportunities and event operations portal.",
 };
 
 export const viewport: Viewport = {
