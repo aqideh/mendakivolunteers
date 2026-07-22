@@ -233,6 +233,92 @@
   opacity: 0.55;
 }
 
+.phaseone-attendance-metrics {
+  margin: 1.5rem 0;
+}
+
+.phaseone-attendance-filters,
+.phaseone-attendance-correction {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.phaseone-attendance-filters {
+  margin: 1rem 0 1.5rem;
+  align-items: end;
+}
+
+.phaseone-attendance-filters input,
+.phaseone-attendance-filters select,
+.phaseone-attendance-correction input,
+.phaseone-attendance-correction select {
+  width: 100%;
+  min-height: 2.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+
+.phaseone-attendance-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.phaseone-attendance-card {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 1rem;
+  background: var(--surface);
+}
+
+.phaseone-attendance-card[data-status="anomaly"] {
+  border-color: #a22b2b;
+}
+
+.phaseone-attendance-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.phaseone-attendance-summary h3,
+.phaseone-attendance-summary p {
+  margin-bottom: 0.25rem;
+}
+
+.phaseone-attendance-times {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.phaseone-attendance-times div {
+  border-top: 1px solid var(--border);
+  padding-top: 0.65rem;
+}
+
+.phaseone-attendance-times dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.phaseone-attendance-times dd {
+  margin: 0.2rem 0 0;
+}
+
+.phaseone-attendance-reason {
+  grid-column: 1 / -1;
+}
+
 @media (min-width: 680px) {
   .phaseone-frame {
     padding-top: 3rem;
@@ -266,5 +352,22 @@
 
   .phaseone-admin-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .phaseone-attendance-filters {
+    grid-template-columns: minmax(16rem, 1fr) minmax(10rem, 0.35fr) auto;
+  }
+
+  .phaseone-attendance-times {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .phaseone-attendance-correction {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .phaseone-attendance-correction .button {
+    justify-self: start;
   }
 }
