@@ -11,7 +11,7 @@ Ship a mobile-first volunteer operations web app on Vercel, backed by Supabase, 
 - Show upcoming MENDAKI opportunities from Volunteer.gov.sg as cards.
 - Import title, image, summary, dates, venue and canonical Volunteer.gov.sg URL.
 - Registration always links out to Volunteer.gov.sg.
-- Refresh through a protected Vercel Cron route every six hours.
+- Refresh through a protected Vercel Cron route once daily at 08:17 Singapore time.
 - Preserve the last successful import when Volunteer.gov.sg is unavailable.
 
 ### 2. Volunteer event page
