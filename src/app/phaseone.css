@@ -119,6 +119,66 @@
   margin-top: 2rem;
 }
 
+.phaseone-event-card {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(20, 43, 56, 0.09);
+}
+
+.phaseone-event-card h1 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(2rem, 9vw, 3.4rem);
+  line-height: 1;
+}
+
+.phaseone-pin-form,
+.phaseone-event-actions {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.phaseone-pin-form {
+  margin-top: 1rem;
+}
+
+.phaseone-pin-form label {
+  font-weight: 800;
+}
+
+.phaseone-pin-form input {
+  width: 100%;
+  min-height: 3.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding: 0 0.9rem;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 1.2rem;
+  letter-spacing: 0.16em;
+}
+
+.phaseone-event-actions .button,
+.phaseone-pin-form .button {
+  width: 100%;
+  min-height: 3.25rem;
+}
+
+.phaseone-form-error {
+  margin: 0.9rem 0 0;
+  color: #a22b2b;
+  font-weight: 750;
+}
+
+.phaseone-access-note {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 @media (min-width: 680px) {
   .phaseone-frame {
     padding-top: 3rem;
@@ -136,5 +196,17 @@
 
   .phaseone-opportunity-body {
     padding: 1.6rem;
+  }
+
+  .phaseone-event-card {
+    padding: 1.75rem;
+  }
+
+  .phaseone-event-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .phaseone-access-note {
+    grid-column: 1 / -1;
   }
 }
