@@ -53,7 +53,7 @@ export async function changePassword(
   const { supabase } = await requireActiveAccount("/account/password");
   const { error } = await supabase.auth.updateUser({
     password: newPassword.data,
-    currentPassword: currentPassword.data,
+    current_password: currentPassword.data,
   });
 
   if (error) {
