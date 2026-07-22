@@ -2,79 +2,94 @@
 
 ## Goal
 
-Ship a mobile-first volunteer operations web app on Vercel, backed by Supabase, for a weekend release.
+Ship a mobile-first volunteer operations web app on Vercel, backed by Supabase, for a controlled Phase One release.
 
-## Product surfaces
+## Delivered product surfaces
 
-### 1. Public opportunities
+### Public opportunities
 
-- Show upcoming MENDAKI opportunities from Volunteer.gov.sg as cards.
-- Import title, image, summary, dates, venue and canonical Volunteer.gov.sg URL.
-- Registration always links out to Volunteer.gov.sg.
-- Refresh through a protected Vercel Cron route once daily at 08:17 Singapore time.
-- Preserve the last successful import when Volunteer.gov.sg is unavailable.
+- Upcoming MENDAKI opportunities imported from Volunteer.gov.sg.
+- Title, image, summary, dates, venue and canonical registration URL.
+- Registration remains on Volunteer.gov.sg.
+- Protected daily Vercel Cron import at 08:17 Singapore time.
+- Failed imports preserve the last successfully imported listings.
 
-### 2. Volunteer event page
+### Volunteer event access
 
-- Staff-created event operations record linked to an imported opportunity or a standalone event.
-- Show reporting time, venue, briefing link and WhatsApp group link.
-- Hide sign-in and sign-out links until the volunteer supplies the event PIN.
-- PIN verification occurs server-side; store only a salted scrypt hash.
-- Successful verification creates a short-lived, event-scoped HttpOnly cookie.
+- Staff-managed event details linked to an imported opportunity or standalone event.
+- Reporting time, venue, briefing and WhatsApp links.
+- Server-side PIN verification using salted scrypt hashes.
+- Rate-limited PIN attempts.
+- Short-lived, event-scoped HttpOnly access cookies signed with a dedicated `PIN_COOKIE_SECRET`.
 
-### 3. Staff administration
+### Staff event operations
 
-- Supabase-authenticated staff only.
-- Create and edit event operations records.
-- Upload a CSV roster with volunteer ID, name and optional email/mobile fields.
-- Set or rotate the event PIN.
-- Update operational links.
-- Mark sign-in and sign-out manually while preserving timestamps and the staff actor.
+- Supabase-authenticated `attendance_manager` and `admin` access.
+- Event create, edit, publish and unpublish workflow.
+- PIN rotation and protected sign-in/sign-out destinations.
+- CSV roster preview, validation, merge and replace modes.
+- Transactional roster imports with import audit history.
 
-## Minimal architecture
+### Attendance counter-check
+
+- Search and filter the event roster.
+- Pending, signed-in, signed-out and anomaly states.
+- Staff timestamp corrections with mandatory reasons.
+- Atomic attendance updates and immutable before/after audit records.
+- Protected CSV export for subsequent YM Hub entry or verification.
+
+## Architecture boundaries
 
 - Next.js App Router on Vercel.
 - Supabase Auth for staff only.
-- Supabase Postgres with RLS on every table.
-- No volunteer accounts in this release.
-- No YM Hub writeback.
-- No points, badges, news feed or volunteer profiles.
-- No client-side service-role key.
+- Supabase Postgres with RLS on exposed tables.
+- Service-role operations remain server-only.
+- Volunteers do not need accounts for this release.
+- No YM Hub writes, points, badges, news feed, referrals or volunteer profiles.
 
-## Tables
-
-- `phaseone_external_opportunities`: imported Volunteer.gov.sg listings.
-- `phaseone_events`: staff-managed operational details and PIN hash.
-- `phaseone_roster`: uploaded event volunteer list.
-- `phaseone_attendance`: sign-in/sign-out status and immutable timestamps.
-- `phaseone_import_runs`: importer audit and failure diagnostics.
-
-## Release sequence
-
-1. Importer, schema and public cards.
-2. Event details and PIN-gated links.
-3. Admin event editor and CSV roster upload.
-4. Attendance counter-check interface.
-5. Mobile QA, accessibility, security checks and Vercel production configuration.
-
-## Required environment variables
+## Required production environment variables
 
 ```text
+APP_ENV=production
+NEXT_PUBLIC_APP_URL=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 VOLUNTEER_GOV_SG_MENDAKI_URL=
 CRON_SECRET=
 PIN_COOKIE_SECRET=
+AUTH_ALLOW_SIGN_UP=false
 ```
 
-## Release gates
+`PIN_COOKIE_SECRET`, `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` must each contain at least 32 characters. The PIN cookie secret must not reuse the Supabase service-role key.
 
-- `npm run check` passes.
-- Database tests cover anonymous public reads, staff-only writes and cross-event isolation.
-- Service-role key is absent from browser bundles.
-- PIN endpoints are rate-limited and never log the supplied PIN.
-- CSV upload rejects unsupported headers and oversized files.
-- Import failure does not delete previously published opportunities.
-- Sign-in/sign-out timestamp changes are append-only or separately audited.
-- Production Vercel deployment uses the `phaseone` branch until the release is accepted.
+## Automated release evidence
+
+- ESLint passes in GitHub Actions.
+- TypeScript and Next.js route type generation pass.
+- Unit tests pass.
+- Production Next.js build passes.
+- Supabase migrations rebuild successfully from scratch.
+- Database/RLS tests pass.
+- High-severity npm audit is enforced in a dedicated CI job.
+- Vulnerable transitive `sharp` versions are overridden with `sharp@0.35.3` and committed in the lockfile.
+- Vercel successfully builds the `phaseone` branch with explicit public Supabase configuration.
+
+## Final operator checks
+
+Before accepting the release:
+
+1. Confirm all required environment variables are set for the Vercel Production environment.
+2. Generate distinct random values for `CRON_SECRET` and `PIN_COOKIE_SECRET`.
+3. Confirm the production branch policy intentionally points to `phaseone`; restore the normal production branch after acceptance.
+4. Confirm Vercel deployment protection is configured as intended. Public volunteer routes must not require Vercel SSO at launch.
+5. Run `npm run check:production` with the production environment values.
+6. Trigger the opportunity importer once and confirm a successful `phaseone_import_runs` record.
+7. Create a controlled test event and verify PIN entry, sign-in, sign-out, expiry and PIN rotation.
+8. Test public and staff flows at 320 px, 375 px, 390 px and 768 px widths on Safari and Chromium.
+9. Confirm keyboard navigation, visible focus, labels, error messages and minimum touch-target sizes.
+10. Confirm the attendance CSV opens correctly and contains no spreadsheet formulas supplied by roster data.
+
+## Release decision
+
+Do not merge or expose the app publicly until CI is green and the operator checks above are signed off. Keep PR #12 in draft until those checks are complete.
