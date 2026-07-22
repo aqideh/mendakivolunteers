@@ -84,6 +84,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </div>
           <div className="actions">
             <Link className="button button-secondary" href="/admin/events">All events</Link>
+            <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Counter-check attendance</Link>
             {event.is_published ? <Link className="button" href={`/events/${event.slug}`}>View event page</Link> : null}
           </div>
         </div>
