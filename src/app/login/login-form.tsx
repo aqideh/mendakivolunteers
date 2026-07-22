@@ -2,10 +2,12 @@
 
 import { useActionState } from "react";
 
-import {
-  initialLoginState,
-  requestMagicLink,
-} from "@/app/login/actions";
+import { requestMagicLink, type LoginState } from "@/app/login/actions";
+
+const initialLoginState: LoginState = {
+  status: "idle",
+  message: "",
+};
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(

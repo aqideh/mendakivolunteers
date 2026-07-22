@@ -12,11 +12,6 @@ export type LoginState = Readonly<{
   message: string;
 }>;
 
-export const initialLoginState: LoginState = {
-  status: "idle",
-  message: "",
-};
-
 export async function requestMagicLink(
   _previousState: LoginState,
   formData: FormData,
