@@ -24,10 +24,6 @@ const hostnameSchema = z
     "Registration hosts must be plain DNS hostnames without schemes, ports, or paths.",
   );
 
-const vercelSupabaseUrl = "https://glpdougaxlgaipqlzcbq.supabase.co";
-const vercelSupabasePublishableKey =
-  "sb_publishable_H4hkv5q-5cSz_rlEqligFA_0fUMrzVL";
-
 export type AppEnvironment = z.infer<typeof appEnvironmentSchema>;
 export type Environment = Readonly<Record<string, string | undefined>>;
 
@@ -47,12 +43,8 @@ export function getPublicConfig(environment: Environment = process.env) {
     appUrl:
       environment.NEXT_PUBLIC_APP_URL ??
       (isVercel ? inferVercelAppUrl(environment) : undefined),
-    supabaseUrl:
-      environment.NEXT_PUBLIC_SUPABASE_URL ??
-      (isVercel ? vercelSupabaseUrl : undefined),
-    supabasePublishableKey:
-      environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-      (isVercel ? vercelSupabasePublishableKey : undefined),
+    supabaseUrl: environment.NEXT_PUBLIC_SUPABASE_URL,
+    supabasePublishableKey: environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   });
 }
 
