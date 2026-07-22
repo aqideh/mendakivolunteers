@@ -24,7 +24,8 @@ Ship a mobile-first volunteer operations web app on Vercel, backed by Supabase, 
 
 ### Staff event operations
 
-- Supabase-authenticated `attendance_manager` and `admin` access.
+- Supabase-authenticated `attendance_manager` and `admin` access using staff
+  email addresses and passwords.
 - Event create, edit, publish and unpublish workflow.
 - PIN rotation and protected sign-in/sign-out destinations.
 - CSV roster preview, validation, merge and replace modes.
@@ -83,12 +84,14 @@ Before accepting the release:
 2. Generate distinct random values for `CRON_SECRET` and `PIN_COOKIE_SECRET`.
 3. Confirm the production branch policy intentionally points to `phaseone`; restore the normal production branch after acceptance.
 4. Confirm Vercel deployment protection is configured as intended. Public volunteer routes must not require Vercel SSO at launch.
-5. Run `npm run check:production` with the production environment values.
-6. Trigger the opportunity importer once and confirm a successful `phaseone_import_runs` record.
-7. Create a controlled test event and verify PIN entry, sign-in, sign-out, expiry and PIN rotation.
-8. Test public and staff flows at 320 px, 375 px, 390 px and 768 px widths on Safari and Chromium.
-9. Confirm keyboard navigation, visible focus, labels, error messages and minimum touch-target sizes.
-10. Confirm the attendance CSV opens correctly and contains no spreadsheet formulas supplied by roster data.
+5. Set strong, unique initial passwords for the three staff accounts and verify
+   password sign-in with a controlled account.
+6. Run `npm run check:production` with the production environment values.
+7. Trigger the opportunity importer once and confirm a successful `phaseone_import_runs` record.
+8. Create a controlled test event and verify PIN entry, sign-in, sign-out, expiry and PIN rotation.
+9. Test public and staff flows at 320 px, 375 px, 390 px and 768 px widths on Safari and Chromium.
+10. Confirm keyboard navigation, visible focus, labels, error messages and minimum touch-target sizes.
+11. Confirm the attendance CSV opens correctly and contains no spreadsheet formulas supplied by roster data.
 
 ## Release decision
 
