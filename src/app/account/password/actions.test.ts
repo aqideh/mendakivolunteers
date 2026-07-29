@@ -62,7 +62,7 @@ describe("staff password change server action", () => {
     expect(requireActiveAccountMock).toHaveBeenCalledWith("/account/password");
     expect(updateUserMock).toHaveBeenCalledWith({
       password: "new correct horse battery staple",
-      currentPassword: "old correct password",
+      current_password: "old correct password",
     });
   });
 
