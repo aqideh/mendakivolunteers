@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 
 import { MagicLinkConfirmation } from "@/app/auth/confirm/magic-link-confirmation";
 
@@ -7,7 +8,11 @@ export const metadata: Metadata = {
   title: "Completing sign in",
 };
 
-export default function ConfirmSignInPage() {
+export default async function ConfirmSignInPage() {
+  // CSP nonces are generated per request. Dynamic rendering lets Next.js
+  // attach the current request nonce to the callback page's scripts.
+  await connection();
+
   return (
     <div className="site-shell">
       <header className="site-header">
