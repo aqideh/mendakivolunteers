@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 
 import { SetPasswordForm } from "@/app/set-password/set-password-form";
 
@@ -7,7 +8,11 @@ export const metadata: Metadata = {
   title: "Set staff password",
 };
 
-export default function SetPasswordPage() {
+export default async function SetPasswordPage() {
+  // The page reads its one-time token in the browser. Dynamic rendering lets
+  // Next.js attach the request-specific CSP nonce to the form's client scripts.
+  await connection();
+
   return (
     <div className="site-shell">
       <header className="site-header">
