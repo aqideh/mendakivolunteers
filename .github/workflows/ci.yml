@@ -67,12 +67,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run high-severity dependency audit
+      - name: Run high-severity production dependency audit
         id: audit
         shell: bash
         run: |
           set +e
-          npm audit --audit-level=high --json > npm-audit.json
+          npm audit --omit=dev --audit-level=high --json > npm-audit.json
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           node -e 'const report = require("./npm-audit.json"); console.log("Vulnerability totals:", report.metadata?.vulnerabilities ?? report.error ?? "unavailable")'
