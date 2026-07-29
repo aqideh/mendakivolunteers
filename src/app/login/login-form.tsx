@@ -42,9 +42,13 @@ export function LoginForm({ nextPath, initialError }: LoginFormProps) {
     }
 
     let cancelled = false;
-    setMagicLinkState({
-      status: "success",
-      message: "Completing secure sign-in...",
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setMagicLinkState({
+          status: "success",
+          message: "Completing secure sign-in...",
+        });
+      }
     });
 
     async function completeMagicLinkSignIn() {
