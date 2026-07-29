@@ -4,13 +4,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 import { createClient } from "@/lib/supabase/server";
 
-const allowedOtpTypes = new Set<EmailOtpType>(["email"]);
+const allowedOtpTypes = new Set<EmailOtpType>(["email", "magiclink"]);
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
-  const type = request.nextUrl.searchParams.get("type") as EmailOtpType | null;
-  const next = getSafeRedirectPath(
+  const rawType = request.nextUrl.searchParams.get("type");
+  const nextPath = getSafeRedirectPath(
     request.nextUrl.searchParams.get("next"),
     "/dashboard",
   );
@@ -20,19 +20,33 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(new URL(next, request.url));
+      return NextResponse.redirect(new URL(nextPath, request.url));
     }
+
+    console.error("Magic-link code exchange failed", {
+      code: error.code,
+      status: error.status,
+    });
   }
 
-  if (tokenHash && type && allowedOtpTypes.has(type)) {
+  if (
+    tokenHash &&
+    rawType &&
+    allowedOtpTypes.has(rawType as EmailOtpType)
+  ) {
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type,
+      type: rawType as EmailOtpType,
     });
 
     if (!error) {
-      return NextResponse.redirect(new URL(next, request.url));
+      return NextResponse.redirect(new URL(nextPath, request.url));
     }
+
+    console.error("Magic-link token verification failed", {
+      code: error.code,
+      status: error.status,
+    });
   }
 
   const loginUrl = new URL("/login", request.url);
