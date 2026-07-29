@@ -16,10 +16,14 @@ type LoginFormProps = Readonly<{
 }>;
 
 export function LoginForm({ nextPath, initialError }: LoginFormProps) {
-  const [state, formAction, pending] = useActionState(signInWithPassword, {
+  const initialState: LoginState = {
     status: initialError ? "error" : "idle",
     message: initialError ?? "",
-  });
+  };
+  const [state, formAction, pending] = useActionState(
+    signInWithPassword,
+    initialState,
+  );
   const [magicLinkState, setMagicLinkState] = useState<LoginState>(idleLoginState);
 
   useEffect(() => {
