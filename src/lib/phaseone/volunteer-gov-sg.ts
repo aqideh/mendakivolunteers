@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+import { load } from "cheerio";
 import { z } from "zod";
 
 const volunteerGovHost = "volunteer.gov.sg";
@@ -42,6 +43,7 @@ export type ImportedOpportunity = Readonly<{
   image_url: string | null;
   starts_at: string | null;
   ends_at: string | null;
+  schedule_text: string | null;
   venue: string | null;
   source_url: string;
   source_updated_at: string | null;
@@ -141,6 +143,228 @@ function sourceKey(sourceUrl: string): string {
   return createHash("sha256").update(sourceUrl).digest("hex");
 }
 
+function normaliseWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+export function normaliseScheduleText(value: string): string | null {
+  const schedule = normaliseWhitespace(value).replace(/[–—]/g, "-");
+  if (!schedule) return null;
+
+  if (/^12:00\s*AM\s*-\s*12:00\s*AM$/i.test(schedule)) {
+    return "multiple timings";
+  }
+
+  if (/multiple\s+shifts?/i.test(schedule)) {
+    return "multiple shifts";
+  }
+
+  return schedule;
+}
+
+type DateParts = Readonly<{
+  year: string;
+  month: string;
+  day: string;
+}>;
+
+type TimeParts = Readonly<{
+  hour: number;
+  minute: number;
+}>;
+
+function parseDateParts(value: string): DateParts | null {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
+  if (!match) return null;
+
+  const [, day, month, year] = match;
+  if (!day || !month || !year) return null;
+
+  const candidate = new Date(`${year}-${month}-${day}T00:00:00+08:00`);
+  if (
+    Number.isNaN(candidate.getTime()) ||
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Singapore",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(candidate) !== `${year}-${month}-${day}`
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+}
+
+function parseDateRange(value: string): [DateParts, DateParts] | null {
+  const match =
+    /(\d{2}\/\d{2}\/\d{4})\s*[-–—]\s*(\d{2}\/\d{2}\/\d{4})/.exec(value);
+  if (!match?.[1] || !match[2]) return null;
+
+  const start = parseDateParts(match[1]);
+  const end = parseDateParts(match[2]);
+  return start && end ? [start, end] : null;
+}
+
+function toTwentyFourHour(hour: number, period: string): number {
+  if (period.toUpperCase() === "AM") return hour === 12 ? 0 : hour;
+  return hour === 12 ? 12 : hour + 12;
+}
+
+function parseTimeRange(value: string): [TimeParts, TimeParts] | null {
+  const schedule = normaliseWhitespace(value).replace(/[–—]/g, "-");
+  const match =
+    /(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(
+      schedule,
+    );
+  if (!match) return null;
+
+  const startHour = Number(match[1]);
+  const startMinute = Number(match[2]);
+  const endHour = Number(match[4]);
+  const endMinute = Number(match[5]);
+  if (
+    startHour < 1 ||
+    startHour > 12 ||
+    endHour < 1 ||
+    endHour > 12 ||
+    startMinute < 0 ||
+    startMinute > 59 ||
+    endMinute < 0 ||
+    endMinute > 59 ||
+    !match[3] ||
+    !match[6]
+  ) {
+    return null;
+  }
+
+  return [
+    {
+      hour: toTwentyFourHour(startHour, match[3]),
+      minute: startMinute,
+    },
+    {
+      hour: toTwentyFourHour(endHour, match[6]),
+      minute: endMinute,
+    },
+  ];
+}
+
+function singaporeDateTime(
+  date: DateParts,
+  time: TimeParts,
+  seconds = "00",
+): string {
+  const hour = time.hour.toString().padStart(2, "0");
+  const minute = time.minute.toString().padStart(2, "0");
+  return new Date(
+    `${date.year}-${date.month}-${date.day}T${hour}:${minute}:${seconds}+08:00`,
+  ).toISOString();
+}
+
+function listingDateTimes(
+  dateRange: string,
+  schedule: string,
+): { starts_at: string | null; ends_at: string | null } {
+  const dates = parseDateRange(dateRange);
+  if (!dates) return { starts_at: null, ends_at: null };
+
+  const normalisedSchedule = normaliseScheduleText(schedule);
+  const times =
+    normalisedSchedule === "multiple shifts" ||
+    normalisedSchedule === "multiple timings"
+      ? null
+      : parseTimeRange(schedule);
+
+  return {
+    starts_at: singaporeDateTime(dates[0], times?.[0] ?? { hour: 0, minute: 0 }),
+    ends_at: singaporeDateTime(
+      dates[1],
+      times?.[1] ?? { hour: 23, minute: 59 },
+      times ? "00" : "59",
+    ),
+  };
+}
+
+export function parseVolunteerGovSgAgencyListings(
+  html: string,
+  importedAt = new Date(),
+): ImportedOpportunity[] {
+  const $ = load(html);
+  const imported_at = importedAt.toISOString();
+  const seen = new Set<string>();
+  const opportunities: ImportedOpportunity[] = [];
+
+  $(".home-discover-opp").each((_, element) => {
+    const card = $(element);
+    const sourceHref = card
+      .find('a[href*="/volunteer/opportunity/details/"]')
+      .first()
+      .attr("href");
+    const titleElement = card.find(".label-opp-name").first();
+    const title = normaliseWhitespace(
+      titleElement.attr("title") ?? titleElement.text(),
+    );
+    const source_url = sourceHref ? normaliseSourceUrl(sourceHref) : null;
+    if (!title || !source_url || seen.has(source_url)) return;
+
+    const paragraphWithImage = (name: "calendar" | "time" | "pin") => {
+      const paragraph = card
+        .find(".caption p")
+        .filter((__, paragraphElement) =>
+          $(paragraphElement)
+            .find("img")
+            .toArray()
+            .some((image) => ($(image).attr("src") ?? "").includes(name)),
+        )
+        .first();
+      return paragraph.length > 0 ? paragraph : null;
+    };
+
+    const dateParagraph = paragraphWithImage("calendar");
+    const timeParagraph = paragraphWithImage("time");
+    const venueParagraph = paragraphWithImage("pin");
+    const dateRange = normaliseWhitespace(dateParagraph?.text() ?? "");
+    const rawSchedule = normaliseWhitespace(timeParagraph?.text() ?? "");
+    const schedule_text = normaliseScheduleText(rawSchedule);
+    const venue = normaliseWhitespace(
+      venueParagraph?.attr("title") ?? venueParagraph?.text() ?? "",
+    );
+    const image = card
+      .find('a[href*="/volunteer/opportunity/details/"] img.img-fluid')
+      .first()
+      .attr("src");
+    const availability = normaliseWhitespace(
+      card.find(".opp-thumb-slot-label").first().text(),
+    );
+    const { starts_at, ends_at } = listingDateTimes(dateRange, rawSchedule);
+
+    seen.add(source_url);
+    opportunities.push({
+      source_key: sourceKey(source_url),
+      title,
+      summary: null,
+      image_url: normaliseImage(image),
+      starts_at,
+      ends_at,
+      schedule_text,
+      venue: venue || null,
+      source_url,
+      source_updated_at: null,
+      imported_at,
+      is_active: true,
+      raw_payload: {
+        source_format: "volunteer.gov.sg agency listing",
+        date_range: dateRange,
+        schedule: rawSchedule,
+        availability,
+      },
+    });
+  });
+
+  return opportunities;
+}
+
 export function parseVolunteerGovSgListings(
   html: string,
   importedAt = new Date(),
@@ -166,10 +390,11 @@ export function parseVolunteerGovSgListings(
     opportunities.push({
       source_key: sourceKey(source_url),
       title: parsed.data.name,
-      summary: parsed.data.description?.trim() || null,
+      summary: null,
       image_url: normaliseImage(parsed.data.image),
       starts_at: asIsoDate(parsed.data.startDate),
       ends_at: asIsoDate(parsed.data.endDate),
+      schedule_text: null,
       venue: normaliseVenue(parsed.data.location),
       source_url,
       source_updated_at: asIsoDate(parsed.data.dateModified),
@@ -182,6 +407,37 @@ export function parseVolunteerGovSgListings(
   return opportunities;
 }
 
+function readAgencyPageContext(html: string) {
+  const $ = load(html);
+  const agencyId = $("#hdAgencyId").attr("value");
+  const requestVerificationToken = $(
+    'input[name="__RequestVerificationToken"]',
+  ).attr("value");
+  const pageNumber = $("#hiddenAgencyDetailOpPageNo").attr("value") ?? "3";
+
+  if (!agencyId || !requestVerificationToken) {
+    throw new Error("MENDAKI agency page context could not be read");
+  }
+
+  return { agencyId, requestVerificationToken, pageNumber };
+}
+
+function responseCookieHeader(headers: Headers): string | null {
+  const cookieAwareHeaders = headers as Headers & {
+    getSetCookie?: () => string[];
+  };
+  const cookieHeaders =
+    typeof cookieAwareHeaders.getSetCookie === "function"
+      ? cookieAwareHeaders.getSetCookie()
+      : [headers.get("set-cookie")].filter(
+          (value): value is string => value !== null,
+        );
+  const cookies = cookieHeaders
+    .map((value) => value.split(";", 1)[0]?.trim())
+    .filter((value): value is string => Boolean(value));
+  return cookies.length > 0 ? cookies.join("; ") : null;
+}
+
 export async function fetchMendakiVolunteerGovSgListings(
   sourceUrl: string,
 ): Promise<ImportedOpportunity[]> {
@@ -192,7 +448,7 @@ export async function fetchMendakiVolunteerGovSgListings(
     );
   }
 
-  const response = await fetch(url, {
+  const pageResponse = await fetch(url, {
     headers: {
       accept: "text/html,application/xhtml+xml",
       "user-agent": "MENDAKI-Volunteer-Portal/1.0 (+https://www.mendaki.org.sg)",
@@ -201,13 +457,54 @@ export async function fetchMendakiVolunteerGovSgListings(
     signal: AbortSignal.timeout(15_000),
   });
 
-  if (!response.ok) {
-    throw new Error(`Volunteer.gov.sg returned HTTP ${response.status}`);
+  if (!pageResponse.ok) {
+    throw new Error(`Volunteer.gov.sg returned HTTP ${pageResponse.status}`);
   }
 
-  const listings = parseVolunteerGovSgListings(await response.text());
+  const agencyPage = await pageResponse.text();
+  const structuredListings = parseVolunteerGovSgListings(agencyPage);
+  if (structuredListings.length > 0) return structuredListings;
+
+  const { agencyId, requestVerificationToken, pageNumber } =
+    readAgencyPageContext(agencyPage);
+  const cookie = responseCookieHeader(pageResponse.headers);
+  const requestHeaders: Record<string, string> = {
+    accept: "text/html,application/xhtml+xml",
+    "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+    origin: url.origin,
+    referer: url.toString(),
+    "user-agent": "MENDAKI-Volunteer-Portal/1.0 (+https://www.mendaki.org.sg)",
+  };
+  if (cookie) requestHeaders.cookie = cookie;
+
+  const listingResponse = await fetch(
+    new URL("/Agency/GetOpportunityByAgency/", url),
+    {
+      method: "POST",
+      headers: requestHeaders,
+      body: new URLSearchParams({
+        agencyID: agencyId,
+        loadFor: "UpComing",
+        PageNo: pageNumber,
+        loadMore: "True",
+        __RequestVerificationToken: requestVerificationToken,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+
+  if (!listingResponse.ok) {
+    throw new Error(
+      `Volunteer.gov.sg opportunity listing returned HTTP ${listingResponse.status}`,
+    );
+  }
+
+  const listings = parseVolunteerGovSgAgencyListings(
+    await listingResponse.text(),
+  );
   if (listings.length === 0) {
-    throw new Error("No structured MENDAKI opportunity records were found");
+    throw new Error("No MENDAKI opportunity records were found");
   }
 
   return listings;

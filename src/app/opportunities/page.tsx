@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { PortalHeader } from "@/components/portal-header";
-import { formatSingaporeDateTime } from "@/lib/content/dates";
+import { formatSingaporeDate } from "@/lib/content/dates";
 import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 
 export const metadata: Metadata = {
@@ -41,7 +41,7 @@ export default async function OpportunitiesPage() {
                 </div>
                 <div className="phaseone-opportunity-body">
                   <p className="phaseone-opportunity-date">
-                    {formatSingaporeDateTime(opportunity.starts_at)}
+                    {formatSingaporeDate(opportunity.starts_at)}
                   </p>
                   <h2>{opportunity.title}</h2>
                   {opportunity.summary ? (
@@ -52,10 +52,16 @@ export default async function OpportunitiesPage() {
                       <dt>Venue</dt>
                       <dd>{opportunity.venue ?? "See Volunteer.gov.sg for details"}</dd>
                     </div>
+                    {opportunity.schedule_text ? (
+                      <div>
+                        <dt>Schedule</dt>
+                        <dd>{opportunity.schedule_text}</dd>
+                      </div>
+                    ) : null}
                     {opportunity.ends_at ? (
                       <div>
                         <dt>Ends</dt>
-                        <dd>{formatSingaporeDateTime(opportunity.ends_at)}</dd>
+                        <dd>{formatSingaporeDate(opportunity.ends_at)}</dd>
                       </div>
                     ) : null}
                   </dl>

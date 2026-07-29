@@ -9,6 +9,7 @@ export type PhaseOneOpportunity = Readonly<{
   image_url: string | null;
   starts_at: string | null;
   ends_at: string | null;
+  schedule_text: string | null;
   venue: string | null;
   source_url: string;
   imported_at: string;
@@ -36,18 +37,17 @@ type PhaseOneDatabase = {
   };
 };
 
-export async function getUpcomingPhaseOneOpportunities(
-  now = new Date(),
-): Promise<PhaseOneOpportunity[]> {
+export async function getUpcomingPhaseOneOpportunities(): Promise<
+  PhaseOneOpportunity[]
+> {
   const supabase = (await createClient()) as unknown as SupabaseClient<PhaseOneDatabase>;
   const { data, error } = await supabase
     .from("phaseone_external_opportunities")
     .select(
-      "id, title, summary, image_url, starts_at, ends_at, venue, source_url, imported_at",
+      "id, title, summary, image_url, starts_at, ends_at, schedule_text, venue, source_url, imported_at",
     )
     .eq("is_active", true)
-    .gte("starts_at", now.toISOString())
-    .order("starts_at", { ascending: true })
+    .order("starts_at", { ascending: true, nullsFirst: false })
     .limit(100);
 
   if (error) {
