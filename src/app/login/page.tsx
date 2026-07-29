@@ -12,12 +12,30 @@ type LoginPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
+function getLoginErrorMessage(errorCode: string | undefined): string | undefined {
+  switch (errorCode) {
+    case "invalid_or_expired_link":
+    case "magic_link_invalid":
+      return "This sign-in link is invalid, expired, or has already been used. Request a new link.";
+    case "account_inactive":
+      return "This portal account is not active. Contact an administrator.";
+    case "account_authorization_unavailable":
+      return "The portal could not verify your account permissions. Try again shortly.";
+    default:
+      return undefined;
+  }
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const parameters = await searchParams;
   const requestedNext = Array.isArray(parameters.next)
     ? parameters.next[0]
     : parameters.next;
+  const errorCode = Array.isArray(parameters.error)
+    ? parameters.error[0]
+    : parameters.error;
   const nextPath = getSafeRedirectPath(requestedNext);
+  const initialError = getLoginErrorMessage(errorCode);
 
   return (
     <div className="site-shell">
@@ -36,11 +54,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p className="eyebrow">Secure access</p>
           <h1 id="sign-in-title">Sign in</h1>
           <p className="muted">
-            Enter your staff email address and password. Access to volunteer
-            information is still controlled by your portal account and
-            database security rules.
+            Enter your staff email address and password. Magic links complete
+            automatically when opened in this browser.
           </p>
-          <LoginForm nextPath={nextPath} />
+          <LoginForm nextPath={nextPath} initialError={initialError} />
         </section>
       </main>
     </div>

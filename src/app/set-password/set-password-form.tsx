@@ -22,12 +22,24 @@ export function SetPasswordForm() {
 
   useEffect(() => {
     const parameters = new URLSearchParams(window.location.hash.slice(1));
-    setToken(parameters.get("token") ?? "");
+    const setupToken = parameters.get("token") ?? "";
+    let cancelled = false;
+
     window.history.replaceState(
       null,
       "",
       `${window.location.pathname}${window.location.search}`,
     );
+
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setToken(setupToken);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const hasToken = Boolean(token);
