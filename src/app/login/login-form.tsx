@@ -12,7 +12,7 @@ const idleLoginState: LoginState = {
 
 type LoginFormProps = Readonly<{
   nextPath: string;
-  initialError?: string;
+  initialError: string | undefined;
 }>;
 
 export function LoginForm({ nextPath, initialError }: LoginFormProps) {
