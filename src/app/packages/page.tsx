@@ -5,6 +5,8 @@ import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getUpcomingVolunteerPackages } from "@/lib/phaseone/packages";
 
+import styles from "./packages.module.css";
+
 export const metadata: Metadata = {
   title: "Volunteer packages",
   description: "Access briefing, sign-in and sign-out resources for upcoming MENDAKI volunteer events.",
@@ -29,10 +31,10 @@ export default async function PackagesPage() {
         </section>
 
         {packages.length > 0 ? (
-          <section className="phaseone-package-list" aria-label="Upcoming volunteer packages">
+          <section className={styles.list} aria-label="Upcoming volunteer packages">
             {packages.map((volunteerPackage) => (
-              <article className="phaseone-package-card" key={volunteerPackage.id}>
-                <div className="phaseone-package-date" aria-hidden="true">
+              <article className={styles.card} key={volunteerPackage.id}>
+                <div className={styles.date} aria-hidden="true">
                   <span>{new Intl.DateTimeFormat("en-SG", {
                     timeZone: "Asia/Singapore",
                     month: "short",
@@ -42,7 +44,7 @@ export default async function PackagesPage() {
                     day: "2-digit",
                   }).format(new Date(volunteerPackage.reporting_at))}</strong>
                 </div>
-                <div className="phaseone-package-body">
+                <div className={styles.body}>
                   <p className="phaseone-opportunity-date">
                     {formatSingaporeDateTime(volunteerPackage.reporting_at)}
                   </p>
@@ -58,7 +60,7 @@ export default async function PackagesPage() {
                     </div>
                   </dl>
                   <Link
-                    className="button button-primary phaseone-package-cta"
+                    className={`button button-primary ${styles.cta}`}
                     href={`/events/${volunteerPackage.slug}`}
                   >
                     View package
