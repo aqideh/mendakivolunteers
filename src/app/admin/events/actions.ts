@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
-import { createPinHash } from "@/lib/phaseone/event-access";
+import {
+  buildPackagePinUpdate,
+  getPackagePublishError,
+  packageWillHaveActionPins,
+} from "@/lib/phaseone/package-cms";
 import {
   getPhaseOneValidationMessage,
   parseEventForm,
@@ -22,7 +26,11 @@ function eventPath(id?: string): string {
 
 function revalidateEventRoutes(slug?: string) {
   revalidatePath("/admin/events");
-  if (slug) revalidatePath(`/events/${slug}`);
+  revalidatePath("/packages");
+  if (slug) {
+    revalidatePath(`/packages/${slug}`);
+    revalidatePath(`/events/${slug}`);
+  }
 }
 
 export async function saveEvent(formData: FormData) {
@@ -38,32 +46,37 @@ export async function saveEvent(formData: FormData) {
   const current = parsed.data.id
     ? await admin
         .from("phaseone_events")
-        .select("id, slug, pin_hash")
+        .select("id, slug, sign_in_pin_hash, sign_out_pin_hash")
         .eq("id", parsed.data.id)
         .maybeSingle()
     : { data: null, error: null };
 
   if (current.error || (parsed.data.id && !current.data)) {
-    redirect(`/admin/events?error=${encode("Event could not be found.")}`);
+    redirect(`/admin/events?error=${encode("Package could not be found.")}`);
   }
 
-  const willHavePin = Boolean(parsed.data.pin || (!parsed.data.clearPin && current.data?.pin_hash));
-  if (
-    parsed.data.isPublished &&
-    (!willHavePin || !parsed.data.signInUrl || !parsed.data.signOutUrl)
-  ) {
-    redirect(
-      `${eventPath(parsed.data.id)}?error=${encode("Published events require a PIN, sign-in URL and sign-out URL.")}`,
-    );
+  const pinInput = {
+    signInPin: parsed.data.signInPin,
+    clearSignInPin: parsed.data.clearSignInPin,
+    signOutPin: parsed.data.signOutPin,
+    clearSignOutPin: parsed.data.clearSignOutPin,
+  };
+  const pins = packageWillHaveActionPins(current.data, pinInput);
+  const publishError = getPackagePublishError({
+    isPublished: parsed.data.isPublished,
+    reportingAt: parsed.data.reportingAt,
+    briefingUrl: parsed.data.briefingUrl,
+    briefingAvailableAt: parsed.data.briefingAvailableAt,
+    signInUrl: parsed.data.signInUrl,
+    signOutUrl: parsed.data.signOutUrl,
+    hasSignInPin: pins.signIn,
+    hasSignOutPin: pins.signOut,
+  });
+  if (publishError) {
+    redirect(`${eventPath(parsed.data.id)}?error=${encode(publishError)}`);
   }
 
-  const pinUpdate = parsed.data.pin
-    ? {
-        ...createPinHash(parsed.data.pin),
-        updatedAt: new Date().toISOString(),
-      }
-    : null;
-
+  const pinUpdate = buildPackagePinUpdate(pinInput);
   const values = {
     external_opportunity_id: parsed.data.externalOpportunityId,
     title: parsed.data.title,
@@ -71,20 +84,13 @@ export async function saveEvent(formData: FormData) {
     reporting_at: parsed.data.reportingAt,
     venue: parsed.data.venue,
     briefing_url: parsed.data.briefingUrl,
+    briefing_available_at: parsed.data.briefingAvailableAt,
     whatsapp_url: parsed.data.whatsappUrl,
     sign_in_url: parsed.data.signInUrl,
     sign_out_url: parsed.data.signOutUrl,
     is_published: parsed.data.isPublished,
     updated_by: userId,
-    ...(pinUpdate
-      ? {
-          pin_salt: pinUpdate.salt,
-          pin_hash: pinUpdate.hash,
-          pin_updated_at: pinUpdate.updatedAt,
-        }
-      : parsed.data.clearPin
-        ? { pin_salt: null, pin_hash: null, pin_updated_at: null }
-        : {}),
+    ...pinUpdate,
   };
 
   if (parsed.data.id) {
@@ -96,8 +102,8 @@ export async function saveEvent(formData: FormData) {
       .maybeSingle();
 
     if (error || !data) {
-      console.error("Unable to update phase-one event", { code: error?.code });
-      redirect(`${eventPath(parsed.data.id)}?error=${encode("Event could not be updated. Check the slug and URLs.")}`);
+      console.error("Unable to update volunteer package", { code: error?.code });
+      redirect(`${eventPath(parsed.data.id)}?error=${encode("Package could not be updated. Check the slug, dates and URLs.")}`);
     }
 
     revalidateEventRoutes(current.data?.slug);
@@ -105,19 +111,43 @@ export async function saveEvent(formData: FormData) {
     redirect(`/admin/events/${parsed.data.id}/edit?success=event_updated`);
   }
 
-  const { data, error } = await admin
+  const { data: created, error: createError } = await admin
     .from("phaseone_events")
-    .insert({ ...values, created_by: userId })
+    .insert({
+      external_opportunity_id: parsed.data.externalOpportunityId,
+      title: parsed.data.title,
+      slug: parsed.data.slug,
+      reporting_at: parsed.data.reportingAt,
+      venue: parsed.data.venue,
+      briefing_url: parsed.data.briefingUrl,
+      briefing_available_at: parsed.data.briefingAvailableAt,
+      whatsapp_url: parsed.data.whatsappUrl,
+      sign_in_url: parsed.data.signInUrl,
+      sign_out_url: parsed.data.signOutUrl,
+      is_published: false,
+      updated_by: userId,
+      created_by: userId,
+    })
     .select("id")
     .single();
 
-  if (error || !data) {
-    console.error("Unable to create phase-one event", { code: error?.code });
-    redirect(`/admin/events/new?error=${encode("Event could not be created. Check for a duplicate slug.")}`);
+  if (createError || !created) {
+    console.error("Unable to create volunteer package", { code: createError?.code });
+    redirect(`/admin/events/new?error=${encode("Package could not be created. Check for a duplicate slug.")}`);
+  }
+
+  const { error: configureError } = await admin
+    .from("phaseone_events")
+    .update({ ...pinUpdate, is_published: parsed.data.isPublished })
+    .eq("id", created.id);
+
+  if (configureError) {
+    console.error("Unable to configure new volunteer package", { code: configureError.code });
+    redirect(`/admin/events/${created.id}/edit?error=${encode("The package draft was created, but its PINs or publication status could not be saved.")}`);
   }
 
   revalidateEventRoutes(parsed.data.slug);
-  redirect(`/admin/events/${data.id}/edit?success=event_created`);
+  redirect(`/admin/events/${created.id}/edit?success=event_created`);
 }
 
 export async function importRoster(formData: FormData) {

@@ -1,4 +1,5 @@
 import { saveEvent } from "@/app/admin/events/actions";
+import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
 export type EventFormValue = Readonly<{
   id: string;
@@ -8,10 +9,12 @@ export type EventFormValue = Readonly<{
   reporting_at: string | null;
   venue: string | null;
   briefing_url: string | null;
+  briefing_available_at: string | null;
   whatsapp_url: string | null;
   sign_in_url: string | null;
   sign_out_url: string | null;
-  has_pin: boolean;
+  has_sign_in_pin: boolean;
+  has_sign_out_pin: boolean;
   is_published: boolean;
 }>;
 
@@ -20,13 +23,6 @@ type OpportunityOption = Readonly<{
   title: string;
   starts_at: string | null;
 }>;
-
-function dateTimeLocal(value: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 16);
-}
 
 export function EventForm({
   event,
@@ -57,11 +53,11 @@ export function EventForm({
 
       <div className="phaseone-admin-grid">
         <div className="form-field">
-          <label htmlFor="title">Event title</label>
+          <label htmlFor="title">Package title</label>
           <input defaultValue={event?.title} id="title" maxLength={160} name="title" required />
         </div>
         <div className="form-field">
-          <label htmlFor="slug">Public URL slug</label>
+          <label htmlFor="slug">Public package URL slug</label>
           <input
             autoCapitalize="none"
             defaultValue={event?.slug}
@@ -76,9 +72,9 @@ export function EventForm({
 
       <div className="phaseone-admin-grid">
         <div className="form-field">
-          <label htmlFor="reportingAt">Reporting date and time</label>
+          <label htmlFor="reportingAt">Reporting date and time (Singapore)</label>
           <input
-            defaultValue={dateTimeLocal(event?.reporting_at ?? null)}
+            defaultValue={toSingaporeDateTimeLocal(event?.reporting_at ?? null)}
             id="reportingAt"
             name="reportingAt"
             type="datetime-local"
@@ -90,20 +86,34 @@ export function EventForm({
         </div>
       </div>
 
-      <div className="phaseone-admin-grid">
-        <div className="form-field">
-          <label htmlFor="briefingUrl">Briefing URL</label>
-          <input defaultValue={event?.briefing_url ?? ""} id="briefingUrl" name="briefingUrl" type="url" />
+      <fieldset className="phaseone-admin-fieldset">
+        <legend>Briefing</legend>
+        <p className="muted">The destination remains server-only until the configured release time.</p>
+        <div className="phaseone-admin-grid">
+          <div className="form-field">
+            <label htmlFor="briefingUrl">Briefing URL</label>
+            <input defaultValue={event?.briefing_url ?? ""} id="briefingUrl" name="briefingUrl" type="url" />
+          </div>
+          <div className="form-field">
+            <label htmlFor="briefingAvailableAt">Briefing release (Singapore)</label>
+            <input
+              defaultValue={toSingaporeDateTimeLocal(event?.briefing_available_at ?? null)}
+              id="briefingAvailableAt"
+              name="briefingAvailableAt"
+              type="datetime-local"
+            />
+          </div>
         </div>
-        <div className="form-field">
-          <label htmlFor="whatsappUrl">WhatsApp URL</label>
-          <input defaultValue={event?.whatsapp_url ?? ""} id="whatsappUrl" name="whatsappUrl" type="url" />
-        </div>
+      </fieldset>
+
+      <div className="form-field">
+        <label htmlFor="whatsappUrl">WhatsApp URL</label>
+        <input defaultValue={event?.whatsapp_url ?? ""} id="whatsappUrl" name="whatsappUrl" type="url" />
       </div>
 
       <fieldset className="phaseone-admin-fieldset">
         <legend>Attendance destinations</legend>
-        <p className="muted">These URLs are never returned directly to the browser until a volunteer passes the event PIN.</p>
+        <p className="muted">Each destination is exposed only after its matching PIN is verified.</p>
         <div className="phaseone-admin-grid">
           <div className="form-field">
             <label htmlFor="signInUrl">Sign-in URL</label>
@@ -116,37 +126,63 @@ export function EventForm({
         </div>
       </fieldset>
 
-      <fieldset className="phaseone-admin-fieldset">
-        <legend>Event PIN</legend>
-        <div className="form-field">
-          <label htmlFor="pin">{event?.has_pin ? "Set a new PIN" : "Set PIN"}</label>
-          <input
-            autoComplete="new-password"
-            id="pin"
-            inputMode="numeric"
-            name="pin"
-            pattern="[0-9]{4,8}"
-            placeholder={event?.has_pin ? "Leave blank to keep current PIN" : "4 to 8 digits"}
-            type="password"
-          />
-        </div>
-        {event?.has_pin ? (
-          <label className="checkbox-row">
-            <input name="clearPin" type="checkbox" />
-            Remove the current PIN and disable volunteer access
-          </label>
-        ) : null}
-      </fieldset>
+      <div className="phaseone-admin-grid">
+        <fieldset className="phaseone-admin-fieldset">
+          <legend>Sign-in PIN</legend>
+          <div className="form-field">
+            <label htmlFor="signInPin">{event?.has_sign_in_pin ? "Set a new sign-in PIN" : "Set sign-in PIN"}</label>
+            <input
+              autoComplete="new-password"
+              id="signInPin"
+              inputMode="numeric"
+              name="signInPin"
+              pattern="[0-9]{4,8}"
+              placeholder={event?.has_sign_in_pin ? "Leave blank to keep current PIN" : "4 to 8 digits"}
+              type="password"
+            />
+          </div>
+          {event?.has_sign_in_pin ? (
+            <label className="checkbox-row">
+              <input name="clearSignInPin" type="checkbox" />
+              Remove sign-in PIN
+            </label>
+          ) : null}
+        </fieldset>
+
+        <fieldset className="phaseone-admin-fieldset">
+          <legend>Sign-out PIN</legend>
+          <div className="form-field">
+            <label htmlFor="signOutPin">{event?.has_sign_out_pin ? "Set a new sign-out PIN" : "Set sign-out PIN"}</label>
+            <input
+              autoComplete="new-password"
+              id="signOutPin"
+              inputMode="numeric"
+              name="signOutPin"
+              pattern="[0-9]{4,8}"
+              placeholder={event?.has_sign_out_pin ? "Leave blank to keep current PIN" : "4 to 8 digits"}
+              type="password"
+            />
+          </div>
+          {event?.has_sign_out_pin ? (
+            <label className="checkbox-row">
+              <input name="clearSignOutPin" type="checkbox" />
+              Remove sign-out PIN
+            </label>
+          ) : null}
+        </fieldset>
+      </div>
 
       <label className="checkbox-row">
         <input defaultChecked={event?.is_published} name="isPublished" type="checkbox" />
-        Publish event page
+        Publish volunteer package
       </label>
-      <p className="muted">Publishing requires a PIN and both sign-in and sign-out URLs.</p>
+      <p className="muted">
+        Publishing requires reporting time, both attendance URLs and both action PINs. Briefing URL and release time must be set together.
+      </p>
 
       <div className="actions">
         <button className="button button-primary" type="submit">
-          {event ? "Save event" : "Create event"}
+          {event ? "Save package" : "Create package"}
         </button>
       </div>
     </form>

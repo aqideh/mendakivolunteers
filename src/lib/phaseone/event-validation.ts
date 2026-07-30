@@ -1,15 +1,30 @@
 import { z } from "zod";
 
+import {
+  isValidSingaporeDateTimeLocal,
+  singaporeDateTimeLocalToIso,
+} from "@/lib/content/dates";
+
 const optionalUrl = z.preprocess(
   (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
-  z.string().url().nullable(),
+  z
+    .string()
+    .url()
+    .refine((value) => new URL(value).protocol === "https:", "Use an HTTPS URL.")
+    .nullable(),
 );
 
-const optionalDateTime = z.preprocess((value) => {
+const optionalSingaporeDateTime = z.preprocess((value) => {
   if (typeof value !== "string" || !value.trim()) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+  return isValidSingaporeDateTimeLocal(value)
+    ? singaporeDateTimeLocalToIso(value)
+    : value;
 }, z.string().datetime().nullable());
+
+const optionalPin = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
+  z.string().regex(/^\d{4,8}$/, "PINs must contain 4 to 8 digits.").nullable(),
+);
 
 export const eventFormSchema = z.object({
   id: z.string().uuid().optional(),
@@ -19,20 +34,20 @@ export const eventFormSchema = z.object({
   ),
   title: z.string().trim().min(3).max(160),
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  reportingAt: optionalDateTime,
+  reportingAt: optionalSingaporeDateTime,
   venue: z.preprocess(
     (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
     z.string().max(240).nullable(),
   ),
   briefingUrl: optionalUrl,
+  briefingAvailableAt: optionalSingaporeDateTime,
   whatsappUrl: optionalUrl,
   signInUrl: optionalUrl,
   signOutUrl: optionalUrl,
-  pin: z.preprocess(
-    (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
-    z.string().regex(/^\d{4,8}$/).nullable(),
-  ),
-  clearPin: z.boolean(),
+  signInPin: optionalPin,
+  clearSignInPin: z.boolean(),
+  signOutPin: optionalPin,
+  clearSignOutPin: z.boolean(),
   isPublished: z.boolean(),
 });
 
@@ -47,11 +62,14 @@ export function parseEventForm(formData: FormData) {
     reportingAt: formData.get("reportingAt"),
     venue: formData.get("venue"),
     briefingUrl: formData.get("briefingUrl"),
+    briefingAvailableAt: formData.get("briefingAvailableAt"),
     whatsappUrl: formData.get("whatsappUrl"),
     signInUrl: formData.get("signInUrl"),
     signOutUrl: formData.get("signOutUrl"),
-    pin: formData.get("pin"),
-    clearPin: formData.get("clearPin") === "on",
+    signInPin: formData.get("signInPin"),
+    clearSignInPin: formData.get("clearSignInPin") === "on",
+    signOutPin: formData.get("signOutPin"),
+    clearSignOutPin: formData.get("clearSignOutPin") === "on",
     isPublished: formData.get("isPublished") === "on",
   });
 }
