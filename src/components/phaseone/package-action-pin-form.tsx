@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { PackageAction } from "@/lib/phaseone/package-action-access";
-import { packageActionLabel } from "@/lib/phaseone/package-action-access";
 
 export function PackageActionPinForm({
   slug,
@@ -14,7 +13,7 @@ export function PackageActionPinForm({
   action: PackageAction;
 }) {
   const router = useRouter();
-  const label = packageActionLabel(action);
+  const label = action === "sign-in" ? "Sign in" : "Sign out";
   const [pin, setPin] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
