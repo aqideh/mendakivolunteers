@@ -34,13 +34,11 @@ export async function GET(
   }
 
   const supabase = getPhaseOneAdminClient();
-  const actionColumns =
-    rawAction === "sign-in"
-      ? "id, sign_in_url, sign_in_pin_updated_at"
-      : "id, sign_out_url, sign_out_pin_updated_at";
   const { data: event, error } = await supabase
     .from("phaseone_events")
-    .select(actionColumns)
+    .select(
+      "id, sign_in_url, sign_out_url, sign_in_pin_updated_at, sign_out_pin_updated_at",
+    )
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
@@ -65,13 +63,7 @@ export async function GET(
     eventId: event.id,
     action: rawAction,
     pinUpdatedAt,
-    destination: getPackageActionDestination(
-      {
-        sign_in_url: rawAction === "sign-in" ? event.sign_in_url : null,
-        sign_out_url: rawAction === "sign-out" ? event.sign_out_url : null,
-      },
-      rawAction,
-    ),
+    destination: getPackageActionDestination(event, rawAction),
   });
 
   if (decision.status !== "allowed") {
