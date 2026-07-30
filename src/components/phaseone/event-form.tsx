@@ -79,6 +79,7 @@ export function EventForm({
             name="reportingAt"
             type="datetime-local"
           />
+          <p className="muted">Published packages cannot use a reporting date before today.</p>
         </div>
         <div className="form-field">
           <label htmlFor="venue">Venue</label>
@@ -177,7 +178,7 @@ export function EventForm({
         Publish volunteer package
       </label>
       <p className="muted">
-        Publishing requires reporting time, both attendance URLs and both action PINs. Briefing URL and release time must be set together.
+        Publishing requires a current or future reporting date, both attendance URLs and both action PINs. Briefing URL and release time must be set together.
       </p>
 
       <div className="actions">
