@@ -7,8 +7,9 @@ import {
 } from "./package-cms";
 
 const now = new Date("2026-07-30T08:00:00.000Z");
+type PublishInput = Parameters<typeof getPackagePublishError>[0];
 
-function completePackage(overrides: Record<string, unknown> = {}) {
+function completePackage(overrides: Partial<PublishInput> = {}): PublishInput {
   return {
     isPublished: true,
     reportingAt: "2026-08-01T01:00:00.000Z",
