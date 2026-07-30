@@ -41,13 +41,13 @@ export async function GET(
     claims.eventId !== event.id ||
     claims.pinUpdatedAt !== event.pin_updated_at
   ) {
-    return NextResponse.redirect(new URL(`/events/${slug}?access=expired`, request.url));
+    return NextResponse.redirect(new URL(`/packages/${slug}?access=expired`, request.url));
   }
 
   const destination =
     action.data === "sign-in" ? event.sign_in_url : event.sign_out_url;
   if (!destination) {
-    return NextResponse.redirect(new URL(`/events/${slug}?access=unavailable`, request.url));
+    return NextResponse.redirect(new URL(`/packages/${slug}?access=unavailable`, request.url));
   }
 
   return NextResponse.redirect(destination);

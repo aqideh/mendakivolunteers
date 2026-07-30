@@ -61,7 +61,7 @@ export default async function PackagesPage() {
                   </dl>
                   <Link
                     className={`button button-primary ${styles.cta}`}
-                    href={`/events/${volunteerPackage.slug}`}
+                    href={`/packages/${volunteerPackage.slug}`}
                   >
                     View package
                   </Link>
