@@ -5,6 +5,7 @@ import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import { getPackageListingStatus } from "@/lib/phaseone/packages";
 
 export const metadata: Metadata = { title: "Package operations" };
 export const dynamic = "force-dynamic";
@@ -52,15 +53,22 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
 
         <div className="table-wrap">
           <table className="content-table">
-            <thead><tr><th>Package</th><th>Reporting</th><th>Access</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th>Package</th><th>Reporting</th><th>Access</th><th>Visibility</th><th>Actions</th></tr></thead>
             <tbody>
               {events.map((event) => (
                 <tr key={event.id}>
                   <td><strong>{event.title}</strong><span className="table-subtext">/packages/{event.slug}</span></td>
                   <td>{event.reporting_at ? formatSingaporeDateTime(event.reporting_at) : "Not set"}</td>
                   <td>{event.has_sign_in_pin && event.has_sign_out_pin ? "Both PINs configured" : "Configuration incomplete"}</td>
-                  <td><span className="status-pill">{event.is_published ? "Published" : "Draft"}</span></td>
-                  <td><Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link></td>
+                  <td><span className="status-pill">{getPackageListingStatus(event.reporting_at, event.is_published)}</span></td>
+                  <td>
+                    <div className="actions">
+                      <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
+                      {event.is_published ? (
+                        <Link className="text-link" href={`/packages/${event.slug}`} target="_blank">View public package</Link>
+                      ) : null}
+                    </div>
+                  </td>
                 </tr>
               ))}
               {events.length === 0 ? <tr><td colSpan={5}>No package records.</td></tr> : null}
