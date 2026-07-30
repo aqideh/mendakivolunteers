@@ -47,7 +47,7 @@ export async function getUpcomingPhaseOneOpportunities(): Promise<
       "id, title, summary, image_url, starts_at, ends_at, schedule_text, venue, source_url, imported_at",
     )
     .eq("is_active", true)
-    .order("starts_at", { ascending: true, nullsFirst: false })
+    .order("starts_at", { ascending: false, nullsFirst: false })
     .limit(100);
 
   if (error) {
