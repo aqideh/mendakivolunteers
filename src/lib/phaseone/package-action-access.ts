@@ -27,6 +27,11 @@ export type PackageActionDestinationRecord = Readonly<{
   sign_out_url: string | null;
 }>;
 
+export type PackageActionRedirectDecision =
+  | Readonly<{ status: "allowed"; destination: string }>
+  | Readonly<{ status: "expired" }>
+  | Readonly<{ status: "unavailable" }>;
+
 function safeEqual(left: Buffer, right: Buffer): boolean {
   return left.length === right.length && timingSafeEqual(left, right);
 }
@@ -54,6 +59,18 @@ export function packageActionCookieName(
   action: PackageAction,
 ): string {
   return `phaseone_package_${packageActionAuditType(action)}_${eventId}`;
+}
+
+export function packageActionRateLimitScope(
+  eventId: string,
+  action: PackageAction,
+  clientKey: string,
+): Readonly<{ eventId: string; actionType: PackagePinAction; clientKey: string }> {
+  return {
+    eventId,
+    actionType: packageActionAuditType(action),
+    clientKey,
+  };
 }
 
 export function getPackageActionPin(
@@ -157,6 +174,29 @@ export function hasPackageActionAccess(
       claims.action === action &&
       claims.pinUpdatedAt === pinUpdatedAt,
   );
+}
+
+export function evaluatePackageActionRedirect(input: Readonly<{
+  claims: PackageActionAccessClaims | null;
+  eventId: string;
+  action: PackageAction;
+  pinUpdatedAt: string | null;
+  destination: string | null;
+}>): PackageActionRedirectDecision {
+  if (
+    !hasPackageActionAccess(
+      input.claims,
+      input.eventId,
+      input.action,
+      input.pinUpdatedAt,
+    )
+  ) {
+    return { status: "expired" };
+  }
+  if (!isSafePackageActionDestination(input.destination)) {
+    return { status: "unavailable" };
+  }
+  return { status: "allowed", destination: input.destination as string };
 }
 
 export const packageActionAccessMaxAge = accessTtlSeconds;
