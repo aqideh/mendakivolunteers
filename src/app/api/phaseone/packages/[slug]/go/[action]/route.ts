@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
 import {
+  evaluatePackageActionRedirect,
   getPackageActionDestination,
   getPackageActionPin,
-  hasPackageActionAccess,
   isPackageAction,
-  isSafePackageActionDestination,
   packageActionCookieName,
   readPackageActionAccessToken,
 } from "@/lib/phaseone/package-action-access";
@@ -35,21 +34,28 @@ export async function GET(
 
   const configuredPin = event ? getPackageActionPin(event, rawAction) : null;
   if (error || !event || !configuredPin) {
-    return NextResponse.redirect(new URL(`/packages/${slug}?access=unavailable&action=${rawAction}`, request.url));
+    return NextResponse.redirect(
+      new URL(`/packages/${slug}?access=unavailable&action=${rawAction}`, request.url),
+    );
   }
 
   const claims = readPackageActionAccessToken(
     request.cookies.get(packageActionCookieName(event.id, rawAction))?.value,
     getPhaseOneServerSecret(),
   );
-  if (!hasPackageActionAccess(claims, event.id, rawAction, configuredPin.updatedAt)) {
-    return NextResponse.redirect(new URL(`/packages/${slug}?access=expired&action=${rawAction}`, request.url));
+  const decision = evaluatePackageActionRedirect({
+    claims,
+    eventId: event.id,
+    action: rawAction,
+    pinUpdatedAt: configuredPin.updatedAt,
+    destination: getPackageActionDestination(event, rawAction),
+  });
+
+  if (decision.status !== "allowed") {
+    return NextResponse.redirect(
+      new URL(`/packages/${slug}?access=${decision.status}&action=${rawAction}`, request.url),
+    );
   }
 
-  const destination = getPackageActionDestination(event, rawAction);
-  if (!isSafePackageActionDestination(destination)) {
-    return NextResponse.redirect(new URL(`/packages/${slug}?access=unavailable&action=${rawAction}`, request.url));
-  }
-
-  return NextResponse.redirect(destination);
+  return NextResponse.redirect(decision.destination);
 }
