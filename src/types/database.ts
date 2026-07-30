@@ -37,6 +37,8 @@ export type ContentStatus =
 
 export type ContentKind = "opportunity" | "news";
 
+export type PhaseOnePinAction = "legacy" | "sign_in" | "sign_out";
+
 export type YmHubRegistrationState =
   | "registered"
   | "waitlisted"
@@ -409,3 +411,4 @@ export type Database = {
     CompositeTypes: Record<never, never>;
   };
 };
+
