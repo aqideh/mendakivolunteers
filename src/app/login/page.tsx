@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { LoginForm } from "@/app/login/login-form";
+import { BrandLockup } from "@/components/brand-lockup";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 
 export const metadata: Metadata = {
@@ -40,12 +40,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <div className="site-shell">
       <header className="site-header">
-        <Link className="brand-lockup" href="/">
-          <span className="brand-mark" aria-hidden="true">
-            MV
-          </span>
-          <span>MENDAKI Volunteer Portal</span>
-        </Link>
+        <BrandLockup href="/" priority />
         <p className="header-status">Staff sign in</p>
       </header>
 

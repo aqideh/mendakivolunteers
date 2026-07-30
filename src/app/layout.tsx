@@ -6,8 +6,8 @@ import "./phaseone.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "MENDAKI Volunteer Portal",
-    template: "%s | MENDAKI Volunteer Portal",
+    default: "RELA! MENDAKI Volunteer App",
+    template: "%s | RELA! MENDAKI Volunteer App",
   },
   description:
     "Mobile-first MENDAKI volunteer opportunities and event operations portal.",
