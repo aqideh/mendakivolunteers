@@ -2,15 +2,19 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { EventPinForm } from "@/components/phaseone/event-pin-form";
+import { PackageActionPinForm } from "@/components/phaseone/package-action-pin-form";
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
-import {
-  eventAccessCookieName,
-  readEventAccessToken,
-} from "@/lib/phaseone/event-access";
 import { evaluateBriefingAccess } from "@/lib/phaseone/package-briefing";
+import {
+  getPackageActionPin,
+  hasPackageActionAccess,
+  packageActionCookieName,
+  packageActionLabel,
+  readPackageActionAccessToken,
+  type PackageAction,
+} from "@/lib/phaseone/package-action-access";
 
 import styles from "./package-detail.module.css";
 
@@ -18,17 +22,19 @@ export const dynamic = "force-dynamic";
 
 type PackagePageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ access?: string }>;
+  searchParams: Promise<{ access?: string; action?: string }>;
 };
+
+const actions: PackageAction[] = ["sign-in", "sign-out"];
 
 export default async function PackagePage({ params, searchParams }: PackagePageProps) {
   const { slug } = await params;
-  const { access } = await searchParams;
+  const { access, action: actionParam } = await searchParams;
   const supabase = getPhaseOneAdminClient();
   const { data: volunteerPackage, error } = await supabase
     .from("phaseone_events")
     .select(
-      "id, title, reporting_at, venue, briefing_url, briefing_available_at, pin_updated_at, has_pin",
+      "id, title, reporting_at, venue, briefing_url, briefing_available_at, sign_in_pin_salt, sign_in_pin_hash, sign_in_pin_updated_at, sign_out_pin_salt, sign_out_pin_hash, sign_out_pin_updated_at",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -47,16 +53,31 @@ export default async function PackagePage({ params, searchParams }: PackagePageP
   });
 
   const cookieStore = await cookies();
-  const claims = readEventAccessToken(
-    cookieStore.get(eventAccessCookieName(volunteerPackage.id))?.value,
-    getPhaseOneServerSecret(),
-  );
-  const hasAttendanceAccess = Boolean(
-    claims &&
-      volunteerPackage.pin_updated_at &&
-      claims.eventId === volunteerPackage.id &&
-      claims.pinUpdatedAt === volunteerPackage.pin_updated_at,
-  );
+  const secret = getPhaseOneServerSecret();
+  const actionStates = actions.map((action) => {
+    const configuredPin = getPackageActionPin(volunteerPackage, action);
+    const claims = readPackageActionAccessToken(
+      cookieStore.get(packageActionCookieName(volunteerPackage.id, action))?.value,
+      secret,
+    );
+    return {
+      action,
+      configured: Boolean(configuredPin),
+      unlocked: Boolean(
+        configuredPin &&
+          hasPackageActionAccess(
+            claims,
+            volunteerPackage.id,
+            action,
+            configuredPin.updatedAt,
+          ),
+      ),
+    };
+  });
+
+  const errorAction = actions.includes(actionParam as PackageAction)
+    ? (actionParam as PackageAction)
+    : null;
 
   return (
     <div className="site-shell phaseone-shell">
@@ -102,44 +123,41 @@ export default async function PackagePage({ params, searchParams }: PackagePageP
             </button>
           )}
 
-          {access === "expired" ? (
+          {access === "expired" && errorAction ? (
             <p className="phaseone-form-error" role="alert">
-              Your event access expired. Enter the PIN again.
+              Your {packageActionLabel(errorAction).toLowerCase()} access expired. Enter that PIN again.
             </p>
           ) : null}
-          {access === "unavailable" ? (
+          {access === "unavailable" && errorAction ? (
             <p className="phaseone-form-error" role="alert">
-              That event action has not been configured yet.
+              {packageActionLabel(errorAction)} has not been configured yet.
             </p>
           ) : null}
 
-          {!volunteerPackage.has_pin ? (
-            <div className={`panel ${styles.accessPanel}`}>
-              <h2>Attendance access not configured</h2>
-              <p>The event team has not enabled volunteer sign-in and sign-out yet.</p>
-            </div>
-          ) : hasAttendanceAccess ? (
-            <div className={styles.attendance}>
-              <a
-                className="button button-primary"
-                href={`/api/phaseone/events/${slug}/go/sign-in`}
-              >
-                Sign in
-              </a>
-              <a
-                className="button button-secondary"
-                href={`/api/phaseone/events/${slug}/go/sign-out`}
-              >
-                Sign out
-              </a>
-            </div>
-          ) : (
-            <div className={`panel ${styles.accessPanel}`}>
-              <h2>Unlock attendance</h2>
-              <p>Get the event PIN from the event team. Failed attempts are rate-limited.</p>
-              <EventPinForm slug={slug} />
-            </div>
-          )}
+          <div className={styles.actionGrid}>
+            {actionStates.map(({ action, configured, unlocked }) => (
+              <section className={`panel ${styles.actionPanel}`} key={action}>
+                <h2>{packageActionLabel(action)}</h2>
+                {!configured ? (
+                  <p>This action has not been enabled by the event team.</p>
+                ) : unlocked ? (
+                  <>
+                    <a
+                      className="button button-primary"
+                      href={`/api/phaseone/packages/${slug}/go/${action}`}
+                    >
+                      Open {packageActionLabel(action).toLowerCase()}
+                    </a>
+                    <p className="phaseone-access-note">
+                      Access remains valid for five minutes or until this PIN changes.
+                    </p>
+                  </>
+                ) : (
+                  <PackageActionPinForm slug={slug} action={action} />
+                )}
+              </section>
+            ))}
+          </div>
         </article>
       </main>
     </div>
