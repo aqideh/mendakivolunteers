@@ -8,7 +8,6 @@ import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
 import { evaluateBriefingAccess } from "@/lib/phaseone/package-briefing";
 import {
-  getPackageActionPin,
   hasPackageActionAccess,
   packageActionCookieName,
   packageActionLabel,
@@ -20,12 +19,37 @@ import styles from "./package-detail.module.css";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  robots: { index: false, follow: false },
+  referrer: "no-referrer" as const,
+};
+
 type PackagePageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ access?: string; action?: string }>;
 };
 
 const actions: PackageAction[] = ["sign-in", "sign-out"];
+
+function actionConfiguration(
+  volunteerPackage: {
+    has_sign_in_pin: boolean;
+    has_sign_out_pin: boolean;
+    sign_in_pin_updated_at: string | null;
+    sign_out_pin_updated_at: string | null;
+  },
+  action: PackageAction,
+) {
+  return action === "sign-in"
+    ? {
+        configured: volunteerPackage.has_sign_in_pin,
+        updatedAt: volunteerPackage.sign_in_pin_updated_at,
+      }
+    : {
+        configured: volunteerPackage.has_sign_out_pin,
+        updatedAt: volunteerPackage.sign_out_pin_updated_at,
+      };
+}
 
 export default async function PackagePage({ params, searchParams }: PackagePageProps) {
   const { slug } = await params;
@@ -34,7 +58,7 @@ export default async function PackagePage({ params, searchParams }: PackagePageP
   const { data: volunteerPackage, error } = await supabase
     .from("phaseone_events")
     .select(
-      "id, title, reporting_at, venue, briefing_url, briefing_available_at, sign_in_pin_salt, sign_in_pin_hash, sign_in_pin_updated_at, sign_out_pin_salt, sign_out_pin_hash, sign_out_pin_updated_at",
+      "id, title, reporting_at, venue, briefing_url, briefing_available_at, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -55,22 +79,19 @@ export default async function PackagePage({ params, searchParams }: PackagePageP
   const cookieStore = await cookies();
   const secret = getPhaseOneServerSecret();
   const actionStates = actions.map((action) => {
-    const configuredPin = getPackageActionPin(volunteerPackage, action);
+    const configuration = actionConfiguration(volunteerPackage, action);
     const claims = readPackageActionAccessToken(
       cookieStore.get(packageActionCookieName(volunteerPackage.id, action))?.value,
       secret,
     );
     return {
       action,
-      configured: Boolean(configuredPin),
-      unlocked: Boolean(
-        configuredPin &&
-          hasPackageActionAccess(
-            claims,
-            volunteerPackage.id,
-            action,
-            configuredPin.updatedAt,
-          ),
+      configured: configuration.configured,
+      unlocked: hasPackageActionAccess(
+        claims,
+        volunteerPackage.id,
+        action,
+        configuration.updatedAt,
       ),
     };
   });
@@ -110,6 +131,7 @@ export default async function PackagePage({ params, searchParams }: PackagePageP
               href={`/api/phaseone/packages/${slug}/go/briefing`}
               target="_blank"
               rel="noopener noreferrer"
+              referrerPolicy="no-referrer"
             >
               View briefing
             </a>
@@ -145,6 +167,7 @@ export default async function PackagePage({ params, searchParams }: PackagePageP
                     <a
                       className="button button-primary"
                       href={`/api/phaseone/packages/${slug}/go/${action}`}
+                      referrerPolicy="no-referrer"
                     >
                       Open {packageActionLabel(action).toLowerCase()}
                     </a>

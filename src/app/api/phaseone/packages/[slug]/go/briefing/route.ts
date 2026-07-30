@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { evaluateBriefingAccess } from "@/lib/phaseone/package-briefing";
+import { packagePrivateResponseHeaders } from "@/lib/phaseone/package-route-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function json(body: object, status: number) {
+  return NextResponse.json(body, {
+    status,
+    headers: packagePrivateResponseHeaders,
+  });
+}
 
 export async function GET(
   _request: NextRequest,
@@ -20,7 +28,7 @@ export async function GET(
 
   if (error) {
     console.error("Unable to load package briefing", { code: error.code, slug });
-    return NextResponse.json({ error: "Briefing access is unavailable." }, { status: 500 });
+    return json({ error: "Briefing access is unavailable." }, 500);
   }
 
   const decision = evaluateBriefingAccess({
@@ -30,8 +38,12 @@ export async function GET(
   });
 
   if (!decision.available) {
-    return NextResponse.json({ error: "Briefing not started." }, { status: 404 });
+    return json({ error: "Briefing not started." }, 404);
   }
 
-  return NextResponse.redirect(decision.destination);
+  const response = NextResponse.redirect(decision.destination);
+  for (const [name, value] of Object.entries(packagePrivateResponseHeaders)) {
+    response.headers.set(name, value);
+  }
+  return response;
 }

@@ -14,20 +14,22 @@ Ship a mobile-first volunteer operations web app on Vercel, backed by Supabase, 
 - Protected daily Vercel Cron import at 08:17 Singapore time.
 - Failed imports preserve the last successfully imported listings.
 
-### Volunteer event access
+### Volunteer event packages
 
-- Staff-managed event details linked to an imported opportunity or standalone event.
-- Reporting time, venue, briefing and WhatsApp links.
-- Server-side PIN verification using salted scrypt hashes.
-- Rate-limited PIN attempts.
-- Short-lived, event-scoped HttpOnly access cookies signed with a dedicated `PIN_COOKIE_SECRET`.
+- Upcoming package listing and package detail pages.
+- Timed briefing release through a protected server redirect.
+- Independent sign-in and sign-out PIN verification, cookies, rotation and rate limits.
+- HTTPS-only external destinations with non-cacheable, no-referrer redirects.
+- Package routes are not intended for search-engine indexing.
+
+The exact stacked merge order, migration verification, rollback plan and package operator test matrix are documented in `docs/volunteer-package-release-runbook.md`.
 
 ### Staff event operations
 
 - Supabase-authenticated `attendance_manager` and `admin` access using staff
   email addresses and passwords.
-- Event create, edit, publish and unpublish workflow.
-- PIN rotation and protected sign-in/sign-out destinations.
+- Package create, edit, publish and unpublish workflow.
+- Independent sign-in and sign-out PIN rotation and protected destinations.
 - CSV roster preview, validation, merge and replace modes.
 - Transactional roster imports with import audit history.
 
@@ -74,7 +76,7 @@ AUTH_ALLOW_SIGN_UP=false
 - Database/RLS tests pass.
 - High-severity npm audit is enforced in a dedicated CI job.
 - Vulnerable transitive `sharp` versions are overridden with `sharp@0.35.3` and committed in the lockfile.
-- Vercel successfully builds the `phaseone` branch with explicit public Supabase configuration.
+- Vercel successfully builds the release branch with explicit public Supabase configuration.
 
 ## Final operator checks
 
@@ -84,15 +86,15 @@ Before accepting the release:
 2. Generate distinct random values for `CRON_SECRET` and `PIN_COOKIE_SECRET`.
 3. Confirm the production branch policy intentionally points to `phaseone`; restore the normal production branch after acceptance.
 4. Confirm Vercel deployment protection is configured as intended. Public volunteer routes must not require Vercel SSO at launch.
-5. Set strong, unique initial passwords for the three staff accounts and verify
-   password sign-in with a controlled account.
+5. Set strong, unique initial passwords for the staff accounts and verify password sign-in with a controlled account.
 6. Run `npm run check:production` with the production environment values.
 7. Trigger the opportunity importer once and confirm a successful `phaseone_import_runs` record.
-8. Create a controlled test event and verify PIN entry, sign-in, sign-out, expiry and PIN rotation.
-9. Test public and staff flows at 320 px, 375 px, 390 px and 768 px widths on Safari and Chromium.
-10. Confirm keyboard navigation, visible focus, labels, error messages and minimum touch-target sizes.
-11. Confirm the attendance CSV opens correctly and contains no spreadsheet formulas supplied by roster data.
+8. Complete the package migration and operator sequence in `docs/volunteer-package-release-runbook.md`.
+9. Create a controlled package and verify briefing timing, independent PIN entry, sign-in, sign-out, expiry, rate limiting and PIN rotation.
+10. Test public and staff flows at 320 px, 375 px, 390 px and 768 px widths on Safari and Chromium.
+11. Confirm keyboard navigation, visible focus, labels, error messages and minimum touch-target sizes.
+12. Confirm the attendance CSV opens correctly and contains no spreadsheet formulas supplied by roster data.
 
 ## Release decision
 
-Do not merge or expose the app publicly until CI is green and the operator checks above are signed off. Keep PR #12 in draft until those checks are complete.
+Do not merge or expose the app publicly until CI is green and the operator checks above are signed off. Keep PR #12 and the package stack in draft until those checks are complete.
