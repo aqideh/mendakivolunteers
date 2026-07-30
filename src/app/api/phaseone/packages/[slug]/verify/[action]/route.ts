@@ -10,6 +10,7 @@ import {
   packageActionAccessMaxAge,
   packageActionAuditType,
   packageActionCookieName,
+  packageActionRateLimitScope,
 } from "@/lib/phaseone/package-action-access";
 
 export const runtime = "nodejs";
@@ -51,7 +52,11 @@ export async function POST(
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to load package action PIN", { code: error.code, slug, action: rawAction });
+    console.error("Unable to load package action PIN", {
+      code: error.code,
+      slug,
+      action: rawAction,
+    });
     return NextResponse.json({ error: "Package access is unavailable." }, { status: 500 });
   }
 
@@ -60,19 +65,23 @@ export async function POST(
     return NextResponse.json({ error: "This action is not configured." }, { status: 404 });
   }
 
-  const actionType = packageActionAuditType(rawAction);
+  const scope = packageActionRateLimitScope(event.id, rawAction, clientKey);
   const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
   const { count, error: countError } = await supabase
     .from("phaseone_pin_attempts")
     .select("id", { count: "exact", head: true })
-    .eq("event_id", event.id)
-    .eq("action_type", actionType)
-    .eq("client_key", clientKey)
+    .eq("event_id", scope.eventId)
+    .eq("action_type", scope.actionType)
+    .eq("client_key", scope.clientKey)
     .eq("was_successful", false)
     .gte("attempted_at", since);
 
   if (countError) {
-    console.error("Unable to check package PIN rate limit", { code: countError.code, slug, action: rawAction });
+    console.error("Unable to check package PIN rate limit", {
+      code: countError.code,
+      slug,
+      action: rawAction,
+    });
     return NextResponse.json({ error: "Package access is unavailable." }, { status: 500 });
   }
   if ((count ?? 0) >= 5) {
@@ -90,12 +99,16 @@ export async function POST(
 
   const { error: auditError } = await supabase.from("phaseone_pin_attempts").insert({
     event_id: event.id,
-    action_type: actionType,
+    action_type: packageActionAuditType(rawAction),
     client_key: clientKey,
     was_successful: wasSuccessful,
   });
   if (auditError) {
-    console.error("Unable to record package PIN attempt", { code: auditError.code, slug, action: rawAction });
+    console.error("Unable to record package PIN attempt", {
+      code: auditError.code,
+      slug,
+      action: rawAction,
+    });
     return NextResponse.json({ error: "Package access is unavailable." }, { status: 500 });
   }
 
