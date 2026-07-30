@@ -11,7 +11,12 @@ import {
   packageActionAuditType,
   packageActionCookieName,
   packageActionRateLimitScope,
+  type PackageActionPinRecord,
 } from "@/lib/phaseone/package-action-access";
+import {
+  isSameOriginPackageRequest,
+  packagePrivateResponseHeaders,
+} from "@/lib/phaseone/package-route-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,18 +25,40 @@ const requestSchema = z.object({
   pin: z.string().trim().regex(/^\d{4,8}$/),
 });
 
+function json(body: object, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: packagePrivateResponseHeaders,
+  });
+}
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ slug: string; action: string }> },
 ) {
   const { slug, action: rawAction } = await context.params;
   if (!isPackageAction(rawAction)) {
-    return NextResponse.json({ error: "Unknown package action." }, { status: 404 });
+    return json({ error: "Unknown package action." }, 404);
+  }
+
+  if (
+    !isSameOriginPackageRequest({
+      requestUrl: request.url,
+      origin: request.headers.get("origin"),
+      fetchSite: request.headers.get("sec-fetch-site"),
+    })
+  ) {
+    return json({ error: "Cross-origin package access is not allowed." }, 403);
+  }
+
+  const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.startsWith("application/json")) {
+    return json({ error: "Package access requires JSON." }, 415);
   }
 
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Enter the action PIN." }, { status: 400 });
+    return json({ error: "Enter the action PIN." }, 400);
   }
 
   const supabase = getPhaseOneAdminClient();
@@ -41,12 +68,14 @@ export async function POST(
     request.headers.get("user-agent"),
     secret,
   );
+  const pinColumns =
+    rawAction === "sign-in"
+      ? "id, sign_in_pin_salt, sign_in_pin_hash, sign_in_pin_updated_at"
+      : "id, sign_out_pin_salt, sign_out_pin_hash, sign_out_pin_updated_at";
 
   const { data: event, error } = await supabase
     .from("phaseone_events")
-    .select(
-      "id, sign_in_pin_salt, sign_in_pin_hash, sign_in_pin_updated_at, sign_out_pin_salt, sign_out_pin_hash, sign_out_pin_updated_at",
-    )
+    .select(pinColumns)
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
@@ -57,12 +86,14 @@ export async function POST(
       slug,
       action: rawAction,
     });
-    return NextResponse.json({ error: "Package access is unavailable." }, { status: 500 });
+    return json({ error: "Package access is unavailable." }, 500);
   }
 
-  const configuredPin = event ? getPackageActionPin(event, rawAction) : null;
+  const configuredPin = event
+    ? getPackageActionPin(event as unknown as PackageActionPinRecord, rawAction)
+    : null;
   if (!event || !configuredPin) {
-    return NextResponse.json({ error: "This action is not configured." }, { status: 404 });
+    return json({ error: "This action is not configured." }, 404);
   }
 
   const scope = packageActionRateLimitScope(event.id, rawAction, clientKey);
@@ -82,13 +113,10 @@ export async function POST(
       slug,
       action: rawAction,
     });
-    return NextResponse.json({ error: "Package access is unavailable." }, { status: 500 });
+    return json({ error: "Package access is unavailable." }, 500);
   }
   if ((count ?? 0) >= 5) {
-    return NextResponse.json(
-      { error: "Too many attempts. Try again in 15 minutes." },
-      { status: 429 },
-    );
+    return json({ error: "Too many attempts. Try again in 15 minutes." }, 429);
   }
 
   const wasSuccessful = verifyPin(
@@ -109,14 +137,14 @@ export async function POST(
       slug,
       action: rawAction,
     });
-    return NextResponse.json({ error: "Package access is unavailable." }, { status: 500 });
+    return json({ error: "Package access is unavailable." }, 500);
   }
 
   if (!wasSuccessful) {
-    return NextResponse.json({ error: "Incorrect PIN." }, { status: 401 });
+    return json({ error: "Incorrect PIN." }, 401);
   }
 
-  const response = NextResponse.json({ ok: true });
+  const response = json({ ok: true });
   response.cookies.set(
     packageActionCookieName(event.id, rawAction),
     createPackageActionAccessToken(
