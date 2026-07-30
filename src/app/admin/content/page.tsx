@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
+import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 
 export const metadata: Metadata = {
@@ -40,6 +41,7 @@ export default async function ContentAdminPage({
   const successCode = readParameter(parameters, "success");
   const errorMessage = readParameter(parameters, "error");
   const successMessage = successCode ? successMessages[successCode] : undefined;
+  const canManagePackages = hasEventManagerRole(access.roles);
 
   const [opportunitiesResult, newsResult] = await Promise.all([
     supabase
@@ -86,6 +88,11 @@ export default async function ContentAdminPage({
             </p>
           </div>
           <div className="actions">
+            {canManagePackages ? (
+              <Link className="button button-secondary" href="/admin/events">
+                Manage packages
+              </Link>
+            ) : null}
             <Link className="button button-secondary" href="/admin/content/news/new">
               New news post
             </Link>
