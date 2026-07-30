@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { connection } from "next/server";
 
 import { MagicLinkConfirmation } from "@/app/auth/confirm/magic-link-confirmation";
+import { BrandLockup } from "@/components/brand-lockup";
 
 export const metadata: Metadata = {
   title: "Completing sign in",
@@ -16,12 +16,7 @@ export default async function ConfirmSignInPage() {
   return (
     <div className="site-shell">
       <header className="site-header">
-        <Link className="brand-lockup" href="/">
-          <span className="brand-mark" aria-hidden="true">
-            MV
-          </span>
-          <span>MENDAKI Volunteer Portal</span>
-        </Link>
+        <BrandLockup href="/" priority />
         <p className="header-status">Secure sign in</p>
       </header>
 

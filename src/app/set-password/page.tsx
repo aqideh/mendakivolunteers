@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { connection } from "next/server";
 
 import { SetPasswordForm } from "@/app/set-password/set-password-form";
+import { BrandLockup } from "@/components/brand-lockup";
 
 export const metadata: Metadata = {
   title: "Set staff password",
@@ -16,12 +16,7 @@ export default async function SetPasswordPage() {
   return (
     <div className="site-shell">
       <header className="site-header">
-        <Link className="brand-lockup" href="/">
-          <span className="brand-mark" aria-hidden="true">
-            MV
-          </span>
-          <span>MENDAKI Volunteer Portal</span>
-        </Link>
+        <BrandLockup href="/" priority />
         <p className="header-status">Staff password setup</p>
       </header>
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { BrandLockup } from "@/components/brand-lockup";
 import { createClient } from "@/lib/supabase/server";
 
 export async function PortalHeader({
@@ -16,12 +17,7 @@ export async function PortalHeader({
 
   return (
     <header className="site-header portal-header">
-      <Link className="brand-lockup" href={lite ? "/opportunities" : "/"}>
-        <span className="brand-mark" aria-hidden="true">
-          MV
-        </span>
-        <span>MENDAKI Volunteer Portal</span>
-      </Link>
+      <BrandLockup href={lite ? "/opportunities" : "/"} priority />
       <nav className="site-nav" aria-label="Primary navigation">
         <Link href="/opportunities">Opportunities</Link>
         <Link href="/news">News</Link>
