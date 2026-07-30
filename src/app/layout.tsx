@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./content.css";
 import "./phaseone.css";
+import "./opportunity-image.css";
 
 export const metadata: Metadata = {
   title: {
