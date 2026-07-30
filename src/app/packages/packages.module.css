@@ -1,0 +1,70 @@
+.list {
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(20, 43, 56, 0.09);
+}
+
+.date {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  min-height: 9rem;
+  padding: 1rem 0.75rem;
+  color: #ffffff;
+  background: var(--brand);
+  text-transform: uppercase;
+}
+
+.date span {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.date strong {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.body {
+  min-width: 0;
+  padding: 1.2rem;
+}
+
+.body h2 {
+  margin-bottom: 0.65rem;
+  font-size: clamp(1.35rem, 6vw, 1.85rem);
+  line-height: 1.12;
+}
+
+.cta {
+  width: 100%;
+  min-height: 3.25rem;
+}
+
+@media (min-width: 680px) {
+  .card {
+    grid-template-columns: 7rem minmax(0, 1fr);
+  }
+
+  .date {
+    min-height: 12rem;
+  }
+
+  .body {
+    padding: 1.6rem;
+  }
+
+  .cta {
+    width: auto;
+  }
+}

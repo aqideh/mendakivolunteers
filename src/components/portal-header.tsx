@@ -20,6 +20,7 @@ export async function PortalHeader({
       <BrandLockup href={lite ? "/opportunities" : "/"} priority />
       <nav className="site-nav" aria-label="Primary navigation">
         <Link href="/opportunities">Opportunities</Link>
+        <Link href="/packages">Packages</Link>
         <Link href="/news">News</Link>
         <Link href={isSignedIn ? "/dashboard" : "/login"}>
           {isSignedIn ? "Dashboard" : "Sign in"}
