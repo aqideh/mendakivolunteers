@@ -5,7 +5,7 @@ import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
-export const metadata: Metadata = { title: "New event" };
+export const metadata: Metadata = { title: "New package" };
 export const dynamic = "force-dynamic";
 
 type PageProps = {
@@ -36,12 +36,12 @@ export default async function NewEventPage({ searchParams }: PageProps) {
 
   return (
     <div className="site-shell">
-      <PortalHeader status="New event" dashboard />
+      <PortalHeader status="New package" dashboard />
       <main className="page-frame narrow-frame">
         <section className="page-intro">
           <p className="eyebrow">Phase-one operations</p>
-          <h1>Create volunteer event</h1>
-          <p className="lede">Create the public event page and configure PIN-protected attendance destinations.</p>
+          <h1>Create volunteer package</h1>
+          <p className="lede">Configure the briefing release, attendance forms and separate action PINs.</p>
         </section>
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
         <EventForm opportunities={opportunities} />
