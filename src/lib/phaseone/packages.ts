@@ -6,7 +6,8 @@ export type VolunteerPackage = Readonly<{
   slug: string;
   reporting_at: string;
   venue: string | null;
-  has_pin: boolean;
+  has_sign_in_pin: boolean;
+  has_sign_out_pin: boolean;
 }>;
 
 export function startOfSingaporeDayIso(now = new Date()): string {
@@ -27,7 +28,9 @@ export async function getUpcomingVolunteerPackages(
   const supabase = getPhaseOneAdminClient();
   const { data, error } = await supabase
     .from("phaseone_events")
-    .select("id, title, slug, reporting_at, venue, has_pin")
+    .select(
+      "id, title, slug, reporting_at, venue, has_sign_in_pin, has_sign_out_pin",
+    )
     .eq("is_published", true)
     .not("reporting_at", "is", null)
     .gte("reporting_at", startOfSingaporeDayIso(now))
