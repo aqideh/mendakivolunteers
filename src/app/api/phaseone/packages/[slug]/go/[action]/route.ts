@@ -4,14 +4,22 @@ import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/
 import {
   evaluatePackageActionRedirect,
   getPackageActionDestination,
-  getPackageActionPin,
   isPackageAction,
   packageActionCookieName,
   readPackageActionAccessToken,
 } from "@/lib/phaseone/package-action-access";
+import { packagePrivateResponseHeaders } from "@/lib/phaseone/package-route-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function redirect(destination: URL | string) {
+  const response = NextResponse.redirect(destination);
+  for (const [name, value] of Object.entries(packagePrivateResponseHeaders)) {
+    response.headers.set(name, value);
+  }
+  return response;
+}
 
 export async function GET(
   request: NextRequest,
@@ -19,22 +27,31 @@ export async function GET(
 ) {
   const { slug, action: rawAction } = await context.params;
   if (!isPackageAction(rawAction)) {
-    return NextResponse.json({ error: "Unknown package action." }, { status: 404 });
+    return NextResponse.json(
+      { error: "Unknown package action." },
+      { status: 404, headers: packagePrivateResponseHeaders },
+    );
   }
 
   const supabase = getPhaseOneAdminClient();
+  const actionColumns =
+    rawAction === "sign-in"
+      ? "id, sign_in_url, sign_in_pin_updated_at"
+      : "id, sign_out_url, sign_out_pin_updated_at";
   const { data: event, error } = await supabase
     .from("phaseone_events")
-    .select(
-      "id, sign_in_url, sign_out_url, sign_in_pin_salt, sign_in_pin_hash, sign_in_pin_updated_at, sign_out_pin_salt, sign_out_pin_hash, sign_out_pin_updated_at",
-    )
+    .select(actionColumns)
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
 
-  const configuredPin = event ? getPackageActionPin(event, rawAction) : null;
-  if (error || !event || !configuredPin) {
-    return NextResponse.redirect(
+  const pinUpdatedAt = event
+    ? rawAction === "sign-in"
+      ? event.sign_in_pin_updated_at
+      : event.sign_out_pin_updated_at
+    : null;
+  if (error || !event || !pinUpdatedAt) {
+    return redirect(
       new URL(`/packages/${slug}?access=unavailable&action=${rawAction}`, request.url),
     );
   }
@@ -47,15 +64,21 @@ export async function GET(
     claims,
     eventId: event.id,
     action: rawAction,
-    pinUpdatedAt: configuredPin.updatedAt,
-    destination: getPackageActionDestination(event, rawAction),
+    pinUpdatedAt,
+    destination: getPackageActionDestination(
+      {
+        sign_in_url: rawAction === "sign-in" ? event.sign_in_url : null,
+        sign_out_url: rawAction === "sign-out" ? event.sign_out_url : null,
+      },
+      rawAction,
+    ),
   });
 
   if (decision.status !== "allowed") {
-    return NextResponse.redirect(
+    return redirect(
       new URL(`/packages/${slug}?access=${decision.status}&action=${rawAction}`, request.url),
     );
   }
 
-  return NextResponse.redirect(decision.destination);
+  return redirect(decision.destination);
 }
