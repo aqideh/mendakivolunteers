@@ -9,7 +9,7 @@ import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
-export const metadata: Metadata = { title: "Edit event" };
+export const metadata: Metadata = { title: "Edit package" };
 export const dynamic = "force-dynamic";
 
 type PageProps = {
@@ -23,8 +23,8 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 }
 
 const successMessages: Record<string, string> = {
-  event_created: "Event created.",
-  event_updated: "Event updated.",
+  event_created: "Package created.",
+  event_updated: "Package updated.",
   roster_imported: "Roster imported.",
 };
 
@@ -36,7 +36,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const [eventResult, opportunitiesResult, rosterCountResult, importsResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, external_opportunity_id, title, slug, reporting_at, venue, briefing_url, whatsapp_url, sign_in_url, sign_out_url, has_pin, is_published")
+      .select("id, external_opportunity_id, title, slug, reporting_at, venue, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
       .eq("id", id)
       .maybeSingle(),
     admin
@@ -58,12 +58,12 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   ]);
 
   if (eventResult.error) {
-    console.error("Unable to load event editor", { code: eventResult.error.code, id });
-    throw new Error("Event editor could not be loaded");
+    console.error("Unable to load package editor", { code: eventResult.error.code, id });
+    throw new Error("Package editor could not be loaded");
   }
   if (!eventResult.data) notFound();
   if (opportunitiesResult.error || !opportunitiesResult.data || rosterCountResult.error || importsResult.error || !importsResult.data) {
-    throw new Error("Event operations data could not be loaded");
+    throw new Error("Package operations data could not be loaded");
   }
 
   const parameters = await searchParams;
@@ -74,18 +74,18 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
 
   return (
     <div className="site-shell">
-      <PortalHeader status="Edit event" dashboard />
+      <PortalHeader status="Edit package" dashboard />
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Phase-one operations</p>
             <h1>{event.title}</h1>
-            <p className="muted">Manage event details and the operational roster.</p>
+            <p className="muted">Manage the volunteer package, access controls and operational roster.</p>
           </div>
           <div className="actions">
-            <Link className="button button-secondary" href="/admin/events">All events</Link>
+            <Link className="button button-secondary" href="/admin/events">All packages</Link>
             <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Counter-check attendance</Link>
-            {event.is_published ? <Link className="button" href={`/events/${event.slug}`}>View event page</Link> : null}
+            {event.is_published ? <Link className="button" href={`/packages/${event.slug}`}>View package</Link> : null}
           </div>
         </div>
 
@@ -93,7 +93,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
         <section className="panel phaseone-admin-section" aria-labelledby="event-details-title">
-          <h2 id="event-details-title">Event configuration</h2>
+          <h2 id="event-details-title">Package configuration</h2>
           <EventForm event={event} opportunities={opportunitiesResult.data} />
         </section>
 
