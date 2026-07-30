@@ -6,6 +6,22 @@ import {
   packageWillHaveActionPins,
 } from "./package-cms";
 
+const now = new Date("2026-07-30T08:00:00.000Z");
+
+function completePackage(overrides: Record<string, unknown> = {}) {
+  return {
+    isPublished: true,
+    reportingAt: "2026-08-01T01:00:00.000Z",
+    briefingUrl: null,
+    briefingAvailableAt: null,
+    signInUrl: "https://example.com/sign-in",
+    signOutUrl: "https://example.com/sign-out",
+    hasSignInPin: true,
+    hasSignOutPin: true,
+    ...overrides,
+  };
+}
+
 describe("package CMS policy", () => {
   it("updates and clears action PINs independently", () => {
     const update = buildPackagePinUpdate(
@@ -42,46 +58,46 @@ describe("package CMS policy", () => {
 
   it("requires both action PINs and attendance URLs for published packages", () => {
     expect(
-      getPackagePublishError({
-        isPublished: true,
-        reportingAt: "2026-08-01T01:00:00.000Z",
-        briefingUrl: null,
-        briefingAvailableAt: null,
-        signInUrl: "https://example.com/sign-in",
-        signOutUrl: "https://example.com/sign-out",
-        hasSignInPin: true,
-        hasSignOutPin: false,
-      }),
+      getPackagePublishError(
+        completePackage({ hasSignOutPin: false }),
+        now,
+      ),
     ).toBe("Published packages require separate sign-in and sign-out PINs.");
   });
 
   it("requires briefing URL and release time to be configured together", () => {
     expect(
-      getPackagePublishError({
-        isPublished: true,
-        reportingAt: "2026-08-01T01:00:00.000Z",
-        briefingUrl: "https://example.com/briefing",
-        briefingAvailableAt: null,
-        signInUrl: "https://example.com/sign-in",
-        signOutUrl: "https://example.com/sign-out",
-        hasSignInPin: true,
-        hasSignOutPin: true,
-      }),
+      getPackagePublishError(
+        completePackage({
+          briefingUrl: "https://example.com/briefing",
+          briefingAvailableAt: null,
+        }),
+        now,
+      ),
     ).toBe("A briefing release date is required when a briefing URL is configured.");
   });
 
-  it("accepts a complete published package", () => {
+  it("rejects publication when the Singapore reporting date has passed", () => {
     expect(
-      getPackagePublishError({
-        isPublished: true,
-        reportingAt: "2026-08-01T01:00:00.000Z",
-        briefingUrl: "https://example.com/briefing",
-        briefingAvailableAt: "2026-07-20T01:00:00.000Z",
-        signInUrl: "https://example.com/sign-in",
-        signOutUrl: "https://example.com/sign-out",
-        hasSignInPin: true,
-        hasSignOutPin: true,
-      }),
+      getPackagePublishError(
+        completePackage({ reportingAt: "2026-07-28T01:00:00.000Z" }),
+        now,
+      ),
+    ).toBe(
+      "The reporting date has already passed. Update the reporting date before publishing this package.",
+    );
+  });
+
+  it("accepts a package scheduled earlier on the current Singapore day", () => {
+    expect(
+      getPackagePublishError(
+        completePackage({ reportingAt: "2026-07-29T17:00:00.000Z" }),
+        now,
+      ),
     ).toBeNull();
+  });
+
+  it("accepts a complete published package", () => {
+    expect(getPackagePublishError(completePackage(), now)).toBeNull();
   });
 });
