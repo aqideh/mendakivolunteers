@@ -1,4 +1,5 @@
 import { createPinHash } from "@/lib/phaseone/event-access";
+import { startOfSingaporeDayIso } from "@/lib/phaseone/packages";
 
 export type PackagePinState = Readonly<{
   sign_in_pin_hash: string | null;
@@ -68,9 +69,12 @@ export function getPackagePublishError(input: Readonly<{
   signOutUrl: string | null;
   hasSignInPin: boolean;
   hasSignOutPin: boolean;
-}>): string | null {
+}>, now = new Date()): string | null {
   if (!input.isPublished) return null;
   if (!input.reportingAt) return "Published packages require a reporting date and time.";
+  if (input.reportingAt < startOfSingaporeDayIso(now)) {
+    return "The reporting date has already passed. Update the reporting date before publishing this package.";
+  }
   if (!input.signInUrl || !input.signOutUrl) {
     return "Published packages require both sign-in and sign-out URLs.";
   }
