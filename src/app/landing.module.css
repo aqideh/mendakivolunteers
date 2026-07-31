@@ -1,0 +1,99 @@
+.frame {
+  width: min(68rem, calc(100% - 1.5rem));
+}
+
+.hero {
+  display: grid;
+  gap: 1.5rem;
+  border-radius: 1.25rem;
+  padding: clamp(1.5rem, 6vw, 4rem);
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--brand), #113f73);
+  box-shadow: 0 20px 50px rgba(20, 43, 56, 0.18);
+}
+
+.heroCopy h1 {
+  max-width: 13ch;
+  margin-bottom: 1rem;
+  font-size: clamp(2.6rem, 11vw, 5.5rem);
+  line-height: 0.94;
+}
+
+.heroCopy :global(.eyebrow),
+.heroCopy :global(.lede) {
+  color: inherit;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.actions :global(.button-secondary) {
+  border-color: rgba(255, 255, 255, 0.7);
+  color: #ffffff;
+  background: transparent;
+}
+
+.outcomes {
+  display: grid;
+  gap: 0;
+  align-self: end;
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.outcomes p {
+  margin: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 0.7rem 0;
+  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  font-weight: 800;
+}
+
+.statistics {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0 3rem;
+}
+
+.statCard {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(20, 43, 56, 0.08);
+}
+
+.statCard strong {
+  font-size: clamp(2.5rem, 10vw, 4rem);
+  line-height: 1;
+}
+
+.statCard span {
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.path {
+  margin-top: 2rem;
+}
+
+.path h2 {
+  max-width: 19ch;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 760px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.45fr) minmax(15rem, 0.55fr);
+    min-height: 31rem;
+  }
+
+  .statistics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
