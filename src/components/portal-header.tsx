@@ -3,14 +3,13 @@ import Link from "next/link";
 import { BrandLockup } from "@/components/brand-lockup";
 import { createClient } from "@/lib/supabase/server";
 
-export async function PortalHeader({
-  status,
-  lite = false,
-}: {
+type PortalHeaderProps = {
   status?: string;
   dashboard?: boolean;
   lite?: boolean;
-}) {
+};
+
+export async function PortalHeader({ status }: PortalHeaderProps) {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   const isSignedIn = !error && Boolean(data?.claims?.sub);
