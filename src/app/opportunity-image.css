@@ -1,0 +1,24 @@
+.phaseone-opportunity-image {
+  padding: 0.75rem;
+}
+
+.phaseone-opportunity-image img {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: 20rem;
+  object-fit: contain;
+}
+
+@media (min-width: 680px) {
+  .phaseone-opportunity-image {
+    min-height: 100%;
+    padding: 1rem;
+  }
+
+  .phaseone-opportunity-image img {
+    height: auto;
+    min-height: 0;
+    max-height: 100%;
+  }
+}

@@ -1,0 +1,4 @@
+section:has(> #link-title),
+section:has(> #next-title) {
+  display: none;
+}

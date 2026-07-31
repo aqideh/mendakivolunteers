@@ -2,14 +2,16 @@ import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
 import "./content.css";
+import "./phaseone.css";
+import "./opportunity-image.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "MENDAKI Volunteer Portal",
-    template: "%s | MENDAKI Volunteer Portal",
+    default: "RELA! MENDAKI Volunteer App",
+    template: "%s | RELA! MENDAKI Volunteer App",
   },
   description:
-    "Volunteer-facing web portal for opportunities, attendance support, engagement, and downstream YM Hub information.",
+    "Mobile-first MENDAKI volunteer opportunities and event operations portal.",
 };
 
 export const viewport: Viewport = {

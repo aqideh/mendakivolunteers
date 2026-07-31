@@ -3,7 +3,10 @@ import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
+import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import { getPackageListingStatus } from "@/lib/phaseone/packages";
 
 export const metadata: Metadata = {
   title: "Content management",
@@ -24,8 +27,6 @@ function readParameter(
 }
 
 const successMessages: Record<string, string> = {
-  opportunity_created: "Opportunity created.",
-  opportunity_updated: "Opportunity updated.",
   news_created: "News post created.",
   news_updated: "News post updated.",
 };
@@ -40,8 +41,9 @@ export default async function ContentAdminPage({
   const successCode = readParameter(parameters, "success");
   const errorMessage = readParameter(parameters, "error");
   const successMessage = successCode ? successMessages[successCode] : undefined;
+  const canManagePackages = hasEventManagerRole(access.roles);
 
-  const [opportunitiesResult, newsResult] = await Promise.all([
+  const [opportunitiesResult, newsResult, packagesResult] = await Promise.all([
     supabase
       .schema("content")
       .from("opportunities")
@@ -54,23 +56,36 @@ export default async function ContentAdminPage({
       .select("id, slug, title, status, publish_at, published_at, updated_at, featured")
       .order("updated_at", { ascending: false })
       .limit(100),
+    canManagePackages
+      ? getPhaseOneAdminClient()
+          .from("phaseone_events")
+          .select(
+            "id, title, slug, reporting_at, venue, has_sign_in_pin, has_sign_out_pin, is_published, updated_at",
+          )
+          .order("reporting_at", { ascending: true, nullsFirst: false })
+          .limit(200)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const hasLoadError = Boolean(opportunitiesResult.error || newsResult.error);
+  const hasLoadError = Boolean(
+    opportunitiesResult.error || newsResult.error || packagesResult.error,
+  );
   if (hasLoadError) {
     console.error("Unable to load CMS content", {
       opportunitiesCode: opportunitiesResult.error?.code,
       newsCode: newsResult.error?.code,
+      packagesCode: packagesResult.error?.code,
     });
     throw new Error("CMS content could not be loaded");
   }
 
-  if (!opportunitiesResult.data || !newsResult.data) {
+  if (!opportunitiesResult.data || !newsResult.data || !packagesResult.data) {
     throw new Error("CMS content query returned no result set");
   }
 
   const opportunities = opportunitiesResult.data;
   const newsPosts = newsResult.data;
+  const packages = packagesResult.data;
 
   return (
     <div className="site-shell">
@@ -81,19 +96,18 @@ export default async function ContentAdminPage({
             <p className="eyebrow">Native CMS</p>
             <h1>Manage volunteer content</h1>
             <p className="muted">
-              Opportunities and news are owned by this portal. Opportunity
-              registration remains a YM Hub link-out.
+              Manage packages and news here. Opportunity listings remain visible,
+              but creation and editing are temporarily paused.
             </p>
           </div>
           <div className="actions">
+            {canManagePackages ? (
+              <Link className="button button-primary" href="/admin/events/new">
+                New package
+              </Link>
+            ) : null}
             <Link className="button button-secondary" href="/admin/content/news/new">
               New news post
-            </Link>
-            <Link
-              className="button button-primary"
-              href="/admin/content/opportunities/new"
-            >
-              New opportunity
             </Link>
           </div>
         </div>
@@ -108,15 +122,101 @@ export default async function ContentAdminPage({
             {errorMessage}
           </div>
         ) : null}
+
+        {canManagePackages ? (
+          <section className="section" aria-labelledby="packages-title">
+            <div className="section-header">
+              <div>
+                <p className="eyebrow">Volunteer operations</p>
+                <h2 id="packages-title">Packages</h2>
+              </div>
+              <Link className="text-link" href="/packages">
+                View public packages
+              </Link>
+            </div>
+            <div className="table-wrap">
+              <table className="content-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Package</th>
+                    <th scope="col">Reporting</th>
+                    <th scope="col">Access</th>
+                    <th scope="col">Visibility</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {packages.map((volunteerPackage) => (
+                    <tr key={volunteerPackage.id}>
+                      <td>
+                        <strong>{volunteerPackage.title}</strong>
+                        <span className="table-subtext">
+                          /packages/{volunteerPackage.slug}
+                        </span>
+                      </td>
+                      <td>
+                        {volunteerPackage.reporting_at
+                          ? formatSingaporeDateTime(volunteerPackage.reporting_at)
+                          : "Not set"}
+                      </td>
+                      <td>
+                        {volunteerPackage.has_sign_in_pin &&
+                        volunteerPackage.has_sign_out_pin
+                          ? "Both PINs configured"
+                          : "Configuration incomplete"}
+                      </td>
+                      <td>
+                        <span className="status-pill">
+                          {getPackageListingStatus(
+                            volunteerPackage.reporting_at,
+                            volunteerPackage.is_published,
+                          )}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="actions">
+                          <Link
+                            className="text-link"
+                            href={`/admin/events/${volunteerPackage.id}/edit`}
+                          >
+                            Edit
+                          </Link>
+                          {volunteerPackage.is_published ? (
+                            <Link
+                              className="text-link"
+                              href={`/packages/${volunteerPackage.slug}`}
+                              target="_blank"
+                            >
+                              View
+                            </Link>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {packages.length === 0 ? (
+                    <tr>
+                      <td colSpan={5}>No package records.</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : null}
+
         <section className="section" aria-labelledby="opportunities-title">
           <div className="section-header">
             <div>
-              <p className="eyebrow">Opportunity listings</p>
+              <p className="eyebrow">Read-only listings</p>
               <h2 id="opportunities-title">Opportunities</h2>
             </div>
             <Link className="text-link" href="/opportunities">
               View public listings
             </Link>
+          </div>
+          <div className="notice" role="status">
+            Opportunity creation and editing are temporarily paused.
           </div>
           <div className="table-wrap">
             <table className="content-table">
@@ -126,7 +226,6 @@ export default async function ContentAdminPage({
                   <th scope="col">Status</th>
                   <th scope="col">Starts</th>
                   <th scope="col">Updated</th>
-                  <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -143,19 +242,11 @@ export default async function ContentAdminPage({
                     </td>
                     <td>{formatSingaporeDateTime(opportunity.starts_at)}</td>
                     <td>{formatSingaporeDateTime(opportunity.updated_at)}</td>
-                    <td>
-                      <Link
-                        className="text-link"
-                        href={`/admin/content/opportunities/${opportunity.id}/edit`}
-                      >
-                        Edit
-                      </Link>
-                    </td>
                   </tr>
                 ))}
                 {opportunities.length === 0 ? (
                   <tr>
-                    <td colSpan={5}>No opportunity records.</td>
+                    <td colSpan={4}>No opportunity records.</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -224,12 +315,12 @@ export default async function ContentAdminPage({
           <p className="eyebrow">Publishing control</p>
           <h2 id="workflow-title">Role-based workflow</h2>
           <p>
-            Editors can create drafts and submit content for review. Publishers
-            and administrators can schedule, publish, and archive records.
-            Database triggers record immutable revisions and status changes.
+            Package access is limited to attendance managers and administrators.
+            News editors can create drafts, while publishers and administrators can
+            schedule and publish posts.
           </p>
           <p className="muted">
-            Current access: {access.canPublish ? "Publisher" : "Editor"}
+            Current news access: {access.canPublish ? "Publisher" : "Editor"}
           </p>
         </section>
       </main>

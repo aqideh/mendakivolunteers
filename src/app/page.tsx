@@ -1,106 +1,113 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
+import { CountUpStat } from "@/components/phaseone/count-up-stat";
 import { PortalHeader } from "@/components/portal-header";
+import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 
-const foundations = [
+import styles from "./landing.module.css";
+
+export const metadata: Metadata = {
+  title: "Volunteer with MENDAKI",
+  description:
+    "Discover MENDAKI volunteer opportunities and make a difference in your community.",
+};
+
+export const dynamic = "force-dynamic";
+
+const outcomes = [
+  { emoji: "🎓", label: "Confident Learners" },
+  { emoji: "🏠", label: "Stronger Families" },
+  { emoji: "💼", label: "Future Ready Workforce" },
+  { emoji: "🌱", label: "Thriving Community" },
+];
+
+const steps = [
   {
-    title: "Secure identity boundary",
-    body: "Supabase Auth identities remain separate from the authoritative YM Hub volunteer identifier until a controlled link is made.",
+    number: "01",
+    title: "Discover",
+    description: "Browse current opportunities that match your time and interests.",
   },
   {
-    title: "App-owned content",
-    body: "Opportunity discovery and volunteer news are managed in the portal without taking ownership of YM Hub registration records.",
+    number: "02",
+    title: "Register",
+    description: "Continue securely to Volunteer.gov.sg to register your interest.",
   },
   {
-    title: "Database-enforced access",
-    body: "Role checks, row-level security, immutable revisions, and server-only integration credentials are enforced below the interface.",
+    number: "03",
+    title: "Volunteer",
+    description: "Receive event updates and contribute alongside the community.",
   },
 ];
 
-export default function Home() {
-  return (
-    <div className="site-shell">
-      <PortalHeader status="Volunteer portal" />
+export default async function Home() {
+  const opportunities = await getUpcomingPhaseOneOpportunities();
 
-      <main className="page-frame">
-        <section className="hero">
-          <div>
-            <p className="eyebrow">MENDAKI volunteer web portal</p>
-            <h1>A secure engagement layer for volunteers.</h1>
-            <p className="lede">
-              Browse opportunities and volunteer news in this portal. Official
-              registration, attendance verification, and verified hours remain
-              in YM Hub.
+  return (
+    <div className="site-shell phaseone-shell">
+      <PortalHeader status="Community volunteers" lite />
+      <main className={`phaseone-frame ${styles.frame}`}>
+        <section className={styles.hero} aria-labelledby="landing-title">
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>Volunteer with MENDAKI</p>
+            <h1 id="landing-title">
+              <span>Make A Difference</span>
+              <span>In Your Community.</span>
+            </h1>
+            <p className={styles.lede}>
+              Discover meaningful opportunities, stay informed, and contribute to
+              outcomes that strengthen our community.
             </p>
-            <div className="actions">
+
+            <div className={styles.actions}>
               <Link className="button button-primary" href="/opportunities">
-                Browse opportunities
+                Explore opportunities
               </Link>
-              <Link className="button button-secondary" href="/news">
-                Read volunteer news
+              <Link className="button button-secondary" href="/updates">
+                View updates
               </Link>
-              <Link className="button button-secondary" href="/login">
-                Volunteer sign in
-              </Link>
+            </div>
+
+            <CountUpStat
+              className={styles.opportunityStat}
+              value={opportunities.length}
+              label="Active volunteer opportunities"
+            />
+          </div>
+
+          <div className={styles.outcomePanel}>
+            <p className={styles.outcomeKicker}>Together, we work towards</p>
+            <div className={styles.outcomes} aria-label="MENDAKI community outcomes">
+              {outcomes.map(({ emoji, label }) => (
+                <div className={styles.outcomePill} key={label}>
+                  <span className={styles.outcomeEmoji} aria-hidden="true">
+                    {emoji}
+                  </span>
+                  <span>{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="section" aria-labelledby="available-title">
-          <p className="eyebrow">Available services</p>
-          <h2 id="available-title">Volunteer content and secure account access</h2>
-          <div className="card-grid">
-            <article className="card">
-              <h3>Opportunity discovery</h3>
-              <p className="muted">
-                App-managed listings provide clear descriptions and link to the
-                official YM Hub registration destination.
-              </p>
-              <Link className="text-link" href="/opportunities">
-                View opportunities
-              </Link>
-            </article>
-            <article className="card">
-              <h3>Volunteer news</h3>
-              <p className="muted">
-                Staff-managed updates and announcements are published separately
-                from volunteer records in YM Hub.
-              </p>
-              <Link className="text-link" href="/news">
-                View news
-              </Link>
-            </article>
-            <article className="card">
-              <h3>Authenticated dashboard</h3>
-              <p className="muted">
-                Supabase authentication and row-level policies isolate volunteer
-                accounts and staff permissions.
-              </p>
-              <Link className="text-link" href="/dashboard">
-                Open dashboard
-              </Link>
-            </article>
+        <section className={styles.path} aria-labelledby="landing-path-title">
+          <div className={styles.pathHeading}>
+            <p className="eyebrow">How it works</p>
+            <h2 id="landing-path-title">Your next opportunity is a few taps away.</h2>
           </div>
-        </section>
-
-        <section className="section" id="foundation">
-          <p className="eyebrow">Platform principles</p>
-          <h2>Designed to supplement YM Hub</h2>
-          <div className="card-grid">
-            {foundations.map((foundation) => (
-              <article className="card" key={foundation.title}>
-                <h3>{foundation.title}</h3>
-                <p className="muted">{foundation.body}</p>
+          <div className={styles.pathGrid}>
+            {steps.map(({ number, title, description }) => (
+              <article className={styles.pathStep} key={number}>
+                <span className={styles.pathNumber}>{number}</span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                </div>
               </article>
             ))}
           </div>
         </section>
       </main>
-
-      <footer className="site-footer">
-        Official registration, attendance verification, and verified hours remain
-        in YM Hub.
-      </footer>
     </div>
   );
 }

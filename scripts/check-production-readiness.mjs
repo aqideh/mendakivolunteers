@@ -2,13 +2,23 @@ const required = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "VOLUNTEER_GOV_SG_MENDAKI_URL",
+  "CRON_SECRET",
+  "PIN_COOKIE_SECRET",
   "AUTH_ALLOW_SIGN_UP",
-  "YMHUB_REGISTRATION_ALLOWED_HOSTS",
 ];
 
 const secureUrlSettings = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
+  "VOLUNTEER_GOV_SG_MENDAKI_URL",
+];
+
+const secretSettings = [
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "CRON_SECRET",
+  "PIN_COOKIE_SECRET",
 ];
 
 const errors = [];
@@ -17,8 +27,8 @@ if (process.env.APP_ENV !== "production") {
   errors.push("APP_ENV must be production.");
 }
 
-if (!["true", "false"].includes(process.env.AUTH_ALLOW_SIGN_UP ?? "")) {
-  errors.push("AUTH_ALLOW_SIGN_UP must be explicitly set to true or false.");
+if (process.env.AUTH_ALLOW_SIGN_UP !== "false") {
+  errors.push("AUTH_ALLOW_SIGN_UP must be false for the Phase One staff-only release.");
 }
 
 for (const name of required) {
@@ -28,45 +38,29 @@ for (const name of required) {
     continue;
   }
 
-  if (/PROTO|PLACEHOLDER|\[[A-Z0-9_]+\]/i.test(value)) {
+  if (/PROTO|PLACEHOLDER|CHANGE_ME|\[[A-Z0-9_]+\]/i.test(value)) {
     errors.push(`${name} still contains a prototype or placeholder value.`);
   }
 }
 
-const registrationHosts = process.env.YMHUB_REGISTRATION_ALLOWED_HOSTS
-  ?.split(",")
-  .map((host) => host.trim().toLowerCase())
-  .filter(Boolean);
-
-if (registrationHosts) {
-  for (const host of registrationHosts) {
-    if (
-      !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(
-        host,
-      )
-    ) {
-      errors.push(
-        "YMHUB_REGISTRATION_ALLOWED_HOSTS must contain DNS hostnames only.",
-      );
-    }
-
-    if (host === "example.invalid" || /proto|placeholder/i.test(host)) {
-      errors.push(
-        "YMHUB_REGISTRATION_ALLOWED_HOSTS must not contain development hosts.",
-      );
-    }
+for (const name of secretSettings) {
+  const value = process.env[name]?.trim();
+  if (value && value.length < 32) {
+    errors.push(`${name} must contain at least 32 characters.`);
   }
 }
 
-errors.push(
-  "Production deployment is blocked until the read-only Salesforce YM Hub adapter is implemented and verified.",
-);
+if (
+  process.env.SUPABASE_SERVICE_ROLE_KEY &&
+  process.env.PIN_COOKIE_SECRET &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY === process.env.PIN_COOKIE_SECRET
+) {
+  errors.push("PIN_COOKIE_SECRET must be different from SUPABASE_SERVICE_ROLE_KEY.");
+}
 
 for (const name of secureUrlSettings) {
   const value = process.env[name]?.trim();
-  if (!value) {
-    continue;
-  }
+  if (!value) continue;
 
   try {
     const url = new URL(value);
@@ -89,4 +83,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log("Production readiness configuration passed.");
+console.log("Phase One production readiness configuration passed.");
