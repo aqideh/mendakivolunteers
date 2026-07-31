@@ -1,0 +1,192 @@
+import { cookies } from "next/headers";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { PackageActionPinForm } from "@/components/phaseone/package-action-pin-form";
+import { PortalHeader } from "@/components/portal-header";
+import { formatSingaporeDateTime } from "@/lib/content/dates";
+import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
+import { evaluateBriefingAccess } from "@/lib/phaseone/package-briefing";
+import {
+  hasPackageActionAccess,
+  packageActionCookieName,
+  packageActionLabel,
+  readPackageActionAccessToken,
+  type PackageAction,
+} from "@/lib/phaseone/package-action-access";
+
+import styles from "../../packages/[slug]/package-detail.module.css";
+
+export const dynamic = "force-dynamic";
+export const metadata = {
+  robots: { index: false, follow: false },
+  referrer: "no-referrer" as const,
+};
+
+type UpdatePageProps = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ access?: string; action?: string }>;
+};
+
+const actions: PackageAction[] = ["sign-in", "sign-out"];
+
+function actionConfiguration(
+  volunteerPackage: {
+    has_sign_in_pin: boolean;
+    has_sign_out_pin: boolean;
+    sign_in_pin_updated_at: string | null;
+    sign_out_pin_updated_at: string | null;
+  },
+  action: PackageAction,
+) {
+  return action === "sign-in"
+    ? {
+        configured: volunteerPackage.has_sign_in_pin,
+        updatedAt: volunteerPackage.sign_in_pin_updated_at,
+      }
+    : {
+        configured: volunteerPackage.has_sign_out_pin,
+        updatedAt: volunteerPackage.sign_out_pin_updated_at,
+      };
+}
+
+export default async function UpdatePage({ params, searchParams }: UpdatePageProps) {
+  const { slug } = await params;
+  const { access, action: actionParam } = await searchParams;
+  const supabase = getPhaseOneAdminClient();
+  const { data: volunteerPackage, error } = await supabase
+    .from("phaseone_events")
+    .select(
+      "id, title, reporting_at, venue, briefing_url, briefing_available_at, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
+    )
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Unable to load volunteer update", { code: error.code, slug });
+    throw new Error("Volunteer update details could not be loaded");
+  }
+  if (!volunteerPackage) notFound();
+
+  const briefing = evaluateBriefingAccess({
+    isPublished: true,
+    briefingUrl: volunteerPackage.briefing_url,
+    briefingAvailableAt: volunteerPackage.briefing_available_at,
+  });
+
+  const cookieStore = await cookies();
+  const secret = getPhaseOneServerSecret();
+  const actionStates = actions.map((action) => {
+    const configuration = actionConfiguration(volunteerPackage, action);
+    const claims = readPackageActionAccessToken(
+      cookieStore.get(packageActionCookieName(volunteerPackage.id, action))?.value,
+      secret,
+    );
+    return {
+      action,
+      configured: configuration.configured,
+      unlocked: hasPackageActionAccess(
+        claims,
+        volunteerPackage.id,
+        action,
+        configuration.updatedAt,
+      ),
+    };
+  });
+
+  const errorAction = actions.includes(actionParam as PackageAction)
+    ? (actionParam as PackageAction)
+    : null;
+
+  return (
+    <div className="site-shell phaseone-shell">
+      <PortalHeader status="Volunteer update" lite />
+      <main className="phaseone-frame">
+        <Link className="back-link" href="/updates">
+          ← Updates
+        </Link>
+        <article className={styles.card}>
+          <p className="phaseone-opportunity-date">Volunteer event update</p>
+          <h1>{volunteerPackage.title}</h1>
+          <dl className="phaseone-opportunity-details">
+            <div>
+              <dt>Report</dt>
+              <dd>
+                {volunteerPackage.reporting_at
+                  ? formatSingaporeDateTime(volunteerPackage.reporting_at)
+                  : "Check with the event team"}
+              </dd>
+            </div>
+            <div>
+              <dt>Venue</dt>
+              <dd>{volunteerPackage.venue ?? "Check with the event team"}</dd>
+            </div>
+          </dl>
+
+          {briefing.available ? (
+            <a
+              className={`button button-primary ${styles.briefing}`}
+              href={`/api/phaseone/packages/${slug}/go/briefing`}
+              target="_blank"
+              rel="noopener noreferrer"
+              referrerPolicy="no-referrer"
+            >
+              View briefing
+            </a>
+          ) : (
+            <button
+              className={`button ${styles.briefing} ${styles.briefingDisabled}`}
+              type="button"
+              disabled
+            >
+              Briefing not started
+            </button>
+          )}
+
+          {access === "expired" && errorAction ? (
+            <p className="phaseone-form-error" role="alert">
+              Your {packageActionLabel(errorAction).toLowerCase()} access expired. Enter that PIN again.
+            </p>
+          ) : null}
+          {access === "unavailable" && errorAction ? (
+            <p className="phaseone-form-error" role="alert">
+              {packageActionLabel(errorAction)} has not been configured yet.
+            </p>
+          ) : null}
+
+          <div className={styles.actionGrid}>
+            {actionStates.map(({ action, configured, unlocked }) => (
+              <section className={`panel ${styles.actionPanel}`} key={action}>
+                <h2>{packageActionLabel(action)}</h2>
+                <p className="phaseone-access-note">
+                  {action === "sign-in"
+                    ? "The sign-in PIN will be provided by staff when you arrive on-site."
+                    : "The sign-out PIN will be provided by staff before you leave the event."}
+                </p>
+                {!configured ? (
+                  <p>This action has not been enabled by the event team.</p>
+                ) : unlocked ? (
+                  <>
+                    <a
+                      className="button button-primary"
+                      href={`/api/phaseone/packages/${slug}/go/${action}`}
+                      referrerPolicy="no-referrer"
+                    >
+                      Open {packageActionLabel(action).toLowerCase()}
+                    </a>
+                    <p className="phaseone-access-note">
+                      Access remains valid for five minutes or until this PIN changes.
+                    </p>
+                  </>
+                ) : (
+                  <PackageActionPinForm slug={slug} action={action} />
+                )}
+              </section>
+            ))}
+          </div>
+        </article>
+      </main>
+    </div>
+  );
+}
