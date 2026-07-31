@@ -9,7 +9,7 @@ export function CountUpStat({
 }: {
   value: number;
   label: string;
-  className?: string;
+  className?: string | undefined;
 }) {
   const [displayValue, setDisplayValue] = useState(0);
 
