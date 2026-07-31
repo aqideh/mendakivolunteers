@@ -16,10 +16,28 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const outcomes = [
-  "Confident Learners",
-  "Stronger Families",
-  "Future Ready Workforce",
-  "Thriving Community",
+  { emoji: "🎓", label: "Confident Learners" },
+  { emoji: "🏠", label: "Stronger Families" },
+  { emoji: "💼", label: "Future Ready Workforce" },
+  { emoji: "🌱", label: "Thriving Community" },
+];
+
+const steps = [
+  {
+    number: "01",
+    title: "Discover",
+    description: "Browse current opportunities that match your time and interests.",
+  },
+  {
+    number: "02",
+    title: "Register",
+    description: "Continue securely to Volunteer.gov.sg to register your interest.",
+  },
+  {
+    number: "03",
+    title: "Volunteer",
+    description: "Receive event updates and contribute alongside the community.",
+  },
 ];
 
 export default async function Home() {
@@ -31,63 +49,62 @@ export default async function Home() {
       <main className={`phaseone-frame ${styles.frame}`}>
         <section className={styles.hero} aria-labelledby="landing-title">
           <div className={styles.heroCopy}>
-            <p className="eyebrow">Volunteer with MENDAKI</p>
-            <h1 id="landing-title">Make A Difference In Your Community.</h1>
-            <p className="lede">
-              Find meaningful opportunities, access event updates, and take part in
-              building a stronger community together.
+            <p className={styles.eyebrow}>Volunteer with MENDAKI</p>
+            <h1 id="landing-title">
+              <span>Make A Difference</span>
+              <span>In Your Community.</span>
+            </h1>
+            <p className={styles.lede}>
+              Discover meaningful opportunities, stay informed, and contribute to
+              outcomes that strengthen our community.
             </p>
+
             <div className={styles.actions}>
               <Link className="button button-primary" href="/opportunities">
                 Explore opportunities
               </Link>
-              <Link className="button button-secondary" href="/login">
-                Staff sign in
+              <Link className="button button-secondary" href="/updates">
+                View updates
               </Link>
             </div>
+
+            <CountUpStat
+              className={styles.opportunityStat}
+              value={opportunities.length}
+              label="Active volunteer opportunities"
+            />
           </div>
 
-          <div className={styles.outcomes} aria-label="MENDAKI community outcomes">
-            {outcomes.map((outcome) => (
-              <p key={outcome}>{outcome}</p>
-            ))}
+          <div className={styles.outcomePanel}>
+            <p className={styles.outcomeKicker}>Together, we work towards</p>
+            <div className={styles.outcomes} aria-label="MENDAKI community outcomes">
+              {outcomes.map(({ emoji, label }) => (
+                <div className={styles.outcomePill} key={label}>
+                  <span className={styles.outcomeEmoji} aria-hidden="true">
+                    {emoji}
+                  </span>
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </section>
-
-        <section className={styles.statistics} aria-label="Volunteer statistics">
-          <CountUpStat
-            className={styles.statCard}
-            value={opportunities.length}
-            label="Active volunteer opportunities"
-          />
-          <article className={styles.statCard}>
-            <strong>4</strong>
-            <span>Community outcomes we work towards</span>
-          </article>
         </section>
 
         <section className={styles.path} aria-labelledby="landing-path-title">
-          <p className="eyebrow">Start here</p>
-          <h2 id="landing-path-title">Your next opportunity is a few taps away.</h2>
-          <div className="card-grid">
-            <article className="card">
-              <h3>Discover</h3>
-              <p className="muted">
-                Browse current opportunities that match your time and interests.
-              </p>
-            </article>
-            <article className="card">
-              <h3>Volunteer</h3>
-              <p className="muted">
-                Register securely and receive the details needed for the event.
-              </p>
-            </article>
-            <article className="card">
-              <h3>Stay updated</h3>
-              <p className="muted">
-                Access event briefings, sign-in and sign-out resources on-site.
-              </p>
-            </article>
+          <div className={styles.pathHeading}>
+            <p className="eyebrow">How it works</p>
+            <h2 id="landing-path-title">Your next opportunity is a few taps away.</h2>
+          </div>
+          <div className={styles.pathGrid}>
+            {steps.map(({ number, title, description }) => (
+              <article className={styles.pathStep} key={number}>
+                <span className={styles.pathNumber}>{number}</span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
       </main>
