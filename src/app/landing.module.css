@@ -1,99 +1,229 @@
 .frame {
-  width: min(68rem, calc(100% - 1.5rem));
+  width: min(72rem, calc(100% - 1.5rem));
 }
 
 .hero {
+  position: relative;
   display: grid;
-  gap: 1.5rem;
-  border-radius: 1.25rem;
-  padding: clamp(1.5rem, 6vw, 4rem);
+  gap: 2rem;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  padding: clamp(1.5rem, 5vw, 4.5rem);
   color: #ffffff;
-  background: linear-gradient(135deg, var(--brand), #113f73);
-  box-shadow: 0 20px 50px rgba(20, 43, 56, 0.18);
+  background:
+    radial-gradient(circle at 82% 14%, rgba(255, 211, 75, 0.28), transparent 22rem),
+    radial-gradient(circle at 18% 95%, rgba(255, 255, 255, 0.12), transparent 18rem),
+    linear-gradient(135deg, #0d4c86, #0a315c 72%);
+  box-shadow: 0 24px 60px rgba(20, 43, 56, 0.2);
+}
+
+.hero::after {
+  position: absolute;
+  right: -5rem;
+  bottom: -7rem;
+  width: 18rem;
+  height: 18rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4rem;
+  content: "";
+  transform: rotate(18deg);
+}
+
+.heroCopy,
+.outcomePanel {
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 0.2rem;
+  background: #ffd34b;
+  content: "";
 }
 
 .heroCopy h1 {
-  max-width: 13ch;
-  margin-bottom: 1rem;
-  font-size: clamp(2.6rem, 11vw, 5.5rem);
-  line-height: 0.94;
+  max-width: 11ch;
+  margin-bottom: 1.2rem;
+  font-size: clamp(3rem, 8vw, 6rem);
+  line-height: 0.92;
+  letter-spacing: -0.05em;
 }
 
-.heroCopy :global(.eyebrow),
-.heroCopy :global(.lede) {
-  color: inherit;
+.heroCopy h1 span {
+  display: block;
+}
+
+.lede {
+  max-width: 38rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
 }
 
 .actions :global(.button-secondary) {
-  border-color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.58);
   color: #ffffff;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+}
+
+.opportunityStat {
+  display: inline-grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.opportunityStat strong {
+  min-width: 2ch;
+  font-size: clamp(2.2rem, 6vw, 3.5rem);
+  line-height: 1;
+}
+
+.opportunityStat span {
+  max-width: 13rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 750;
+}
+
+.outcomePanel {
+  align-self: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1.35rem;
+  padding: clamp(1rem, 3vw, 1.4rem);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.outcomeKicker {
+  margin: 0 0 0.85rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .outcomes {
   display: grid;
-  gap: 0;
-  align-self: end;
-  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  gap: 0.75rem;
 }
 
-.outcomes p {
-  margin: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 0.7rem 0;
-  font-size: clamp(1.05rem, 4vw, 1.35rem);
-  font-weight: 800;
+.outcomePill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  border: 1px solid rgba(20, 43, 56, 0.1);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem 0.45rem 0.5rem;
+  color: #12334f;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 24px rgba(5, 30, 56, 0.12);
+  font-weight: 820;
 }
 
-.statistics {
+.outcomeEmoji {
   display: grid;
-  gap: 1rem;
-  margin: 1rem 0 3rem;
-}
-
-.statCard {
-  display: grid;
-  gap: 0.2rem;
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  background: var(--surface);
-  box-shadow: 0 12px 34px rgba(20, 43, 56, 0.08);
-}
-
-.statCard strong {
-  font-size: clamp(2.5rem, 10vw, 4rem);
-  line-height: 1;
-}
-
-.statCard span {
-  color: var(--muted);
-  font-weight: 750;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: #edf5fb;
+  font-size: 1.15rem;
 }
 
 .path {
-  margin-top: 2rem;
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 3rem;
 }
 
-.path h2 {
+.pathHeading h2 {
   max-width: 19ch;
-  margin-bottom: 1.25rem;
+  margin: 0;
 }
 
-@media (min-width: 760px) {
+.pathGrid {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.pathStep {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding: 1.15rem 0;
+}
+
+.pathNumber {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.pathStep h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+}
+
+.pathStep p {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (min-width: 780px) {
   .hero {
-    grid-template-columns: minmax(0, 1.45fr) minmax(15rem, 0.55fr);
-    min-height: 31rem;
+    grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
+    min-height: 34rem;
   }
 
-  .statistics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .outcomePanel {
+    justify-self: end;
+    width: min(100%, 24rem);
+  }
+
+  .path {
+    grid-template-columns: minmax(14rem, 0.38fr) minmax(0, 0.62fr);
+    align-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .outcomePill,
+  .opportunityStat {
+    scroll-behavior: auto;
   }
 }
