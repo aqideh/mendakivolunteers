@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+export function getCountUpDisplayValue(value: number, progress: number): number {
+  const boundedProgress = Math.min(Math.max(progress, 0), 1);
+  const easedProgress = 1 - Math.pow(1 - boundedProgress, 3);
+  return Math.round(value * easedProgress);
+}
+
 export function CountUpStat({
   value,
   label,
@@ -19,8 +25,10 @@ export function CountUpStat({
     ).matches;
 
     if (reducedMotion || value <= 0) {
-      setDisplayValue(value);
-      return;
+      const frame = requestAnimationFrame(() => {
+        setDisplayValue(value);
+      });
+      return () => cancelAnimationFrame(frame);
     }
 
     const duration = 800;
@@ -28,9 +36,8 @@ export function CountUpStat({
     let frame = 0;
 
     const animate = (now: number) => {
-      const progress = Math.min((now - startedAt) / duration, 1);
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
-      setDisplayValue(Math.round(value * easedProgress));
+      const progress = (now - startedAt) / duration;
+      setDisplayValue(getCountUpDisplayValue(value, progress));
 
       if (progress < 1) {
         frame = requestAnimationFrame(animate);
