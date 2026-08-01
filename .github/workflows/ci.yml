@@ -80,7 +80,7 @@ jobs:
 
       - name: Preserve failed audit report
         if: steps.audit.outputs.status != '0'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: npm-audit-report
           path: npm-audit.json
