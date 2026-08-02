@@ -38,9 +38,9 @@
     "@types/node": "22.20.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "eslint": "9.39.4",
-    "eslint-config-next": "16.2.10",
-    "supabase": "2.109.1",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.12",
+    "supabase": "2.110.0",
     "typescript": "5.9.3",
     "vitest": "4.1.10"
   },
