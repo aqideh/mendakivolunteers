@@ -55,9 +55,11 @@ export function TimeslotEditor({ initialTimeslots }: { initialTimeslots: Timeslo
     setTimeslots((current) => [
       ...current,
       {
-        ...source,
-        id: undefined,
         clientId: `copy-${nextClientId.current++}`,
+        label: source.label,
+        startsAt: source.startsAt,
+        endsAt: source.endsAt,
+        status: source.status,
       },
     ]);
   }
