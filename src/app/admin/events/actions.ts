@@ -93,12 +93,17 @@ export async function saveEvent(formData: FormData) {
     redirect(`${eventPath(parsed.data.id)}?error=${encode(publishError)}`);
   }
 
+  const firstTimeslot = parsed.data.timeslots.at(0);
+  if (!firstTimeslot) {
+    redirect(`${eventPath(parsed.data.id)}?error=${encode("At least one timeslot is required.")}`);
+  }
+
   const pinUpdate = buildPackagePinUpdate(pinInput);
   const values = {
     external_opportunity_id: parsed.data.externalOpportunityId,
     title: parsed.data.title,
     slug: parsed.data.slug,
-    reporting_at: parsed.data.timeslots[0].startsAt,
+    reporting_at: firstTimeslot.startsAt,
     venue: parsed.data.venue,
     navigation_destination: parsed.data.navigationDestination,
     attire_notes: parsed.data.attireNotes,
@@ -164,7 +169,7 @@ export async function saveEvent(formData: FormData) {
       external_opportunity_id: parsed.data.externalOpportunityId,
       title: parsed.data.title,
       slug: parsed.data.slug,
-      reporting_at: parsed.data.timeslots[0].startsAt,
+      reporting_at: firstTimeslot.startsAt,
       venue: parsed.data.venue,
       navigation_destination: parsed.data.navigationDestination,
       attire_notes: parsed.data.attireNotes,
