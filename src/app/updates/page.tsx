@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
+import { buildDirectionsLinks } from "@/lib/phaseone/directions";
 import {
   getVisibleVolunteerPackages,
   type VolunteerPackage,
@@ -13,7 +14,7 @@ import styles from "../packages/packages.module.css";
 export const metadata: Metadata = {
   title: "Volunteer updates",
   description:
-    "Access briefing, sign-in and sign-out resources for MENDAKI volunteer events.",
+    "Access directions, preparation guidance, briefing, sign-in and sign-out resources for MENDAKI volunteer events.",
   robots: { index: false, follow: false },
 };
 
@@ -21,6 +22,7 @@ export const dynamic = "force-dynamic";
 
 function UpdateCard({ volunteerPackage }: { volunteerPackage: VolunteerPackage }) {
   const ready = volunteerPackage.has_sign_in_pin && volunteerPackage.has_sign_out_pin;
+  const directions = buildDirectionsLinks(volunteerPackage.navigation_destination);
 
   return (
     <article className={styles.card}>
@@ -46,13 +48,21 @@ function UpdateCard({ volunteerPackage }: { volunteerPackage: VolunteerPackage }
         <dl className="phaseone-opportunity-details">
           <div>
             <dt>Venue</dt>
-            <dd>{volunteerPackage.venue ?? "Check with the event team"}</dd>
+            <dd>{volunteerPackage.venue}</dd>
           </div>
           <div>
             <dt>Access</dt>
             <dd>{ready ? "Sign-in and sign-out ready" : "Not available yet"}</dd>
           </div>
         </dl>
+        <div className={styles.directionLinks} aria-label={`Directions to ${volunteerPackage.venue}`}>
+          <a href={directions.appleMaps} target="_blank" rel="noopener noreferrer">
+            Apple Maps
+          </a>
+          <a href={directions.googleMaps} target="_blank" rel="noopener noreferrer">
+            Google Maps
+          </a>
+        </div>
         <Link
           className={`button button-primary ${styles.cta}`}
           href={`/updates/${volunteerPackage.slug}`}
@@ -103,8 +113,8 @@ export default async function UpdatesPage() {
           <p className="eyebrow">Volunteer event resources</p>
           <h1>Your event updates.</h1>
           <p className="lede">
-            Open an event update for its briefing, sign-in and sign-out resources.
-            Access details are provided by the event team.
+            Open an event update for directions, preparation guidance, briefing,
+            sign-in and sign-out resources.
           </p>
         </section>
 
