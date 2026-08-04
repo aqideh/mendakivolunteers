@@ -77,11 +77,11 @@ export function EventForm({
 
       <div className="phaseone-admin-grid">
         <div className="form-field">
-          <label htmlFor="title">Package title</label>
+          <label htmlFor="title">Event title</label>
           <input defaultValue={event?.title} id="title" maxLength={160} name="title" required />
         </div>
         <div className="form-field">
-          <label htmlFor="slug">Public package URL slug</label>
+          <label htmlFor="slug">Public journey URL slug</label>
           <input
             autoCapitalize="none"
             defaultValue={event?.slug}
@@ -228,7 +228,7 @@ export function EventForm({
 
       <label className="checkbox-row">
         <input defaultChecked={event?.is_published} name="isPublished" type="checkbox" />
-        Publish volunteer package
+        Publish event guide to Your Volunteer Journey
       </label>
       <p className="muted">
         Publishing requires at least one current or future scheduled timeslot, a venue,
@@ -238,7 +238,7 @@ export function EventForm({
 
       <div className="actions">
         <button className="button button-primary" type="submit">
-          {event ? "Save package" : "Create package"}
+          {event ? "Save event guide" : "Create event guide"}
         </button>
       </div>
     </form>
