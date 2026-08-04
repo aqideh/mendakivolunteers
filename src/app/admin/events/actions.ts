@@ -26,9 +26,12 @@ function eventPath(id?: string): string {
 
 function revalidateEventRoutes(slug?: string) {
   revalidatePath("/admin/events");
+  revalidatePath("/admin/content");
   revalidatePath("/packages");
+  revalidatePath("/updates");
   if (slug) {
     revalidatePath(`/packages/${slug}`);
+    revalidatePath(`/updates/${slug}`);
     revalidatePath(`/events/${slug}`);
   }
 }
@@ -65,6 +68,8 @@ export async function saveEvent(formData: FormData) {
   const publishError = getPackagePublishError({
     isPublished: parsed.data.isPublished,
     reportingAt: parsed.data.reportingAt,
+    venue: parsed.data.venue,
+    navigationDestination: parsed.data.navigationDestination,
     briefingUrl: parsed.data.briefingUrl,
     briefingAvailableAt: parsed.data.briefingAvailableAt,
     signInUrl: parsed.data.signInUrl,
@@ -83,6 +88,9 @@ export async function saveEvent(formData: FormData) {
     slug: parsed.data.slug,
     reporting_at: parsed.data.reportingAt,
     venue: parsed.data.venue,
+    navigation_destination: parsed.data.navigationDestination,
+    attire_notes: parsed.data.attireNotes,
+    preparation_notes: parsed.data.preparationNotes,
     briefing_url: parsed.data.briefingUrl,
     briefing_available_at: parsed.data.briefingAvailableAt,
     whatsapp_url: parsed.data.whatsappUrl,
@@ -119,6 +127,9 @@ export async function saveEvent(formData: FormData) {
       slug: parsed.data.slug,
       reporting_at: parsed.data.reportingAt,
       venue: parsed.data.venue,
+      navigation_destination: parsed.data.navigationDestination,
+      attire_notes: parsed.data.attireNotes,
+      preparation_notes: parsed.data.preparationNotes,
       briefing_url: parsed.data.briefingUrl,
       briefing_available_at: parsed.data.briefingAvailableAt,
       whatsapp_url: parsed.data.whatsappUrl,
