@@ -13,6 +13,8 @@ function completePackage(overrides: Partial<PublishInput> = {}): PublishInput {
   return {
     isPublished: true,
     reportingAt: "2026-08-01T01:00:00.000Z",
+    venue: "Test venue",
+    navigationDestination: "Test venue, Singapore 123456",
     briefingUrl: null,
     briefingAvailableAt: null,
     signInUrl: "https://example.com/sign-in",
@@ -55,6 +57,15 @@ describe("package CMS policy", () => {
         },
       ),
     ).toEqual({ signIn: true, signOut: true });
+  });
+
+  it("requires a venue and navigation destination for published packages", () => {
+    expect(
+      getPackagePublishError(
+        completePackage({ navigationDestination: null }),
+        now,
+      ),
+    ).toBe("Published packages require a venue and navigation destination.");
   });
 
   it("requires both action PINs and attendance URLs for published packages", () => {
