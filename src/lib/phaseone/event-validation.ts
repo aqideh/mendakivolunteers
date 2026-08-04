@@ -14,6 +14,12 @@ const optionalUrl = z.preprocess(
     .nullable(),
 );
 
+const optionalText = (maximum: number) =>
+  z.preprocess(
+    (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
+    z.string().max(maximum).nullable(),
+  );
+
 const optionalSingaporeDateTime = z.preprocess((value) => {
   if (typeof value !== "string" || !value.trim()) return null;
   return isValidSingaporeDateTimeLocal(value)
@@ -35,10 +41,10 @@ export const eventFormSchema = z.object({
   title: z.string().trim().min(3).max(160),
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   reportingAt: optionalSingaporeDateTime,
-  venue: z.preprocess(
-    (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
-    z.string().max(240).nullable(),
-  ),
+  venue: optionalText(240),
+  navigationDestination: optionalText(500),
+  attireNotes: z.string().trim().min(1).max(500),
+  preparationNotes: optionalText(2000),
   briefingUrl: optionalUrl,
   briefingAvailableAt: optionalSingaporeDateTime,
   whatsappUrl: optionalUrl,
@@ -61,6 +67,11 @@ export function parseEventForm(formData: FormData) {
     slug: formData.get("slug"),
     reportingAt: formData.get("reportingAt"),
     venue: formData.get("venue"),
+    navigationDestination: formData.get("navigationDestination"),
+    attireNotes:
+      formData.get("attireNotes") ??
+      "Wear your MENDAKI volunteer shirt if you have one.",
+    preparationNotes: formData.get("preparationNotes"),
     briefingUrl: formData.get("briefingUrl"),
     briefingAvailableAt: formData.get("briefingAvailableAt"),
     whatsappUrl: formData.get("whatsappUrl"),
