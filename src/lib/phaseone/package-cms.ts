@@ -63,6 +63,8 @@ export function packageWillHaveActionPins(
 export function getPackagePublishError(input: Readonly<{
   isPublished: boolean;
   reportingAt: string | null;
+  venue: string | null;
+  navigationDestination: string | null;
   briefingUrl: string | null;
   briefingAvailableAt: string | null;
   signInUrl: string | null;
@@ -74,6 +76,9 @@ export function getPackagePublishError(input: Readonly<{
   if (!input.reportingAt) return "Published packages require a reporting date and time.";
   if (input.reportingAt < startOfSingaporeDayIso(now)) {
     return "The reporting date has already passed. Update the reporting date before publishing this package.";
+  }
+  if (!input.venue || !input.navigationDestination) {
+    return "Published packages require a venue and navigation destination.";
   }
   if (!input.signInUrl || !input.signOutUrl) {
     return "Published packages require both sign-in and sign-out URLs.";
