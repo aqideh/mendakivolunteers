@@ -36,7 +36,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const [eventResult, opportunitiesResult, rosterCountResult, importsResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, external_opportunity_id, title, slug, reporting_at, venue, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
+      .select("id, external_opportunity_id, title, slug, reporting_at, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
       .eq("id", id)
       .maybeSingle(),
     admin
@@ -80,12 +80,12 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           <div>
             <p className="eyebrow">Phase-one operations</p>
             <h1>{event.title}</h1>
-            <p className="muted">Manage the volunteer package, access controls and operational roster.</p>
+            <p className="muted">Manage the volunteer package, preparation flow, access controls and operational roster.</p>
           </div>
           <div className="actions">
             <Link className="button button-secondary" href="/admin/events">All packages</Link>
             <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Counter-check attendance</Link>
-            {event.is_published ? <Link className="button" href={`/packages/${event.slug}`}>View package</Link> : null}
+            {event.is_published ? <Link className="button" href={`/updates/${event.slug}`}>View update</Link> : null}
           </div>
         </div>
 
