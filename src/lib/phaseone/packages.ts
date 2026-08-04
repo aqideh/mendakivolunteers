@@ -5,7 +5,8 @@ export type VolunteerPackage = Readonly<{
   title: string;
   slug: string;
   reporting_at: string;
-  venue: string | null;
+  venue: string;
+  navigation_destination: string;
   has_sign_in_pin: boolean;
   has_sign_out_pin: boolean;
 }>;
@@ -87,10 +88,12 @@ export async function getVisibleVolunteerPackages(
   const { data, error } = await supabase
     .from("phaseone_events")
     .select(
-      "id, title, slug, reporting_at, venue, has_sign_in_pin, has_sign_out_pin",
+      "id, title, slug, reporting_at, venue, navigation_destination, has_sign_in_pin, has_sign_out_pin",
     )
     .eq("is_published", true)
     .not("reporting_at", "is", null)
+    .not("venue", "is", null)
+    .not("navigation_destination", "is", null)
     .gte("reporting_at", recentlyCompletedCutoffIso(now))
     .order("reporting_at", { ascending: true })
     .order("id", { ascending: true })
