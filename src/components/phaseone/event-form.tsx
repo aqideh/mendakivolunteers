@@ -1,6 +1,8 @@
 import { saveEvent } from "@/app/admin/events/actions";
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
+const defaultAttireNotes = "Wear your MENDAKI volunteer shirt if you have one.";
+
 export type EventFormValue = Readonly<{
   id: string;
   external_opportunity_id: string | null;
@@ -8,6 +10,9 @@ export type EventFormValue = Readonly<{
   slug: string;
   reporting_at: string | null;
   venue: string | null;
+  navigation_destination: string | null;
+  attire_notes: string;
+  preparation_notes: string | null;
   briefing_url: string | null;
   briefing_available_at: string | null;
   whatsapp_url: string | null;
@@ -70,22 +75,65 @@ export function EventForm({
         </div>
       </div>
 
-      <div className="phaseone-admin-grid">
+      <fieldset className="phaseone-admin-fieldset">
+        <legend>Location and directions</legend>
+        <div className="phaseone-admin-grid">
+          <div className="form-field">
+            <label htmlFor="reportingAt">Reporting date and time (Singapore)</label>
+            <input
+              defaultValue={toSingaporeDateTimeLocal(event?.reporting_at ?? null)}
+              id="reportingAt"
+              name="reportingAt"
+              type="datetime-local"
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="venue">Venue name</label>
+            <input defaultValue={event?.venue ?? ""} id="venue" maxLength={240} name="venue" />
+          </div>
+        </div>
         <div className="form-field">
-          <label htmlFor="reportingAt">Reporting date and time (Singapore)</label>
+          <label htmlFor="navigationDestination">Full navigation destination</label>
           <input
-            defaultValue={toSingaporeDateTimeLocal(event?.reporting_at ?? null)}
-            id="reportingAt"
-            name="reportingAt"
-            type="datetime-local"
+            defaultValue={event?.navigation_destination ?? ""}
+            id="navigationDestination"
+            maxLength={500}
+            name="navigationDestination"
+            placeholder="Venue, street address, Singapore postal code"
           />
-          <p className="muted">Published packages cannot use a reporting date before today.</p>
+          <p className="muted">Used directly for Apple Maps and Google Maps directions.</p>
+        </div>
+      </fieldset>
+
+      <fieldset className="phaseone-admin-fieldset">
+        <legend>Volunteer preparation</legend>
+        <div className="form-field">
+          <label htmlFor="attireNotes">Attire reminder</label>
+          <textarea
+            defaultValue={event?.attire_notes ?? defaultAttireNotes}
+            id="attireNotes"
+            maxLength={500}
+            name="attireNotes"
+            required
+            rows={3}
+          />
         </div>
         <div className="form-field">
-          <label htmlFor="venue">Venue</label>
-          <input defaultValue={event?.venue ?? ""} id="venue" maxLength={240} name="venue" />
+          <label htmlFor="preparationNotes">Additional preparation notes</label>
+          <textarea
+            defaultValue={event?.preparation_notes ?? ""}
+            id="preparationNotes"
+            maxLength={2000}
+            name="preparationNotes"
+            placeholder="What to bring, where to report, meal arrangements, or other instructions"
+            rows={5}
+          />
         </div>
-      </div>
+        <div className="form-field">
+          <label htmlFor="whatsappUrl">WhatsApp group URL</label>
+          <input defaultValue={event?.whatsapp_url ?? ""} id="whatsappUrl" name="whatsappUrl" type="url" />
+        </div>
+      </fieldset>
 
       <fieldset className="phaseone-admin-fieldset">
         <legend>Briefing</legend>
@@ -106,11 +154,6 @@ export function EventForm({
           </div>
         </div>
       </fieldset>
-
-      <div className="form-field">
-        <label htmlFor="whatsappUrl">WhatsApp URL</label>
-        <input defaultValue={event?.whatsapp_url ?? ""} id="whatsappUrl" name="whatsappUrl" type="url" />
-      </div>
 
       <fieldset className="phaseone-admin-fieldset">
         <legend>Attendance destinations</legend>
@@ -178,7 +221,7 @@ export function EventForm({
         Publish volunteer package
       </label>
       <p className="muted">
-        Publishing requires a current or future reporting date, both attendance URLs and both action PINs. Briefing URL and release time must be set together.
+        Publishing requires the reporting time, venue, navigation destination, both attendance URLs and both action PINs. Briefing URL and release time must be set together.
       </p>
 
       <div className="actions">
