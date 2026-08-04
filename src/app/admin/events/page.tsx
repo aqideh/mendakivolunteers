@@ -12,7 +12,7 @@ import {
   type VolunteerTimeslot,
 } from "@/lib/phaseone/packages";
 
-export const metadata: Metadata = { title: "Package operations" };
+export const metadata: Metadata = { title: "Event operations" };
 export const dynamic = "force-dynamic";
 
 type PageProps = {
@@ -42,11 +42,11 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
   ]);
 
   if (eventsResult.error || !eventsResult.data || timeslotsResult.error || !timeslotsResult.data) {
-    console.error("Unable to load package operations", {
+    console.error("Unable to load event operations", {
       eventsCode: eventsResult.error?.code,
       timeslotsCode: timeslotsResult.error?.code,
     });
-    throw new Error("Package operations could not be loaded");
+    throw new Error("Event operations could not be loaded");
   }
 
   const timeslotsByEvent = new Map<string, VolunteerTimeslot[]>();
@@ -68,28 +68,28 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
 
   return (
     <div className="site-shell">
-      <PortalHeader status="Package operations" dashboard />
+      <PortalHeader status="Event operations" dashboard />
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Phase-one operations</p>
-            <h1>Manage volunteer packages</h1>
+            <h1>Manage event guides</h1>
             <p className="muted">Configure schedules, briefing release, attendance links, separate PINs and volunteer rosters.</p>
           </div>
-          <Link className="button button-primary" href="/admin/events/new">New package</Link>
+          <Link className="button button-primary" href="/admin/events/new">New event guide</Link>
         </div>
 
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
         <div className="table-wrap">
           <table className="content-table">
-            <thead><tr><th>Package</th><th>Schedule</th><th>Access</th><th>Visibility</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Event</th><th>Schedule</th><th>Access</th><th>Visibility</th><th>Actions</th></tr></thead>
             <tbody>
               {events.map((event) => {
                 const first = event.timeslots[0];
                 return (
                   <tr key={event.id}>
-                    <td><strong>{event.title}</strong><span className="table-subtext">/packages/{event.slug}</span></td>
+                    <td><strong>{event.title}</strong><span className="table-subtext">/journey/{event.slug}</span></td>
                     <td>
                       {first ? `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}` : "Not set"}
                       {event.timeslots.length > 1 ? <span className="table-subtext">{event.timeslots.length} timeslots</span> : null}
@@ -100,14 +100,14 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                       <div className="actions">
                         <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
                         {event.is_published ? (
-                          <Link className="text-link" href={`/packages/${event.slug}`} target="_blank">View public package</Link>
+                          <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">View event guide</Link>
                         ) : null}
                       </div>
                     </td>
                   </tr>
                 );
               })}
-              {events.length === 0 ? <tr><td colSpan={5}>No package records.</td></tr> : null}
+              {events.length === 0 ? <tr><td colSpan={5}>No event guides have been created.</td></tr> : null}
             </tbody>
           </table>
         </div>
