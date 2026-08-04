@@ -25,7 +25,7 @@ export function PackageActionPinForm({
 
     try {
       const response = await fetch(
-        `/api/phaseone/packages/${slug}/verify/${action}`,
+        `/api/phaseone/events/${slug}/verify/${action}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -40,13 +40,15 @@ export function PackageActionPinForm({
       setPin("");
       router.refresh();
     } catch {
-      setMessage(`Unable to unlock ${label.toLowerCase()}. Check your connection and try again.`);
+      setMessage(
+        `Unable to unlock ${label.toLowerCase()}. Check your connection and try again.`,
+      );
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  const inputId = `package-${action}-pin`;
+  const inputId = `event-${action}-pin`;
 
   return (
     <form className="phaseone-pin-form" onSubmit={submit}>
@@ -67,7 +69,11 @@ export function PackageActionPinForm({
       <button className="button button-primary" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Checking…" : `Unlock ${label.toLowerCase()}`}
       </button>
-      {message ? <p className="phaseone-form-error" role="alert">{message}</p> : null}
+      {message ? (
+        <p className="phaseone-form-error" role="alert">
+          {message}
+        </p>
+      ) : null}
     </form>
   );
 }
