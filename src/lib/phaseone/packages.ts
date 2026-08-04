@@ -9,6 +9,11 @@ export type VolunteerTimeslot = Readonly<{
   sort_order: number;
 }>;
 
+export type NonEmptyVolunteerTimeslots = [
+  VolunteerTimeslot,
+  ...VolunteerTimeslot[],
+];
+
 export type VolunteerPackage = Readonly<{
   id: string;
   title: string;
@@ -17,7 +22,7 @@ export type VolunteerPackage = Readonly<{
   navigation_destination: string;
   has_sign_in_pin: boolean;
   has_sign_out_pin: boolean;
-  timeslots: VolunteerTimeslot[];
+  timeslots: NonEmptyVolunteerTimeslots;
 }>;
 
 export type VolunteerPackageGroups = Readonly<{
@@ -133,6 +138,8 @@ export function getPackageListingStatus(
       ? [{ id: "legacy", label: null, starts_at: schedule, ends_at: null, status: "scheduled" as const, sort_order: 0 }]
       : [];
   if (timeslots.length === 0) return "Published — schedule missing";
+  const firstTimeslot = timeslots[0];
+  if (!firstTimeslot) return "Published — schedule missing";
   const groups = groupVolunteerPackages([{
     id: "status",
     title: "Status",
@@ -141,7 +148,7 @@ export function getPackageListingStatus(
     navigation_destination: "Status",
     has_sign_in_pin: false,
     has_sign_out_pin: false,
-    timeslots: sortTimeslots(timeslots),
+    timeslots: [firstTimeslot, ...timeslots.slice(1)],
   }], now);
   if (groups.today.length > 0) return "Published — visible today";
   if (groups.upcoming.length > 0) return "Published — upcoming";
@@ -219,13 +226,18 @@ export async function getVisibleVolunteerPackages(now = new Date()): Promise<Vol
     current.push(timeslot as VolunteerTimeslot);
     timeslotsByEvent.set(timeslot.event_id, current);
   }
-  const packages = events
-    .map((event) => ({
+  const packages: VolunteerPackage[] = [];
+  for (const event of events) {
+    const sortedTimeslots = sortTimeslots(timeslotsByEvent.get(event.id) ?? []);
+    const firstTimeslot = sortedTimeslots[0];
+    if (!firstTimeslot) continue;
+
+    packages.push({
       ...event,
       venue: event.venue as string,
       navigation_destination: event.navigation_destination as string,
-      timeslots: sortTimeslots(timeslotsByEvent.get(event.id) ?? []),
-    }))
-    .filter(({ timeslots: eventTimeslots }) => eventTimeslots.length > 0) as VolunteerPackage[];
+      timeslots: [firstTimeslot, ...sortedTimeslots.slice(1)],
+    });
+  }
   return groupVolunteerPackages(packages, now);
 }
