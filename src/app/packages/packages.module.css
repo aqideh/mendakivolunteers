@@ -46,6 +46,19 @@
   line-height: 1.12;
 }
 
+.directionLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  margin: -0.15rem 0 1rem;
+}
+
+.directionLinks a {
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .cta {
   width: 100%;
   min-height: 3.25rem;
