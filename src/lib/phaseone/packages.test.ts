@@ -15,7 +15,8 @@ function volunteerPackage(id: string, reportingAt: string) {
     title: id,
     slug: id,
     reporting_at: reportingAt,
-    venue: null,
+    venue: "Test venue",
+    navigation_destination: "Test venue, Singapore 123456",
     has_sign_in_pin: true,
     has_sign_out_pin: true,
   };
