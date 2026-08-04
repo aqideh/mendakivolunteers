@@ -69,29 +69,34 @@ function Schedule({ timeslots }: { timeslots: VolunteerTimeslot[] }) {
       <p className="eyebrow">Event schedule</p>
       <h2 id="schedule-title">Reporting times</h2>
       <div className={styles.scheduleDays}>
-        {[...groups.entries()].map(([dateKey, dayTimeslots]) => (
-          <section className={styles.scheduleDay} key={dateKey}>
-            <h3>{formatTimeslotDayHeading(dayTimeslots[0].starts_at)}</h3>
-            <div className={styles.scheduleSlots}>
-              {dayTimeslots.map((timeslot) => (
-                <article
-                  className={`${styles.scheduleSlot} ${
-                    timeslot.status === "cancelled" ? styles.cancelledSlot : ""
-                  }`}
-                  key={timeslot.id}
-                >
-                  <div>
-                    <strong>{timeslot.label ?? "Volunteer timeslot"}</strong>
-                    <p>{formatTimeslotTimeRange(timeslot)}</p>
-                  </div>
-                  {timeslot.status === "cancelled" ? (
-                    <span className="status-pill">Cancelled</span>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          </section>
-        ))}
+        {[...groups.entries()].map(([dateKey, dayTimeslots]) => {
+          const firstTimeslot = dayTimeslots.at(0);
+          if (!firstTimeslot) return null;
+
+          return (
+            <section className={styles.scheduleDay} key={dateKey}>
+              <h3>{formatTimeslotDayHeading(firstTimeslot.starts_at)}</h3>
+              <div className={styles.scheduleSlots}>
+                {dayTimeslots.map((timeslot) => (
+                  <article
+                    className={`${styles.scheduleSlot} ${
+                      timeslot.status === "cancelled" ? styles.cancelledSlot : ""
+                    }`}
+                    key={timeslot.id}
+                  >
+                    <div>
+                      <strong>{timeslot.label ?? "Volunteer timeslot"}</strong>
+                      <p>{formatTimeslotTimeRange(timeslot)}</p>
+                    </div>
+                    {timeslot.status === "cancelled" ? (
+                      <span className="status-pill">Cancelled</span>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </section>
   );
