@@ -14,6 +14,7 @@ import {
   readPackageActionAccessToken,
   type PackageAction,
 } from "@/lib/phaseone/package-action-access";
+import { buildDirectionsLinks } from "@/lib/phaseone/directions";
 
 import styles from "../../packages/[slug]/package-detail.module.css";
 
@@ -57,7 +58,7 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
   const { data: volunteerPackage, error } = await supabase
     .from("phaseone_events")
     .select(
-      "id, title, reporting_at, venue, briefing_url, briefing_available_at, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
+      "id, title, reporting_at, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -74,6 +75,7 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
     briefingUrl: volunteerPackage.briefing_url,
     briefingAvailableAt: volunteerPackage.briefing_available_at,
   });
+  const directions = buildDirectionsLinks(volunteerPackage.navigation_destination);
 
   const cookieStore = await cookies();
   const secret = getPhaseOneServerSecret();
@@ -98,6 +100,8 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
   const errorAction = actions.includes(actionParam as PackageAction)
     ? (actionParam as PackageAction)
     : null;
+  const signInState = actionStates.find(({ action }) => action === "sign-in");
+  const signOutState = actionStates.find(({ action }) => action === "sign-out");
 
   return (
     <div className="site-shell phaseone-shell">
@@ -112,37 +116,13 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
           <dl className="phaseone-opportunity-details">
             <div>
               <dt>Report</dt>
-              <dd>
-                {volunteerPackage.reporting_at
-                  ? formatSingaporeDateTime(volunteerPackage.reporting_at)
-                  : "Check with the event team"}
-              </dd>
+              <dd>{formatSingaporeDateTime(volunteerPackage.reporting_at)}</dd>
             </div>
             <div>
               <dt>Venue</dt>
-              <dd>{volunteerPackage.venue ?? "Check with the event team"}</dd>
+              <dd>{volunteerPackage.venue}</dd>
             </div>
           </dl>
-
-          {briefing.available ? (
-            <a
-              className={`button button-primary ${styles.briefing}`}
-              href={`/api/phaseone/packages/${slug}/go/briefing`}
-              target="_blank"
-              rel="noopener noreferrer"
-              referrerPolicy="no-referrer"
-            >
-              View briefing
-            </a>
-          ) : (
-            <button
-              className={`button ${styles.briefing} ${styles.briefingDisabled}`}
-              type="button"
-              disabled
-            >
-              Briefing not started
-            </button>
-          )}
 
           {access === "expired" && errorAction ? (
             <p className="phaseone-form-error" role="alert">
@@ -155,36 +135,149 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
             </p>
           ) : null}
 
-          <div className={styles.actionGrid}>
-            {actionStates.map(({ action, configured, unlocked }) => (
-              <section className={`panel ${styles.actionPanel}`} key={action}>
-                <h2>{packageActionLabel(action)}</h2>
-                <p className="phaseone-access-note">
-                  {action === "sign-in"
-                    ? "The sign-in PIN will be provided by staff when you arrive on-site."
-                    : "The sign-out PIN will be provided by staff before you leave the event."}
-                </p>
-                {!configured ? (
-                  <p>This action has not been enabled by the event team.</p>
-                ) : unlocked ? (
-                  <>
+          <section className={styles.flowSection} aria-labelledby="volunteer-flow-title">
+            <p className="eyebrow">What to do</p>
+            <h2 id="volunteer-flow-title">Your volunteering flow</h2>
+            <ol className={styles.flow}>
+              <li className={styles.flowStep}>
+                <span className={styles.stepNumber} aria-hidden="true">1</span>
+                <div className={styles.stepBody}>
+                  <h3>Complete the online briefing</h3>
+                  <p>Review the event briefing before reporting for your shift.</p>
+                  {briefing.available ? (
                     <a
                       className="button button-primary"
-                      href={`/api/phaseone/packages/${slug}/go/${action}`}
+                      href={`/api/phaseone/packages/${slug}/go/briefing`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       referrerPolicy="no-referrer"
                     >
-                      Open {packageActionLabel(action).toLowerCase()}
+                      View briefing
                     </a>
-                    <p className="phaseone-access-note">
-                      Access remains valid for five minutes or until this PIN changes.
-                    </p>
-                  </>
-                ) : (
-                  <PackageActionPinForm slug={slug} action={action} />
-                )}
-              </section>
-            ))}
-          </div>
+                  ) : (
+                    <button
+                      className={`button ${styles.briefingDisabled}`}
+                      type="button"
+                      disabled
+                    >
+                      Briefing not started
+                    </button>
+                  )}
+                </div>
+              </li>
+
+              {volunteerPackage.whatsapp_url ? (
+                <li className={styles.flowStep}>
+                  <span className={styles.stepNumber} aria-hidden="true">2</span>
+                  <div className={styles.stepBody}>
+                    <h3>Join the WhatsApp group</h3>
+                    <p>Join the group for event-day announcements and instructions from the team.</p>
+                    <a
+                      className="button button-secondary"
+                      href={volunteerPackage.whatsapp_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Join WhatsApp group
+                    </a>
+                  </div>
+                </li>
+              ) : null}
+
+              <li className={styles.flowStep}>
+                <span className={styles.stepNumber} aria-hidden="true">3</span>
+                <div className={styles.stepBody}>
+                  <h3>Prepare for the event</h3>
+                  <p className={styles.notes}>{volunteerPackage.attire_notes}</p>
+                  {volunteerPackage.preparation_notes ? (
+                    <p className={styles.notes}>{volunteerPackage.preparation_notes}</p>
+                  ) : null}
+                </div>
+              </li>
+
+              <li className={styles.flowStep}>
+                <span className={styles.stepNumber} aria-hidden="true">4</span>
+                <div className={styles.stepBody}>
+                  <h3>Travel to the venue</h3>
+                  <p>{volunteerPackage.navigation_destination}</p>
+                  <div className={styles.stepActions}>
+                    <a
+                      className="button button-secondary"
+                      href={directions.appleMaps}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Apple Maps
+                    </a>
+                    <a
+                      className="button button-secondary"
+                      href={directions.googleMaps}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Google Maps
+                    </a>
+                  </div>
+                </div>
+              </li>
+
+              <li className={styles.flowStep}>
+                <span className={styles.stepNumber} aria-hidden="true">5</span>
+                <div className={styles.stepBody}>
+                  <h3>Check in when you arrive</h3>
+                  <p className="phaseone-access-note">
+                    The sign-in PIN will be provided by staff when you arrive on-site.
+                  </p>
+                  {!signInState?.configured ? (
+                    <p>This action has not been enabled by the event team.</p>
+                  ) : signInState.unlocked ? (
+                    <>
+                      <a
+                        className="button button-primary"
+                        href={`/api/phaseone/packages/${slug}/go/sign-in`}
+                        referrerPolicy="no-referrer"
+                      >
+                        Open sign-in
+                      </a>
+                      <p className="phaseone-access-note">
+                        Access remains valid for five minutes or until this PIN changes.
+                      </p>
+                    </>
+                  ) : (
+                    <PackageActionPinForm slug={slug} action="sign-in" />
+                  )}
+                </div>
+              </li>
+
+              <li className={styles.flowStep}>
+                <span className={styles.stepNumber} aria-hidden="true">6</span>
+                <div className={styles.stepBody}>
+                  <h3>Check out before you leave</h3>
+                  <p className="phaseone-access-note">
+                    Get the sign-out PIN from staff and complete check-out before leaving the venue.
+                  </p>
+                  {!signOutState?.configured ? (
+                    <p>This action has not been enabled by the event team.</p>
+                  ) : signOutState.unlocked ? (
+                    <>
+                      <a
+                        className="button button-primary"
+                        href={`/api/phaseone/packages/${slug}/go/sign-out`}
+                        referrerPolicy="no-referrer"
+                      >
+                        Open sign-out
+                      </a>
+                      <p className="phaseone-access-note">
+                        Access remains valid for five minutes or until this PIN changes.
+                      </p>
+                    </>
+                  ) : (
+                    <PackageActionPinForm slug={slug} action="sign-out" />
+                  )}
+                </div>
+              </li>
+            </ol>
+          </section>
         </article>
       </main>
     </div>
