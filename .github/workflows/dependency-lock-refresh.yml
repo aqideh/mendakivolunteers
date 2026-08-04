@@ -1,0 +1,46 @@
+name: Dependency lock refresh
+
+on:
+  pull_request:
+    branches:
+      - phaseone
+
+permissions:
+  contents: read
+
+jobs:
+  refresh-lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Generate compatible audit fix
+        shell: bash
+        run: |
+          npm ci
+          set +e
+          npm audit fix --package-lock-only
+          status=$?
+          echo "npm audit fix exit code: $status"
+          set -e
+          npm audit --audit-level=high --json > npm-audit-after-fix.json || true
+
+      - name: Upload generated dependency files
+        uses: actions/upload-artifact@v6
+        with:
+          name: dependency-lock-refresh
+          path: |
+            package.json
+            package-lock.json
+            npm-audit-after-fix.json
+          if-no-files-found: error
+          retention-days: 2
