@@ -3,9 +3,14 @@ import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
-import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
-import { getPackageListingStatus } from "@/lib/phaseone/packages";
+import {
+  formatTimeslotDate,
+  formatTimeslotTimeRange,
+  getPackageListingStatus,
+  sortTimeslots,
+  type VolunteerTimeslot,
+} from "@/lib/phaseone/packages";
 
 export const metadata: Metadata = { title: "Package operations" };
 export const dynamic = "force-dynamic";
@@ -22,17 +27,42 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 export default async function EventsAdminPage({ searchParams }: PageProps) {
   await requireEventManager();
   const admin = getPhaseOneAdminClient();
-  const { data: events, error } = await admin
-    .from("phaseone_events")
-    .select("id, title, slug, reporting_at, venue, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, updated_at")
-    .order("reporting_at", { ascending: true, nullsFirst: false })
-    .limit(200);
+  const [eventsResult, timeslotsResult] = await Promise.all([
+    admin
+      .from("phaseone_events")
+      .select("id, title, slug, venue, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(200),
+    admin
+      .from("phaseone_event_timeslots")
+      .select("id, event_id, label, starts_at, ends_at, status, sort_order")
+      .order("starts_at", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .limit(20000),
+  ]);
 
-  if (error || !events) {
-    console.error("Unable to load package operations", { code: error?.code });
+  if (eventsResult.error || !eventsResult.data || timeslotsResult.error || !timeslotsResult.data) {
+    console.error("Unable to load package operations", {
+      eventsCode: eventsResult.error?.code,
+      timeslotsCode: timeslotsResult.error?.code,
+    });
     throw new Error("Package operations could not be loaded");
   }
 
+  const timeslotsByEvent = new Map<string, VolunteerTimeslot[]>();
+  timeslotsResult.data.forEach((timeslot) => {
+    const current = timeslotsByEvent.get(timeslot.event_id) ?? [];
+    current.push(timeslot as VolunteerTimeslot);
+    timeslotsByEvent.set(timeslot.event_id, current);
+  });
+
+  const events = eventsResult.data
+    .map((event) => ({ ...event, timeslots: sortTimeslots(timeslotsByEvent.get(event.id) ?? []) }))
+    .sort((left, right) =>
+      (left.timeslots[0]?.starts_at ?? "9999").localeCompare(
+        right.timeslots[0]?.starts_at ?? "9999",
+      ),
+    );
   const parameters = await searchParams;
   const errorMessage = parameter(parameters, "error");
 
@@ -44,7 +74,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
           <div>
             <p className="eyebrow">Phase-one operations</p>
             <h1>Manage volunteer packages</h1>
-            <p className="muted">Configure briefing release, attendance links, separate PINs and volunteer rosters.</p>
+            <p className="muted">Configure schedules, briefing release, attendance links, separate PINs and volunteer rosters.</p>
           </div>
           <Link className="button button-primary" href="/admin/events/new">New package</Link>
         </div>
@@ -53,24 +83,30 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
 
         <div className="table-wrap">
           <table className="content-table">
-            <thead><tr><th>Package</th><th>Reporting</th><th>Access</th><th>Visibility</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Package</th><th>Schedule</th><th>Access</th><th>Visibility</th><th>Actions</th></tr></thead>
             <tbody>
-              {events.map((event) => (
-                <tr key={event.id}>
-                  <td><strong>{event.title}</strong><span className="table-subtext">/packages/{event.slug}</span></td>
-                  <td>{event.reporting_at ? formatSingaporeDateTime(event.reporting_at) : "Not set"}</td>
-                  <td>{event.has_sign_in_pin && event.has_sign_out_pin ? "Both PINs configured" : "Configuration incomplete"}</td>
-                  <td><span className="status-pill">{getPackageListingStatus(event.reporting_at, event.is_published)}</span></td>
-                  <td>
-                    <div className="actions">
-                      <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
-                      {event.is_published ? (
-                        <Link className="text-link" href={`/packages/${event.slug}`} target="_blank">View public package</Link>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {events.map((event) => {
+                const first = event.timeslots[0];
+                return (
+                  <tr key={event.id}>
+                    <td><strong>{event.title}</strong><span className="table-subtext">/packages/{event.slug}</span></td>
+                    <td>
+                      {first ? `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}` : "Not set"}
+                      {event.timeslots.length > 1 ? <span className="table-subtext">{event.timeslots.length} timeslots</span> : null}
+                    </td>
+                    <td>{event.has_sign_in_pin && event.has_sign_out_pin ? "Both PINs configured" : "Configuration incomplete"}</td>
+                    <td><span className="status-pill">{getPackageListingStatus(event.timeslots, event.is_published)}</span></td>
+                    <td>
+                      <div className="actions">
+                        <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
+                        {event.is_published ? (
+                          <Link className="text-link" href={`/packages/${event.slug}`} target="_blank">View public package</Link>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {events.length === 0 ? <tr><td colSpan={5}>No package records.</td></tr> : null}
             </tbody>
           </table>

@@ -20,6 +20,13 @@ const optionalText = (maximum: number) =>
     z.string().max(maximum).nullable(),
   );
 
+const requiredSingaporeDateTime = z.preprocess((value) => {
+  if (typeof value !== "string" || !value.trim()) return value;
+  return isValidSingaporeDateTimeLocal(value)
+    ? singaporeDateTimeLocalToIso(value)
+    : value;
+}, z.string().datetime({ message: "Enter a valid date and time." }));
+
 const optionalSingaporeDateTime = z.preprocess((value) => {
   if (typeof value !== "string" || !value.trim()) return null;
   return isValidSingaporeDateTimeLocal(value)
@@ -32,40 +39,80 @@ const optionalPin = z.preprocess(
   z.string().regex(/^\d{4,8}$/, "PINs must contain 4 to 8 digits.").nullable(),
 );
 
-export const eventFormSchema = z.object({
-  id: z.string().uuid().optional(),
-  externalOpportunityId: z.preprocess(
-    (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
-    z.string().uuid().nullable(),
-  ),
-  title: z.string().trim().min(3).max(160),
-  slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  reportingAt: optionalSingaporeDateTime,
-  venue: optionalText(240),
-  navigationDestination: optionalText(500),
-  attireNotes: z.string().trim().min(1).max(500),
-  preparationNotes: optionalText(2000),
-  briefingUrl: optionalUrl,
-  briefingAvailableAt: optionalSingaporeDateTime,
-  whatsappUrl: optionalUrl,
-  signInUrl: optionalUrl,
-  signOutUrl: optionalUrl,
-  signInPin: optionalPin,
-  clearSignInPin: z.boolean(),
-  signOutPin: optionalPin,
-  clearSignOutPin: z.boolean(),
-  isPublished: z.boolean(),
-});
+export const eventTimeslotSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    label: optionalText(120),
+    startsAt: requiredSingaporeDateTime,
+    endsAt: optionalSingaporeDateTime,
+    status: z.enum(["scheduled", "cancelled"]),
+  })
+  .superRefine((timeslot, context) => {
+    if (timeslot.endsAt && timeslot.endsAt <= timeslot.startsAt) {
+      context.addIssue({
+        code: "custom",
+        path: ["endsAt"],
+        message: "A timeslot end must be after its start.",
+      });
+    }
+  });
+
+export const eventFormSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    externalOpportunityId: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
+      z.string().uuid().nullable(),
+    ),
+    title: z.string().trim().min(3).max(160),
+    slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    timeslots: z.array(eventTimeslotSchema).min(1, "Add at least one timeslot.").max(100),
+    venue: optionalText(240),
+    navigationDestination: optionalText(500),
+    attireNotes: z.string().trim().min(1).max(500),
+    preparationNotes: optionalText(2000),
+    briefingUrl: optionalUrl,
+    briefingAvailableAt: optionalSingaporeDateTime,
+    whatsappUrl: optionalUrl,
+    signInUrl: optionalUrl,
+    signOutUrl: optionalUrl,
+    signInPin: optionalPin,
+    clearSignInPin: z.boolean(),
+    signOutPin: optionalPin,
+    clearSignOutPin: z.boolean(),
+    isPublished: z.boolean(),
+  })
+  .superRefine(({ timeslots }, context) => {
+    const seen = new Set<string>();
+    timeslots.forEach((timeslot, index) => {
+      const key = `${timeslot.startsAt}|${timeslot.endsAt ?? ""}`;
+      if (seen.has(key)) {
+        context.addIssue({
+          code: "custom",
+          path: ["timeslots", index],
+          message: "Remove duplicate timeslots.",
+        });
+      }
+      seen.add(key);
+    });
+  });
 
 export type EventFormInput = z.infer<typeof eventFormSchema>;
 
 export function parseEventForm(formData: FormData) {
+  let timeslots: unknown = null;
+  try {
+    timeslots = JSON.parse(String(formData.get("timeslotsJson") ?? "null"));
+  } catch {
+    timeslots = null;
+  }
+
   return eventFormSchema.safeParse({
     id: formData.get("id") || undefined,
     externalOpportunityId: formData.get("externalOpportunityId"),
     title: formData.get("title"),
     slug: formData.get("slug"),
-    reportingAt: formData.get("reportingAt"),
+    timeslots,
     venue: formData.get("venue"),
     navigationDestination: formData.get("navigationDestination"),
     attireNotes:

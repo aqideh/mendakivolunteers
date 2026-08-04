@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 
 import { PackageActionPinForm } from "@/components/phaseone/package-action-pin-form";
 import { PortalHeader } from "@/components/portal-header";
-import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
 import { evaluateBriefingAccess } from "@/lib/phaseone/package-briefing";
 import {
@@ -15,6 +14,13 @@ import {
   type PackageAction,
 } from "@/lib/phaseone/package-action-access";
 import { buildDirectionsLinks } from "@/lib/phaseone/directions";
+import {
+  formatTimeslotDayHeading,
+  formatTimeslotTimeRange,
+  singaporeDateKey,
+  sortTimeslots,
+  type VolunteerTimeslot,
+} from "@/lib/phaseone/packages";
 
 import styles from "../../packages/[slug]/package-detail.module.css";
 
@@ -51,6 +57,46 @@ function actionConfiguration(
       };
 }
 
+function Schedule({ timeslots }: { timeslots: VolunteerTimeslot[] }) {
+  const groups = new Map<string, VolunteerTimeslot[]>();
+  timeslots.forEach((timeslot) => {
+    const key = singaporeDateKey(timeslot.starts_at);
+    groups.set(key, [...(groups.get(key) ?? []), timeslot]);
+  });
+
+  return (
+    <section className={styles.scheduleSection} aria-labelledby="schedule-title">
+      <p className="eyebrow">Event schedule</p>
+      <h2 id="schedule-title">Reporting times</h2>
+      <div className={styles.scheduleDays}>
+        {[...groups.entries()].map(([dateKey, dayTimeslots]) => (
+          <section className={styles.scheduleDay} key={dateKey}>
+            <h3>{formatTimeslotDayHeading(dayTimeslots[0].starts_at)}</h3>
+            <div className={styles.scheduleSlots}>
+              {dayTimeslots.map((timeslot) => (
+                <article
+                  className={`${styles.scheduleSlot} ${
+                    timeslot.status === "cancelled" ? styles.cancelledSlot : ""
+                  }`}
+                  key={timeslot.id}
+                >
+                  <div>
+                    <strong>{timeslot.label ?? "Volunteer timeslot"}</strong>
+                    <p>{formatTimeslotTimeRange(timeslot)}</p>
+                  </div>
+                  {timeslot.status === "cancelled" ? (
+                    <span className="status-pill">Cancelled</span>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default async function UpdatePage({ params, searchParams }: UpdatePageProps) {
   const { slug } = await params;
   const { access, action: actionParam } = await searchParams;
@@ -58,7 +104,7 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
   const { data: volunteerPackage, error } = await supabase
     .from("phaseone_events")
     .select(
-      "id, title, reporting_at, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
+      "id, title, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -69,6 +115,22 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
     throw new Error("Volunteer update details could not be loaded");
   }
   if (!volunteerPackage) notFound();
+
+  const { data: timeslotData, error: timeslotError } = await supabase
+    .from("phaseone_event_timeslots")
+    .select("id, label, starts_at, ends_at, status, sort_order")
+    .eq("event_id", volunteerPackage.id)
+    .order("starts_at", { ascending: true })
+    .order("sort_order", { ascending: true });
+
+  if (timeslotError || !timeslotData || timeslotData.length === 0) {
+    console.error("Unable to load volunteer update schedule", {
+      code: timeslotError?.code,
+      slug,
+    });
+    throw new Error("Volunteer update schedule could not be loaded");
+  }
+  const timeslots = sortTimeslots(timeslotData as VolunteerTimeslot[]);
 
   const briefing = evaluateBriefingAccess({
     isPublished: true,
@@ -115,14 +177,16 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
           <h1>{volunteerPackage.title}</h1>
           <dl className="phaseone-opportunity-details">
             <div>
-              <dt>Report</dt>
-              <dd>{formatSingaporeDateTime(volunteerPackage.reporting_at)}</dd>
+              <dt>Timeslots</dt>
+              <dd>{timeslots.length}</dd>
             </div>
             <div>
               <dt>Venue</dt>
               <dd>{volunteerPackage.venue}</dd>
             </div>
           </dl>
+
+          <Schedule timeslots={timeslots} />
 
           {access === "expired" && errorAction ? (
             <p className="phaseone-form-error" role="alert">
@@ -201,22 +265,8 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
                   <h3>Travel to the venue</h3>
                   <p>{volunteerPackage.navigation_destination}</p>
                   <div className={styles.stepActions}>
-                    <a
-                      className="button button-secondary"
-                      href={directions.appleMaps}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Apple Maps
-                    </a>
-                    <a
-                      className="button button-secondary"
-                      href={directions.googleMaps}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Google Maps
-                    </a>
+                    <a className="button button-secondary" href={directions.appleMaps} target="_blank" rel="noopener noreferrer">Apple Maps</a>
+                    <a className="button button-secondary" href={directions.googleMaps} target="_blank" rel="noopener noreferrer">Google Maps</a>
                   </div>
                 </div>
               </li>
@@ -225,23 +275,13 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
                 <span className={styles.stepNumber} aria-hidden="true">5</span>
                 <div className={styles.stepBody}>
                   <h3>Check in when you arrive</h3>
-                  <p className="phaseone-access-note">
-                    The sign-in PIN will be provided by staff when you arrive on-site.
-                  </p>
+                  <p className="phaseone-access-note">The sign-in PIN will be provided by staff when you arrive on-site.</p>
                   {!signInState?.configured ? (
                     <p>This action has not been enabled by the event team.</p>
                   ) : signInState.unlocked ? (
                     <>
-                      <a
-                        className="button button-primary"
-                        href={`/api/phaseone/packages/${slug}/go/sign-in`}
-                        referrerPolicy="no-referrer"
-                      >
-                        Open sign-in
-                      </a>
-                      <p className="phaseone-access-note">
-                        Access remains valid for five minutes or until this PIN changes.
-                      </p>
+                      <a className="button button-primary" href={`/api/phaseone/packages/${slug}/go/sign-in`} referrerPolicy="no-referrer">Open sign-in</a>
+                      <p className="phaseone-access-note">Access remains valid for five minutes or until this PIN changes.</p>
                     </>
                   ) : (
                     <PackageActionPinForm slug={slug} action="sign-in" />
@@ -253,23 +293,13 @@ export default async function UpdatePage({ params, searchParams }: UpdatePagePro
                 <span className={styles.stepNumber} aria-hidden="true">6</span>
                 <div className={styles.stepBody}>
                   <h3>Check out before you leave</h3>
-                  <p className="phaseone-access-note">
-                    Get the sign-out PIN from staff and complete check-out before leaving the venue.
-                  </p>
+                  <p className="phaseone-access-note">Get the sign-out PIN from staff and complete check-out before leaving the venue.</p>
                   {!signOutState?.configured ? (
                     <p>This action has not been enabled by the event team.</p>
                   ) : signOutState.unlocked ? (
                     <>
-                      <a
-                        className="button button-primary"
-                        href={`/api/phaseone/packages/${slug}/go/sign-out`}
-                        referrerPolicy="no-referrer"
-                      >
-                        Open sign-out
-                      </a>
-                      <p className="phaseone-access-note">
-                        Access remains valid for five minutes or until this PIN changes.
-                      </p>
+                      <a className="button button-primary" href={`/api/phaseone/packages/${slug}/go/sign-out`} referrerPolicy="no-referrer">Open sign-out</a>
+                      <p className="phaseone-access-note">Access remains valid for five minutes or until this PIN changes.</p>
                     </>
                   ) : (
                     <PackageActionPinForm slug={slug} action="sign-out" />

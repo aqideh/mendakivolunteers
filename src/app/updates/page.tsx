@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
-import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { buildDirectionsLinks } from "@/lib/phaseone/directions";
 import {
+  formatTimeslotDate,
+  formatTimeslotTimeRange,
   getVisibleVolunteerPackages,
+  singaporeDateKey,
   type VolunteerPackage,
 } from "@/lib/phaseone/packages";
 
@@ -20,30 +22,79 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+function DateBadge({ volunteerPackage }: { volunteerPackage: VolunteerPackage }) {
+  const first = volunteerPackage.timeslots[0];
+  const last = volunteerPackage.timeslots.at(-1) ?? first;
+  const firstDate = new Date(first.starts_at);
+  const lastDate = new Date(last.starts_at);
+  const dateKeys = [...new Set(
+    volunteerPackage.timeslots.map((timeslot) => singaporeDateKey(timeslot.starts_at)),
+  )];
+  const sameDay = dateKeys.length === 1;
+  const consecutive = dateKeys.every((dateKey, index) => {
+    if (index === 0) return true;
+    const previous = new Date(`${dateKeys[index - 1]}T00:00:00Z`);
+    previous.setUTCDate(previous.getUTCDate() + 1);
+    return previous.toISOString().slice(0, 10) === dateKey;
+  });
+  const monthFormatter = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    month: "short",
+  });
+  const dayFormatter = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    day: "2-digit",
+  });
+
+  return (
+    <div className={styles.date} aria-hidden="true">
+      <span>
+        {monthFormatter.format(firstDate)}
+        {!sameDay && consecutive && monthFormatter.format(firstDate) !== monthFormatter.format(lastDate)
+          ? `–${monthFormatter.format(lastDate)}`
+          : ""}
+      </span>
+      <strong>
+        {sameDay
+          ? dayFormatter.format(firstDate)
+          : consecutive
+            ? `${dayFormatter.format(firstDate)}–${dayFormatter.format(lastDate)}`
+            : `${dayFormatter.format(firstDate)}+`}
+      </strong>
+    </div>
+  );
+}
+
 function UpdateCard({ volunteerPackage }: { volunteerPackage: VolunteerPackage }) {
   const ready = volunteerPackage.has_sign_in_pin && volunteerPackage.has_sign_out_pin;
   const directions = buildDirectionsLinks(volunteerPackage.navigation_destination);
+  const now = new Date().toISOString();
+  const first =
+    volunteerPackage.timeslots.find(
+      (timeslot) =>
+        timeslot.status === "scheduled" &&
+        (timeslot.ends_at ?? timeslot.starts_at) >= now,
+    ) ?? volunteerPackage.timeslots[0];
+  const dateCount = new Set(
+    volunteerPackage.timeslots.map((timeslot) => singaporeDateKey(timeslot.starts_at)),
+  ).size;
+  const scheduleSummary =
+    volunteerPackage.timeslots.length === 1
+      ? `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}`
+      : dateCount === 1
+        ? `${volunteerPackage.timeslots.length} timeslots · ${formatTimeslotDate(first.starts_at)}`
+        : `${volunteerPackage.timeslots.length} timeslots across ${dateCount} days`;
 
   return (
     <article className={styles.card}>
-      <div className={styles.date} aria-hidden="true">
-        <span>
-          {new Intl.DateTimeFormat("en-SG", {
-            timeZone: "Asia/Singapore",
-            month: "short",
-          }).format(new Date(volunteerPackage.reporting_at))}
-        </span>
-        <strong>
-          {new Intl.DateTimeFormat("en-SG", {
-            timeZone: "Asia/Singapore",
-            day: "2-digit",
-          }).format(new Date(volunteerPackage.reporting_at))}
-        </strong>
-      </div>
+      <DateBadge volunteerPackage={volunteerPackage} />
       <div className={styles.body}>
-        <p className="phaseone-opportunity-date">
-          {formatSingaporeDateTime(volunteerPackage.reporting_at)}
-        </p>
+        <p className="phaseone-opportunity-date">{scheduleSummary}</p>
+        {volunteerPackage.timeslots.length > 1 ? (
+          <p className={styles.nextTimeslot}>
+            Next: {formatTimeslotDate(first.starts_at)} · {formatTimeslotTimeRange(first)}
+          </p>
+        ) : null}
         <h3>{volunteerPackage.title}</h3>
         <dl className="phaseone-opportunity-details">
           <div>
@@ -67,7 +118,7 @@ function UpdateCard({ volunteerPackage }: { volunteerPackage: VolunteerPackage }
           className={`button button-primary ${styles.cta}`}
           href={`/updates/${volunteerPackage.slug}`}
         >
-          View update
+          {volunteerPackage.timeslots.length > 1 ? "View all timeslots" : "View update"}
         </Link>
       </div>
     </article>
@@ -113,8 +164,8 @@ export default async function UpdatesPage() {
           <p className="eyebrow">Volunteer event resources</p>
           <h1>Your event updates.</h1>
           <p className="lede">
-            Open an event update for directions, preparation guidance, briefing,
-            sign-in and sign-out resources.
+            Open an event update for its full schedule, directions, preparation guidance,
+            briefing, sign-in and sign-out resources.
           </p>
         </section>
 

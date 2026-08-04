@@ -1,14 +1,24 @@
 import { saveEvent } from "@/app/admin/events/actions";
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
+import { TimeslotEditor } from "./timeslot-editor";
+
 const defaultAttireNotes = "Wear your MENDAKI volunteer shirt if you have one.";
+
+export type EventTimeslotValue = Readonly<{
+  id: string;
+  label: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  status: "scheduled" | "cancelled";
+  sort_order: number;
+}>;
 
 export type EventFormValue = Readonly<{
   id: string;
   external_opportunity_id: string | null;
   title: string;
   slug: string;
-  reporting_at: string | null;
   venue: string | null;
   navigation_destination: string | null;
   attire_notes: string;
@@ -21,6 +31,7 @@ export type EventFormValue = Readonly<{
   has_sign_in_pin: boolean;
   has_sign_out_pin: boolean;
   is_published: boolean;
+  timeslots: EventTimeslotValue[];
 }>;
 
 type OpportunityOption = Readonly<{
@@ -36,6 +47,14 @@ export function EventForm({
   event?: EventFormValue;
   opportunities: readonly OpportunityOption[];
 }) {
+  const initialTimeslots = (event?.timeslots ?? []).map((timeslot) => ({
+    id: timeslot.id,
+    label: timeslot.label ?? "",
+    startsAt: toSingaporeDateTimeLocal(timeslot.starts_at),
+    endsAt: toSingaporeDateTimeLocal(timeslot.ends_at),
+    status: timeslot.status,
+  }));
+
   return (
     <form action={saveEvent} className="phaseone-admin-form">
       {event ? <input name="id" type="hidden" value={event.id} /> : null}
@@ -75,22 +94,13 @@ export function EventForm({
         </div>
       </div>
 
+      <TimeslotEditor initialTimeslots={initialTimeslots} />
+
       <fieldset className="phaseone-admin-fieldset">
         <legend>Location and directions</legend>
-        <div className="phaseone-admin-grid">
-          <div className="form-field">
-            <label htmlFor="reportingAt">Reporting date and time (Singapore)</label>
-            <input
-              defaultValue={toSingaporeDateTimeLocal(event?.reporting_at ?? null)}
-              id="reportingAt"
-              name="reportingAt"
-              type="datetime-local"
-            />
-          </div>
-          <div className="form-field">
-            <label htmlFor="venue">Venue name</label>
-            <input defaultValue={event?.venue ?? ""} id="venue" maxLength={240} name="venue" />
-          </div>
+        <div className="form-field">
+          <label htmlFor="venue">Venue name</label>
+          <input defaultValue={event?.venue ?? ""} id="venue" maxLength={240} name="venue" />
         </div>
         <div className="form-field">
           <label htmlFor="navigationDestination">Full navigation destination</label>
@@ -221,7 +231,9 @@ export function EventForm({
         Publish volunteer package
       </label>
       <p className="muted">
-        Publishing requires the reporting time, venue, navigation destination, both attendance URLs and both action PINs. Briefing URL and release time must be set together.
+        Publishing requires at least one current or future scheduled timeslot, a venue,
+        navigation destination, both attendance URLs and both action PINs. Briefing URL
+        and release time must be set together.
       </p>
 
       <div className="actions">

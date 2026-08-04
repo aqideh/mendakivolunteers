@@ -33,12 +33,18 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   await requireEventManager(`/admin/events/${id}/edit`);
   const admin = getPhaseOneAdminClient();
 
-  const [eventResult, opportunitiesResult, rosterCountResult, importsResult] = await Promise.all([
+  const [eventResult, timeslotsResult, opportunitiesResult, rosterCountResult, importsResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, external_opportunity_id, title, slug, reporting_at, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
+      .select("id, external_opportunity_id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
       .eq("id", id)
       .maybeSingle(),
+    admin
+      .from("phaseone_event_timeslots")
+      .select("id, label, starts_at, ends_at, status, sort_order")
+      .eq("event_id", id)
+      .order("starts_at", { ascending: true })
+      .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_external_opportunities")
       .select("id, title, starts_at")
@@ -62,7 +68,15 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
     throw new Error("Package editor could not be loaded");
   }
   if (!eventResult.data) notFound();
-  if (opportunitiesResult.error || !opportunitiesResult.data || rosterCountResult.error || importsResult.error || !importsResult.data) {
+  if (
+    timeslotsResult.error ||
+    !timeslotsResult.data ||
+    opportunitiesResult.error ||
+    !opportunitiesResult.data ||
+    rosterCountResult.error ||
+    importsResult.error ||
+    !importsResult.data
+  ) {
     throw new Error("Package operations data could not be loaded");
   }
 
@@ -70,7 +84,10 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const errorMessage = parameter(parameters, "error");
   const successCode = parameter(parameters, "success");
   const successMessage = successCode ? successMessages[successCode] : undefined;
-  const event = eventResult.data as EventFormValue;
+  const event = {
+    ...eventResult.data,
+    timeslots: timeslotsResult.data,
+  } as EventFormValue;
 
   return (
     <div className="site-shell">
@@ -80,7 +97,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           <div>
             <p className="eyebrow">Phase-one operations</p>
             <h1>{event.title}</h1>
-            <p className="muted">Manage the volunteer package, preparation flow, access controls and operational roster.</p>
+            <p className="muted">Manage the volunteer package, schedule, preparation flow, access controls and operational roster.</p>
           </div>
           <div className="actions">
             <Link className="button button-secondary" href="/admin/events">All packages</Link>
