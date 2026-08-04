@@ -66,7 +66,6 @@ function DateBadge({ volunteerPackage }: { volunteerPackage: VolunteerPackage })
 }
 
 function UpdateCard({ volunteerPackage }: { volunteerPackage: VolunteerPackage }) {
-  const ready = volunteerPackage.has_sign_in_pin && volunteerPackage.has_sign_out_pin;
   const directions = buildDirectionsLinks(volunteerPackage.navigation_destination);
   const now = new Date().toISOString();
   const first =
@@ -100,10 +99,6 @@ function UpdateCard({ volunteerPackage }: { volunteerPackage: VolunteerPackage }
           <div>
             <dt>Venue</dt>
             <dd>{volunteerPackage.venue}</dd>
-          </div>
-          <div>
-            <dt>Access</dt>
-            <dd>{ready ? "Sign-in and sign-out ready" : "Not available yet"}</dd>
           </div>
         </dl>
         <div className={styles.directionLinks} aria-label={`Directions to ${volunteerPackage.venue}`}>
