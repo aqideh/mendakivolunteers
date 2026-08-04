@@ -36,7 +36,8 @@ const steps = [
   {
     number: "03",
     title: "Volunteer",
-    description: "Receive event updates and contribute alongside the community.",
+    description:
+      "Get the schedule, briefing and event-day information you need to volunteer confidently.",
   },
 ];
 
@@ -63,8 +64,8 @@ export default async function Home() {
               <Link className="button button-primary" href="/opportunities">
                 Explore opportunities
               </Link>
-              <Link className="button button-secondary" href="/updates">
-                View updates
+              <Link className="button button-secondary" href="/journey">
+                View your journey
               </Link>
             </div>
 
