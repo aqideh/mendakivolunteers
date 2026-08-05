@@ -141,7 +141,10 @@ export async function POST(
   }
 
   if (!wasSuccessful) {
-    return json({ error: "Incorrect PIN." }, 401);
+    return json(
+      { error: "Incorrect PIN. Please check the correct PIN with staff." },
+      401,
+    );
   }
 
   const response = json({ ok: true });
