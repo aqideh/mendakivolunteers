@@ -87,7 +87,7 @@ export async function duplicateEvent(formData: FormData) {
   }
 
   const source = eventResult.data;
-  const firstTimeslot = timeslotsResult.data[0];
+  const firstTimeslot = timeslotsResult.data.at(0)!;
   const baseSlug = `${source.slug}-copy`;
   let created: { id: string; slug: string } | null = null;
   let createErrorCode: string | undefined;
