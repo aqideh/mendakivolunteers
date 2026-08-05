@@ -36,7 +36,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefix "$GITHUB_WORKSPACE"
 
       - name: Lint
         run: npm run lint
@@ -65,7 +65,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefix "$GITHUB_WORKSPACE"
 
       - name: Audit complete dependency tree
         id: full-audit
@@ -130,7 +130,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefix "$GITHUB_WORKSPACE"
 
       - name: Start local Supabase
         run: npx supabase start
@@ -144,3 +144,4 @@ jobs:
       - name: Stop local Supabase
         if: always()
         run: npx supabase stop --no-backup
+
