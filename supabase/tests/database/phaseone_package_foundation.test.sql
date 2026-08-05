@@ -186,6 +186,8 @@ insert into public.phaseone_events (
   title,
   slug,
   reporting_at,
+  venue,
+  navigation_destination,
   briefing_url,
   sign_in_url,
   sign_out_url,
@@ -201,6 +203,8 @@ values (
   'Package foundation test',
   'package-foundation-test',
   '2026-08-15 01:00:00+00',
+  'Test venue',
+  '1 Test Street, Singapore 000001',
   'https://example.test/briefing',
   'https://example.test/sign-in',
   'https://example.test/sign-out',
@@ -349,4 +353,5 @@ select ok(
 
 select * from finish();
 rollback;
+
 
