@@ -35,6 +35,16 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Verify deterministic install inputs
+        shell: bash
+        run: |
+          pwd
+          test -f package.json
+          test -f package-lock.json
+          node -e 'const fs = require("node:fs"); const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8")); console.log({ cwd: process.cwd(), lockfileVersion: lock.lockfileVersion, lockfileBytes: fs.statSync("package-lock.json").size })'
+          npm config get package-lock
+          npm config get global
+
       - name: Install dependencies
         run: npm ci --prefix "$GITHUB_WORKSPACE"
 
