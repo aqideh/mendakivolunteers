@@ -30,9 +30,9 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -59,36 +59,60 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run high-severity production dependency audit
-        id: audit
+      - name: Audit complete dependency tree
+        id: full-audit
         shell: bash
         run: |
           set +e
-          npm audit --omit=dev --audit-level=high --json > npm-audit.json
+          npm audit --audit-level=high --json > npm-audit-full.json
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
-          node -e 'const report = require("./npm-audit.json"); console.log("Vulnerability totals:", report.metadata?.vulnerabilities ?? report.error ?? "unavailable")'
+          node -e 'const report = require("./npm-audit-full.json"); console.log("Full-tree vulnerability totals:", report.metadata?.vulnerabilities ?? report.error ?? "unavailable")'
           exit 0
 
-      - name: Preserve failed audit report
-        if: steps.audit.outputs.status != '0'
-        uses: actions/upload-artifact@v6
+      - name: Preserve complete audit report
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
-          name: npm-audit-report
-          path: npm-audit.json
+          name: npm-audit-full-report
+          path: npm-audit-full.json
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
 
-      - name: Enforce audit result
-        if: steps.audit.outputs.status != '0'
+      - name: Run high-severity production dependency audit
+        id: production-audit
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --audit-level=high --json > npm-audit-production.json
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          node -e 'const report = require("./npm-audit-production.json"); console.log("Production vulnerability totals:", report.metadata?.vulnerabilities ?? report.error ?? "unavailable")'
+          exit 0
+
+      - name: Preserve production audit report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-audit-production-report
+          path: npm-audit-production.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Summarize full-tree audit result
+        if: steps.full-audit.outputs.status != '0'
+        run: echo "::warning::High-severity vulnerabilities exist in the complete dependency tree. Review the npm-audit-full-report artifact before merging."
+
+      - name: Enforce production audit result
+        if: steps.production-audit.outputs.status != '0'
         run: exit 1
 
   database:
@@ -100,9 +124,9 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies

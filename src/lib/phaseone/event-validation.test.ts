@@ -6,7 +6,17 @@ function validForm() {
   const form = new FormData();
   form.set("title", "Volunteer package");
   form.set("slug", "volunteer-package");
-  form.set("reportingAt", "2026-08-10T09:30");
+  form.set(
+    "timeslotsJson",
+    JSON.stringify([
+      {
+        label: "Morning shift",
+        startsAt: "2026-08-10T09:30",
+        endsAt: "2026-08-10T12:30",
+        status: "scheduled",
+      },
+    ]),
+  );
   form.set("venue", "Test venue");
   form.set("navigationDestination", "Test venue, Singapore 123456");
   form.set("attireNotes", "Wear your MENDAKI volunteer shirt if you have one.");
@@ -27,7 +37,8 @@ describe("package form validation", () => {
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
 
-    expect(parsed.data.reportingAt).toBe("2026-08-10T01:30:00.000Z");
+    expect(parsed.data.timeslots[0]?.startsAt).toBe("2026-08-10T01:30:00.000Z");
+    expect(parsed.data.timeslots[0]?.endsAt).toBe("2026-08-10T04:30:00.000Z");
     expect(parsed.data.briefingAvailableAt).toBe("2026-07-28T01:30:00.000Z");
   });
 
