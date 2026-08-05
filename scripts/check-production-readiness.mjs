@@ -28,7 +28,7 @@ if (process.env.APP_ENV !== "production") {
 }
 
 if (process.env.AUTH_ALLOW_SIGN_UP !== "false") {
-  errors.push("AUTH_ALLOW_SIGN_UP must be false for the Phase One staff-only release.");
+  errors.push("AUTH_ALLOW_SIGN_UP must be false for production.");
 }
 
 for (const name of required) {
@@ -83,4 +83,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log("Phase One production readiness configuration passed.");
+console.log("Production readiness configuration passed.");

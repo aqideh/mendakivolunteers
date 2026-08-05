@@ -38,7 +38,7 @@ export async function POST(
 ) {
   const { slug, action: rawAction } = await context.params;
   if (!isPackageAction(rawAction)) {
-    return json({ error: "Unknown package action." }, 404);
+    return json({ error: "Unknown event action." }, 404);
   }
 
   if (
@@ -48,12 +48,12 @@ export async function POST(
       fetchSite: request.headers.get("sec-fetch-site"),
     })
   ) {
-    return json({ error: "Cross-origin package access is not allowed." }, 403);
+    return json({ error: "Cross-origin event access is not allowed." }, 403);
   }
 
   const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
   if (!contentType.startsWith("application/json")) {
-    return json({ error: "Package access requires JSON." }, 415);
+    return json({ error: "Event access requires JSON." }, 415);
   }
 
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
@@ -81,12 +81,12 @@ export async function POST(
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to load package action PIN", {
+    console.error("Unable to load event action PIN", {
       code: error.code,
       slug,
       action: rawAction,
     });
-    return json({ error: "Package access is unavailable." }, 500);
+    return json({ error: "Event access is unavailable." }, 500);
   }
 
   const configuredPin = event
@@ -108,12 +108,12 @@ export async function POST(
     .gte("attempted_at", since);
 
   if (countError) {
-    console.error("Unable to check package PIN rate limit", {
+    console.error("Unable to check event PIN rate limit", {
       code: countError.code,
       slug,
       action: rawAction,
     });
-    return json({ error: "Package access is unavailable." }, 500);
+    return json({ error: "Event access is unavailable." }, 500);
   }
   if ((count ?? 0) >= 5) {
     return json({ error: "Too many attempts. Try again in 15 minutes." }, 429);
@@ -132,16 +132,19 @@ export async function POST(
     was_successful: wasSuccessful,
   });
   if (auditError) {
-    console.error("Unable to record package PIN attempt", {
+    console.error("Unable to record event PIN attempt", {
       code: auditError.code,
       slug,
       action: rawAction,
     });
-    return json({ error: "Package access is unavailable." }, 500);
+    return json({ error: "Event access is unavailable." }, 500);
   }
 
   if (!wasSuccessful) {
-    return json({ error: "Incorrect PIN." }, 401);
+    return json(
+      { error: "Incorrect PIN. Please check the correct PIN with staff." },
+      401,
+    );
   }
 
   const response = json({ ok: true });

@@ -20,21 +20,21 @@ export async function GET(
 ) {
   const { slug } = await context.params;
   const supabase = getPhaseOneAdminClient();
-  const { data: volunteerPackage, error } = await supabase
+  const { data: volunteerEvent, error } = await supabase
     .from("phaseone_events")
     .select("is_published, briefing_url, briefing_available_at")
     .eq("slug", slug)
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to load package briefing", { code: error.code, slug });
+    console.error("Unable to load event briefing", { code: error.code, slug });
     return json({ error: "Briefing access is unavailable." }, 500);
   }
 
   const decision = evaluateBriefingAccess({
-    isPublished: volunteerPackage?.is_published ?? false,
-    briefingUrl: volunteerPackage?.briefing_url ?? null,
-    briefingAvailableAt: volunteerPackage?.briefing_available_at ?? null,
+    isPublished: volunteerEvent?.is_published ?? false,
+    briefingUrl: volunteerEvent?.briefing_url ?? null,
+    briefingAvailableAt: volunteerEvent?.briefing_available_at ?? null,
   });
 
   if (!decision.available) {

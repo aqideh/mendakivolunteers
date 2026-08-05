@@ -31,7 +31,9 @@
 }
 
 .date strong {
-  font-size: 2.25rem;
+  max-width: 5rem;
+  text-align: center;
+  font-size: clamp(1.65rem, 6vw, 2.25rem);
   line-height: 1;
 }
 
@@ -44,6 +46,26 @@
   margin-bottom: 0.65rem;
   font-size: clamp(1.35rem, 6vw, 1.85rem);
   line-height: 1.12;
+}
+
+.nextTimeslot {
+  margin: -0.35rem 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.directionLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  margin: -0.15rem 0 1rem;
+}
+
+.directionLinks a {
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .cta {

@@ -12,7 +12,15 @@ type PublishInput = Parameters<typeof getPackagePublishError>[0];
 function completePackage(overrides: Partial<PublishInput> = {}): PublishInput {
   return {
     isPublished: true,
-    reportingAt: "2026-08-01T01:00:00.000Z",
+    timeslots: [
+      {
+        startsAt: "2026-08-01T01:00:00.000Z",
+        endsAt: null,
+        status: "scheduled",
+      },
+    ],
+    venue: "Test venue",
+    navigationDestination: "Test venue, Singapore 123456",
     briefingUrl: null,
     briefingAvailableAt: null,
     signInUrl: "https://example.com/sign-in",
@@ -57,6 +65,15 @@ describe("package CMS policy", () => {
     ).toEqual({ signIn: true, signOut: true });
   });
 
+  it("requires a venue and navigation destination for published packages", () => {
+    expect(
+      getPackagePublishError(
+        completePackage({ navigationDestination: null }),
+        now,
+      ),
+    ).toBe("Published packages require a venue and navigation destination.");
+  });
+
   it("requires both action PINs and attendance URLs for published packages", () => {
     expect(
       getPackagePublishError(
@@ -78,21 +95,35 @@ describe("package CMS policy", () => {
     ).toBe("A briefing release date is required when a briefing URL is configured.");
   });
 
-  it("rejects publication when the Singapore reporting date has passed", () => {
+  it("rejects publication when every scheduled timeslot has passed", () => {
     expect(
       getPackagePublishError(
-        completePackage({ reportingAt: "2026-07-28T01:00:00.000Z" }),
+        completePackage({
+          timeslots: [
+            {
+              startsAt: "2026-07-28T01:00:00.000Z",
+              endsAt: null,
+              status: "scheduled",
+            },
+          ],
+        }),
         now,
       ),
-    ).toBe(
-      "The reporting date has already passed. Update the reporting date before publishing this package.",
-    );
+    ).toBe("Published packages require at least one current or future scheduled timeslot.");
   });
 
-  it("accepts a package scheduled earlier on the current Singapore day", () => {
+  it("accepts a timeslot scheduled earlier on the current Singapore day", () => {
     expect(
       getPackagePublishError(
-        completePackage({ reportingAt: "2026-07-29T17:00:00.000Z" }),
+        completePackage({
+          timeslots: [
+            {
+              startsAt: "2026-07-29T17:00:00.000Z",
+              endsAt: null,
+              status: "scheduled",
+            },
+          ],
+        }),
         now,
       ),
     ).toBeNull();

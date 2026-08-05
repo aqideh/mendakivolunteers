@@ -2,14 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import { csvCell } from "@/lib/security/csv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function csvCell(value: string | null | undefined): string {
-  const text = value ?? "";
-  return `"${text.replaceAll('"', '""')}"`;
-}
 
 export async function GET(
   request: NextRequest,

@@ -1,13 +1,28 @@
 import { saveEvent } from "@/app/admin/events/actions";
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
+import { TimeslotEditor } from "./timeslot-editor";
+
+const defaultAttireNotes = "Wear your MENDAKI volunteer shirt if you have one.";
+
+export type EventTimeslotValue = Readonly<{
+  id: string;
+  label: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  status: "scheduled" | "cancelled";
+  sort_order: number;
+}>;
+
 export type EventFormValue = Readonly<{
   id: string;
   external_opportunity_id: string | null;
   title: string;
   slug: string;
-  reporting_at: string | null;
   venue: string | null;
+  navigation_destination: string | null;
+  attire_notes: string;
+  preparation_notes: string | null;
   briefing_url: string | null;
   briefing_available_at: string | null;
   whatsapp_url: string | null;
@@ -16,6 +31,7 @@ export type EventFormValue = Readonly<{
   has_sign_in_pin: boolean;
   has_sign_out_pin: boolean;
   is_published: boolean;
+  timeslots: EventTimeslotValue[];
 }>;
 
 type OpportunityOption = Readonly<{
@@ -31,6 +47,14 @@ export function EventForm({
   event?: EventFormValue;
   opportunities: readonly OpportunityOption[];
 }) {
+  const initialTimeslots = (event?.timeslots ?? []).map((timeslot) => ({
+    id: timeslot.id,
+    label: timeslot.label ?? "",
+    startsAt: toSingaporeDateTimeLocal(timeslot.starts_at),
+    endsAt: toSingaporeDateTimeLocal(timeslot.ends_at),
+    status: timeslot.status,
+  }));
+
   return (
     <form action={saveEvent} className="phaseone-admin-form">
       {event ? <input name="id" type="hidden" value={event.id} /> : null}
@@ -53,11 +77,11 @@ export function EventForm({
 
       <div className="phaseone-admin-grid">
         <div className="form-field">
-          <label htmlFor="title">Package title</label>
+          <label htmlFor="title">Event title</label>
           <input defaultValue={event?.title} id="title" maxLength={160} name="title" required />
         </div>
         <div className="form-field">
-          <label htmlFor="slug">Public package URL slug</label>
+          <label htmlFor="slug">Public journey URL slug</label>
           <input
             autoCapitalize="none"
             defaultValue={event?.slug}
@@ -70,22 +94,56 @@ export function EventForm({
         </div>
       </div>
 
-      <div className="phaseone-admin-grid">
+      <TimeslotEditor initialTimeslots={initialTimeslots} />
+
+      <fieldset className="phaseone-admin-fieldset">
+        <legend>Location and directions</legend>
         <div className="form-field">
-          <label htmlFor="reportingAt">Reporting date and time (Singapore)</label>
-          <input
-            defaultValue={toSingaporeDateTimeLocal(event?.reporting_at ?? null)}
-            id="reportingAt"
-            name="reportingAt"
-            type="datetime-local"
-          />
-          <p className="muted">Published packages cannot use a reporting date before today.</p>
-        </div>
-        <div className="form-field">
-          <label htmlFor="venue">Venue</label>
+          <label htmlFor="venue">Venue name</label>
           <input defaultValue={event?.venue ?? ""} id="venue" maxLength={240} name="venue" />
         </div>
-      </div>
+        <div className="form-field">
+          <label htmlFor="navigationDestination">Full navigation destination</label>
+          <input
+            defaultValue={event?.navigation_destination ?? ""}
+            id="navigationDestination"
+            maxLength={500}
+            name="navigationDestination"
+            placeholder="Venue, street address, Singapore postal code"
+          />
+          <p className="muted">Used directly for Apple Maps and Google Maps directions.</p>
+        </div>
+      </fieldset>
+
+      <fieldset className="phaseone-admin-fieldset">
+        <legend>Volunteer preparation</legend>
+        <div className="form-field">
+          <label htmlFor="attireNotes">Attire reminder</label>
+          <textarea
+            defaultValue={event?.attire_notes ?? defaultAttireNotes}
+            id="attireNotes"
+            maxLength={500}
+            name="attireNotes"
+            required
+            rows={3}
+          />
+        </div>
+        <div className="form-field">
+          <label htmlFor="preparationNotes">Additional preparation notes</label>
+          <textarea
+            defaultValue={event?.preparation_notes ?? ""}
+            id="preparationNotes"
+            maxLength={2000}
+            name="preparationNotes"
+            placeholder="What to bring, where to report, meal arrangements, or other instructions"
+            rows={5}
+          />
+        </div>
+        <div className="form-field">
+          <label htmlFor="whatsappUrl">WhatsApp group URL</label>
+          <input defaultValue={event?.whatsapp_url ?? ""} id="whatsappUrl" name="whatsappUrl" type="url" />
+        </div>
+      </fieldset>
 
       <fieldset className="phaseone-admin-fieldset">
         <legend>Briefing</legend>
@@ -106,11 +164,6 @@ export function EventForm({
           </div>
         </div>
       </fieldset>
-
-      <div className="form-field">
-        <label htmlFor="whatsappUrl">WhatsApp URL</label>
-        <input defaultValue={event?.whatsapp_url ?? ""} id="whatsappUrl" name="whatsappUrl" type="url" />
-      </div>
 
       <fieldset className="phaseone-admin-fieldset">
         <legend>Attendance destinations</legend>
@@ -175,15 +228,17 @@ export function EventForm({
 
       <label className="checkbox-row">
         <input defaultChecked={event?.is_published} name="isPublished" type="checkbox" />
-        Publish volunteer package
+        Publish event guide to Your Volunteer Journey
       </label>
       <p className="muted">
-        Publishing requires a current or future reporting date, both attendance URLs and both action PINs. Briefing URL and release time must be set together.
+        Publishing requires at least one current or future scheduled timeslot, a venue,
+        navigation destination, both attendance URLs and both action PINs. Briefing URL
+        and release time must be set together.
       </p>
 
       <div className="actions">
         <button className="button button-primary" type="submit">
-          {event ? "Save package" : "Create package"}
+          {event ? "Save event guide" : "Create event guide"}
         </button>
       </div>
     </form>

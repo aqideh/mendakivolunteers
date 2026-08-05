@@ -15,6 +15,12 @@ export type PackagePinInput = Readonly<{
 
 export type PackagePinUpdate = Readonly<Record<string, string | null>>;
 
+type PublishTimeslot = Readonly<{
+  startsAt: string;
+  endsAt: string | null;
+  status: "scheduled" | "cancelled";
+}>;
+
 export function buildPackagePinUpdate(
   input: PackagePinInput,
   now = new Date().toISOString(),
@@ -62,7 +68,9 @@ export function packageWillHaveActionPins(
 
 export function getPackagePublishError(input: Readonly<{
   isPublished: boolean;
-  reportingAt: string | null;
+  timeslots: readonly PublishTimeslot[];
+  venue: string | null;
+  navigationDestination: string | null;
   briefingUrl: string | null;
   briefingAvailableAt: string | null;
   signInUrl: string | null;
@@ -71,9 +79,19 @@ export function getPackagePublishError(input: Readonly<{
   hasSignOutPin: boolean;
 }>, now = new Date()): string | null {
   if (!input.isPublished) return null;
-  if (!input.reportingAt) return "Published packages require a reporting date and time.";
-  if (input.reportingAt < startOfSingaporeDayIso(now)) {
-    return "The reporting date has already passed. Update the reporting date before publishing this package.";
+  if (input.timeslots.length === 0) {
+    return "Published packages require at least one timeslot.";
+  }
+  const currentOrFutureScheduled = input.timeslots.some(
+    (timeslot) =>
+      timeslot.status === "scheduled" &&
+      (timeslot.endsAt ?? timeslot.startsAt) >= startOfSingaporeDayIso(now),
+  );
+  if (!currentOrFutureScheduled) {
+    return "Published packages require at least one current or future scheduled timeslot.";
+  }
+  if (!input.venue || !input.navigationDestination) {
+    return "Published packages require a venue and navigation destination.";
   }
   if (!input.signInUrl || !input.signOutUrl) {
     return "Published packages require both sign-in and sign-out URLs.";

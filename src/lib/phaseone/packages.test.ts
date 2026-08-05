@@ -5,19 +5,30 @@ import {
   groupVolunteerPackages,
   recentlyCompletedCutoffIso,
   startOfSingaporeDayIso,
+  type VolunteerPackage,
 } from "./packages";
 
 const now = new Date("2026-07-30T08:00:00.000Z");
 
-function volunteerPackage(id: string, reportingAt: string) {
+function volunteerPackage(id: string, reportingAt: string): VolunteerPackage {
   return {
     id,
     title: id,
     slug: id,
-    reporting_at: reportingAt,
-    venue: null,
+    venue: "Test venue",
+    navigation_destination: "Test venue, Singapore 123456",
     has_sign_in_pin: true,
     has_sign_out_pin: true,
+    timeslots: [
+      {
+        id: `${id}-timeslot`,
+        label: null,
+        starts_at: reportingAt,
+        ends_at: null,
+        status: "scheduled",
+        sort_order: 0,
+      },
+    ],
   };
 }
 

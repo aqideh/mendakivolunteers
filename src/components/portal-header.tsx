@@ -19,11 +19,9 @@ export async function PortalHeader({ status }: PortalHeaderProps) {
       <BrandLockup href="/" priority />
       <nav className="site-nav" aria-label="Primary navigation">
         <Link href="/opportunities">Opportunities</Link>
-        <Link href="/updates">Updates</Link>
+        <Link href="/journey">My Journey</Link>
         <Link href="/news">News</Link>
-        <Link href={isSignedIn ? "/dashboard" : "/login"}>
-          {isSignedIn ? "Dashboard" : "Sign in"}
-        </Link>
+        {isSignedIn ? <Link href="/dashboard">Dashboard</Link> : null}
       </nav>
       {status ? <p className="header-status">{status}</p> : null}
     </header>

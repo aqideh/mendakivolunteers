@@ -9,7 +9,7 @@ import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
-export const metadata: Metadata = { title: "Edit package" };
+export const metadata: Metadata = { title: "Edit event guide" };
 export const dynamic = "force-dynamic";
 
 type PageProps = {
@@ -23,8 +23,8 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 }
 
 const successMessages: Record<string, string> = {
-  event_created: "Package created.",
-  event_updated: "Package updated.",
+  event_created: "Event guide created.",
+  event_updated: "Event guide updated.",
   roster_imported: "Roster imported.",
 };
 
@@ -33,12 +33,18 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   await requireEventManager(`/admin/events/${id}/edit`);
   const admin = getPhaseOneAdminClient();
 
-  const [eventResult, opportunitiesResult, rosterCountResult, importsResult] = await Promise.all([
+  const [eventResult, timeslotsResult, opportunitiesResult, rosterCountResult, importsResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, external_opportunity_id, title, slug, reporting_at, venue, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
+      .select("id, external_opportunity_id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
       .eq("id", id)
       .maybeSingle(),
+    admin
+      .from("phaseone_event_timeslots")
+      .select("id, label, starts_at, ends_at, status, sort_order")
+      .eq("event_id", id)
+      .order("starts_at", { ascending: true })
+      .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_external_opportunities")
       .select("id, title, starts_at")
@@ -58,34 +64,45 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   ]);
 
   if (eventResult.error) {
-    console.error("Unable to load package editor", { code: eventResult.error.code, id });
-    throw new Error("Package editor could not be loaded");
+    console.error("Unable to load event guide editor", { code: eventResult.error.code, id });
+    throw new Error("Event guide editor could not be loaded");
   }
   if (!eventResult.data) notFound();
-  if (opportunitiesResult.error || !opportunitiesResult.data || rosterCountResult.error || importsResult.error || !importsResult.data) {
-    throw new Error("Package operations data could not be loaded");
+  if (
+    timeslotsResult.error ||
+    !timeslotsResult.data ||
+    opportunitiesResult.error ||
+    !opportunitiesResult.data ||
+    rosterCountResult.error ||
+    importsResult.error ||
+    !importsResult.data
+  ) {
+    throw new Error("Event operations data could not be loaded");
   }
 
   const parameters = await searchParams;
   const errorMessage = parameter(parameters, "error");
   const successCode = parameter(parameters, "success");
   const successMessage = successCode ? successMessages[successCode] : undefined;
-  const event = eventResult.data as EventFormValue;
+  const event = {
+    ...eventResult.data,
+    timeslots: timeslotsResult.data,
+  } as EventFormValue;
 
   return (
     <div className="site-shell">
-      <PortalHeader status="Edit package" dashboard />
+      <PortalHeader status="Edit event guide" dashboard />
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Phase-one operations</p>
             <h1>{event.title}</h1>
-            <p className="muted">Manage the volunteer package, access controls and operational roster.</p>
+            <p className="muted">Manage the event guide, schedule, preparation flow, access controls and operational roster.</p>
           </div>
           <div className="actions">
-            <Link className="button button-secondary" href="/admin/events">All packages</Link>
+            <Link className="button button-secondary" href="/admin/events">All event guides</Link>
             <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Counter-check attendance</Link>
-            {event.is_published ? <Link className="button" href={`/packages/${event.slug}`}>View package</Link> : null}
+            {event.is_published ? <Link className="button" href={`/journey/${event.slug}`}>View event guide</Link> : null}
           </div>
         </div>
 
@@ -93,7 +110,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
         <section className="panel phaseone-admin-section" aria-labelledby="event-details-title">
-          <h2 id="event-details-title">Package configuration</h2>
+          <h2 id="event-details-title">Event guide configuration</h2>
           <EventForm event={event} opportunities={opportunitiesResult.data} />
         </section>
 
