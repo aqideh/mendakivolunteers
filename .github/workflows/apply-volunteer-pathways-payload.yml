@@ -1,0 +1,47 @@
+name: Apply Volunteer Pathways Payload
+
+on:
+  push:
+    branches:
+      - agent/volunteer-pathways
+    paths:
+      - .github/workflows/apply-volunteer-pathways-payload.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/volunteer-pathways
+          fetch-depth: 0
+
+      - name: Apply implementation payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            _agent_payload/part00 \
+            _agent_payload/part01 \
+            _agent_payload/part02 \
+            _agent_payload/part03_04 \
+            _agent_payload/part05 \
+            _agent_payload/part06 \
+            _agent_payload/part07 \
+            _agent_payload/part08 \
+            _agent_payload/part09 \
+            > /tmp/volunteer-pathways.b64
+          base64 --decode /tmp/volunteer-pathways.b64 > /tmp/volunteer-pathways.tar.gz
+          tar -xzf /tmp/volunteer-pathways.tar.gz -C .
+          rm -rf _agent_payload
+          rm -f .github/workflows/apply-volunteer-pathways-payload.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "add editable volunteer pathways"
+          git push origin HEAD:agent/volunteer-pathways
