@@ -25,6 +25,7 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 const successMessages: Record<string, string> = {
   event_created: "Event guide created.",
   event_updated: "Event guide updated.",
+  event_duplicated: "Event guide duplicated as a draft. Review its title, slug, dates and access settings before publishing.",
   roster_imported: "Roster imported.",
 };
 
