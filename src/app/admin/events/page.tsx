@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { duplicateEvent } from "@/app/admin/events/actions";
 import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -99,6 +100,10 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                     <td>
                       <div className="actions">
                         <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
+                        <form action={duplicateEvent}>
+                          <input type="hidden" name="eventId" value={event.id} />
+                          <button className="text-link button-reset" type="submit">Duplicate</button>
+                        </form>
                         {event.is_published ? (
                           <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">View event guide</Link>
                         ) : null}

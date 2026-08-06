@@ -147,6 +147,14 @@
   text-decoration: none;
 }
 
+.button-reset {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  font: inherit;
+}
+
 .back-link {
   display: inline-flex;
   margin-bottom: 1.5rem;

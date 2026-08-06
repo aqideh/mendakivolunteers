@@ -41,9 +41,9 @@ export default async function ContentAdminPage({
   const successCode = readParameter(parameters, "success");
   const errorMessage = readParameter(parameters, "error");
   const successMessage = successCode ? successMessages[successCode] : undefined;
-  const canManagePackages = hasEventManagerRole(access.roles);
+  const canManageJourneys = hasEventManagerRole(access.roles);
 
-  const [opportunitiesResult, newsResult, packagesResult] = await Promise.all([
+  const [opportunitiesResult, newsResult, journeysResult] = await Promise.all([
     supabase
       .schema("content")
       .from("opportunities")
@@ -56,7 +56,7 @@ export default async function ContentAdminPage({
       .select("id, slug, title, status, publish_at, published_at, updated_at, featured")
       .order("updated_at", { ascending: false })
       .limit(100),
-    canManagePackages
+    canManageJourneys
       ? getPhaseOneAdminClient()
           .from("phaseone_events")
           .select(
@@ -68,24 +68,24 @@ export default async function ContentAdminPage({
   ]);
 
   const hasLoadError = Boolean(
-    opportunitiesResult.error || newsResult.error || packagesResult.error,
+    opportunitiesResult.error || newsResult.error || journeysResult.error,
   );
   if (hasLoadError) {
     console.error("Unable to load CMS content", {
       opportunitiesCode: opportunitiesResult.error?.code,
       newsCode: newsResult.error?.code,
-      packagesCode: packagesResult.error?.code,
+      journeysCode: journeysResult.error?.code,
     });
     throw new Error("CMS content could not be loaded");
   }
 
-  if (!opportunitiesResult.data || !newsResult.data || !packagesResult.data) {
+  if (!opportunitiesResult.data || !newsResult.data || !journeysResult.data) {
     throw new Error("CMS content query returned no result set");
   }
 
   const opportunities = opportunitiesResult.data;
   const newsPosts = newsResult.data;
-  const packages = packagesResult.data;
+  const journeys = journeysResult.data;
 
   return (
     <div className="site-shell">
@@ -96,14 +96,14 @@ export default async function ContentAdminPage({
             <p className="eyebrow">Native CMS</p>
             <h1>Manage volunteer content</h1>
             <p className="muted">
-              Manage packages and news here. Opportunity listings remain visible,
+              Manage event guides and news here. Opportunity listings remain visible,
               but creation and editing are temporarily paused.
             </p>
           </div>
           <div className="actions">
-            {canManagePackages ? (
+            {canManageJourneys ? (
               <Link className="button button-primary" href="/admin/events/new">
-                New package
+                New event guide
               </Link>
             ) : null}
             <Link className="button button-secondary" href="/admin/content/news/new">
@@ -123,22 +123,22 @@ export default async function ContentAdminPage({
           </div>
         ) : null}
 
-        {canManagePackages ? (
-          <section className="section" aria-labelledby="packages-title">
+        {canManageJourneys ? (
+          <section className="section" aria-labelledby="journeys-title">
             <div className="section-header">
               <div>
                 <p className="eyebrow">Volunteer operations</p>
-                <h2 id="packages-title">Packages</h2>
+                <h2 id="journeys-title">Event guides</h2>
               </div>
-              <Link className="text-link" href="/packages">
-                View public packages
+              <Link className="text-link" href="/journey">
+                View public journeys
               </Link>
             </div>
             <div className="table-wrap">
               <table className="content-table">
                 <thead>
                   <tr>
-                    <th scope="col">Package</th>
+                    <th scope="col">Event guide</th>
                     <th scope="col">Reporting</th>
                     <th scope="col">Access</th>
                     <th scope="col">Visibility</th>
@@ -146,30 +146,29 @@ export default async function ContentAdminPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {packages.map((volunteerPackage) => (
-                    <tr key={volunteerPackage.id}>
+                  {journeys.map((journey) => (
+                    <tr key={journey.id}>
                       <td>
-                        <strong>{volunteerPackage.title}</strong>
+                        <strong>{journey.title}</strong>
                         <span className="table-subtext">
-                          /packages/{volunteerPackage.slug}
+                          /journey/{journey.slug}
                         </span>
                       </td>
                       <td>
-                        {volunteerPackage.reporting_at
-                          ? formatSingaporeDateTime(volunteerPackage.reporting_at)
+                        {journey.reporting_at
+                          ? formatSingaporeDateTime(journey.reporting_at)
                           : "Not set"}
                       </td>
                       <td>
-                        {volunteerPackage.has_sign_in_pin &&
-                        volunteerPackage.has_sign_out_pin
+                        {journey.has_sign_in_pin && journey.has_sign_out_pin
                           ? "Both PINs configured"
                           : "Configuration incomplete"}
                       </td>
                       <td>
                         <span className="status-pill">
                           {getPackageListingStatus(
-                            volunteerPackage.reporting_at,
-                            volunteerPackage.is_published,
+                            journey.reporting_at,
+                            journey.is_published,
                           )}
                         </span>
                       </td>
@@ -177,14 +176,14 @@ export default async function ContentAdminPage({
                         <div className="actions">
                           <Link
                             className="text-link"
-                            href={`/admin/events/${volunteerPackage.id}/edit`}
+                            href={`/admin/events/${journey.id}/edit`}
                           >
                             Edit
                           </Link>
-                          {volunteerPackage.is_published ? (
+                          {journey.is_published ? (
                             <Link
                               className="text-link"
-                              href={`/packages/${volunteerPackage.slug}`}
+                              href={`/journey/${journey.slug}`}
                               target="_blank"
                             >
                               View
@@ -194,9 +193,9 @@ export default async function ContentAdminPage({
                       </td>
                     </tr>
                   ))}
-                  {packages.length === 0 ? (
+                  {journeys.length === 0 ? (
                     <tr>
-                      <td colSpan={5}>No package records.</td>
+                      <td colSpan={5}>No event guides.</td>
                     </tr>
                   ) : null}
                 </tbody>
@@ -315,7 +314,7 @@ export default async function ContentAdminPage({
           <p className="eyebrow">Publishing control</p>
           <h2 id="workflow-title">Role-based workflow</h2>
           <p>
-            Package access is limited to attendance managers and administrators.
+            Event-guide access is limited to attendance managers and administrators.
             News editors can create drafts, while publishers and administrators can
             schedule and publish posts.
           </p>
