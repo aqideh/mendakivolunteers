@@ -38,6 +38,8 @@ Before release:
 3. Run `npm run db:test` to verify grants and Row Level Security.
 4. Compare repository migration versions with the production migration history.
 5. Review new tables for Data API grants and RLS coverage.
+6. Confirm every custom Data API schema is listed in `supabase/config.toml` and
+   in the linked production project's exposed-schema configuration.
 
 Avoid destructive or backwards-incompatible migrations in the same release as application code that depends on them. Use expand-and-contract changes across releases.
 
@@ -47,8 +49,10 @@ After a merge to `main`, verify:
 
 - The Vercel production deployment is `READY` and references the merged `main` commit.
 - Production domains resolve to that deployment.
-- Public opportunity, news, and journey pages load.
+- Public opportunity, news, journey, and volunteer pathway pages load.
 - Staff login and authorization redirects behave correctly.
+- Pathway managers can load the pathway editor and preview without exposing drafts
+  to ordinary volunteers.
 - Event administration and attendance pages load for authorized staff.
 - The scheduled import route still requires its cron secret.
 - Supabase logs contain no new authentication, API, or database errors.

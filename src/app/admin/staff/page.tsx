@@ -33,7 +33,7 @@ async function loadStaffAccounts(): Promise<StaffAccount[]> {
       .schema("core")
       .from("user_roles")
       .select("user_id, role")
-      .in("role", ["attendance_manager", "admin"]),
+      .in("role", ["attendance_manager", "pathway_manager", "admin"]),
     admin.auth.admin.listUsers({ page: 1, perPage: 200 }),
   ]);
 

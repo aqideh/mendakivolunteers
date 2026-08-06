@@ -20,6 +20,7 @@ export async function PortalHeader({ status }: PortalHeaderProps) {
       <nav className="site-nav" aria-label="Primary navigation">
         <Link href="/opportunities">Opportunities</Link>
         <Link href="/journey">My Journey</Link>
+        <Link href="/pathways">Pathways</Link>
         <Link href="/news">News</Link>
         {isSignedIn ? <Link href="/dashboard">Dashboard</Link> : null}
       </nav>

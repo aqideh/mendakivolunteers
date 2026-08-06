@@ -10,6 +10,7 @@ export type AppRole =
   | "volunteer"
   | "support_officer"
   | "content_editor"
+  | "pathway_manager"
   | "publisher"
   | "attendance_manager"
   | "gamification_manager"
@@ -36,6 +37,8 @@ export type ContentStatus =
   | "archived";
 
 export type ContentKind = "opportunity" | "news";
+
+export type PathwayVersionStatus = "draft" | "published" | "archived";
 
 export type PhaseOnePinAction = "legacy" | "sign_in" | "sign_out";
 
@@ -336,6 +339,209 @@ export type Database = {
     Enums: {
       content_status: ContentStatus;
       content_kind: ContentKind;
+    };
+    CompositeTypes: Record<never, never>;
+  };
+  pathways: {
+    Tables: {
+      maps: {
+        Row: {
+          id: string;
+          slug: string;
+          active_version_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          active_version_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          slug?: string;
+          active_version_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      map_versions: {
+        Row: {
+          id: string;
+          map_id: string;
+          version_number: number;
+          status: PathwayVersionStatus;
+          name: string;
+          introduction: string;
+          explorer_title: string;
+          explorer_description: string;
+          footer_note: string;
+          created_by: string | null;
+          published_by: string | null;
+          published_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          map_id: string;
+          version_number: number;
+          status?: PathwayVersionStatus;
+          name: string;
+          introduction: string;
+          explorer_title?: string;
+          explorer_description: string;
+          footer_note: string;
+          created_by?: string | null;
+          published_by?: string | null;
+          published_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          status?: PathwayVersionStatus;
+          name?: string;
+          introduction?: string;
+          explorer_title?: string;
+          explorer_description?: string;
+          footer_note?: string;
+          created_by?: string | null;
+          published_by?: string | null;
+          published_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      phases: {
+        Row: {
+          id: string;
+          version_id: string;
+          stable_key: string;
+          name: string;
+          description: string;
+          sort_order: number;
+        };
+        Insert: {
+          id?: string;
+          version_id: string;
+          stable_key: string;
+          name: string;
+          description: string;
+          sort_order: number;
+        };
+        Update: {
+          name?: string;
+          description?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      tracks: {
+        Row: {
+          id: string;
+          version_id: string;
+          stable_key: string;
+          name: string;
+          short_name: string;
+          description: string;
+          color_token: string;
+          sort_order: number;
+        };
+        Insert: {
+          id?: string;
+          version_id: string;
+          stable_key: string;
+          name: string;
+          short_name: string;
+          description: string;
+          color_token: string;
+          sort_order: number;
+        };
+        Update: {
+          name?: string;
+          short_name?: string;
+          description?: string;
+          color_token?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      stages: {
+        Row: {
+          id: string;
+          version_id: string;
+          track_id: string;
+          phase_id: string;
+          stable_key: string;
+          title: string;
+          description: string;
+          is_active: boolean;
+        };
+        Insert: {
+          id?: string;
+          version_id: string;
+          track_id: string;
+          phase_id: string;
+          stable_key: string;
+          title: string;
+          description: string;
+          is_active?: boolean;
+        };
+        Update: {
+          title?: string;
+          description?: string;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      stage_roles: {
+        Row: {
+          id: string;
+          stage_id: string;
+          stable_key: string;
+          name: string;
+          sort_order: number;
+        };
+        Insert: {
+          id?: string;
+          stage_id: string;
+          stable_key: string;
+          name: string;
+          sort_order: number;
+        };
+        Update: {
+          name?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+    };
+    Views: Record<never, never>;
+    Functions: {
+      is_manager: {
+        Args: Record<never, never>;
+        Returns: boolean;
+      };
+      version_is_active_published: {
+        Args: { target_version_id: string };
+        Returns: boolean;
+      };
+      create_draft_from_active: {
+        Args: { target_map_id: string };
+        Returns: string;
+      };
+      save_draft: {
+        Args: { draft_version_id: string; payload: Json };
+        Returns: undefined;
+      };
+      publish_draft: {
+        Args: { draft_version_id: string };
+        Returns: undefined;
+      };
+    };
+    Enums: {
+      version_status: PathwayVersionStatus;
     };
     CompositeTypes: Record<never, never>;
   };

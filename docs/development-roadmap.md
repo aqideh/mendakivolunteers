@@ -64,7 +64,25 @@ Exit criteria: no Salesforce credential reaches the browser; outages cannot
 produce substitute records; stale records are visibly marked; mapping changes
 are versioned and audited.
 
-## Phase 4: attendance capture and staff handoff
+## Phase 4: volunteer pathways
+
+Status: implemented for map management; individual positioning is planned.
+
+- Publish a shared Explorer starting point, four colour-coded tracks, and five
+  ordered development phases.
+- Manage pathway maps through role-gated drafts, previews, immutable published
+  versions, forced Row Level Security, and audit events.
+- Keep role options structured rather than parsing slash-separated display copy.
+- Add individual volunteer stage positioning only through a future staff-managed
+  workflow using stable stage keys and the internal `core.volunteers.id`.
+- Do not infer or automatically advance positions from registration or attendance
+  records without approved criteria and staff confirmation.
+
+Exit criteria: volunteers only read the active published version; drafts remain
+staff-only; publication is atomic; published versions are immutable; RLS and
+version transitions are covered by pgTAP tests.
+
+## Phase 5: attendance capture and staff handoff
 
 Status: planned; depends on Phase 3 and an approved operating process.
 
@@ -77,9 +95,9 @@ Status: planned; depends on Phase 3 and an approved operating process.
 Exit criteria: the interface distinguishes captured, submitted, rejected, and
 verified states; only a downstream verified YM Hub record counts as attendance.
 
-## Phase 5: volunteer history and engagement
+## Phase 6: volunteer history and engagement
 
-Status: planned; depends on verified Phase 4 data.
+Status: planned; depends on verified Phase 5 data.
 
 - Show authoritative participation history and verified hours.
 - Add points, badges, referrals, or recognition only after policy, appeals,
@@ -89,7 +107,7 @@ Status: planned; depends on verified Phase 4 data.
 Exit criteria: calculations are deterministic, auditable, reversible through
 documented correction workflows, and never awarded from capture-only records.
 
-## Phase 6: controlled production rollout
+## Phase 7: controlled production rollout
 
 Status: planned across all production-facing phases.
 
