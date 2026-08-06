@@ -17,10 +17,10 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 
 ## Current capabilities
 
-- Public opportunity and news pages.
+- Public opportunity, news, and volunteer pathway pages.
 - Volunteer journey pages with briefing, sign-in, and sign-out controls.
 - Supabase-backed staff authentication and password setup.
-- Staff content, event, roster, attendance, and account administration.
+- Staff content, pathway, event, roster, attendance, and account administration.
 - Attendance CSV export with spreadsheet-formula neutralization.
 - Supabase migrations, Row Level Security policies, and pgTAP database tests.
 - Scheduled Volunteer.gov.sg opportunity import through Vercel Cron.
@@ -95,6 +95,7 @@ src/components             Shared application components
 src/lib/auth               Server-side authorization helpers
 src/lib/content            Content validation and time utilities
 src/lib/phaseone           Deployed event and attendance domain
+src/lib/pathways           Versioned volunteer pathway loading and validation
 src/lib/supabase           Browser, server, and session clients
 src/lib/security           Security and serialization helpers
 src/lib/ymhub              Read-only YM Hub presentation invariants

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/dashboard/actions";
 import { PortalHeader } from "@/components/portal-header";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
+import { hasPathwayManagerRole } from "@/lib/auth/pathway-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -29,6 +30,10 @@ const dashboardErrors: Record<string, string> = {
   cms_access_denied: "Your account does not have permission to manage content.",
   cms_authorization_unavailable:
     "Content-management permissions could not be checked. No content was changed.",
+  pathway_access_denied:
+    "Your account does not have permission to manage volunteer pathways.",
+  pathway_authorization_unavailable:
+    "Pathway-management permissions could not be checked. No pathway data was changed.",
 };
 
 type YmHubSyncStatus =
@@ -170,6 +175,7 @@ export default async function DashboardPage({
   }
 
   const canManageContent = hasContentManagerRole(roles);
+  const canManagePathways = hasPathwayManagerRole(roles);
   const syncStatus = ymHubReadModel?.syncStatus ?? null;
   const syncOutcome = getYmHubSyncOutcome(syncStatus);
   const parameters = await searchParams;
@@ -193,6 +199,11 @@ export default async function DashboardPage({
             {canManageContent ? (
               <Link className="button button-primary" href="/admin/content">
                 Manage content
+              </Link>
+            ) : null}
+            {canManagePathways ? (
+              <Link className="button button-secondary" href="/admin/pathways">
+                Manage pathways
               </Link>
             ) : null}
             <form action={signOut}>
@@ -435,6 +446,21 @@ export default async function DashboardPage({
               <Link className="text-link" href="/news">
                 Read news
               </Link>
+            </article>
+            <article className="card">
+              <h3>Volunteer pathways</h3>
+              <p className="muted">
+                See your starting point and explore potential roles across four
+                volunteering pathways.
+              </p>
+              <Link className="text-link" href="/pathways">
+                View my pathways
+              </Link>
+              {canManagePathways ? (
+                <Link className="text-link" href="/admin/pathways">
+                  Manage pathway map
+                </Link>
+              ) : null}
             </article>
             <article className="card">
               <h3>Native CMS</h3>
