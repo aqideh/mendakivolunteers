@@ -34,8 +34,18 @@ jobs:
           const nanoid = lock.packages?.['node_modules/nanoid']?.version;
           const jsYaml = lock.packages?.['node_modules/js-yaml']?.version;
           console.log({ nanoid, jsYaml });
-          if (nanoid !== '3.3.17') throw new Error(`Expected nanoid 3.3.17, got ${nanoid}`);
-          if (jsYaml !== '4.3.1') throw new Error(`Expected js-yaml 4.3.1, got ${jsYaml}`);
+          const parse = (version) => version.split('.').map(Number);
+          const atLeast = (version, minimum) => {
+            const actual = parse(version);
+            const required = parse(minimum);
+            for (let i = 0; i < 3; i += 1) {
+              if (actual[i] > required[i]) return true;
+              if (actual[i] < required[i]) return false;
+            }
+            return true;
+          };
+          if (!nanoid || !atLeast(nanoid, '3.3.17')) throw new Error(`Expected nanoid >= 3.3.17, got ${nanoid}`);
+          if (!jsYaml || !atLeast(jsYaml, '4.3.1')) throw new Error(`Expected js-yaml >= 4.3.1, got ${jsYaml}`);
           NODE
 
       - name: Verify dependency audits
