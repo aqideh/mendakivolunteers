@@ -21,6 +21,7 @@ function validForm() {
   form.set("navigationDestination", "Test venue, Singapore 123456");
   form.set("attireNotes", "Wear your MENDAKI volunteer shirt if you have one.");
   form.set("preparationNotes", "Bring a water bottle.");
+  form.set("programmeRundownUrl", "https://example.com/programme-rundown.png");
   form.set("briefingUrl", "https://example.com/briefing");
   form.set("briefingAvailableAt", "2026-07-28T09:30");
   form.set("whatsappUrl", "https://chat.whatsapp.com/example");
@@ -47,6 +48,7 @@ describe("package form validation", () => {
     form.set("navigationDestination", "  Test venue, Singapore 123456  ");
     form.set("attireNotes", "  Wear covered shoes.  ");
     form.set("preparationNotes", "  Bring a water bottle.  ");
+    form.set("programmeRundownUrl", "  https://example.com/rundown.jpg  ");
 
     const parsed = parseEventForm(form);
     expect(parsed.success).toBe(true);
@@ -55,11 +57,12 @@ describe("package form validation", () => {
     expect(parsed.data.navigationDestination).toBe("Test venue, Singapore 123456");
     expect(parsed.data.attireNotes).toBe("Wear covered shoes.");
     expect(parsed.data.preparationNotes).toBe("Bring a water bottle.");
+    expect(parsed.data.programmeRundownUrl).toBe("https://example.com/rundown.jpg");
   });
 
   it("rejects non-HTTPS destinations", () => {
     const form = validForm();
-    form.set("signInUrl", "http://example.com/sign-in");
+    form.set("programmeRundownUrl", "http://example.com/rundown.png");
 
     const parsed = parseEventForm(form);
     expect(parsed.success).toBe(false);
