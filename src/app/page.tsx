@@ -64,9 +64,6 @@ export default async function Home() {
               <Link className="button button-primary" href="/opportunities">
                 Explore opportunities
               </Link>
-              <Link className="button button-secondary" href="/pathways">
-                My volunteer pathways
-              </Link>
               <Link className="button button-secondary" href="/journey">
                 View your journey
               </Link>
