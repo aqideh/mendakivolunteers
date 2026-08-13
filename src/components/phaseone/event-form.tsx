@@ -23,6 +23,7 @@ export type EventFormValue = Readonly<{
   navigation_destination: string | null;
   attire_notes: string;
   preparation_notes: string | null;
+  programme_rundown_url: string | null;
   briefing_url: string | null;
   briefing_available_at: string | null;
   whatsapp_url: string | null;
@@ -138,6 +139,19 @@ export function EventForm({
             placeholder="What to bring, where to report, meal arrangements, or other instructions"
             rows={5}
           />
+        </div>
+        <div className="form-field">
+          <label htmlFor="programmeRundownUrl">Programme rundown image URL</label>
+          <input
+            defaultValue={event?.programme_rundown_url ?? ""}
+            id="programmeRundownUrl"
+            name="programmeRundownUrl"
+            placeholder="https://example.com/programme-rundown.png"
+            type="url"
+          />
+          <p className="muted">
+            Optional HTTPS image URL. When set, volunteers can open the programme rundown from the event journey.
+          </p>
         </div>
         <div className="form-field">
           <label htmlFor="whatsappUrl">WhatsApp group URL</label>

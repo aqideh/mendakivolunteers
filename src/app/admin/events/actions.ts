@@ -57,7 +57,7 @@ export async function duplicateEvent(formData: FormData) {
     admin
       .from("phaseone_events")
       .select(
-        "id, external_opportunity_id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url",
+        "id, external_opportunity_id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url",
       )
       .eq("id", sourceId)
       .maybeSingle(),
@@ -105,6 +105,7 @@ export async function duplicateEvent(formData: FormData) {
         navigation_destination: source.navigation_destination,
         attire_notes: source.attire_notes,
         preparation_notes: source.preparation_notes,
+        programme_rundown_url: source.programme_rundown_url,
         briefing_url: source.briefing_url,
         briefing_available_at: source.briefing_available_at,
         whatsapp_url: source.whatsapp_url,
@@ -231,6 +232,7 @@ export async function saveEvent(formData: FormData) {
     navigation_destination: parsed.data.navigationDestination,
     attire_notes: parsed.data.attireNotes,
     preparation_notes: parsed.data.preparationNotes,
+    programme_rundown_url: parsed.data.programmeRundownUrl,
     briefing_url: parsed.data.briefingUrl,
     briefing_available_at: parsed.data.briefingAvailableAt,
     whatsapp_url: parsed.data.whatsappUrl,
@@ -297,6 +299,7 @@ export async function saveEvent(formData: FormData) {
       navigation_destination: parsed.data.navigationDestination,
       attire_notes: parsed.data.attireNotes,
       preparation_notes: parsed.data.preparationNotes,
+      programme_rundown_url: parsed.data.programmeRundownUrl,
       briefing_url: parsed.data.briefingUrl,
       briefing_available_at: parsed.data.briefingAvailableAt,
       whatsapp_url: parsed.data.whatsappUrl,

@@ -71,6 +71,7 @@ export const eventFormSchema = z
     navigationDestination: optionalText(500),
     attireNotes: z.string().trim().min(1).max(500),
     preparationNotes: optionalText(2000),
+    programmeRundownUrl: optionalUrl,
     briefingUrl: optionalUrl,
     briefingAvailableAt: optionalSingaporeDateTime,
     whatsappUrl: optionalUrl,
@@ -119,6 +120,7 @@ export function parseEventForm(formData: FormData) {
       formData.get("attireNotes") ??
       "Wear your MENDAKI volunteer shirt if you have one.",
     preparationNotes: formData.get("preparationNotes"),
+    programmeRundownUrl: formData.get("programmeRundownUrl"),
     briefingUrl: formData.get("briefingUrl"),
     briefingAvailableAt: formData.get("briefingAvailableAt"),
     whatsappUrl: formData.get("whatsappUrl"),
