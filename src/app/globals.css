@@ -51,10 +51,6 @@ a {
   color: inherit;
 }
 
-a[href="/pathways"] {
-  display: none;
-}
-
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
