@@ -112,7 +112,7 @@ export default async function EventGuidePage({
   const { data: volunteerEvent, error } = await supabase
     .from("phaseone_events")
     .select(
-      "id, title, venue, navigation_destination, attire_notes, preparation_notes, briefing_url, briefing_available_at, whatsapp_url, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
+      "id, title, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -172,6 +172,13 @@ export default async function EventGuidePage({
     : null;
   const signInState = actionStates.find(({ action }) => action === "sign-in");
   const signOutState = actionStates.find(({ action }) => action === "sign-out");
+  const hasWhatsapp = Boolean(volunteerEvent.whatsapp_url);
+  const hasProgrammeRundown = Boolean(volunteerEvent.programme_rundown_url);
+  const programmeRundownStep = 2 + Number(hasWhatsapp);
+  const preparationStep = 2 + Number(hasWhatsapp) + Number(hasProgrammeRundown);
+  const travelStep = preparationStep + 1;
+  const signInStep = preparationStep + 2;
+  const signOutStep = preparationStep + 3;
 
   return (
     <div className="site-shell phaseone-shell">
@@ -260,8 +267,29 @@ export default async function EventGuidePage({
                 </li>
               ) : null}
 
+              {volunteerEvent.programme_rundown_url ? (
+                <li className={styles.flowStep}>
+                  <span className={styles.stepNumber} aria-hidden="true">
+                    {programmeRundownStep}
+                  </span>
+                  <div className={styles.stepBody}>
+                    <h3>View the programme rundown</h3>
+                    <p>Check the programme and key timings before you report for the event.</p>
+                    <a
+                      className="button button-secondary"
+                      href={volunteerEvent.programme_rundown_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      referrerPolicy="no-referrer"
+                    >
+                      View programme rundown
+                    </a>
+                  </div>
+                </li>
+              ) : null}
+
               <li className={styles.flowStep}>
-                <span className={styles.stepNumber} aria-hidden="true">3</span>
+                <span className={styles.stepNumber} aria-hidden="true">{preparationStep}</span>
                 <div className={styles.stepBody}>
                   <h3>Prepare for the event</h3>
                   <p className={styles.notes}>{volunteerEvent.attire_notes}</p>
@@ -272,7 +300,7 @@ export default async function EventGuidePage({
               </li>
 
               <li className={styles.flowStep}>
-                <span className={styles.stepNumber} aria-hidden="true">4</span>
+                <span className={styles.stepNumber} aria-hidden="true">{travelStep}</span>
                 <div className={styles.stepBody}>
                   <h3>Travel to the venue</h3>
                   <p>{volunteerEvent.navigation_destination}</p>
@@ -284,7 +312,7 @@ export default async function EventGuidePage({
               </li>
 
               <li className={styles.flowStep}>
-                <span className={styles.stepNumber} aria-hidden="true">5</span>
+                <span className={styles.stepNumber} aria-hidden="true">{signInStep}</span>
                 <div className={styles.stepBody}>
                   <h3>Check in when you arrive</h3>
                   <p className="phaseone-access-note">
@@ -306,7 +334,7 @@ export default async function EventGuidePage({
               </li>
 
               <li className={styles.flowStep}>
-                <span className={styles.stepNumber} aria-hidden="true">6</span>
+                <span className={styles.stepNumber} aria-hidden="true">{signOutStep}</span>
                 <div className={styles.stepBody}>
                   <h3>Check out before you leave</h3>
                   <p className="phaseone-access-note">
