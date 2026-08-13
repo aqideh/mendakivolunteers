@@ -453,9 +453,6 @@ export default async function DashboardPage({
                 See your starting point and explore potential roles across four
                 volunteering pathways.
               </p>
-              <Link className="text-link" href="/pathways">
-                View my pathways
-              </Link>
               {canManagePathways ? (
                 <Link className="text-link" href="/admin/pathways">
                   Manage pathway map
