@@ -41,6 +41,7 @@ export function ProgrammeRundownManager({
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const atCapacity = images.length >= programmeRundownMaxImagesPerEvent;
 
   async function uploadFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -117,15 +118,29 @@ export function ProgrammeRundownManager({
         <label htmlFor="programmeRundownImages">Programme rundown images</label>
         <input
           accept="image/jpeg,image/png,image/webp"
-          disabled={uploading || isPending || images.length >= programmeRundownMaxImagesPerEvent}
+          className={styles.fileInput}
+          disabled={uploading || isPending || atCapacity}
           id="programmeRundownImages"
           multiple
           onChange={(event) => void uploadFiles(event.currentTarget.files)}
           ref={inputRef}
           type="file"
         />
+        <div className={styles.uploadRow}>
+          <button
+            className="button button-primary"
+            disabled={uploading || isPending || atCapacity}
+            onClick={() => inputRef.current?.click()}
+            type="button"
+          >
+            {uploading ? "Uploading…" : "Upload images"}
+          </button>
+          <span className="muted">
+            {images.length}/{programmeRundownMaxImagesPerEvent} images
+          </span>
+        </div>
         <p className="muted">
-          Upload JPEG, PNG or WebP images up to 5 MB each. You can add up to {programmeRundownMaxImagesPerEvent} images per event.
+          Upload JPEG, PNG or WebP images up to 5 MB each. You can select up to {programmeRundownMaxFilesPerSelection} at a time.
         </p>
       </div>
 
