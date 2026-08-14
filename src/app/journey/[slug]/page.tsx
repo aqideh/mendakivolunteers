@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PackageActionPinForm } from "@/components/phaseone/package-action-pin-form";
+import { ProgrammeRundownGallery } from "@/components/phaseone/programme-rundown-gallery";
 import { PortalHeader } from "@/components/portal-header";
 import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
 import { evaluateBriefingAccess } from "@/lib/phaseone/package-briefing";
@@ -21,6 +22,7 @@ import {
   sortTimeslots,
   type VolunteerTimeslot,
 } from "@/lib/phaseone/packages";
+import { programmeRundownBucket } from "@/lib/phaseone/programme-rundown";
 
 import styles from "./journey-detail.module.css";
 
@@ -124,21 +126,43 @@ export default async function EventGuidePage({
   }
   if (!volunteerEvent) notFound();
 
-  const { data: timeslotData, error: timeslotError } = await supabase
-    .from("phaseone_event_timeslots")
-    .select("id, label, starts_at, ends_at, status, sort_order")
-    .eq("event_id", volunteerEvent.id)
-    .order("starts_at", { ascending: true })
-    .order("sort_order", { ascending: true });
+  const [timeslotResult, rundownResult] = await Promise.all([
+    supabase
+      .from("phaseone_event_timeslots")
+      .select("id, label, starts_at, ends_at, status, sort_order")
+      .eq("event_id", volunteerEvent.id)
+      .order("starts_at", { ascending: true })
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("phaseone_event_rundown_images")
+      .select("id, storage_path, sort_order, created_at")
+      .eq("event_id", volunteerEvent.id)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+  ]);
 
-  if (timeslotError || !timeslotData || timeslotData.length === 0) {
+  if (timeslotResult.error || !timeslotResult.data || timeslotResult.data.length === 0) {
     console.error("Unable to load event schedule", {
-      code: timeslotError?.code,
+      code: timeslotResult.error?.code,
       slug,
     });
     throw new Error("Event schedule could not be loaded");
   }
-  const timeslots = sortTimeslots(timeslotData as VolunteerTimeslot[]);
+  if (rundownResult.error && rundownResult.error.code !== "42P01") {
+    console.error("Unable to load programme rundown", {
+      code: rundownResult.error.code,
+      slug,
+    });
+    throw new Error("Programme rundown could not be loaded");
+  }
+
+  const timeslots = sortTimeslots(timeslotResult.data as VolunteerTimeslot[]);
+  const rundownImages = (rundownResult.data ?? []).map((image) => ({
+    id: String(image.id),
+    url: supabase.storage
+      .from(programmeRundownBucket)
+      .getPublicUrl(String(image.storage_path)).data.publicUrl,
+  }));
 
   const briefing = evaluateBriefingAccess({
     isPublished: true,
@@ -173,7 +197,7 @@ export default async function EventGuidePage({
   const signInState = actionStates.find(({ action }) => action === "sign-in");
   const signOutState = actionStates.find(({ action }) => action === "sign-out");
   const hasWhatsapp = Boolean(volunteerEvent.whatsapp_url);
-  const hasProgrammeRundown = Boolean(volunteerEvent.programme_rundown_url);
+  const hasProgrammeRundown = rundownImages.length > 0 || Boolean(volunteerEvent.programme_rundown_url);
   const programmeRundownStep = 2 + Number(hasWhatsapp);
   const preparationStep = 2 + Number(hasWhatsapp) + Number(hasProgrammeRundown);
   const travelStep = preparationStep + 1;
@@ -267,7 +291,7 @@ export default async function EventGuidePage({
                 </li>
               ) : null}
 
-              {volunteerEvent.programme_rundown_url ? (
+              {hasProgrammeRundown ? (
                 <li className={styles.flowStep}>
                   <span className={styles.stepNumber} aria-hidden="true">
                     {programmeRundownStep}
@@ -275,15 +299,19 @@ export default async function EventGuidePage({
                   <div className={styles.stepBody}>
                     <h3>View the programme rundown</h3>
                     <p>Check the programme and key timings before you report for the event.</p>
-                    <a
-                      className="button button-secondary"
-                      href={volunteerEvent.programme_rundown_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      referrerPolicy="no-referrer"
-                    >
-                      View programme rundown
-                    </a>
+                    {rundownImages.length > 0 ? (
+                      <ProgrammeRundownGallery images={rundownImages} />
+                    ) : volunteerEvent.programme_rundown_url ? (
+                      <a
+                        className="button button-secondary"
+                        href={volunteerEvent.programme_rundown_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        referrerPolicy="no-referrer"
+                      >
+                        View programme rundown
+                      </a>
+                    ) : null}
                   </div>
                 </li>
               ) : null}
