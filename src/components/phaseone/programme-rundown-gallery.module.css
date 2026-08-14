@@ -1,0 +1,56 @@
+.dialog {
+  width: min(960px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1rem;
+  border: 0;
+  border-radius: 1rem;
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 70%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.header > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.imageFrame {
+  position: relative;
+  width: 100%;
+  height: min(72vh, 900px);
+  background: #f5f5f5;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.imageFrame img {
+  object-fit: contain;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .dialog {
+    width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
+    padding: 0.75rem;
+  }
+
+  .imageFrame {
+    height: 68vh;
+  }
+}
