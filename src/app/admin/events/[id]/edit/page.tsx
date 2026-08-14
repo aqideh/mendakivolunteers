@@ -3,11 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
+import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
 import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import { programmeRundownBucket } from "@/lib/phaseone/programme-rundown";
 
 export const metadata: Metadata = { title: "Edit event guide" };
 export const dynamic = "force-dynamic";
@@ -34,7 +36,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   await requireEventManager(`/admin/events/${id}/edit`);
   const admin = getPhaseOneAdminClient();
 
-  const [eventResult, timeslotsResult, opportunitiesResult, rosterCountResult, importsResult] = await Promise.all([
+  const [eventResult, timeslotsResult, opportunitiesResult, rosterCountResult, importsResult, rundownImagesResult] = await Promise.all([
     admin
       .from("phaseone_events")
       .select("id, external_opportunity_id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
@@ -62,6 +64,12 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
       .eq("event_id", id)
       .order("uploaded_at", { ascending: false })
       .limit(10),
+    admin
+      .from("phaseone_event_rundown_images")
+      .select("id, storage_path, original_file_name, sort_order, created_at")
+      .eq("event_id", id)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
   ]);
 
   if (eventResult.error) {
@@ -80,6 +88,13 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   ) {
     throw new Error("Event operations data could not be loaded");
   }
+  if (rundownImagesResult.error && rundownImagesResult.error.code !== "42P01") {
+    console.error("Unable to load programme rundown images", {
+      code: rundownImagesResult.error.code,
+      id,
+    });
+    throw new Error("Programme rundown images could not be loaded");
+  }
 
   const parameters = await searchParams;
   const errorMessage = parameter(parameters, "error");
@@ -89,6 +104,13 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
     ...eventResult.data,
     timeslots: timeslotsResult.data,
   } as EventFormValue;
+  const rundownImages = (rundownImagesResult.data ?? []).map((image) => ({
+    id: String(image.id),
+    fileName: image.original_file_name ? String(image.original_file_name) : null,
+    url: admin.storage
+      .from(programmeRundownBucket)
+      .getPublicUrl(String(image.storage_path)).data.publicUrl,
+  }));
 
   return (
     <div className="site-shell">
@@ -113,6 +135,21 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         <section className="panel phaseone-admin-section" aria-labelledby="event-details-title">
           <h2 id="event-details-title">Event guide configuration</h2>
           <EventForm event={event} opportunities={opportunitiesResult.data} />
+        </section>
+
+        <section className="section panel phaseone-admin-section" aria-labelledby="rundown-title">
+          <div className="section-header">
+            <div>
+              <p className="eyebrow">Volunteer journey</p>
+              <h2 id="rundown-title">Programme rundown</h2>
+            </div>
+            <span className="status-pill">{rundownImages.length} images</span>
+          </div>
+          <ProgrammeRundownManager
+            eventId={event.id}
+            images={rundownImages}
+            legacyUrl={event.programme_rundown_url}
+          />
         </section>
 
         <section className="section panel phaseone-admin-section" aria-labelledby="roster-title">
