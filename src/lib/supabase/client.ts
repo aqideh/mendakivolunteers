@@ -1,9 +1,14 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-import { getPublicConfig } from "@/lib/env";
 import type { Database } from "@/types/database";
 
 export function createClient() {
-  const { supabaseUrl, supabasePublishableKey } = getPublicConfig();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabasePublishableKey) {
+    throw new Error("Supabase browser configuration is unavailable.");
+  }
+
   return createBrowserClient<Database>(supabaseUrl, supabasePublishableKey);
 }
