@@ -14,6 +14,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      new URL(
+        "https://glpdougaxlgaipqlzcbq.supabase.co/storage/v1/object/public/programme-rundowns/**",
+      ),
+    ],
+  },
   async headers() {
     return [
       {
