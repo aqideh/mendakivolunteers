@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { duplicateEvent } from "@/app/admin/events/actions";
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
@@ -27,7 +28,7 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 const successMessages: Record<string, string> = {
   event_created: "Event guide created.",
   event_updated: "Event guide updated.",
-  event_duplicated: "Event guide duplicated as a draft. Review its title, slug, dates and access settings before publishing.",
+  event_duplicated: "Journey duplicated as a draft. Update its title, slug, dates and access settings before publishing.",
   roster_imported: "Roster imported.",
 };
 
@@ -124,6 +125,10 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </div>
           <div className="actions">
             <Link className="button button-secondary" href="/admin/events">All event guides</Link>
+            <form action={duplicateEvent}>
+              <input type="hidden" name="eventId" value={event.id} />
+              <button className="button button-secondary" type="submit">Duplicate journey</button>
+            </form>
             <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Counter-check attendance</Link>
             {event.is_published ? <Link className="button" href={`/journey/${event.slug}`}>View event guide</Link> : null}
           </div>
