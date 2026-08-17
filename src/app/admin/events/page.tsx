@@ -102,7 +102,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                         <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
                         <form action={duplicateEvent}>
                           <input type="hidden" name="eventId" value={event.id} />
-                          <button className="text-link button-reset" type="submit">Duplicate</button>
+                          <button className="text-link button-reset" type="submit">Duplicate journey</button>
                         </form>
                         {event.is_published ? (
                           <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">View event guide</Link>
