@@ -53,7 +53,7 @@ export async function duplicateEvent(formData: FormData) {
 
   const { userId } = await requireEventManager("/admin/events");
   const admin = getPhaseOneAdminClient();
-  const [eventResult, timeslotsResult] = await Promise.all([
+  const [eventResult, timeslotsResult, rundownImagesResult] = await Promise.all([
     admin
       .from("phaseone_events")
       .select(
@@ -67,12 +67,19 @@ export async function duplicateEvent(formData: FormData) {
       .eq("event_id", sourceId)
       .order("starts_at", { ascending: true })
       .order("sort_order", { ascending: true }),
+    admin
+      .from("phaseone_event_rundown_images")
+      .select("storage_path, original_file_name, sort_order")
+      .eq("event_id", sourceId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
   ]);
 
-  if (eventResult.error || timeslotsResult.error) {
+  if (eventResult.error || timeslotsResult.error || rundownImagesResult.error) {
     console.error("Unable to load event guide for duplication", {
       eventCode: eventResult.error?.code,
       timeslotsCode: timeslotsResult.error?.code,
+      rundownCode: rundownImagesResult.error?.code,
       sourceId,
     });
     redirect(`/admin/events?error=${encode("Event guide could not be duplicated.")}`);
@@ -165,6 +172,31 @@ export async function duplicateEvent(formData: FormData) {
     redirect(
       `/admin/events/${sourceId}/edit?error=${encode("The event guide could not be duplicated because its reporting times could not be copied.")}`,
     );
+  }
+
+  if (rundownImagesResult.data && rundownImagesResult.data.length > 0) {
+    const { error: rundownError } = await admin
+      .from("phaseone_event_rundown_images")
+      .insert(
+        rundownImagesResult.data.map((image, index) => ({
+          event_id: created.id,
+          storage_path: image.storage_path,
+          original_file_name: image.original_file_name,
+          sort_order: index,
+        })),
+      );
+
+    if (rundownError) {
+      await admin.from("phaseone_events").delete().eq("id", created.id);
+      console.error("Unable to duplicate programme rundown images", {
+        code: rundownError.code,
+        sourceId,
+        duplicateId: created.id,
+      });
+      redirect(
+        `/admin/events/${sourceId}/edit?error=${encode("The journey could not be duplicated because its programme rundown images could not be copied.")}`,
+      );
+    }
   }
 
   revalidateEventRoutes(source.slug);
