@@ -135,6 +135,7 @@ export function parseEventForm(formData: FormData) {
 }
 
 export const rosterRowSchema = z.object({
+  timeslot_id: z.string().uuid(),
   volunteer_key: z.string().trim().min(1).max(120),
   volunteer_name: z.string().trim().min(1).max(200),
   email: z.preprocess(
@@ -144,6 +145,10 @@ export const rosterRowSchema = z.object({
   mobile: z.preprocess(
     (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
     z.string().max(40).nullable(),
+  ),
+  tshirt_size: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
+    z.string().max(20).nullable(),
   ),
 });
 
@@ -155,12 +160,12 @@ export const rosterImportSchema = z.object({
 }).superRefine(({ rows }, context) => {
   const seen = new Set<string>();
   rows.forEach((row, index) => {
-    const key = row.volunteer_key.toLowerCase();
+    const key = `${row.timeslot_id}|${row.volunteer_key.toLowerCase()}`;
     if (seen.has(key)) {
       context.addIssue({
         code: "custom",
         path: ["rows", index, "volunteer_key"],
-        message: `Duplicate volunteer ID: ${row.volunteer_key}`,
+        message: `Duplicate volunteer ID in the same shift: ${row.volunteer_key}`,
       });
     }
     seen.add(key);
