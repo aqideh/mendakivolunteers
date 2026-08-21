@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseEventForm } from "./event-validation";
+import { parseEventForm, rosterImportSchema } from "./event-validation";
 
 function validForm() {
   const form = new FormData();
@@ -78,5 +78,58 @@ describe("package form validation", () => {
     if (!parsed.success) return;
     expect(parsed.data.clearSignInPin).toBe(true);
     expect(parsed.data.clearSignOutPin).toBe(false);
+  });
+});
+
+describe("shift-aware roster validation", () => {
+  const eventId = "11111111-1111-4111-8111-111111111111";
+  const morningId = "22222222-2222-4222-8222-222222222222";
+  const afternoonId = "33333333-3333-4333-8333-333333333333";
+
+  function row(timeslotId: string) {
+    return {
+      timeslot_id: timeslotId,
+      volunteer_key: "VOL-001",
+      volunteer_name: "Test Volunteer",
+      email: "volunteer@example.com",
+      mobile: "91234567",
+      tshirt_size: "M",
+    };
+  }
+
+  it("allows the same volunteer ID in different shifts", () => {
+    const parsed = rosterImportSchema.safeParse({
+      eventId,
+      mode: "merge",
+      fileName: "roster.csv",
+      rows: [row(morningId), row(afternoonId)],
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects duplicate volunteer IDs within one shift", () => {
+    const parsed = rosterImportSchema.safeParse({
+      eventId,
+      mode: "merge",
+      fileName: "roster.csv",
+      rows: [row(morningId), row(morningId)],
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("normalizes optional operational fields", () => {
+    const parsed = rosterImportSchema.safeParse({
+      eventId,
+      mode: "merge",
+      fileName: "roster.csv",
+      rows: [{ ...row(morningId), mobile: " 91234567 ", tshirt_size: " L " }],
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.rows[0]?.mobile).toBe("91234567");
+    expect(parsed.data.rows[0]?.tshirt_size).toBe("L");
   });
 });
