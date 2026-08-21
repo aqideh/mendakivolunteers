@@ -4,6 +4,12 @@ import Link from "next/link";
 import { duplicateEvent } from "@/app/admin/events/actions";
 import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
+import {
+  getAdminEventFirstScheduledTimeslot,
+  sortCurrentAdminEvents,
+  splitAdminEvents,
+  type AdminEventSummary,
+} from "@/lib/phaseone/admin-events";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   formatTimeslotDate,
@@ -31,9 +37,9 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
   const [eventsResult, timeslotsResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, title, slug, venue, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, updated_at")
+      .select("id, title, slug, venue, reporting_at, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, updated_at")
       .order("updated_at", { ascending: false })
-      .limit(200),
+      .limit(2000),
     admin
       .from("phaseone_event_timeslots")
       .select("id, event_id, label, starts_at, ends_at, status, sort_order")
@@ -57,13 +63,12 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
     timeslotsByEvent.set(timeslot.event_id, current);
   });
 
-  const events = eventsResult.data
-    .map((event) => ({ ...event, timeslots: sortTimeslots(timeslotsByEvent.get(event.id) ?? []) }))
-    .sort((left, right) =>
-      (left.timeslots[0]?.starts_at ?? "9999").localeCompare(
-        right.timeslots[0]?.starts_at ?? "9999",
-      ),
-    );
+  const allEvents = eventsResult.data.map((event) => ({
+    ...event,
+    timeslots: sortTimeslots(timeslotsByEvent.get(event.id) ?? []),
+  })) as AdminEventSummary[];
+  const { current, past } = splitAdminEvents(allEvents);
+  const events = sortCurrentAdminEvents(current);
   const parameters = await searchParams;
   const errorMessage = parameter(parameters, "error");
 
@@ -77,7 +82,12 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
             <h1>Manage event guides</h1>
             <p className="muted">Configure schedules, briefing release, attendance links, separate PINs and volunteer rosters.</p>
           </div>
-          <Link className="button button-primary" href="/admin/events/new">New event guide</Link>
+          <div className="actions">
+            <Link className="button button-secondary" href="/admin/events/past">
+              Past events ({past.length})
+            </Link>
+            <Link className="button button-primary" href="/admin/events/new">New event guide</Link>
+          </div>
         </div>
 
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
@@ -87,7 +97,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
             <thead><tr><th>Event</th><th>Schedule</th><th>Access</th><th>Visibility</th><th>Actions</th></tr></thead>
             <tbody>
               {events.map((event) => {
-                const first = event.timeslots[0];
+                const first = getAdminEventFirstScheduledTimeslot(event);
                 return (
                   <tr key={event.id}>
                     <td><strong>{event.title}</strong><span className="table-subtext">/journey/{event.slug}</span></td>
@@ -113,7 +123,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                   </tr>
                 );
               })}
-              {events.length === 0 ? <tr><td colSpan={5}>No event guides have been created.</td></tr> : null}
+              {events.length === 0 ? <tr><td colSpan={5}>No current or recent event guides.</td></tr> : null}
             </tbody>
           </table>
         </div>
