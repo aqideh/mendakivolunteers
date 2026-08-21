@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
+  addWalkInVolunteer,
   applyAttendanceChange,
   recordAttendanceAction,
 } from "@/app/admin/events/[id]/attendance/actions";
@@ -127,7 +128,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size")
+      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size, entry_method")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(2000),
@@ -161,6 +162,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const selectedTimeslot = activeTimeslots.find((timeslot) => timeslot.id === requestedTimeslot)
     ?? activeTimeslots[0]
     ?? timeslots[0];
+  const highlightedRosterId = parameter(parameters, "highlight");
 
   const attendanceByRoster = new Map(attendanceResult.data.map((item) => [item.roster_id, item]));
   const rosterById = new Map(rosterResult.data.map((item) => [item.id, item]));
@@ -200,7 +202,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     ? "Attendance recorded."
     : successCode === "attendance_updated"
       ? "Attendance correction saved and audited."
-      : undefined;
+      : successCode === "walk_in_checked_in"
+        ? "Last-minute volunteer added and checked in."
+        : successCode === "walk_in_added"
+          ? "Last-minute volunteer added to the roster."
+          : undefined;
   const errorMessage = parameter(parameters, "error");
   const event = eventResult.data;
 
@@ -273,6 +279,49 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
                 <span className="status-pill">{visible.length} shown</span>
               </div>
+
+              <details className="phaseone-walk-in">
+                <summary className="button button-primary">+ Add last-minute volunteer</summary>
+                <form action={addWalkInVolunteer} className="phaseone-walk-in-form">
+                  <input name="eventId" type="hidden" value={id} />
+                  <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
+                  <p className="muted">
+                    Adds an operational roster entry for this shift. This does not create a portal account or official registration.
+                  </p>
+                  <div className="phaseone-walk-in-grid">
+                    <div className="form-field">
+                      <label htmlFor="walk-in-name">Name</label>
+                      <input id="walk-in-name" name="volunteerName" maxLength={200} required autoComplete="name" />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="walk-in-mobile">Contact number</label>
+                      <input id="walk-in-mobile" name="mobile" maxLength={50} autoComplete="tel" inputMode="tel" />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="walk-in-email">Email</label>
+                      <input id="walk-in-email" name="email" maxLength={320} type="email" autoComplete="email" />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="walk-in-id">Volunteer ID</label>
+                      <input id="walk-in-id" name="volunteerKey" maxLength={100} />
+                      <p className="muted">Optional.</p>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="walk-in-shirt">T-shirt size</label>
+                      <input id="walk-in-shirt" name="tshirtSize" maxLength={20} placeholder="e.g. M" />
+                    </div>
+                  </div>
+                  <div className="phaseone-walk-in-actions">
+                    <button className="button button-primary" name="submitIntent" type="submit" value="add_and_check_in">
+                      Add &amp; check in now
+                    </button>
+                    <button className="button button-secondary" name="submitIntent" type="submit" value="add_only">
+                      Add to roster only
+                    </button>
+                  </div>
+                </form>
+              </details>
+
               <form className="phaseone-attendance-filters" method="get">
                 <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
                 <div className="form-field"><label htmlFor="q">Search</label><input id="q" name="q" defaultValue={query} placeholder="Name, volunteer ID or contact number" /></div>
@@ -282,10 +331,19 @@ export default async function AttendancePage({ params, searchParams }: PageProps
 
               <div className="phaseone-attendance-list">
                 {visible.map(({ volunteer, attendance, status }) => (
-                  <article className="phaseone-attendance-card phaseone-checkin-card" data-status={status} key={volunteer.id}>
+                  <article
+                    className="phaseone-attendance-card phaseone-checkin-card"
+                    data-highlighted={highlightedRosterId === volunteer.id ? "true" : undefined}
+                    data-status={status}
+                    id={`roster-${volunteer.id}`}
+                    key={volunteer.id}
+                  >
                     <div className="phaseone-attendance-summary">
                       <div>
-                        <p className="record-kicker">{volunteer.volunteer_key}</p>
+                        <div className="phaseone-roster-meta">
+                          <p className="record-kicker">{volunteer.volunteer_key ?? "No volunteer ID"}</p>
+                          {volunteer.entry_method === "walk_in" ? <span className="status-pill phaseone-walk-in-badge">Last-minute</span> : null}
+                        </div>
                         <h3>{volunteer.volunteer_name}</h3>
                         <p className="muted">{volunteer.mobile ?? "No contact number"} · T-shirt: {volunteer.tshirt_size ?? "—"}</p>
                       </div>
