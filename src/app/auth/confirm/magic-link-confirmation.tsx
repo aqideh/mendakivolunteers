@@ -4,6 +4,11 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
+import {
+  getRecoveryLinkType,
+  isValidRecoveryPassword,
+  recoveryPasswordRequirements,
+} from "@/lib/auth/password-recovery";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 import { createClient } from "@/lib/supabase/client";
 
@@ -13,16 +18,10 @@ const allowedOtpTypes = new Set<EmailOtpType>([
   "recovery",
 ]);
 
-const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,128}$/;
-
 type ConfirmationState = Readonly<{
   status: "working" | "recovery" | "saving" | "error";
   message: string;
 }>;
-
-function getAuthType(currentUrl: URL, hashParameters: URLSearchParams): string | null {
-  return currentUrl.searchParams.get("type") ?? hashParameters.get("type");
-}
 
 export function MagicLinkConfirmation() {
   const [state, setState] = useState<ConfirmationState>({
@@ -37,7 +36,10 @@ export function MagicLinkConfirmation() {
     const hashParameters = new URLSearchParams(currentUrl.hash.slice(1));
     const code = currentUrl.searchParams.get("code");
     const tokenHash = currentUrl.searchParams.get("token_hash");
-    const rawType = getAuthType(currentUrl, hashParameters);
+    const rawType = getRecoveryLinkType(
+      currentUrl.searchParams.get("type"),
+      hashParameters.get("type"),
+    );
     const accessToken = hashParameters.get("access_token");
     const refreshToken = hashParameters.get("refresh_token");
     const errorDescription =
@@ -131,11 +133,10 @@ export function MagicLinkConfirmation() {
   async function handlePasswordReset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!passwordPattern.test(newPassword)) {
+    if (!isValidRecoveryPassword(newPassword)) {
       setState({
         status: "recovery",
-        message:
-          "Use 12 to 128 characters with at least one uppercase letter, one lowercase letter, and one number.",
+        message: recoveryPasswordRequirements,
       });
       return;
     }
