@@ -104,7 +104,25 @@ export async function addWalkInVolunteer(formData: FormData) {
   }
 
   const result = data as { status?: string; roster_id?: string; checked_in?: boolean } | null;
+
+  if (result?.status === "duplicate_completed") {
+    let path = appendParameter(
+      returnPath,
+      "error",
+      "This volunteer is already on the roster and has already checked out for this shift.",
+    );
+    if (result.roster_id) path = appendParameter(path, "highlight", result.roster_id);
+    redirect(path);
+  }
+
   if (result?.status === "duplicate") {
+    if (parsed.data.submitIntent === "add_and_check_in" && result.checked_in) {
+      revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+      let path = appendParameter(returnPath, "success", "attendance_recorded");
+      if (result.roster_id) path = appendParameter(path, "highlight", result.roster_id);
+      redirect(path);
+    }
+
     let path = appendParameter(
       returnPath,
       "error",
@@ -140,7 +158,7 @@ export async function recordAttendanceAction(formData: FormData) {
   const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
   const { userId } = await requireEventManager(returnPath);
   const admin = getPhaseOneAdminClient();
-  const { error } = await admin.rpc("phaseone_apply_attendance_change", {
+  const { error } = await admin.rpc("phaseone_apply_attendance_transition", {
     p_event_id: parsed.data.eventId,
     p_roster_id: parsed.data.rosterId,
     p_action: parsed.data.action,
