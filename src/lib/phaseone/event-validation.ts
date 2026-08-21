@@ -136,7 +136,10 @@ export function parseEventForm(formData: FormData) {
 
 export const rosterRowSchema = z.object({
   timeslot_id: z.string().uuid(),
-  volunteer_key: z.string().trim().min(1).max(120),
+  volunteer_key: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
+    z.string().max(120).nullable(),
+  ),
   volunteer_name: z.string().trim().min(1).max(200),
   email: z.preprocess(
     (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
@@ -152,6 +155,13 @@ export const rosterRowSchema = z.object({
   ),
 });
 
+function rosterMatchKey(row: z.infer<typeof rosterRowSchema>): string {
+  if (row.volunteer_key) return `id:${row.volunteer_key.toLowerCase()}`;
+  if (row.email) return `email:${row.email.toLowerCase()}`;
+  if (row.mobile) return `mobile:${row.mobile.replace(/\D/g, "")}`;
+  return `name:${row.volunteer_name.trim().toLowerCase().replace(/\s+/g, " ")}`;
+}
+
 export const rosterImportSchema = z.object({
   eventId: z.string().uuid(),
   mode: z.enum(["merge", "replace"]),
@@ -160,12 +170,12 @@ export const rosterImportSchema = z.object({
 }).superRefine(({ rows }, context) => {
   const seen = new Set<string>();
   rows.forEach((row, index) => {
-    const key = `${row.timeslot_id}|${row.volunteer_key.toLowerCase()}`;
+    const key = `${row.timeslot_id}|${rosterMatchKey(row)}`;
     if (seen.has(key)) {
       context.addIssue({
         code: "custom",
-        path: ["rows", index, "volunteer_key"],
-        message: `Duplicate volunteer ID in the same shift: ${row.volunteer_key}`,
+        path: ["rows", index],
+        message: `Duplicate volunteer in the same shift: ${row.volunteer_name}`,
       });
     }
     seen.add(key);
