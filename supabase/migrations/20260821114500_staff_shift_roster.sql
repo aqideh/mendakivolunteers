@@ -3,14 +3,13 @@ alter table public.phaseone_roster
   add column if not exists tshirt_size text;
 
 update public.phaseone_roster roster
-set timeslot_id = first_timeslot.id
-from lateral (
+set timeslot_id = (
   select timeslot.id
   from public.phaseone_event_timeslots timeslot
   where timeslot.event_id = roster.event_id
   order by timeslot.starts_at asc, timeslot.sort_order asc, timeslot.id asc
   limit 1
-) first_timeslot
+)
 where roster.timeslot_id is null;
 
 do $$
