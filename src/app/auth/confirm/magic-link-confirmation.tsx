@@ -2,30 +2,42 @@
 
 import type { EmailOtpType } from "@supabase/supabase-js";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 import { createClient } from "@/lib/supabase/client";
 
-const allowedOtpTypes = new Set<EmailOtpType>(["email", "magiclink"]);
+const allowedOtpTypes = new Set<EmailOtpType>([
+  "email",
+  "magiclink",
+  "recovery",
+]);
+
+const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,128}$/;
 
 type ConfirmationState = Readonly<{
-  status: "working" | "error";
+  status: "working" | "recovery" | "saving" | "error";
   message: string;
 }>;
+
+function getAuthType(currentUrl: URL, hashParameters: URLSearchParams): string | null {
+  return currentUrl.searchParams.get("type") ?? hashParameters.get("type");
+}
 
 export function MagicLinkConfirmation() {
   const [state, setState] = useState<ConfirmationState>({
     status: "working",
-    message: "Completing secure sign-in...",
+    message: "Verifying your secure link...",
   });
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     const currentUrl = new URL(window.location.href);
     const hashParameters = new URLSearchParams(currentUrl.hash.slice(1));
     const code = currentUrl.searchParams.get("code");
     const tokenHash = currentUrl.searchParams.get("token_hash");
-    const rawType = currentUrl.searchParams.get("type");
+    const rawType = getAuthType(currentUrl, hashParameters);
     const accessToken = hashParameters.get("access_token");
     const refreshToken = hashParameters.get("refresh_token");
     const errorDescription =
@@ -35,6 +47,7 @@ export function MagicLinkConfirmation() {
       currentUrl.searchParams.get("next"),
       "/dashboard",
     );
+    const isRecovery = rawType === "recovery";
 
     const cleanedUrl = new URL(currentUrl);
     cleanedUrl.hash = "";
@@ -51,7 +64,7 @@ export function MagicLinkConfirmation() {
 
     let cancelled = false;
 
-    async function completeSignIn() {
+    async function completeAuthentication() {
       let authError: { message: string } | null = errorDescription
         ? { message: errorDescription }
         : null;
@@ -86,13 +99,21 @@ export function MagicLinkConfirmation() {
       }
 
       if (authError) {
-        console.error("Magic-link confirmation failed", {
+        console.error("Secure-link confirmation failed", {
           message: authError.message,
         });
         setState({
           status: "error",
           message:
-            "This sign-in link is invalid, expired, or has already been used. Request a new link.",
+            "This secure link is invalid, expired, or has already been used. Request a new link.",
+        });
+        return;
+      }
+
+      if (isRecovery) {
+        setState({
+          status: "recovery",
+          message: "Recovery link verified. Choose a new password below.",
         });
         return;
       }
@@ -100,12 +121,65 @@ export function MagicLinkConfirmation() {
       window.location.replace(nextPath);
     }
 
-    void completeSignIn();
+    void completeAuthentication();
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  async function handlePasswordReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!passwordPattern.test(newPassword)) {
+      setState({
+        status: "recovery",
+        message:
+          "Use 12 to 128 characters with at least one uppercase letter, one lowercase letter, and one number.",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setState({
+        status: "recovery",
+        message: "The new passwords do not match.",
+      });
+      return;
+    }
+
+    setState({
+      status: "saving",
+      message: "Updating your password...",
+    });
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      console.error("Password recovery update failed", {
+        code: error.code,
+        status: error.status,
+      });
+      setState({
+        status: "recovery",
+        message:
+          "The password could not be updated. The recovery link may have expired; request a new one and try again.",
+      });
+      return;
+    }
+
+    const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+    if (signOutError) {
+      console.error("Recovery-session sign-out failed", {
+        message: signOutError.message,
+      });
+    }
+
+    window.location.replace("/login?password_reset=success");
+  }
+
+  const resettingPassword = state.status === "recovery" || state.status === "saving";
 
   return (
     <>
@@ -116,6 +190,55 @@ export function MagicLinkConfirmation() {
       >
         {state.message}
       </p>
+
+      {resettingPassword ? (
+        <form onSubmit={handlePasswordReset} noValidate>
+          <div className="form-field">
+            <label htmlFor="recovery-new-password">New password</label>
+            <input
+              id="recovery-new-password"
+              name="newPassword"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              required
+              disabled={state.status === "saving"}
+            />
+            <span className="form-help">
+              Use 12 to 128 characters with uppercase and lowercase letters and at
+              least one number.
+            </span>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="recovery-confirm-password">Confirm new password</label>
+            <input
+              id="recovery-confirm-password"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+              disabled={state.status === "saving"}
+            />
+          </div>
+
+          <button
+            className="button button-primary"
+            type="submit"
+            disabled={state.status === "saving"}
+          >
+            {state.status === "saving" ? "Updating password..." : "Reset password"}
+          </button>
+        </form>
+      ) : null}
+
       {state.status === "error" ? (
         <Link className="button button-secondary" href="/login">
           Return to sign in
