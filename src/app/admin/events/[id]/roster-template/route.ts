@@ -59,11 +59,11 @@ export async function GET(
   }
 
   const header = [
-    "volunteer_id",
     "volunteer_name",
     "contact_number",
     "email",
     "tshirt_size",
+    "volunteer_id",
     "date",
     "shift",
     "timeslot_id",

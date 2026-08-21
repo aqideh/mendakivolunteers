@@ -14,14 +14,14 @@ type RosterTimeslot = Readonly<{
 
 type RosterRow = Readonly<{
   timeslot_id: string;
-  volunteer_key: string;
+  volunteer_key: string | null;
   volunteer_name: string;
   email: string | null;
   mobile: string | null;
   tshirt_size: string | null;
 }>;
 
-function parseCsvLine(line: string): string[] {
+function parseDelimitedLine(line: string, delimiter: string): string[] {
   const values: string[] = [];
   let value = "";
   let quoted = false;
@@ -35,7 +35,7 @@ function parseCsvLine(line: string): string[] {
       } else {
         quoted = !quoted;
       }
-    } else if (character === "," && !quoted) {
+    } else if (character === delimiter && !quoted) {
       values.push(value.trim());
       value = "";
     } else {
@@ -78,12 +78,20 @@ function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function parseRosterCsv(text: string, timeslots: readonly RosterTimeslot[]): RosterRow[] {
+function matchKey(row: RosterRow): string {
+  if (row.volunteer_key) return `id:${row.volunteer_key.toLowerCase()}`;
+  if (row.email) return `email:${row.email.toLowerCase()}`;
+  if (row.mobile) return `mobile:${row.mobile.replace(/\D/g, "")}`;
+  return `name:${normalize(row.volunteer_name)}`;
+}
+
+function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): RosterRow[] {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
-  if (lines.length < 2) throw new Error("CSV must include a header and at least one volunteer.");
+  if (lines.length < 2) throw new Error("Roster must include a header row and at least one volunteer.");
   if (timeslots.length === 0) throw new Error("Add an event timeslot before importing a roster.");
 
-  const headers = parseCsvLine(lines[0]!).map((header) => header.toLowerCase().replace(/[\s-]+/g, "_"));
+  const delimiter = lines[0]!.includes("\t") ? "\t" : ",";
+  const headers = parseDelimitedLine(lines[0]!, delimiter).map((header) => header.toLowerCase().replace(/[\s-]+/g, "_"));
   const aliases: Record<string, string[]> = {
     volunteer_key: ["volunteer_key", "volunteer_id", "id"],
     volunteer_name: ["volunteer_name", "name", "full_name"],
@@ -106,8 +114,8 @@ function parseRosterCsv(text: string, timeslots: readonly RosterTimeslot[]): Ros
   const dateIndex = column("date");
   const shiftIndex = column("shift");
   const timeslotIdIndex = column("timeslot_id");
-  if (keyIndex < 0 || nameIndex < 0) {
-    throw new Error("CSV requires volunteer_id and volunteer_name columns.");
+  if (nameIndex < 0) {
+    throw new Error("Roster requires a volunteer_name column. Volunteer ID is optional.");
   }
 
   const activeTimeslots = timeslots.filter((timeslot) => timeslot.status !== "cancelled");
@@ -121,11 +129,11 @@ function parseRosterCsv(text: string, timeslots: readonly RosterTimeslot[]): Ros
   }
 
   const rows = lines.slice(1).map((line, index) => {
-    const values = parseCsvLine(line);
-    const volunteerKey = values[keyIndex]?.trim() ?? "";
+    const values = parseDelimitedLine(line, delimiter);
+    const volunteerKey = keyIndex >= 0 ? values[keyIndex]?.trim() || null : null;
     const volunteerName = values[nameIndex]?.trim() ?? "";
-    if (!volunteerKey || !volunteerName) {
-      throw new Error(`Row ${index + 2} is missing a volunteer ID or name.`);
+    if (!volunteerName) {
+      throw new Error(`Row ${index + 2} is missing a volunteer name.`);
     }
 
     let timeslot: RosterTimeslot | undefined;
@@ -163,12 +171,12 @@ function parseRosterCsv(text: string, timeslots: readonly RosterTimeslot[]): Ros
     };
   });
 
-  if (rows.length > 2000) throw new Error("Roster uploads are limited to 2,000 rows.");
+  if (rows.length > 2000) throw new Error("Roster imports are limited to 2,000 rows.");
   const seen = new Set<string>();
   for (const row of rows) {
-    const key = `${row.timeslot_id}|${row.volunteer_key.toLowerCase()}`;
+    const key = `${row.timeslot_id}|${matchKey(row)}`;
     if (seen.has(key)) {
-      throw new Error(`Duplicate volunteer ID in the same shift: ${row.volunteer_key}`);
+      throw new Error(`Duplicate volunteer in the same shift: ${row.volunteer_name}`);
     }
     seen.add(key);
   }
@@ -184,6 +192,7 @@ export function RosterUpload({
 }) {
   const [rows, setRows] = useState<RosterRow[]>([]);
   const [fileName, setFileName] = useState("");
+  const [pastedRoster, setPastedRoster] = useState("");
   const [error, setError] = useState("");
   const preview = useMemo(() => rows.slice(0, 8), [rows]);
   const timeslotById = useMemo(
@@ -191,15 +200,26 @@ export function RosterUpload({
     [timeslots],
   );
 
+  function loadRoster(text: string, sourceName: string) {
+    setRows([]);
+    setError("");
+    setFileName(sourceName);
+    try {
+      setRows(parseRosterText(text, timeslots));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Roster could not be read.");
+    }
+  }
+
   return (
     <form action={importRoster} className="phaseone-admin-form">
       <input name="eventId" type="hidden" value={eventId} />
-      <input name="fileName" type="hidden" value={fileName} />
+      <input name="fileName" type="hidden" value={fileName || "pasted-roster"} />
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
       <div className="phaseone-roster-upload-header">
         <div>
-          <p className="muted">Use the event template so dates and shift names match the schedule.</p>
+          <p className="muted">Paste rows from Excel/Google Sheets or upload a CSV. Use the event template so dates and shift names match the schedule.</p>
         </div>
         <a className="button button-secondary" href={`/admin/events/${eventId}/roster-template`}>
           Download roster template
@@ -207,37 +227,49 @@ export function RosterUpload({
       </div>
 
       <div className="form-field">
-        <label htmlFor="rosterFile">CSV roster</label>
+        <label htmlFor="pastedRoster">Paste roster</label>
+        <textarea
+          id="pastedRoster"
+          onChange={(event) => setPastedRoster(event.target.value)}
+          placeholder={"volunteer_name\tcontact_number\ttshirt_size\nNur Aisyah\t91234567\tM"}
+          rows={8}
+          value={pastedRoster}
+        />
+        <p className="muted">Include the header row when pasting. Excel and Google Sheets tab-separated paste is supported.</p>
+        <button
+          className="button button-secondary"
+          disabled={!pastedRoster.trim()}
+          onClick={() => loadRoster(pastedRoster, "pasted-roster")}
+          type="button"
+        >
+          Preview pasted roster
+        </button>
+      </div>
+
+      <div className="form-field">
+        <label htmlFor="rosterFile">Or upload CSV roster</label>
         <input
           accept=".csv,text/csv"
           id="rosterFile"
           onChange={async (event) => {
             const file = event.target.files?.[0];
-            setRows([]);
-            setError("");
-            setFileName(file?.name ?? "");
             if (!file) return;
-            try {
-              setRows(parseRosterCsv(await file.text(), timeslots));
-            } catch (cause) {
-              setError(cause instanceof Error ? cause.message : "CSV could not be read.");
-            }
+            loadRoster(await file.text(), file.name);
           }}
-          required
           type="file"
         />
         <p className="muted">
-          Required: volunteer_id, volunteer_name. Recommended: contact_number, tshirt_size. Multi-shift events also use date and shift.
+          Required: volunteer_name. Optional: volunteer_id, contact_number, email, tshirt_size. Multi-shift events also use date and shift.
         </p>
       </div>
 
       <div className="form-field">
         <label htmlFor="mode">Import mode</label>
         <select defaultValue="merge" id="mode" name="mode">
-          <option value="merge">Merge and update matching volunteer IDs within each shift</option>
+          <option value="merge">Merge and update matching volunteers within each shift</option>
           <option value="replace">Replace entire roster</option>
         </select>
-        <p className="muted">Replace is blocked once attendance records exist.</p>
+        <p className="muted">Matching uses Volunteer ID when available, then email, contact number, and finally name. Replace is blocked once attendance records exist.</p>
       </div>
 
       {error ? <p className="phaseone-form-error" role="alert">{error}</p> : null}
@@ -246,15 +278,16 @@ export function RosterUpload({
           <p><strong>{rows.length}</strong> volunteer assignments ready to import.</p>
           <div className="table-wrap">
             <table className="content-table">
-              <thead><tr><th>Date</th><th>Shift</th><th>Name</th><th>Contact</th><th>T-shirt</th></tr></thead>
+              <thead><tr><th>Date</th><th>Shift</th><th>Name</th><th>Volunteer ID</th><th>Contact</th><th>T-shirt</th></tr></thead>
               <tbody>
                 {preview.map((row, index) => {
                   const timeslot = timeslotById.get(row.timeslot_id);
                   return (
-                    <tr key={`${row.timeslot_id}-${row.volunteer_key}-${index}`}>
+                    <tr key={`${row.timeslot_id}-${matchKey(row)}-${index}`}>
                       <td>{timeslot ? singaporeDate(timeslot.starts_at) : "—"}</td>
                       <td>{timeslot ? timeslotLabel(timeslot) : "—"}</td>
                       <td>{row.volunteer_name}</td>
+                      <td>{row.volunteer_key ?? "—"}</td>
                       <td>{row.mobile ?? "—"}</td>
                       <td>{row.tshirt_size ?? "—"}</td>
                     </tr>
