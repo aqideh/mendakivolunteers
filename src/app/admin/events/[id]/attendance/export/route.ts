@@ -51,7 +51,7 @@ export async function GET(
       .eq("event_id", id),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size")
+      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size, entry_method")
       .eq("event_id", id)
       .order("volunteer_name"),
     admin
@@ -95,6 +95,7 @@ export async function GET(
       volunteer.mobile,
       volunteer.email,
       volunteer.tshirt_size,
+      volunteer.entry_method === "walk_in" ? "Last-minute" : "Imported",
       status,
       attendance?.signed_in_at,
       attendance?.signed_out_at,
@@ -112,6 +113,7 @@ export async function GET(
     "contact_number",
     "email",
     "tshirt_size",
+    "roster_source",
     "attendance_status",
     "checked_in_at",
     "checked_out_at",
