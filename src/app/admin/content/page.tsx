@@ -5,8 +5,18 @@ import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
 import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
+import {
+  getAdminEventFirstScheduledTimeslot,
+  sortCurrentAdminEvents,
+  splitAdminEvents,
+  type AdminEventSummary,
+} from "@/lib/phaseone/admin-events";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
-import { getPackageListingStatus } from "@/lib/phaseone/packages";
+import {
+  getPackageListingStatus,
+  sortTimeslots,
+  type VolunteerTimeslot,
+} from "@/lib/phaseone/packages";
 
 export const metadata: Metadata = {
   title: "Content management",
@@ -42,8 +52,9 @@ export default async function ContentAdminPage({
   const errorMessage = readParameter(parameters, "error");
   const successMessage = successCode ? successMessages[successCode] : undefined;
   const canManageJourneys = hasEventManagerRole(access.roles);
+  const phaseOneAdmin = canManageJourneys ? getPhaseOneAdminClient() : null;
 
-  const [opportunitiesResult, newsResult, journeysResult] = await Promise.all([
+  const [opportunitiesResult, newsResult, journeysResult, timeslotsResult] = await Promise.all([
     supabase
       .schema("content")
       .from("opportunities")
@@ -56,36 +67,64 @@ export default async function ContentAdminPage({
       .select("id, slug, title, status, publish_at, published_at, updated_at, featured")
       .order("updated_at", { ascending: false })
       .limit(100),
-    canManageJourneys
-      ? getPhaseOneAdminClient()
+    phaseOneAdmin
+      ? phaseOneAdmin
           .from("phaseone_events")
           .select(
-            "id, title, slug, reporting_at, venue, has_sign_in_pin, has_sign_out_pin, is_published, updated_at",
+            "id, title, slug, reporting_at, venue, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, updated_at",
           )
-          .order("reporting_at", { ascending: true, nullsFirst: false })
-          .limit(200)
+          .order("updated_at", { ascending: false })
+          .limit(2000)
+      : Promise.resolve({ data: [], error: null }),
+    phaseOneAdmin
+      ? phaseOneAdmin
+          .from("phaseone_event_timeslots")
+          .select("id, event_id, label, starts_at, ends_at, status, sort_order")
+          .order("starts_at", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .limit(20000)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
   const hasLoadError = Boolean(
-    opportunitiesResult.error || newsResult.error || journeysResult.error,
+    opportunitiesResult.error ||
+      newsResult.error ||
+      journeysResult.error ||
+      timeslotsResult.error,
   );
   if (hasLoadError) {
     console.error("Unable to load CMS content", {
       opportunitiesCode: opportunitiesResult.error?.code,
       newsCode: newsResult.error?.code,
       journeysCode: journeysResult.error?.code,
+      timeslotsCode: timeslotsResult.error?.code,
     });
     throw new Error("CMS content could not be loaded");
   }
 
-  if (!opportunitiesResult.data || !newsResult.data || !journeysResult.data) {
+  if (
+    !opportunitiesResult.data ||
+    !newsResult.data ||
+    !journeysResult.data ||
+    !timeslotsResult.data
+  ) {
     throw new Error("CMS content query returned no result set");
   }
 
   const opportunities = opportunitiesResult.data;
   const newsPosts = newsResult.data;
-  const journeys = journeysResult.data;
+  const timeslotsByEvent = new Map<string, VolunteerTimeslot[]>();
+  for (const timeslot of timeslotsResult.data) {
+    const current = timeslotsByEvent.get(timeslot.event_id) ?? [];
+    current.push(timeslot as VolunteerTimeslot);
+    timeslotsByEvent.set(timeslot.event_id, current);
+  }
+  const allJourneys = journeysResult.data.map((journey) => ({
+    ...journey,
+    timeslots: sortTimeslots(timeslotsByEvent.get(journey.id) ?? []),
+  })) as AdminEventSummary[];
+  const { current: currentJourneys, past: pastJourneys } = splitAdminEvents(allJourneys);
+  const journeys = sortCurrentAdminEvents(currentJourneys);
 
   return (
     <div className="site-shell">
@@ -130,9 +169,14 @@ export default async function ContentAdminPage({
                 <p className="eyebrow">Volunteer operations</p>
                 <h2 id="journeys-title">Event guides</h2>
               </div>
-              <Link className="text-link" href="/journey">
-                View public journeys
-              </Link>
+              <div className="actions">
+                <Link className="text-link" href="/admin/events/past">
+                  Past events ({pastJourneys.length})
+                </Link>
+                <Link className="text-link" href="/journey">
+                  View public journeys
+                </Link>
+              </div>
             </div>
             <div className="table-wrap">
               <table className="content-table">
@@ -146,56 +190,61 @@ export default async function ContentAdminPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {journeys.map((journey) => (
-                    <tr key={journey.id}>
-                      <td>
-                        <strong>{journey.title}</strong>
-                        <span className="table-subtext">
-                          /journey/{journey.slug}
-                        </span>
-                      </td>
-                      <td>
-                        {journey.reporting_at
-                          ? formatSingaporeDateTime(journey.reporting_at)
-                          : "Not set"}
-                      </td>
-                      <td>
-                        {journey.has_sign_in_pin && journey.has_sign_out_pin
-                          ? "Both PINs configured"
-                          : "Configuration incomplete"}
-                      </td>
-                      <td>
-                        <span className="status-pill">
-                          {getPackageListingStatus(
-                            journey.reporting_at,
-                            journey.is_published,
-                          )}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="actions">
-                          <Link
-                            className="text-link"
-                            href={`/admin/events/${journey.id}/edit`}
-                          >
-                            Edit
-                          </Link>
-                          {journey.is_published ? (
+                  {journeys.map((journey) => {
+                    const firstTimeslot = getAdminEventFirstScheduledTimeslot(journey);
+                    return (
+                      <tr key={journey.id}>
+                        <td>
+                          <strong>{journey.title}</strong>
+                          <span className="table-subtext">
+                            /journey/{journey.slug}
+                          </span>
+                        </td>
+                        <td>
+                          {firstTimeslot
+                            ? formatSingaporeDateTime(firstTimeslot.starts_at)
+                            : journey.reporting_at
+                              ? formatSingaporeDateTime(journey.reporting_at)
+                              : "Not set"}
+                        </td>
+                        <td>
+                          {journey.has_sign_in_pin && journey.has_sign_out_pin
+                            ? "Both PINs configured"
+                            : "Configuration incomplete"}
+                        </td>
+                        <td>
+                          <span className="status-pill">
+                            {getPackageListingStatus(
+                              journey.timeslots.length > 0 ? journey.timeslots : journey.reporting_at,
+                              journey.is_published,
+                            )}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="actions">
                             <Link
                               className="text-link"
-                              href={`/journey/${journey.slug}`}
-                              target="_blank"
+                              href={`/admin/events/${journey.id}/edit`}
                             >
-                              View
+                              Edit
                             </Link>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            {journey.is_published ? (
+                              <Link
+                                className="text-link"
+                                href={`/journey/${journey.slug}`}
+                                target="_blank"
+                              >
+                                View
+                              </Link>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {journeys.length === 0 ? (
                     <tr>
-                      <td colSpan={5}>No event guides.</td>
+                      <td colSpan={5}>No current or recent event guides.</td>
                     </tr>
                   ) : null}
                 </tbody>
