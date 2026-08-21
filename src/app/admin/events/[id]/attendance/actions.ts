@@ -22,12 +22,66 @@ const attendanceActionSchema = z.object({
   reason: z.string().trim().min(5).max(500),
 });
 
+const quickAttendanceSchema = z.object({
+  eventId: z.string().uuid(),
+  rosterId: z.string().uuid(),
+  action: z.enum(["mark_sign_in", "mark_sign_out"]),
+  timeslotId: z.string().uuid().optional(),
+});
+
 function encode(value: string): string {
   return encodeURIComponent(value);
 }
 
+function attendancePath(eventId: string, timeslotId?: string) {
+  const suffix = timeslotId ? `?timeslot=${encode(timeslotId)}` : "";
+  return `/admin/events/${eventId}/attendance${suffix}`;
+}
+
+export async function recordAttendanceAction(formData: FormData) {
+  const eventId = String(formData.get("eventId") ?? "");
+  const parsed = quickAttendanceSchema.safeParse({
+    eventId,
+    rosterId: formData.get("rosterId"),
+    action: formData.get("action"),
+    timeslotId: formData.get("timeslotId") || undefined,
+  });
+
+  if (!parsed.success) {
+    redirect(`${attendancePath(eventId)}?error=${encode("Attendance action could not be read.")}`);
+  }
+
+  const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
+  const { userId } = await requireEventManager(returnPath);
+  const admin = getPhaseOneAdminClient();
+  const { error } = await admin.rpc("phaseone_apply_attendance_change", {
+    p_event_id: parsed.data.eventId,
+    p_roster_id: parsed.data.rosterId,
+    p_action: parsed.data.action,
+    p_timestamp: null,
+    p_reason: parsed.data.action === "mark_sign_in" ? "Staff check-in" : "Staff check-out",
+    p_changed_by: userId,
+  });
+
+  if (error) {
+    console.error("Unable to record staff attendance action", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+      rosterId: parsed.data.rosterId,
+      action: parsed.data.action,
+    });
+    const separator = returnPath.includes("?") ? "&" : "?";
+    redirect(`${returnPath}${separator}error=${encode(error.message || "Attendance could not be recorded.")}`);
+  }
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  const separator = returnPath.includes("?") ? "&" : "?";
+  redirect(`${returnPath}${separator}success=attendance_recorded`);
+}
+
 export async function applyAttendanceChange(formData: FormData) {
   const eventId = String(formData.get("eventId") ?? "");
+  const timeslotId = String(formData.get("timeslotId") ?? "").trim() || undefined;
   const parsed = attendanceActionSchema.safeParse({
     eventId,
     rosterId: formData.get("rosterId"),
@@ -36,12 +90,14 @@ export async function applyAttendanceChange(formData: FormData) {
     reason: formData.get("reason"),
   });
 
+  const returnPath = attendancePath(eventId, timeslotId);
   if (!parsed.success) {
     const message = parsed.error.issues[0]?.message ?? "Check the attendance correction.";
-    redirect(`/admin/events/${eventId}/attendance?error=${encode(message)}`);
+    const separator = returnPath.includes("?") ? "&" : "?";
+    redirect(`${returnPath}${separator}error=${encode(message)}`);
   }
 
-  const { userId } = await requireEventManager(`/admin/events/${eventId}/attendance`);
+  const { userId } = await requireEventManager(returnPath);
   const admin = getPhaseOneAdminClient();
   const { error } = await admin.rpc("phaseone_apply_attendance_change", {
     p_event_id: parsed.data.eventId,
@@ -59,11 +115,11 @@ export async function applyAttendanceChange(formData: FormData) {
       rosterId: parsed.data.rosterId,
       action: parsed.data.action,
     });
-    redirect(
-      `/admin/events/${eventId}/attendance?error=${encode(error.message || "Attendance could not be updated.")}`,
-    );
+    const separator = returnPath.includes("?") ? "&" : "?";
+    redirect(`${returnPath}${separator}error=${encode(error.message || "Attendance could not be updated.")}`);
   }
 
   revalidatePath(`/admin/events/${eventId}/attendance`);
-  redirect(`/admin/events/${eventId}/attendance?success=attendance_updated`);
+  const separator = returnPath.includes("?") ? "&" : "?";
+  redirect(`${returnPath}${separator}success=attendance_updated`);
 }

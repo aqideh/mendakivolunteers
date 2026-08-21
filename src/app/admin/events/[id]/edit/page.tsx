@@ -129,7 +129,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
               <input type="hidden" name="eventId" value={event.id} />
               <button className="button button-secondary" type="submit">Duplicate journey</button>
             </form>
-            <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Counter-check attendance</Link>
+            <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Roster / check-in</Link>
             {event.is_published ? <Link className="button" href={`/journey/${event.slug}`}>View event guide</Link> : null}
           </div>
         </div>
@@ -163,9 +163,9 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
               <p className="eyebrow">Volunteer roster</p>
               <h2 id="roster-title">CSV roster upload</h2>
             </div>
-            <span className="status-pill">{rosterCountResult.count ?? 0} volunteers</span>
+            <span className="status-pill">{rosterCountResult.count ?? 0} assignments</span>
           </div>
-          <RosterUpload eventId={event.id} />
+          <RosterUpload eventId={event.id} timeslots={timeslotsResult.data} />
         </section>
 
         <section className="section" aria-labelledby="imports-title">

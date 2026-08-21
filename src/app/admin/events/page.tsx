@@ -99,6 +99,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                     <td><span className="status-pill">{getPackageListingStatus(event.timeslots, event.is_published)}</span></td>
                     <td>
                       <div className="actions">
+                        <Link className="text-link" href={`/admin/events/${event.id}/attendance`}>Roster / check-in</Link>
                         <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
                         <form action={duplicateEvent}>
                           <input type="hidden" name="eventId" value={event.id} />
