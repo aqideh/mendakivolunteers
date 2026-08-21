@@ -5,7 +5,7 @@ import { MagicLinkConfirmation } from "@/app/auth/confirm/magic-link-confirmatio
 import { BrandLockup } from "@/components/brand-lockup";
 
 export const metadata: Metadata = {
-  title: "Completing sign in",
+  title: "Secure account link",
 };
 
 export default async function ConfirmSignInPage() {
@@ -17,15 +17,17 @@ export default async function ConfirmSignInPage() {
     <div className="site-shell">
       <header className="site-header">
         <BrandLockup href="/" priority />
-        <p className="header-status">Secure sign in</p>
+        <p className="header-status">Secure account access</p>
       </header>
 
       <main className="auth-layout">
         <section className="panel auth-panel" aria-labelledby="confirm-title">
           <p className="eyebrow">Secure access</p>
-          <h1 id="confirm-title">Completing sign in</h1>
+          <h1 id="confirm-title">Verifying secure link</h1>
           <p className="muted">
-            Keep this page open while the portal verifies your one-time link.
+            Keep this page open while the portal verifies your one-time link. If
+            this is a password-recovery link, you will be asked to choose a new
+            password here.
           </p>
           <MagicLinkConfirmation />
         </section>
