@@ -119,6 +119,45 @@ describe("shift-aware roster validation", () => {
     expect(parsed.success).toBe(false);
   });
 
+  it("allows a volunteer without an organisation-wide volunteer ID", () => {
+    const parsed = rosterImportSchema.safeParse({
+      eventId,
+      mode: "merge",
+      fileName: "pasted-roster",
+      rows: [{ ...row(morningId), volunteer_key: null }],
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.rows[0]?.volunteer_key).toBeNull();
+  });
+
+  it("uses contact details to detect duplicate ID-less volunteers within a shift", () => {
+    const first = { ...row(morningId), volunteer_key: null, email: null, mobile: "9123 4567" };
+    const second = { ...first, volunteer_name: "Test Volunteer Updated", mobile: "91234567" };
+    const parsed = rosterImportSchema.safeParse({
+      eventId,
+      mode: "merge",
+      fileName: "pasted-roster",
+      rows: [first, second],
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("falls back to normalized name when ID and contact details are absent", () => {
+    const first = { ...row(morningId), volunteer_key: null, email: null, mobile: null, volunteer_name: " Nur  Aisyah " };
+    const second = { ...first, volunteer_name: "nur aisyah" };
+    const parsed = rosterImportSchema.safeParse({
+      eventId,
+      mode: "merge",
+      fileName: "pasted-roster",
+      rows: [first, second],
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
   it("normalizes optional operational fields", () => {
     const parsed = rosterImportSchema.safeParse({
       eventId,
