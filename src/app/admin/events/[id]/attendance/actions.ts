@@ -29,6 +29,17 @@ const quickAttendanceSchema = z.object({
   timeslotId: z.string().uuid().optional(),
 });
 
+const walkInSchema = z.object({
+  eventId: z.string().uuid(),
+  timeslotId: z.string().uuid(),
+  volunteerName: z.string().trim().min(1).max(200),
+  volunteerKey: z.string().trim().max(100).optional(),
+  email: z.string().trim().email().max(320).optional().or(z.literal("")),
+  mobile: z.string().trim().max(50).optional(),
+  tshirtSize: z.string().trim().max(20).optional(),
+  submitIntent: z.enum(["add_and_check_in", "add_only"]),
+});
+
 function encode(value: string): string {
   return encodeURIComponent(value);
 }
@@ -36,6 +47,81 @@ function encode(value: string): string {
 function attendancePath(eventId: string, timeslotId?: string) {
   const suffix = timeslotId ? `?timeslot=${encode(timeslotId)}` : "";
   return `/admin/events/${eventId}/attendance${suffix}`;
+}
+
+function appendParameter(path: string, key: string, value: string): string {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}${key}=${encode(value)}`;
+}
+
+export async function addWalkInVolunteer(formData: FormData) {
+  const eventId = String(formData.get("eventId") ?? "");
+  const timeslotId = String(formData.get("timeslotId") ?? "");
+  const returnPath = attendancePath(eventId, timeslotId || undefined);
+  const parsed = walkInSchema.safeParse({
+    eventId,
+    timeslotId,
+    volunteerName: formData.get("volunteerName"),
+    volunteerKey: formData.get("volunteerKey") || undefined,
+    email: formData.get("email") || "",
+    mobile: formData.get("mobile") || undefined,
+    tshirtSize: formData.get("tshirtSize") || undefined,
+    submitIntent: formData.get("submitIntent"),
+  });
+
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Check the volunteer details.";
+    redirect(appendParameter(returnPath, "error", message));
+  }
+
+  const { userId } = await requireEventManager(returnPath);
+  const admin = getPhaseOneAdminClient();
+  const { data, error } = await admin.rpc("phaseone_add_walk_in_volunteer", {
+    p_event_id: parsed.data.eventId,
+    p_timeslot_id: parsed.data.timeslotId,
+    p_volunteer_key: parsed.data.volunteerKey || null,
+    p_volunteer_name: parsed.data.volunteerName,
+    p_email: parsed.data.email || null,
+    p_mobile: parsed.data.mobile || null,
+    p_tshirt_size: parsed.data.tshirtSize || null,
+    p_check_in: parsed.data.submitIntent === "add_and_check_in",
+    p_changed_by: userId,
+  });
+
+  if (error) {
+    console.error("Unable to add last-minute volunteer", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+      timeslotId: parsed.data.timeslotId,
+    });
+    redirect(
+      appendParameter(
+        returnPath,
+        "error",
+        error.message || "The last-minute volunteer could not be added.",
+      ),
+    );
+  }
+
+  const result = data as { status?: string; roster_id?: string; checked_in?: boolean } | null;
+  if (result?.status === "duplicate") {
+    let path = appendParameter(
+      returnPath,
+      "error",
+      "This volunteer is already on the roster for this shift.",
+    );
+    if (result.roster_id) path = appendParameter(path, "highlight", result.roster_id);
+    redirect(path);
+  }
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  let path = appendParameter(
+    returnPath,
+    "success",
+    result?.checked_in ? "walk_in_checked_in" : "walk_in_added",
+  );
+  if (result?.roster_id) path = appendParameter(path, "highlight", result.roster_id);
+  redirect(path);
 }
 
 export async function recordAttendanceAction(formData: FormData) {
