@@ -156,7 +156,7 @@ export async function recordAttendanceQuickAction(input: {
   eventId: string;
   rosterId: string;
   action: "mark_sign_in" | "mark_sign_out";
-  timeslotId?: string;
+  timeslotId?: string | undefined;
 }): Promise<QuickAttendanceResult> {
   const parsed = quickAttendanceSchema.safeParse(input);
   if (!parsed.success) {
