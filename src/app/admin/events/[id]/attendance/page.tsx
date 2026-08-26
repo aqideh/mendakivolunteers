@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import {
   addWalkInVolunteer,
   applyAttendanceChange,
-  recordAttendanceAction,
 } from "@/app/admin/events/[id]/attendance/actions";
+import {
+  QuickAttendanceButton,
+  WalkInSubmitButtons,
+} from "@/components/phaseone/attendance-quick-action";
 import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
@@ -14,6 +18,7 @@ import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 export const metadata: Metadata = { title: "Roster and check-in" };
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -114,11 +119,57 @@ function toSingaporeDateTimeLocal(value: string | null): string {
   return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
 }
 
+async function AttendanceAudit({
+  eventId,
+  rosterNames,
+}: {
+  eventId: string;
+  rosterNames: Record<string, string>;
+}) {
+  const admin = getPhaseOneAdminClient();
+  const auditResult = await admin
+    .from("phaseone_attendance_audit")
+    .select("id, roster_id, action, reason, old_signed_in_at, old_signed_out_at, new_signed_in_at, new_signed_out_at, changed_at")
+    .eq("event_id", eventId)
+    .order("changed_at", { ascending: false })
+    .limit(25);
+
+  if (auditResult.error || !auditResult.data) {
+    throw new Error("Attendance audit history could not be loaded");
+  }
+
+  return (
+    <section className="section" aria-labelledby="audit-title">
+      <div className="section-header">
+        <div><p className="eyebrow">Audit history</p><h2 id="audit-title">Recent attendance changes</h2></div>
+      </div>
+      <div className="table-wrap">
+        <table className="content-table">
+          <thead><tr><th>Changed</th><th>Volunteer</th><th>Action</th><th>Reason</th><th>Before</th><th>After</th></tr></thead>
+          <tbody>
+            {auditResult.data.map((audit) => (
+              <tr key={audit.id}>
+                <td>{formatSingaporeDateTime(audit.changed_at)}</td>
+                <td>{rosterNames[audit.roster_id] ?? audit.roster_id}</td>
+                <td>{audit.action.replaceAll("_", " ")}</td>
+                <td>{audit.reason}</td>
+                <td>In: {audit.old_signed_in_at ? formatSingaporeDateTime(audit.old_signed_in_at) : "—"}<br />Out: {audit.old_signed_out_at ? formatSingaporeDateTime(audit.old_signed_out_at) : "—"}</td>
+                <td>In: {audit.new_signed_in_at ? formatSingaporeDateTime(audit.new_signed_in_at) : "—"}<br />Out: {audit.new_signed_out_at ? formatSingaporeDateTime(audit.new_signed_out_at) : "—"}</td>
+              </tr>
+            ))}
+            {auditResult.data.length === 0 ? <tr><td colSpan={6}>No attendance changes yet.</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export default async function AttendancePage({ params, searchParams }: PageProps) {
   const { id } = await params;
   await requireEventManager(`/admin/events/${id}/attendance`);
   const admin = getPhaseOneAdminClient();
-  const [eventResult, timeslotsResult, rosterResult, attendanceResult, auditResult] = await Promise.all([
+  const [eventResult, timeslotsResult, rosterResult, attendanceResult] = await Promise.all([
     admin.from("phaseone_events").select("id, title, slug, venue").eq("id", id).maybeSingle(),
     admin
       .from("phaseone_event_timeslots")
@@ -136,12 +187,6 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .from("phaseone_attendance")
       .select("id, roster_id, signed_in_at, signed_out_at, updated_at")
       .eq("event_id", id),
-    admin
-      .from("phaseone_attendance_audit")
-      .select("id, roster_id, action, reason, old_signed_in_at, old_signed_out_at, new_signed_in_at, new_signed_out_at, changed_at")
-      .eq("event_id", id)
-      .order("changed_at", { ascending: false })
-      .limit(25),
   ]);
 
   if (eventResult.error) throw new Error("Event could not be loaded");
@@ -149,8 +194,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   if (
     timeslotsResult.error || !timeslotsResult.data ||
     rosterResult.error || !rosterResult.data ||
-    attendanceResult.error || !attendanceResult.data ||
-    auditResult.error || !auditResult.data
+    attendanceResult.error || !attendanceResult.data
   ) {
     throw new Error("Attendance operations data could not be loaded");
   }
@@ -165,7 +209,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const highlightedRosterId = parameter(parameters, "highlight");
 
   const attendanceByRoster = new Map(attendanceResult.data.map((item) => [item.roster_id, item]));
-  const rosterById = new Map(rosterResult.data.map((item) => [item.id, item]));
+  const rosterNames = Object.fromEntries(
+    rosterResult.data.map((item) => [item.id, item.volunteer_name]),
+  );
   const records = rosterResult.data
     .filter((volunteer) => !selectedTimeslot || volunteer.timeslot_id === selectedTimeslot.id)
     .map((volunteer) => {
@@ -272,7 +318,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
             </section>
 
             <section className="section panel phaseone-admin-section" aria-labelledby="attendance-roster-title">
-              <div className="section-header">
+              <div className="section-header phaseone-roster-heading">
                 <div>
                   <p className="eyebrow">{singaporeDateLabel(selectedTimeslot.starts_at)} · {timeslotLabel(selectedTimeslot)}</p>
                   <h2 id="attendance-roster-title">Volunteer roster</h2>
@@ -280,14 +326,17 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 <span className="status-pill">{visible.length} shown</span>
               </div>
 
-              <details className="phaseone-walk-in">
-                <summary className="button button-primary">+ Add last-minute volunteer</summary>
+              <section className="phaseone-walk-in" aria-labelledby="walk-in-title">
+                <div className="phaseone-walk-in-header">
+                  <div>
+                    <p className="eyebrow">Event-day registration</p>
+                    <h3 id="walk-in-title">+ Walk-in volunteer</h3>
+                    <p className="muted">Add someone who was not on the original roster. They will be attached to this selected shift.</p>
+                  </div>
+                </div>
                 <form action={addWalkInVolunteer} className="phaseone-walk-in-form">
                   <input name="eventId" type="hidden" value={id} />
                   <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
-                  <p className="muted">
-                    Adds an operational roster entry for this shift. This does not create a portal account or official registration.
-                  </p>
                   <div className="phaseone-walk-in-grid">
                     <div className="form-field">
                       <label htmlFor="walk-in-name">Name</label>
@@ -311,16 +360,10 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       <input id="walk-in-shirt" name="tshirtSize" maxLength={20} placeholder="e.g. M" />
                     </div>
                   </div>
-                  <div className="phaseone-walk-in-actions">
-                    <button className="button button-primary" name="submitIntent" type="submit" value="add_and_check_in">
-                      Add &amp; check in now
-                    </button>
-                    <button className="button button-secondary" name="submitIntent" type="submit" value="add_only">
-                      Add to roster only
-                    </button>
-                  </div>
+                  <WalkInSubmitButtons />
+                  <p className="muted phaseone-walk-in-note">This creates an operational event roster entry only; it does not create a portal account or official YM Hub registration.</p>
                 </form>
-              </details>
+              </section>
 
               <form className="phaseone-attendance-filters" method="get">
                 <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
@@ -342,7 +385,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       <div>
                         <div className="phaseone-roster-meta">
                           <p className="record-kicker">{volunteer.volunteer_key ?? "No volunteer ID"}</p>
-                          {volunteer.entry_method === "walk_in" ? <span className="status-pill phaseone-walk-in-badge">Last-minute</span> : null}
+                          {volunteer.entry_method === "walk_in" ? <span className="status-pill phaseone-walk-in-badge">Walk-in</span> : null}
                         </div>
                         <h3>{volunteer.volunteer_name}</h3>
                         <p className="muted">{volunteer.mobile ?? "No contact number"} · T-shirt: {volunteer.tshirt_size ?? "—"}</p>
@@ -356,21 +399,19 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                     </dl>
 
                     {status === "pending" ? (
-                      <form action={recordAttendanceAction}>
-                        <input name="eventId" type="hidden" value={id} />
-                        <input name="rosterId" type="hidden" value={volunteer.id} />
-                        <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
-                        <input name="action" type="hidden" value="mark_sign_in" />
-                        <button className="button button-primary phaseone-checkin-action" type="submit">Check in now</button>
-                      </form>
+                      <QuickAttendanceButton
+                        action="mark_sign_in"
+                        eventId={id}
+                        rosterId={volunteer.id}
+                        timeslotId={selectedTimeslot.id}
+                      />
                     ) : status === "signed_in" ? (
-                      <form action={recordAttendanceAction}>
-                        <input name="eventId" type="hidden" value={id} />
-                        <input name="rosterId" type="hidden" value={volunteer.id} />
-                        <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
-                        <input name="action" type="hidden" value="mark_sign_out" />
-                        <button className="button button-primary phaseone-checkin-action" type="submit">Check out now</button>
-                      </form>
+                      <QuickAttendanceButton
+                        action="mark_sign_out"
+                        eventId={id}
+                        rosterId={volunteer.id}
+                        timeslotId={selectedTimeslot.id}
+                      />
                     ) : null}
 
                     {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
@@ -395,16 +436,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           </>
         ) : null}
 
-        <section className="section" aria-labelledby="audit-title">
-          <div className="section-header"><div><p className="eyebrow">Audit history</p><h2 id="audit-title">Recent attendance changes</h2></div></div>
-          <div className="table-wrap"><table className="content-table"><thead><tr><th>Changed</th><th>Volunteer</th><th>Action</th><th>Reason</th><th>Before</th><th>After</th></tr></thead><tbody>
-            {auditResult.data.map((audit) => {
-              const volunteer = rosterById.get(audit.roster_id);
-              return <tr key={audit.id}><td>{formatSingaporeDateTime(audit.changed_at)}</td><td>{volunteer?.volunteer_name ?? audit.roster_id}</td><td>{audit.action.replaceAll("_", " ")}</td><td>{audit.reason}</td><td>In: {audit.old_signed_in_at ? formatSingaporeDateTime(audit.old_signed_in_at) : "—"}<br />Out: {audit.old_signed_out_at ? formatSingaporeDateTime(audit.old_signed_out_at) : "—"}</td><td>In: {audit.new_signed_in_at ? formatSingaporeDateTime(audit.new_signed_in_at) : "—"}<br />Out: {audit.new_signed_out_at ? formatSingaporeDateTime(audit.new_signed_out_at) : "—"}</td></tr>;
-            })}
-            {auditResult.data.length === 0 ? <tr><td colSpan={6}>No attendance changes yet.</td></tr> : null}
-          </tbody></table></div>
-        </section>
+        <Suspense fallback={<section className="section"><p className="muted">Loading recent attendance changes…</p></section>}>
+          <AttendanceAudit eventId={id} rosterNames={rosterNames} />
+        </Suspense>
       </main>
     </div>
   );
