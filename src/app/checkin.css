@@ -35,25 +35,30 @@
   margin: 0.9rem 0;
 }
 
+.phaseone-roster-heading {
+  margin-bottom: 0.25rem;
+}
+
 .phaseone-walk-in {
   margin: 0.7rem 0 0.9rem;
   border: 1px solid var(--border);
   border-radius: 0.7rem;
-  padding: 0.7rem 0.8rem;
+  padding: 0.9rem;
+  background: var(--surface-subtle, #f8faf9);
 }
 
-.phaseone-walk-in > summary {
-  cursor: pointer;
-  list-style: none;
-  width: fit-content;
-}
-
-.phaseone-walk-in > summary::-webkit-details-marker {
-  display: none;
-}
-
-.phaseone-walk-in[open] > summary {
+.phaseone-walk-in-header {
   margin-bottom: 0.8rem;
+}
+
+.phaseone-walk-in-header h3 {
+  margin: 0.08rem 0 0.2rem;
+  font-size: 1.05rem;
+}
+
+.phaseone-walk-in-header p,
+.phaseone-walk-in-note {
+  margin-bottom: 0;
 }
 
 .phaseone-walk-in-form,
@@ -71,6 +76,12 @@
   display: flex;
   gap: 0.55rem;
   flex-wrap: wrap;
+}
+
+.phaseone-walk-in-actions button[disabled],
+.phaseone-checkin-action[disabled] {
+  cursor: wait;
+  opacity: 0.78;
 }
 
 .phaseone-roster-meta {
@@ -153,11 +164,31 @@
   font-size: 0.82rem;
 }
 
+.phaseone-quick-action-wrap {
+  display: grid;
+  gap: 0.3rem;
+}
+
 .phaseone-checkin-action {
   width: 100%;
   min-height: 2.75rem;
   padding-block: 0.45rem;
   font-size: 0.92rem;
+}
+
+.phaseone-inline-action-success,
+.phaseone-inline-action-error {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.phaseone-inline-action-success {
+  color: #147d64;
+}
+
+.phaseone-inline-action-error {
+  color: #a61b1b;
 }
 
 .phaseone-attendance-edit {

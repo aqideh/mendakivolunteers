@@ -40,6 +40,16 @@ const walkInSchema = z.object({
   submitIntent: z.enum(["add_and_check_in", "add_only"]),
 });
 
+export type QuickAttendanceResult =
+  | {
+      ok: true;
+      action: "mark_sign_in" | "mark_sign_out";
+      signedInAt: string | null;
+      signedOutAt: string | null;
+      updatedAt: string | null;
+    }
+  | { ok: false; error: string };
+
 function encode(value: string): string {
   return encodeURIComponent(value);
 }
@@ -142,23 +152,21 @@ export async function addWalkInVolunteer(formData: FormData) {
   redirect(path);
 }
 
-export async function recordAttendanceAction(formData: FormData) {
-  const eventId = String(formData.get("eventId") ?? "");
-  const parsed = quickAttendanceSchema.safeParse({
-    eventId,
-    rosterId: formData.get("rosterId"),
-    action: formData.get("action"),
-    timeslotId: formData.get("timeslotId") || undefined,
-  });
-
+export async function recordAttendanceQuickAction(input: {
+  eventId: string;
+  rosterId: string;
+  action: "mark_sign_in" | "mark_sign_out";
+  timeslotId?: string | undefined;
+}): Promise<QuickAttendanceResult> {
+  const parsed = quickAttendanceSchema.safeParse(input);
   if (!parsed.success) {
-    redirect(`${attendancePath(eventId)}?error=${encode("Attendance action could not be read.")}`);
+    return { ok: false, error: "Attendance action could not be read." };
   }
 
   const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
   const { userId } = await requireEventManager(returnPath);
   const admin = getPhaseOneAdminClient();
-  const { error } = await admin.rpc("phaseone_apply_attendance_transition", {
+  const { data, error } = await admin.rpc("phaseone_apply_attendance_transition", {
     p_event_id: parsed.data.eventId,
     p_roster_id: parsed.data.rosterId,
     p_action: parsed.data.action,
@@ -174,8 +182,44 @@ export async function recordAttendanceAction(formData: FormData) {
       rosterId: parsed.data.rosterId,
       action: parsed.data.action,
     });
+    return { ok: false, error: error.message || "Attendance could not be recorded." };
+  }
+
+  const attendance = data as {
+    signed_in_at?: string | null;
+    signed_out_at?: string | null;
+    updated_at?: string | null;
+  } | null;
+
+  return {
+    ok: true,
+    action: parsed.data.action,
+    signedInAt: attendance?.signed_in_at ?? null,
+    signedOutAt: attendance?.signed_out_at ?? null,
+    updatedAt: attendance?.updated_at ?? null,
+  };
+}
+
+// Retained as a progressively enhanced fallback for any existing form callers.
+export async function recordAttendanceAction(formData: FormData) {
+  const eventId = String(formData.get("eventId") ?? "");
+  const parsed = quickAttendanceSchema.safeParse({
+    eventId,
+    rosterId: formData.get("rosterId"),
+    action: formData.get("action"),
+    timeslotId: formData.get("timeslotId") || undefined,
+  });
+
+  if (!parsed.success) {
+    redirect(`${attendancePath(eventId)}?error=${encode("Attendance action could not be read.")}`);
+  }
+
+  const result = await recordAttendanceQuickAction(parsed.data);
+  const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
+
+  if (!result.ok) {
     const separator = returnPath.includes("?") ? "&" : "?";
-    redirect(`${returnPath}${separator}error=${encode(error.message || "Attendance could not be recorded.")}`);
+    redirect(`${returnPath}${separator}error=${encode(result.error)}`);
   }
 
   revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
