@@ -119,33 +119,42 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
-            <p className="eyebrow">Phase-one operations</p>
+            <p className="eyebrow">Event operations</p>
             <h1>{event.title}</h1>
-            <p className="muted">Manage the event guide, schedule, preparation flow, access controls and operational roster.</p>
+            <p className="muted">Update the guide, manage volunteers and run attendance from one place.</p>
           </div>
           <div className="actions">
-            <Link className="button button-secondary" href="/admin/events">All event guides</Link>
-            <form action={duplicateEvent}>
-              <input type="hidden" name="eventId" value={event.id} />
-              <button className="button button-secondary" type="submit">Duplicate journey</button>
-            </form>
-            <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Roster / check-in</Link>
-            {event.is_published ? <Link className="button" href={`/journey/${event.slug}`}>View event guide</Link> : null}
+            <Link className="button button-secondary" href="/admin/events">All events</Link>
+            <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Attendance</Link>
+            {event.is_published ? <Link className="button" href={`/journey/${event.slug}`}>View guide</Link> : null}
           </div>
         </div>
+
+        <nav className="phaseone-task-nav" aria-label="Event editor sections">
+          <a href="#guide">Guide details</a>
+          <a href="#programme">Programme</a>
+          <a href="#roster">Roster</a>
+          <Link href={`/admin/events/${id}/attendance`}>Attendance</Link>
+        </nav>
 
         {successMessage ? <div className="notice notice-success" role="status">{successMessage}</div> : null}
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
-        <section className="panel phaseone-admin-section" aria-labelledby="event-details-title">
-          <h2 id="event-details-title">Event guide configuration</h2>
+        <section className="panel phaseone-admin-section" id="guide" aria-labelledby="event-details-title">
+          <div className="section-header">
+            <div>
+              <p className="eyebrow">Guide details</p>
+              <h2 id="event-details-title">What volunteers need to know</h2>
+            </div>
+            <span className="status-pill">{event.is_published ? "Published" : "Draft"}</span>
+          </div>
           <EventForm event={event} opportunities={opportunitiesResult.data} />
         </section>
 
-        <section className="section panel phaseone-admin-section" aria-labelledby="rundown-title">
+        <section className="section panel phaseone-admin-section" id="programme" aria-labelledby="rundown-title">
           <div className="section-header">
             <div>
-              <p className="eyebrow">Volunteer journey</p>
+              <p className="eyebrow">Programme</p>
               <h2 id="rundown-title">Programme rundown</h2>
             </div>
             <span className="status-pill">{rundownImages.length} images</span>
@@ -157,42 +166,49 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           />
         </section>
 
-        <section className="section panel phaseone-admin-section" aria-labelledby="roster-title">
+        <section className="section panel phaseone-admin-section" id="roster" aria-labelledby="roster-title">
           <div className="section-header">
             <div>
-              <p className="eyebrow">Volunteer roster</p>
-              <h2 id="roster-title">CSV roster upload</h2>
+              <p className="eyebrow">Roster</p>
+              <h2 id="roster-title">Add volunteers</h2>
             </div>
             <span className="status-pill">{rosterCountResult.count ?? 0} assignments</span>
           </div>
           <RosterUpload eventId={event.id} timeslots={timeslotsResult.data} />
+
+          <details className="phaseone-disclosure phaseone-import-history">
+            <summary>Recent roster imports</summary>
+            <div className="phaseone-disclosure-body">
+              <div className="table-wrap">
+                <table className="content-table">
+                  <thead><tr><th>Uploaded</th><th>File</th><th>Mode</th><th>Rows</th><th>Replaced</th></tr></thead>
+                  <tbody>
+                    {importsResult.data.map((item) => (
+                      <tr key={item.id}>
+                        <td>{formatSingaporeDateTime(item.uploaded_at)}</td>
+                        <td>{item.file_name}</td>
+                        <td>{item.mode}</td>
+                        <td>{item.row_count}</td>
+                        <td>{item.replaced_count}</td>
+                      </tr>
+                    ))}
+                    {importsResult.data.length === 0 ? <tr><td colSpan={5}>No roster imports yet.</td></tr> : null}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
         </section>
 
-        <section className="section" aria-labelledby="imports-title">
-          <div className="section-header">
-            <div>
-              <p className="eyebrow">Audit history</p>
-              <h2 id="imports-title">Recent roster imports</h2>
-            </div>
+        <details className="phaseone-disclosure phaseone-page-tools">
+          <summary>More event actions</summary>
+          <div className="phaseone-disclosure-body">
+            <form action={duplicateEvent}>
+              <input type="hidden" name="eventId" value={event.id} />
+              <button className="button button-secondary" type="submit">Duplicate event guide</button>
+            </form>
           </div>
-          <div className="table-wrap">
-            <table className="content-table">
-              <thead><tr><th>Uploaded</th><th>File</th><th>Mode</th><th>Rows</th><th>Replaced</th></tr></thead>
-              <tbody>
-                {importsResult.data.map((item) => (
-                  <tr key={item.id}>
-                    <td>{formatSingaporeDateTime(item.uploaded_at)}</td>
-                    <td>{item.file_name}</td>
-                    <td>{item.mode}</td>
-                    <td>{item.row_count}</td>
-                    <td>{item.replaced_count}</td>
-                  </tr>
-                ))}
-                {importsResult.data.length === 0 ? <tr><td colSpan={5}>No roster imports yet.</td></tr> : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        </details>
       </main>
     </div>
   );
