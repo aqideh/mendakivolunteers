@@ -74,13 +74,33 @@ describe("package CMS policy", () => {
     ).toBe("Published packages require a venue and navigation destination.");
   });
 
-  it("requires both action PINs and attendance URLs for published packages", () => {
+  it("allows publishing without attendance PINs or URLs", () => {
     expect(
       getPackagePublishError(
-        completePackage({ hasSignOutPin: false }),
+        completePackage({
+          signInUrl: null,
+          signOutUrl: null,
+          hasSignInPin: false,
+          hasSignOutPin: false,
+        }),
         now,
       ),
-    ).toBe("Published packages require separate sign-in and sign-out PINs.");
+    ).toBeNull();
+  });
+
+  it("requires a destination URL when its attendance PIN is configured", () => {
+    expect(
+      getPackagePublishError(
+        completePackage({ signInUrl: null, hasSignInPin: true }),
+        now,
+      ),
+    ).toBe("Add a sign-in URL or remove the sign-in PIN before publishing.");
+    expect(
+      getPackagePublishError(
+        completePackage({ signOutUrl: null, hasSignOutPin: true }),
+        now,
+      ),
+    ).toBe("Add a sign-out URL or remove the sign-out PIN before publishing.");
   });
 
   it("requires briefing URL and release time to be configured together", () => {
