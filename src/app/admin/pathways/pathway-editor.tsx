@@ -9,14 +9,19 @@ import {
 import type { PathwayMapVersion } from "@/lib/pathways/types";
 
 import {
-  initialPathwayDraftSaveState,
   savePathwayDraft,
+  type PathwayDraftSaveState,
 } from "./actions";
 import styles from "./pathways-admin.module.css";
 
 type PathwayEditorProps = Readonly<{
   pathwayMap: PathwayMapVersion;
 }>;
+
+const initialSaveState: PathwayDraftSaveState = {
+  status: "idle",
+  message: "",
+};
 
 export function PathwayEditor({ pathwayMap }: PathwayEditorProps) {
   const phases = [...pathwayMap.phases].sort(
@@ -27,7 +32,7 @@ export function PathwayEditor({ pathwayMap }: PathwayEditorProps) {
   );
   const [saveState, saveAction, isSaving] = useActionState(
     savePathwayDraft,
-    initialPathwayDraftSaveState,
+    initialSaveState,
   );
 
   return (
