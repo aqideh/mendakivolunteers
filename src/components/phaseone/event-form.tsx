@@ -181,7 +181,9 @@ export function EventForm({
 
       <fieldset className="phaseone-admin-fieldset">
         <legend>Attendance destinations</legend>
-        <p className="muted">Each destination is exposed only after its matching PIN is verified.</p>
+        <p className="muted">
+          Check-in and check-out are optional. An action is shown to volunteers only when its matching PIN is configured.
+        </p>
         <div className="phaseone-admin-grid">
           <div className="form-field">
             <label htmlFor="signInUrl">Sign-in URL</label>
@@ -205,14 +207,14 @@ export function EventForm({
               inputMode="numeric"
               name="signInPin"
               pattern="[0-9]{4,8}"
-              placeholder={event?.has_sign_in_pin ? "Leave blank to keep current PIN" : "4 to 8 digits"}
+              placeholder={event?.has_sign_in_pin ? "Leave blank to keep current PIN" : "Optional — 4 to 8 digits"}
               type="password"
             />
           </div>
           {event?.has_sign_in_pin ? (
             <label className="checkbox-row">
               <input name="clearSignInPin" type="checkbox" />
-              Remove sign-in PIN
+              Remove sign-in PIN and hide volunteer check-in
             </label>
           ) : null}
         </fieldset>
@@ -227,14 +229,14 @@ export function EventForm({
               inputMode="numeric"
               name="signOutPin"
               pattern="[0-9]{4,8}"
-              placeholder={event?.has_sign_out_pin ? "Leave blank to keep current PIN" : "4 to 8 digits"}
+              placeholder={event?.has_sign_out_pin ? "Leave blank to keep current PIN" : "Optional — 4 to 8 digits"}
               type="password"
             />
           </div>
           {event?.has_sign_out_pin ? (
             <label className="checkbox-row">
               <input name="clearSignOutPin" type="checkbox" />
-              Remove sign-out PIN
+              Remove sign-out PIN and hide volunteer check-out
             </label>
           ) : null}
         </fieldset>
@@ -245,9 +247,8 @@ export function EventForm({
         Publish event guide to Your Volunteer Journey
       </label>
       <p className="muted">
-        Publishing requires at least one current or future scheduled timeslot, a venue,
-        navigation destination, both attendance URLs and both action PINs. Briefing URL
-        and release time must be set together.
+        Publishing requires at least one current or future scheduled timeslot, a venue and navigation destination.
+        Attendance actions are optional; a configured PIN requires its matching URL. Briefing URL and release time must be set together.
       </p>
 
       <div className="actions">
