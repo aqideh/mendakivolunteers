@@ -1,3 +1,7 @@
+"use client";
+
+import { useState, useTransition, type FormEvent } from "react";
+
 import { saveEvent } from "@/app/admin/events/actions";
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
@@ -41,6 +45,11 @@ type OpportunityOption = Readonly<{
   starts_at: string | null;
 }>;
 
+type SaveState = Readonly<{
+  status: "idle" | "error";
+  message: string;
+}>;
+
 export function EventForm({
   event,
   opportunities,
@@ -55,10 +64,49 @@ export function EventForm({
     endsAt: toSingaporeDateTimeLocal(timeslot.ends_at),
     status: timeslot.status,
   }));
+  const [saveState, setSaveState] = useState<SaveState>({
+    status: "idle",
+    message: "",
+  });
+  const [recoveryEventId, setRecoveryEventId] = useState<string | null>(null);
+  const [isSaving, startSaving] = useTransition();
+
+  function handleSubmit(submitEvent: FormEvent<HTMLFormElement>) {
+    submitEvent.preventDefault();
+    const form = submitEvent.currentTarget;
+    if (!form.reportValidity()) return;
+
+    const formData = new FormData(form);
+    if (!event?.id && recoveryEventId) {
+      formData.set("id", recoveryEventId);
+    }
+
+    setSaveState({ status: "idle", message: "" });
+    startSaving(async () => {
+      try {
+        const result = await saveEvent(formData);
+        if (result.status === "error") {
+          if (!event?.id && result.eventId) {
+            setRecoveryEventId(result.eventId);
+          }
+          setSaveState({ status: "error", message: result.message });
+        }
+      } catch (error) {
+        console.error("Unable to submit event guide", error);
+        setSaveState({
+          status: "error",
+          message:
+            "The event guide could not be saved because the request failed. Your entries have been kept; try again.",
+        });
+      }
+    });
+  }
 
   return (
-    <form action={saveEvent} className="phaseone-admin-form">
-      {event ? <input name="id" type="hidden" value={event.id} /> : null}
+    <form className="phaseone-admin-form" onSubmit={handleSubmit}>
+      {event?.id || recoveryEventId ? (
+        <input name="id" type="hidden" value={event?.id ?? recoveryEventId ?? ""} />
+      ) : null}
 
       <div className="form-field">
         <label htmlFor="externalOpportunityId">Volunteer.gov.sg opportunity</label>
@@ -251,9 +299,21 @@ export function EventForm({
         Attendance actions are optional; a configured PIN requires its matching URL. Briefing URL and release time must be set together.
       </p>
 
+      {saveState.status === "error" ? (
+        <div className="notice notice-error" role="alert" aria-live="polite">
+          {saveState.message}
+        </div>
+      ) : null}
+
       <div className="actions">
-        <button className="button button-primary" type="submit">
-          {event ? "Save event guide" : "Create event guide"}
+        <button className="button button-primary" disabled={isSaving} type="submit">
+          {isSaving
+            ? event || recoveryEventId
+              ? "Saving event guide…"
+              : "Creating event guide…"
+            : event || recoveryEventId
+              ? "Save event guide"
+              : "Create event guide"}
         </button>
       </div>
     </form>
