@@ -27,12 +27,30 @@ function readIdOrRedirect(
   }
 }
 
+function readId(formData: FormData, name: string): string | null {
+  try {
+    return readRequiredUuid(formData, name);
+  } catch {
+    return null;
+  }
+}
+
 function revalidatePathwayRoutes() {
   revalidatePath("/");
   revalidatePath("/dashboard");
   revalidatePath("/pathways");
   revalidatePath("/admin/pathways");
 }
+
+export type PathwayDraftSaveState = Readonly<{
+  status: "idle" | "success" | "error";
+  message: string;
+}>;
+
+export const initialPathwayDraftSaveState: PathwayDraftSaveState = {
+  status: "idle",
+  message: "",
+};
 
 export async function createPathwayDraft(formData: FormData) {
   const mapId = readIdOrRedirect(
@@ -59,18 +77,24 @@ export async function createPathwayDraft(formData: FormData) {
   redirect("/admin/pathways?success=draft_created");
 }
 
-export async function savePathwayDraft(formData: FormData) {
-  const versionId = readIdOrRedirect(
-    formData,
-    "versionId",
-    "Invalid pathway version identifier.",
-  );
-  const parsed = parsePathwayDraftForm(formData);
+export async function savePathwayDraft(
+  _previousState: PathwayDraftSaveState,
+  formData: FormData,
+): Promise<PathwayDraftSaveState> {
+  const versionId = readId(formData, "versionId");
+  if (!versionId) {
+    return {
+      status: "error",
+      message: "Invalid pathway version identifier. Your entries have been kept on this page.",
+    };
+  }
 
+  const parsed = parsePathwayDraftForm(formData);
   if (!parsed.success) {
-    redirect(
-      `/admin/pathways?error=${encode(getPathwayValidationMessage(parsed.error))}`,
-    );
+    return {
+      status: "error",
+      message: `${getPathwayValidationMessage(parsed.error)} Correct the highlighted or incomplete field and save again. Your entries have been kept.`,
+    };
   }
 
   const { supabase } = await requirePathwayManager();
@@ -85,13 +109,17 @@ export async function savePathwayDraft(formData: FormData) {
       versionId,
       code: error.code,
     });
-    redirect(
-      `/admin/pathways?error=${encode("The pathway draft could not be saved. Check the field values and try again.")}`,
-    );
+    return {
+      status: "error",
+      message: "The pathway draft could not be saved. Check the field values and try again. Your entries have been kept.",
+    };
   }
 
   revalidatePathwayRoutes();
-  redirect("/admin/pathways?success=draft_saved");
+  return {
+    status: "success",
+    message: "Draft saved. The published pathway map is unchanged.",
+  };
 }
 
 export async function publishPathwayDraft(formData: FormData) {
