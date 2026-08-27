@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 import {
   importRosterWithDiagnostics,
-  initialRosterImportState,
   type RosterImportState,
 } from "@/app/admin/events/roster-actions";
 
@@ -37,6 +36,11 @@ type ParseResult = Readonly<{
   diagnostics: RosterDiagnostic[];
   ignoredHelperRows: number;
 }>;
+
+const initialRosterImportState: RosterImportState = {
+  status: "idle",
+  message: "",
+};
 
 function parseDelimitedLine(line: string, delimiter: string): string[] {
   const values: string[] = [];

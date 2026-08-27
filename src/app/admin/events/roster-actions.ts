@@ -15,11 +15,6 @@ export type RosterImportState = Readonly<{
   diagnosticCode?: string;
 }>;
 
-export const initialRosterImportState: RosterImportState = {
-  status: "idle",
-  message: "",
-};
-
 function rosterImportError(
   message: string,
   diagnosticCode: string,
