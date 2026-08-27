@@ -208,47 +208,31 @@ function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): Pa
       diagnostics.push({ row: rowNumber, code: "MISSING_NAME", message: "volunteer_name is required for every volunteer row." });
       return;
     }
-    if (volunteerName.length > 200) {
-      diagnostics.push({ row: rowNumber, code: "NAME_TOO_LONG", message: "volunteer_name must be 200 characters or fewer." });
-    }
-    if (volunteerKey && volunteerKey.length > 120) {
-      diagnostics.push({ row: rowNumber, code: "ID_TOO_LONG", message: "volunteer_id must be 120 characters or fewer." });
-    }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      diagnostics.push({ row: rowNumber, code: "INVALID_EMAIL", message: `Email does not look valid: ${email}` });
-    }
-    if (mobile && mobile.length > 40) {
-      diagnostics.push({ row: rowNumber, code: "CONTACT_TOO_LONG", message: "contact_number must be 40 characters or fewer." });
-    }
-    if (tshirtSize && tshirtSize.length > 20) {
-      diagnostics.push({ row: rowNumber, code: "SIZE_TOO_LONG", message: "tshirt_size must be 20 characters or fewer." });
-    }
+    if (volunteerName.length > 200) diagnostics.push({ row: rowNumber, code: "NAME_TOO_LONG", message: "volunteer_name must be 200 characters or fewer." });
+    if (volunteerKey && volunteerKey.length > 120) diagnostics.push({ row: rowNumber, code: "ID_TOO_LONG", message: "volunteer_id must be 120 characters or fewer." });
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) diagnostics.push({ row: rowNumber, code: "INVALID_EMAIL", message: `Email does not look valid: ${email}` });
+    if (mobile && mobile.length > 40) diagnostics.push({ row: rowNumber, code: "CONTACT_TOO_LONG", message: "contact_number must be 40 characters or fewer." });
+    if (tshirtSize && tshirtSize.length > 20) diagnostics.push({ row: rowNumber, code: "SIZE_TOO_LONG", message: "tshirt_size must be 20 characters or fewer." });
 
     let timeslot: RosterTimeslot | undefined;
     const suppliedTimeslotId = timeslotIdIndex >= 0 ? values[timeslotIdIndex]?.trim() : "";
     if (suppliedTimeslotId) {
       timeslot = byId.get(suppliedTimeslotId);
-      if (!timeslot) {
-        diagnostics.push({ row: rowNumber, code: "INVALID_TIMESLOT_ID", message: "timeslot_id is not an active shift for this event. Download a fresh template." });
-      }
+      if (!timeslot) diagnostics.push({ row: rowNumber, code: "INVALID_TIMESLOT_ID", message: "timeslot_id is not an active shift for this event. Download a fresh template." });
     } else if (activeTimeslots.length === 1) {
       timeslot = activeTimeslots[0];
     } else {
       const date = dateIndex >= 0 ? values[dateIndex]?.trim() ?? "" : "";
       const shift = shiftIndex >= 0 ? values[shiftIndex]?.trim() ?? "" : "";
       if (!date || !shift) {
-        diagnostics.push({ row: rowNumber, code: "MISSING_SHIFT", message: "This event has multiple shifts. Provide timeslot_id, or both date (YYYY-MM-DD) and shift." });
+        diagnostics.push({ row: rowNumber, code: "MISSING_SHIFT", message: "This event has multiple shifts. Provide date and shift, or use the downloaded template." });
       } else if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         diagnostics.push({ row: rowNumber, code: "INVALID_DATE", message: "date must use YYYY-MM-DD, for example 2026-08-29." });
       } else {
         const matches = byDateAndLabel.get(`${date}|${normalize(shift)}`) ?? [];
-        if (matches.length === 0) {
-          diagnostics.push({ row: rowNumber, code: "SHIFT_NOT_FOUND", message: `No event shift matches date ${date} and shift “${shift}”. Use the exact values shown below or use timeslot_id.` });
-        } else if (matches.length > 1) {
-          diagnostics.push({ row: rowNumber, code: "AMBIGUOUS_SHIFT", message: "More than one event shift matches this date and shift. Use timeslot_id." });
-        } else {
-          timeslot = matches[0];
-        }
+        if (matches.length === 0) diagnostics.push({ row: rowNumber, code: "SHIFT_NOT_FOUND", message: `No event shift matches ${date} and “${shift}”. Use the exact shift name shown in formatting help.` });
+        else if (matches.length > 1) diagnostics.push({ row: rowNumber, code: "AMBIGUOUS_SHIFT", message: "More than one event shift has this date and name. Use the downloaded template." });
+        else timeslot = matches[0];
       }
     }
 
@@ -274,11 +258,8 @@ function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): Pa
     for (const identity of rowIdentityKeys(row)) {
       const key = `${row.timeslot_id}|${identity}`;
       const previous = seen.get(key);
-      if (previous) {
-        diagnostics.push({ row: null, code: "DUPLICATE_IDENTITY", message: `${row.volunteer_name} duplicates ${previous} within the same shift (${identity.split(":")[0]} match).` });
-      } else {
-        seen.set(key, row.volunteer_name);
-      }
+      if (previous) diagnostics.push({ row: null, code: "DUPLICATE_IDENTITY", message: `${row.volunteer_name} duplicates ${previous} within the same shift.` });
+      else seen.set(key, row.volunteer_name);
     }
   }
 
@@ -301,14 +282,8 @@ export function RosterUpload({
   const [importState, setImportState] = useState<RosterImportState>(initialRosterImportState);
   const [isImporting, startImportTransition] = useTransition();
   const preview = useMemo(() => rows.slice(0, 8), [rows]);
-  const activeTimeslots = useMemo(
-    () => timeslots.filter((timeslot) => timeslot.status !== "cancelled"),
-    [timeslots],
-  );
-  const timeslotById = useMemo(
-    () => new Map(timeslots.map((timeslot) => [timeslot.id, timeslot])),
-    [timeslots],
-  );
+  const activeTimeslots = useMemo(() => timeslots.filter((timeslot) => timeslot.status !== "cancelled"), [timeslots]);
+  const timeslotById = useMemo(() => new Map(timeslots.map((timeslot) => [timeslot.id, timeslot])), [timeslots]);
 
   function loadRoster(text: string, sourceName: string) {
     setRows([]);
@@ -334,7 +309,7 @@ export function RosterUpload({
 
   return (
     <form
-      className="phaseone-admin-form"
+      className="phaseone-admin-form phaseone-roster-form"
       onSubmit={(event) => {
         event.preventDefault();
         submitRoster(event.currentTarget);
@@ -344,52 +319,10 @@ export function RosterUpload({
       <input name="fileName" type="hidden" value={fileName || "pasted-roster"} />
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
-      <div className="phaseone-roster-upload-header">
-        <div>
-          <p><strong>Expected roster format</strong></p>
-          <p className="muted">
-            One volunteer per row. Include the header row. The only required volunteer field is <code>volunteer_name</code>.
-          </p>
-        </div>
-        <a className="button button-secondary" href={`/admin/events/${eventId}/roster-template`}>
-          Download roster template
-        </a>
+      <div className="phaseone-roster-toolbar">
+        <p className="muted">Paste from Excel/Google Sheets or upload a CSV. Volunteer name is the only required person field.</p>
+        <a className="button button-secondary" href={`/admin/events/${eventId}/roster-template`}>Download template</a>
       </div>
-
-      <div className="table-wrap">
-        <table className="content-table">
-          <thead><tr><th>Column</th><th>Required?</th><th>Expected value</th></tr></thead>
-          <tbody>
-            <tr><td><code>volunteer_name</code></td><td>Yes</td><td>Volunteer’s full name.</td></tr>
-            <tr><td><code>volunteer_id</code></td><td>No</td><td>MENDAKI/roster volunteer ID, up to 120 characters.</td></tr>
-            <tr><td><code>contact_number</code></td><td>No</td><td>Phone number. 91234567, +65 9123 4567 and 0065 9123 4567 are accepted.</td></tr>
-            <tr><td><code>email</code></td><td>No</td><td>A valid email address.</td></tr>
-            <tr><td><code>tshirt_size</code></td><td>No</td><td>Free text, up to 20 characters, e.g. S, M, L, XL.</td></tr>
-            <tr><td><code>date</code> + <code>shift</code></td><td>{activeTimeslots.length > 1 ? "For multi-shift events" : "No"}</td><td>Date must be YYYY-MM-DD; shift must exactly match the event shift below.</td></tr>
-            <tr><td><code>timeslot_id</code></td><td>No</td><td>Preferred for multi-shift imports; overrides date + shift matching.</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      {activeTimeslots.length > 0 ? (
-        <div className="phaseone-roster-preview">
-          <p><strong>Valid shift values for this event</strong></p>
-          <div className="table-wrap">
-            <table className="content-table">
-              <thead><tr><th>Date</th><th>shift</th><th>timeslot_id</th></tr></thead>
-              <tbody>
-                {activeTimeslots.map((timeslot) => (
-                  <tr key={timeslot.id}>
-                    <td>{singaporeDate(timeslot.starts_at)}</td>
-                    <td>{timeslotLabel(timeslot)}</td>
-                    <td><code>{timeslot.id}</code></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : null}
 
       <div className="form-field">
         <label htmlFor="pastedRoster">Paste roster</label>
@@ -397,114 +330,151 @@ export function RosterUpload({
           id="pastedRoster"
           onChange={(event) => setPastedRoster(event.target.value)}
           placeholder={activeTimeslots.length > 1
-            ? "volunteer_name\tcontact_number\temail\tvolunteer_id\tdate\tshift\nNur Aisyah\t91234567\taisyah@example.com\tMV-001\t2026-08-29\tMorning"
-            : "volunteer_name\tcontact_number\temail\tvolunteer_id\ttshirt_size\nNur Aisyah\t91234567\taisyah@example.com\tMV-001\tM"}
-          rows={8}
+            ? "volunteer_name\tcontact_number\temail\tdate\tshift\nNur Aisyah\t91234567\taisyah@example.com\t2026-08-29\tMorning"
+            : "volunteer_name\tcontact_number\temail\nNur Aisyah\t91234567\taisyah@example.com"}
+          rows={6}
           value={pastedRoster}
         />
-        <p className="muted">
-          Excel and Google Sheets tab-separated paste is supported. CSV-style comma-separated text is also accepted. Header aliases such as name/full_name, phone/mobile, and shirt_size are recognized.
-        </p>
         <button
           className="button button-secondary"
           disabled={!pastedRoster.trim()}
           onClick={() => loadRoster(pastedRoster, "pasted-roster")}
           type="button"
         >
-          Preview and diagnose pasted roster
+          Preview roster
         </button>
       </div>
 
-      <div className="form-field">
-        <label htmlFor="rosterFile">Or upload CSV roster</label>
-        <input
-          accept=".csv,text/csv"
-          id="rosterFile"
-          onChange={async (event) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            loadRoster(await file.text(), file.name);
-          }}
-          type="file"
-        />
-        <p className="muted">
-          The downloaded template contains one blank helper row per event shift. Fill or duplicate those rows as needed; untouched helper rows are ignored automatically.
-        </p>
+      <div className="phaseone-upload-row">
+        <div className="form-field">
+          <label htmlFor="rosterFile">Or upload CSV</label>
+          <input
+            accept=".csv,text/csv"
+            id="rosterFile"
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              loadRoster(await file.text(), file.name);
+            }}
+            type="file"
+          />
+        </div>
       </div>
 
-      <div className="form-field">
-        <label htmlFor="mode">Import mode</label>
-        <select defaultValue="merge" id="mode" name="mode">
-          <option value="merge">Merge and update matching volunteers within each shift</option>
-          <option value="replace">Replace entire roster</option>
-        </select>
-        <p className="muted">
-          Matching uses Volunteer ID, then email and contact number; name is used only when no stronger identifier is supplied. Replace is blocked once attendance records exist.
-        </p>
-      </div>
+      <details className="phaseone-disclosure">
+        <summary>Formatting help</summary>
+        <div className="phaseone-disclosure-body">
+          <p><strong>Accepted columns</strong></p>
+          <ul className="phaseone-compact-list">
+            <li><code>volunteer_name</code> — required</li>
+            <li><code>contact_number</code>, <code>email</code>, <code>volunteer_id</code>, <code>tshirt_size</code> — optional</li>
+            {activeTimeslots.length > 1 ? <li><code>date</code> and <code>shift</code> — required for multi-shift events unless using the downloaded template</li> : null}
+          </ul>
+          {activeTimeslots.length > 1 ? (
+            <div className="phaseone-shift-help">
+              <p><strong>Valid shifts</strong></p>
+              <ul className="phaseone-compact-list">
+                {activeTimeslots.map((timeslot) => (
+                  <li key={timeslot.id}>{singaporeDate(timeslot.starts_at)} — {timeslotLabel(timeslot)}</li>
+                ))}
+              </ul>
+              <details className="phaseone-inline-disclosure">
+                <summary>Technical template identifiers</summary>
+                <div className="table-wrap">
+                  <table className="content-table">
+                    <thead><tr><th>Date</th><th>Shift</th><th>timeslot_id</th></tr></thead>
+                    <tbody>
+                      {activeTimeslots.map((timeslot) => (
+                        <tr key={timeslot.id}>
+                          <td>{singaporeDate(timeslot.starts_at)}</td>
+                          <td>{timeslotLabel(timeslot)}</td>
+                          <td><code>{timeslot.id}</code></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            </div>
+          ) : null}
+        </div>
+      </details>
 
-      {ignoredHelperRows > 0 ? (
-        <p className="muted">Ignored {ignoredHelperRows} blank template/helper row{ignoredHelperRows === 1 ? "" : "s"}.</p>
-      ) : null}
+      <details className="phaseone-disclosure">
+        <summary>Advanced import options</summary>
+        <div className="phaseone-disclosure-body">
+          <div className="form-field">
+            <label htmlFor="mode">Import mode</label>
+            <select defaultValue="merge" id="mode" name="mode">
+              <option value="merge">Merge with current roster</option>
+              <option value="replace">Replace entire roster</option>
+            </select>
+            <p className="muted">Merge is recommended. Replace is blocked once attendance exists.</p>
+          </div>
+        </div>
+      </details>
+
+      {ignoredHelperRows > 0 ? <p className="muted">Ignored {ignoredHelperRows} blank template row{ignoredHelperRows === 1 ? "" : "s"}.</p> : null}
 
       {diagnostics.length > 0 ? (
         <div className="phaseone-form-error" role="alert">
-          <p><strong>Roster diagnostics — {diagnostics.length} issue{diagnostics.length === 1 ? "" : "s"} to fix</strong></p>
+          <p><strong>{diagnostics.length} issue{diagnostics.length === 1 ? "" : "s"} need attention</strong></p>
           <ul>
             {diagnostics.slice(0, 20).map((diagnostic, index) => (
               <li key={`${diagnostic.code}-${diagnostic.row ?? "general"}-${index}`}>
-                {diagnostic.row ? `Row ${diagnostic.row}: ` : ""}{diagnostic.message} <code>{diagnostic.code}</code>
+                {diagnostic.row ? `Row ${diagnostic.row}: ` : ""}{diagnostic.message}
               </li>
             ))}
           </ul>
-          {diagnostics.length > 20 ? <p>Showing the first 20 issues.</p> : null}
+          <details className="phaseone-inline-disclosure">
+            <summary>Technical diagnostic codes</summary>
+            <ul className="phaseone-compact-list">
+              {diagnostics.slice(0, 20).map((diagnostic, index) => (
+                <li key={`code-${diagnostic.code}-${diagnostic.row ?? "general"}-${index}`}><code>{diagnostic.code}</code></li>
+              ))}
+            </ul>
+          </details>
         </div>
       ) : null}
 
       {rows.length ? (
         <div className="phaseone-roster-preview">
-          <p><strong>{rows.length}</strong> valid volunteer assignment{rows.length === 1 ? "" : "s"} ready to import.</p>
+          <div className="phaseone-preview-summary">
+            <strong>{rows.length} volunteer assignment{rows.length === 1 ? "" : "s"} ready</strong>
+            <span className="muted">Showing {Math.min(preview.length, rows.length)}</span>
+          </div>
           <div className="table-wrap">
-            <table className="content-table">
-              <thead><tr><th>Date</th><th>Shift</th><th>Name</th><th>Volunteer ID</th><th>Email</th><th>Contact</th><th>T-shirt</th></tr></thead>
+            <table className="content-table phaseone-roster-summary-table">
+              <thead><tr><th>Name</th>{activeTimeslots.length > 1 ? <th>Shift</th> : null}<th>Contact</th></tr></thead>
               <tbody>
                 {preview.map((row, index) => {
                   const timeslot = timeslotById.get(row.timeslot_id);
+                  const contact = row.mobile ?? row.email ?? row.volunteer_key ?? "—";
                   return (
                     <tr key={`${row.timeslot_id}-${matchKey(row)}-${index}`}>
-                      <td>{timeslot ? singaporeDate(timeslot.starts_at) : "—"}</td>
-                      <td>{timeslot ? timeslotLabel(timeslot) : "—"}</td>
                       <td>{row.volunteer_name}</td>
-                      <td>{row.volunteer_key ?? "—"}</td>
-                      <td>{row.email ?? "—"}</td>
-                      <td>{row.mobile ?? "—"}</td>
-                      <td>{row.tshirt_size ?? "—"}</td>
+                      {activeTimeslots.length > 1 ? <td>{timeslot ? `${singaporeDate(timeslot.starts_at)} · ${timeslotLabel(timeslot)}` : "—"}</td> : null}
+                      <td>{contact}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          {rows.length > preview.length ? <p className="muted">Showing the first {preview.length} rows.</p> : null}
         </div>
       ) : null}
 
       {importState.status !== "idle" ? (
-        <div
-          className={importState.status === "error" ? "phaseone-form-error" : "phaseone-form-success"}
-          role={importState.status === "error" ? "alert" : "status"}
-        >
+        <div className={importState.status === "error" ? "phaseone-form-error" : "phaseone-form-success"} role={importState.status === "error" ? "alert" : "status"}>
           <p>{importState.message}</p>
-          {importState.diagnosticCode ? <p>Diagnostic code: <code>{importState.diagnosticCode}</code></p> : null}
+          {importState.diagnosticCode ? (
+            <details className="phaseone-inline-disclosure"><summary>Technical details</summary><code>{importState.diagnosticCode}</code></details>
+          ) : null}
         </div>
       ) : null}
 
-      <button
-        className="button button-primary"
-        disabled={!rows.length || diagnostics.length > 0 || isImporting}
-        type="submit"
-      >
-        {isImporting ? "Importing roster…" : "Import roster"}
+      <button className="button button-primary" disabled={!rows.length || diagnostics.length > 0 || isImporting} type="submit">
+        {isImporting ? "Importing…" : rows.length ? `Import ${rows.length} volunteer${rows.length === 1 ? "" : "s"}` : "Import roster"}
       </button>
     </form>
   );
