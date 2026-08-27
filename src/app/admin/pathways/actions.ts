@@ -47,11 +47,6 @@ export type PathwayDraftSaveState = Readonly<{
   message: string;
 }>;
 
-export const initialPathwayDraftSaveState: PathwayDraftSaveState = {
-  status: "idle",
-  message: "",
-};
-
 export async function createPathwayDraft(formData: FormData) {
   const mapId = readIdOrRedirect(
     formData,
@@ -93,7 +88,7 @@ export async function savePathwayDraft(
   if (!parsed.success) {
     return {
       status: "error",
-      message: `${getPathwayValidationMessage(parsed.error)} Correct the highlighted or incomplete field and save again. Your entries have been kept.`,
+      message: `${getPathwayValidationMessage(parsed.error)} Correct the incomplete field and save again. Your entries have been kept.`,
     };
   }
 
