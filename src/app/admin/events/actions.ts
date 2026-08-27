@@ -204,12 +204,26 @@ export async function duplicateEvent(formData: FormData) {
   redirect(`/admin/events/${created.id}/edit?success=event_duplicated`);
 }
 
-export async function saveEvent(formData: FormData) {
+export type EventSaveResult = Readonly<{
+  status: "error";
+  message: string;
+  eventId?: string;
+}>;
+
+function eventSaveError(message: string, eventId?: string): EventSaveResult {
+  return eventId ? { status: "error", message, eventId } : { status: "error", message };
+}
+
+export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
   const parsed = parseEventForm(formData);
-  const requestedId = typeof formData.get("id") === "string" ? String(formData.get("id")) : undefined;
+  const requestedId =
+    typeof formData.get("id") === "string" ? String(formData.get("id")) : undefined;
 
   if (!parsed.success) {
-    redirect(`${eventPath(requestedId)}?error=${encode(getPhaseOneValidationMessage(parsed.error))}`);
+    return eventSaveError(
+      `${getPhaseOneValidationMessage(parsed.error)} Correct the field and save again. Your entries have been kept.`,
+      requestedId,
+    );
   }
 
   const { userId } = await requireEventManager(eventPath(parsed.data.id));
@@ -223,7 +237,14 @@ export async function saveEvent(formData: FormData) {
     : { data: null, error: null };
 
   if (current.error || (parsed.data.id && !current.data)) {
-    redirect(`/admin/events?error=${encode("Event guide could not be found.")}`);
+    console.error("Unable to load event guide before save", {
+      code: current.error?.code,
+      eventId: parsed.data.id,
+    });
+    return eventSaveError(
+      "The event guide could not be loaded for saving. Your entries have been kept; try again.",
+      parsed.data.id,
+    );
   }
 
   const pinInput = {
@@ -246,12 +267,12 @@ export async function saveEvent(formData: FormData) {
     hasSignOutPin: pins.signOut,
   });
   if (publishError) {
-    redirect(`${eventPath(parsed.data.id)}?error=${encode(publishError)}`);
+    return eventSaveError(`${publishError} Your entries have been kept.`, parsed.data.id);
   }
 
   const firstTimeslot = parsed.data.timeslots.at(0);
   if (!firstTimeslot) {
-    redirect(`${eventPath(parsed.data.id)}?error=${encode("At least one timeslot is required.")}`);
+    return eventSaveError("At least one timeslot is required. Your entries have been kept.", parsed.data.id);
   }
 
   const pinUpdate = buildPackagePinUpdate(pinInput);
@@ -277,7 +298,9 @@ export async function saveEvent(formData: FormData) {
   const schedule = timeslotPayload(parsed.data.timeslots);
 
   if (parsed.data.id) {
-    const demotingToDraft = Boolean(current.data?.is_published && !parsed.data.isPublished);
+    const demotingToDraft = Boolean(
+      current.data?.is_published && !parsed.data.isPublished,
+    );
 
     if (demotingToDraft) {
       const { error } = await admin
@@ -286,7 +309,10 @@ export async function saveEvent(formData: FormData) {
         .eq("id", parsed.data.id);
       if (error) {
         console.error("Unable to update event guide", { code: error.code });
-        redirect(`${eventPath(parsed.data.id)}?error=${encode("Event guide could not be updated. Check the slug, schedule and URLs.")}`);
+        return eventSaveError(
+          "Event guide could not be updated. Check the slug, schedule and URLs, then try again. Your entries have been kept.",
+          parsed.data.id,
+        );
       }
     }
 
@@ -298,7 +324,10 @@ export async function saveEvent(formData: FormData) {
       console.error("Unable to update event guide schedule", {
         code: scheduleError.code,
       });
-      redirect(`${eventPath(parsed.data.id)}?error=${encode("Event guide schedule could not be updated.")}`);
+      return eventSaveError(
+        "Event guide schedule could not be updated. Correct the schedule and try again. Your entries have been kept.",
+        parsed.data.id,
+      );
     }
 
     if (!demotingToDraft) {
@@ -311,7 +340,10 @@ export async function saveEvent(formData: FormData) {
 
       if (error || !data) {
         console.error("Unable to update event guide", { code: error?.code });
-        redirect(`${eventPath(parsed.data.id)}?error=${encode("Event guide could not be updated. Check the slug, schedule and URLs.")}`);
+        return eventSaveError(
+          "Event guide could not be updated. Check the slug, schedule and URLs, then try again. Your entries have been kept.",
+          parsed.data.id,
+        );
       }
     }
 
@@ -346,7 +378,9 @@ export async function saveEvent(formData: FormData) {
 
   if (createError || !created) {
     console.error("Unable to create event guide", { code: createError?.code });
-    redirect(`/admin/events/new?error=${encode("Event guide could not be created. Check for a duplicate slug.")}`);
+    return eventSaveError(
+      "Event guide could not be created. Check for a duplicate slug and try again. Your entries have been kept.",
+    );
   }
 
   const { error: scheduleError } = await admin.rpc(
@@ -354,11 +388,14 @@ export async function saveEvent(formData: FormData) {
     { p_event_id: created.id, p_timeslots: schedule },
   );
   if (scheduleError) {
-    await admin.from("phaseone_events").delete().eq("id", created.id);
     console.error("Unable to configure new event guide schedule", {
       code: scheduleError.code,
+      eventId: created.id,
     });
-    redirect(`/admin/events/new?error=${encode("Event guide schedule could not be created.")}`);
+    return eventSaveError(
+      "The journey draft was created, but its schedule could not be saved. Your entries have been kept; correct the schedule and save again.",
+      created.id,
+    );
   }
 
   const { error: configureError } = await admin
@@ -367,8 +404,14 @@ export async function saveEvent(formData: FormData) {
     .eq("id", created.id);
 
   if (configureError) {
-    console.error("Unable to configure new event guide", { code: configureError.code });
-    redirect(`/admin/events/${created.id}/edit?error=${encode("The event guide draft was created, but its PINs or publication status could not be saved.")}`);
+    console.error("Unable to configure new event guide", {
+      code: configureError.code,
+      eventId: created.id,
+    });
+    return eventSaveError(
+      "The journey draft was created, but its attendance or publication settings could not be saved. Your entries have been kept; save again to retry.",
+      created.id,
+    );
   }
 
   revalidateEventRoutes(parsed.data.slug);
