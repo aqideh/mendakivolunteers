@@ -67,7 +67,11 @@ export async function GET(
     "date",
     "shift",
     "timeslot_id",
+    "_instructions",
   ].map(csvCell).join(",");
+
+  const instruction =
+    "Enter one volunteer per row. volunteer_name is required. volunteer_id, contact_number, email and tshirt_size are optional. Duplicate this row for more volunteers in the same shift. Keep date, shift and timeslot_id unchanged.";
 
   const rows = timeslotsResult.data.map((timeslot) => [
     "",
@@ -78,6 +82,7 @@ export async function GET(
     singaporeDate(timeslot.starts_at),
     timeslotLabel(timeslot),
     timeslot.id,
+    instruction,
   ].map(csvCell).join(","));
 
   const csv = [header, ...rows].join("\r\n");
