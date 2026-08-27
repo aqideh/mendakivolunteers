@@ -93,11 +93,11 @@ export function getPackagePublishError(input: Readonly<{
   if (!input.venue || !input.navigationDestination) {
     return "Published packages require a venue and navigation destination.";
   }
-  if (!input.signInUrl || !input.signOutUrl) {
-    return "Published packages require both sign-in and sign-out URLs.";
+  if (input.hasSignInPin && !input.signInUrl) {
+    return "Add a sign-in URL or remove the sign-in PIN before publishing.";
   }
-  if (!input.hasSignInPin || !input.hasSignOutPin) {
-    return "Published packages require separate sign-in and sign-out PINs.";
+  if (input.hasSignOutPin && !input.signOutUrl) {
+    return "Add a sign-out URL or remove the sign-out PIN before publishing.";
   }
   if (input.briefingUrl && !input.briefingAvailableAt) {
     return "A briefing release date is required when a briefing URL is configured.";
