@@ -49,14 +49,8 @@ function actionConfiguration(
   action: PackageAction,
 ) {
   return action === "sign-in"
-    ? {
-        configured: volunteerEvent.has_sign_in_pin,
-        updatedAt: volunteerEvent.sign_in_pin_updated_at,
-      }
-    : {
-        configured: volunteerEvent.has_sign_out_pin,
-        updatedAt: volunteerEvent.sign_out_pin_updated_at,
-      };
+    ? { configured: volunteerEvent.has_sign_in_pin, updatedAt: volunteerEvent.sign_in_pin_updated_at }
+    : { configured: volunteerEvent.has_sign_out_pin, updatedAt: volunteerEvent.sign_out_pin_updated_at };
 }
 
 function Schedule({ timeslots }: { timeslots: VolunteerTimeslot[] }) {
@@ -74,25 +68,20 @@ function Schedule({ timeslots }: { timeslots: VolunteerTimeslot[] }) {
         {[...groups.entries()].map(([dateKey, dayTimeslots]) => {
           const firstTimeslot = dayTimeslots.at(0);
           if (!firstTimeslot) return null;
-
           return (
             <section className={styles.scheduleDay} key={dateKey}>
               <h3>{formatTimeslotDayHeading(firstTimeslot.starts_at)}</h3>
               <div className={styles.scheduleSlots}>
                 {dayTimeslots.map((timeslot) => (
                   <article
-                    className={`${styles.scheduleSlot} ${
-                      timeslot.status === "cancelled" ? styles.cancelledSlot : ""
-                    }`}
+                    className={`${styles.scheduleSlot} ${timeslot.status === "cancelled" ? styles.cancelledSlot : ""}`}
                     key={timeslot.id}
                   >
                     <div>
                       <strong>{timeslot.label ?? "Volunteer timeslot"}</strong>
                       <p>{formatTimeslotTimeRange(timeslot)}</p>
                     </div>
-                    {timeslot.status === "cancelled" ? (
-                      <span className="status-pill">Cancelled</span>
-                    ) : null}
+                    {timeslot.status === "cancelled" ? <span className="status-pill">Cancelled</span> : null}
                   </article>
                 ))}
               </div>
@@ -104,10 +93,7 @@ function Schedule({ timeslots }: { timeslots: VolunteerTimeslot[] }) {
   );
 }
 
-export default async function EventGuidePage({
-  params,
-  searchParams,
-}: EventGuidePageProps) {
+export default async function EventGuidePage({ params, searchParams }: EventGuidePageProps) {
   const { slug } = await params;
   const { access, action: actionParam } = await searchParams;
   const supabase = getPhaseOneAdminClient();
@@ -142,28 +128,19 @@ export default async function EventGuidePage({
   ]);
 
   if (timeslotResult.error || !timeslotResult.data || timeslotResult.data.length === 0) {
-    console.error("Unable to load event schedule", {
-      code: timeslotResult.error?.code,
-      slug,
-    });
+    console.error("Unable to load event schedule", { code: timeslotResult.error?.code, slug });
     throw new Error("Event schedule could not be loaded");
   }
   if (rundownResult.error && rundownResult.error.code !== "42P01") {
-    console.error("Unable to load programme rundown", {
-      code: rundownResult.error.code,
-      slug,
-    });
+    console.error("Unable to load programme rundown", { code: rundownResult.error.code, slug });
     throw new Error("Programme rundown could not be loaded");
   }
 
   const timeslots = sortTimeslots(timeslotResult.data as VolunteerTimeslot[]);
   const rundownImages = (rundownResult.data ?? []).map((image) => ({
     id: String(image.id),
-    url: supabase.storage
-      .from(programmeRundownBucket)
-      .getPublicUrl(String(image.storage_path)).data.publicUrl,
+    url: supabase.storage.from(programmeRundownBucket).getPublicUrl(String(image.storage_path)).data.publicUrl,
   }));
-
   const briefing = evaluateBriefingAccess({
     isPublished: true,
     briefingUrl: volunteerEvent.briefing_url,
@@ -201,41 +178,28 @@ export default async function EventGuidePage({
   const programmeRundownStep = 2 + Number(hasWhatsapp);
   const preparationStep = 2 + Number(hasWhatsapp) + Number(hasProgrammeRundown);
   const travelStep = preparationStep + 1;
-  const signInStep = preparationStep + 2;
-  const signOutStep = preparationStep + 3;
+  let nextStep = travelStep + 1;
+  const signInStep = signInState?.configured ? nextStep++ : null;
+  const signOutStep = signOutState?.configured ? nextStep : null;
 
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Event guide" lite />
       <main className="phaseone-frame">
-        <Link className="back-link" href="/journey">
-          ← Your Volunteer Journey
-        </Link>
+        <Link className="back-link" href="/journey">← Your Volunteer Journey</Link>
         <article className={styles.card}>
           <p className="phaseone-opportunity-date">Volunteer event</p>
           <h1>{volunteerEvent.title}</h1>
           <dl className="phaseone-opportunity-details">
-            <div>
-              <dt>Timeslots</dt>
-              <dd>{timeslots.length}</dd>
-            </div>
-            <div>
-              <dt>Venue</dt>
-              <dd>{volunteerEvent.venue}</dd>
-            </div>
+            <div><dt>Timeslots</dt><dd>{timeslots.length}</dd></div>
+            <div><dt>Venue</dt><dd>{volunteerEvent.venue}</dd></div>
           </dl>
 
           <Schedule timeslots={timeslots} />
 
           {access === "expired" && errorAction ? (
             <p className="phaseone-form-error" role="alert">
-              Your {packageActionLabel(errorAction).toLowerCase()} access expired.
-              Enter that PIN again.
-            </p>
-          ) : null}
-          {access === "unavailable" && errorAction ? (
-            <p className="phaseone-form-error" role="alert">
-              {packageActionLabel(errorAction)} has not been configured yet.
+              Your {packageActionLabel(errorAction).toLowerCase()} access expired. Enter that PIN again.
             </p>
           ) : null}
 
@@ -249,23 +213,9 @@ export default async function EventGuidePage({
                   <h3>Complete the online briefing</h3>
                   <p>Review the event briefing before reporting for your shift.</p>
                   {briefing.available ? (
-                    <a
-                      className="button button-primary"
-                      href={`/api/phaseone/events/${slug}/go/briefing`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      referrerPolicy="no-referrer"
-                    >
-                      View briefing
-                    </a>
+                    <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/briefing`} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">View briefing</a>
                   ) : (
-                    <button
-                      className={`button ${styles.briefingDisabled}`}
-                      type="button"
-                      disabled
-                    >
-                      Briefing not started
-                    </button>
+                    <button className={`button ${styles.briefingDisabled}`} type="button" disabled>Briefing not started</button>
                   )}
                 </div>
               </li>
@@ -275,42 +225,22 @@ export default async function EventGuidePage({
                   <span className={styles.stepNumber} aria-hidden="true">2</span>
                   <div className={styles.stepBody}>
                     <h3>Join the WhatsApp group</h3>
-                    <p>
-                      Join the group for event-day announcements and instructions
-                      from the team.
-                    </p>
-                    <a
-                      className="button button-secondary"
-                      href={volunteerEvent.whatsapp_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Join WhatsApp group
-                    </a>
+                    <p>Join the group for event-day announcements and instructions from the team.</p>
+                    <a className="button button-secondary" href={volunteerEvent.whatsapp_url} target="_blank" rel="noopener noreferrer">Join WhatsApp group</a>
                   </div>
                 </li>
               ) : null}
 
               {hasProgrammeRundown ? (
                 <li className={styles.flowStep}>
-                  <span className={styles.stepNumber} aria-hidden="true">
-                    {programmeRundownStep}
-                  </span>
+                  <span className={styles.stepNumber} aria-hidden="true">{programmeRundownStep}</span>
                   <div className={styles.stepBody}>
                     <h3>View the programme rundown</h3>
                     <p>Check the programme and key timings before you report for the event.</p>
                     {rundownImages.length > 0 ? (
                       <ProgrammeRundownGallery images={rundownImages} />
                     ) : volunteerEvent.programme_rundown_url ? (
-                      <a
-                        className="button button-secondary"
-                        href={volunteerEvent.programme_rundown_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        referrerPolicy="no-referrer"
-                      >
-                        View programme rundown
-                      </a>
+                      <a className="button button-secondary" href={volunteerEvent.programme_rundown_url} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">View programme rundown</a>
                     ) : null}
                   </div>
                 </li>
@@ -321,9 +251,7 @@ export default async function EventGuidePage({
                 <div className={styles.stepBody}>
                   <h3>Prepare for the event</h3>
                   <p className={styles.notes}>{volunteerEvent.attire_notes}</p>
-                  {volunteerEvent.preparation_notes ? (
-                    <p className={styles.notes}>{volunteerEvent.preparation_notes}</p>
-                  ) : null}
+                  {volunteerEvent.preparation_notes ? <p className={styles.notes}>{volunteerEvent.preparation_notes}</p> : null}
                 </div>
               </li>
 
@@ -339,50 +267,41 @@ export default async function EventGuidePage({
                 </div>
               </li>
 
-              <li className={styles.flowStep}>
-                <span className={styles.stepNumber} aria-hidden="true">{signInStep}</span>
-                <div className={styles.stepBody}>
-                  <h3>Check in when you arrive</h3>
-                  <p className="phaseone-access-note">
-                    The sign-in PIN will be provided by staff when you arrive on-site.
-                  </p>
-                  {!signInState?.configured ? (
-                    <p>This action has not been enabled by the event team.</p>
-                  ) : signInState.unlocked ? (
-                    <>
-                      <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/sign-in`} referrerPolicy="no-referrer">Open sign-in</a>
-                      <p className="phaseone-access-note">
-                        Access remains valid for five minutes or until this PIN changes.
-                      </p>
-                    </>
-                  ) : (
-                    <PackageActionPinForm slug={slug} action="sign-in" />
-                  )}
-                </div>
-              </li>
+              {signInState?.configured && signInStep ? (
+                <li className={styles.flowStep}>
+                  <span className={styles.stepNumber} aria-hidden="true">{signInStep}</span>
+                  <div className={styles.stepBody}>
+                    <h3>Check in when you arrive</h3>
+                    <p className="phaseone-access-note">The sign-in PIN will be provided by staff when you arrive on-site.</p>
+                    {signInState.unlocked ? (
+                      <>
+                        <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/sign-in`} referrerPolicy="no-referrer">Open sign-in</a>
+                        <p className="phaseone-access-note">Access remains valid for five minutes or until this PIN changes.</p>
+                      </>
+                    ) : (
+                      <PackageActionPinForm slug={slug} action="sign-in" />
+                    )}
+                  </div>
+                </li>
+              ) : null}
 
-              <li className={styles.flowStep}>
-                <span className={styles.stepNumber} aria-hidden="true">{signOutStep}</span>
-                <div className={styles.stepBody}>
-                  <h3>Check out before you leave</h3>
-                  <p className="phaseone-access-note">
-                    Get the sign-out PIN from staff and complete check-out before leaving
-                    the venue.
-                  </p>
-                  {!signOutState?.configured ? (
-                    <p>This action has not been enabled by the event team.</p>
-                  ) : signOutState.unlocked ? (
-                    <>
-                      <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/sign-out`} referrerPolicy="no-referrer">Open sign-out</a>
-                      <p className="phaseone-access-note">
-                        Access remains valid for five minutes or until this PIN changes.
-                      </p>
-                    </>
-                  ) : (
-                    <PackageActionPinForm slug={slug} action="sign-out" />
-                  )}
-                </div>
-              </li>
+              {signOutState?.configured && signOutStep ? (
+                <li className={styles.flowStep}>
+                  <span className={styles.stepNumber} aria-hidden="true">{signOutStep}</span>
+                  <div className={styles.stepBody}>
+                    <h3>Check out before you leave</h3>
+                    <p className="phaseone-access-note">Get the sign-out PIN from staff and complete check-out before leaving the venue.</p>
+                    {signOutState.unlocked ? (
+                      <>
+                        <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/sign-out`} referrerPolicy="no-referrer">Open sign-out</a>
+                        <p className="phaseone-access-note">Access remains valid for five minutes or until this PIN changes.</p>
+                      </>
+                    ) : (
+                      <PackageActionPinForm slug={slug} action="sign-out" />
+                    )}
+                  </div>
+                </li>
+              ) : null}
             </ol>
           </section>
         </article>
