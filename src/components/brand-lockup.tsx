@@ -16,6 +16,7 @@ export function BrandLockup({ href, priority = false }: BrandLockupProps) {
         height={48}
         alt=""
         priority={priority}
+        unoptimized
       />
       <span className="brand-copy">
         <span className="brand-name">KELUARGA</span>
