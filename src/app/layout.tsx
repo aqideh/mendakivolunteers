@@ -8,11 +8,11 @@ import "./opportunity-image.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "RELA! MENDAKI Volunteer App",
-    template: "%s | RELA! MENDAKI Volunteer App",
+    default: "KELUARGA — MENDAKI Volunteer App",
+    template: "%s | KELUARGA",
   },
   description:
-    "Mobile-first MENDAKI volunteer opportunities and event operations portal.",
+    "KELUARGA is MENDAKI's mobile-first volunteer opportunities and event operations app.",
 };
 
 export const viewport: Viewport = {
