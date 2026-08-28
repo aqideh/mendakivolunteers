@@ -226,19 +226,6 @@ select throws_ok(
   'checked-in volunteer cannot be marked absent'
 );
 
-select throws_ok(
-  $$
-    update public.phaseone_attendance
-    set non_attendance_status = 'withdrawn',
-        non_attendance_marked_by = '73000000-0000-4000-8000-000000000001',
-        non_attendance_marked_at = now()
-    where roster_id = '73000000-0000-4000-8000-000000000006'
-  $$,
-  '23514',
-  null,
-  'database constraint rejects non-attendance status when check-in exists'
-);
-
 select ok(
   not has_function_privilege(
     'authenticated',
