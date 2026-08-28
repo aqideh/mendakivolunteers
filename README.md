@@ -1,6 +1,6 @@
-# MENDAKI Volunteers
+# KELUARGA
 
-Volunteer-facing web application for MENDAKI. It supplements YM Hub; YM Hub remains authoritative for volunteer identity, registration, verified attendance, and verified hours.
+KELUARGA is the volunteer-facing web application for MENDAKI. It supplements YM Hub; YM Hub remains authoritative for volunteer identity, registration, verified attendance, and verified hours.
 
 ## Production ownership
 
