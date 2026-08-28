@@ -8,9 +8,9 @@ import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 import styles from "./landing.module.css";
 
 export const metadata: Metadata = {
-  title: "Volunteer with MENDAKI",
+  title: "KELUARGA — Volunteer with MENDAKI",
   description:
-    "Discover MENDAKI volunteer opportunities and make a difference in your community.",
+    "Discover MENDAKI volunteer opportunities with KELUARGA and make a difference in your community.",
 };
 
 export const dynamic = "force-dynamic";

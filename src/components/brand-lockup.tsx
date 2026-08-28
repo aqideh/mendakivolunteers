@@ -8,16 +8,20 @@ type BrandLockupProps = Readonly<{
 
 export function BrandLockup({ href, priority = false }: BrandLockupProps) {
   return (
-    <Link className="brand-lockup" href={href}>
+    <Link className="brand-lockup" href={href} aria-label="KELUARGA — MENDAKI Volunteer App">
       <Image
         className="brand-logo"
-        src="/brand/rela-header.webp"
-        width={104}
-        height={40}
-        alt="RELA!"
+        src="/brand/keluarga-mark.svg"
+        width={48}
+        height={48}
+        alt=""
         priority={priority}
+        unoptimized
       />
-      <span className="brand-title">MENDAKI Volunteer App</span>
+      <span className="brand-copy">
+        <span className="brand-name">KELUARGA</span>
+        <span className="brand-title">MENDAKI Volunteer App</span>
+      </span>
     </Link>
   );
 }
