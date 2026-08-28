@@ -25,7 +25,8 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-type AttendanceStatus = "pending" | "signed_in" | "signed_out" | "anomaly";
+type NonAttendanceStatus = "withdrawn" | "absent";
+type AttendanceStatus = "pending" | "signed_in" | "signed_out" | NonAttendanceStatus | "anomaly";
 
 type Timeslot = {
   id: string;
@@ -41,7 +42,14 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
   return Array.isArray(value) ? value[0] : value;
 }
 
-function statusFor(signedInAt: string | null, signedOutAt: string | null): AttendanceStatus {
+function statusFor(
+  signedInAt: string | null,
+  signedOutAt: string | null,
+  nonAttendanceStatus: string | null,
+): AttendanceStatus {
+  if (nonAttendanceStatus === "withdrawn" || nonAttendanceStatus === "absent") {
+    return nonAttendanceStatus;
+  }
   if (signedOutAt && !signedInAt) return "anomaly";
   if (signedOutAt) return "signed_out";
   if (signedInAt) return "signed_in";
@@ -53,8 +61,16 @@ function statusLabel(status: AttendanceStatus): string {
     pending: "Not arrived",
     signed_in: "Checked in",
     signed_out: "Checked out",
+    withdrawn: "Withdrawn",
+    absent: "Absent",
     anomaly: "Needs review",
   }[status];
+}
+
+function auditStatusLabel(status: string | null): string {
+  if (status === "withdrawn") return "Withdrawn";
+  if (status === "absent") return "Absent";
+  return "—";
 }
 
 function singaporeDateKey(value: string): string {
@@ -129,7 +145,7 @@ async function AttendanceAudit({
   const admin = getPhaseOneAdminClient();
   const auditResult = await admin
     .from("phaseone_attendance_audit")
-    .select("id, roster_id, action, reason, old_signed_in_at, old_signed_out_at, new_signed_in_at, new_signed_out_at, changed_at")
+    .select("id, roster_id, action, reason, old_signed_in_at, old_signed_out_at, new_signed_in_at, new_signed_out_at, old_non_attendance_status, new_non_attendance_status, changed_at")
     .eq("event_id", eventId)
     .order("changed_at", { ascending: false })
     .limit(25);
@@ -153,8 +169,16 @@ async function AttendanceAudit({
                 <td>{rosterNames[audit.roster_id] ?? audit.roster_id}</td>
                 <td>{audit.action.replaceAll("_", " ")}</td>
                 <td>{audit.reason}</td>
-                <td>In: {audit.old_signed_in_at ? formatSingaporeDateTime(audit.old_signed_in_at) : "—"}<br />Out: {audit.old_signed_out_at ? formatSingaporeDateTime(audit.old_signed_out_at) : "—"}</td>
-                <td>In: {audit.new_signed_in_at ? formatSingaporeDateTime(audit.new_signed_in_at) : "—"}<br />Out: {audit.new_signed_out_at ? formatSingaporeDateTime(audit.new_signed_out_at) : "—"}</td>
+                <td>
+                  Status: {auditStatusLabel(audit.old_non_attendance_status)}<br />
+                  In: {audit.old_signed_in_at ? formatSingaporeDateTime(audit.old_signed_in_at) : "—"}<br />
+                  Out: {audit.old_signed_out_at ? formatSingaporeDateTime(audit.old_signed_out_at) : "—"}
+                </td>
+                <td>
+                  Status: {auditStatusLabel(audit.new_non_attendance_status)}<br />
+                  In: {audit.new_signed_in_at ? formatSingaporeDateTime(audit.new_signed_in_at) : "—"}<br />
+                  Out: {audit.new_signed_out_at ? formatSingaporeDateTime(audit.new_signed_out_at) : "—"}
+                </td>
               </tr>
             ))}
             {auditResult.data.length === 0 ? <tr><td colSpan={6}>No attendance changes yet.</td></tr> : null}
@@ -185,7 +209,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .limit(2000),
     admin
       .from("phaseone_attendance")
-      .select("id, roster_id, signed_in_at, signed_out_at, updated_at")
+      .select("id, roster_id, signed_in_at, signed_out_at, non_attendance_status, non_attendance_marked_at, updated_at")
       .eq("event_id", id),
   ]);
 
@@ -219,13 +243,17 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       return {
         volunteer,
         attendance,
-        status: statusFor(attendance?.signed_in_at ?? null, attendance?.signed_out_at ?? null),
+        status: statusFor(
+          attendance?.signed_in_at ?? null,
+          attendance?.signed_out_at ?? null,
+          attendance?.non_attendance_status ?? null,
+        ),
       };
     });
 
   const query = (parameter(parameters, "q") ?? "").trim().toLowerCase();
   const requestedFilter = parameter(parameters, "status") ?? "all";
-  const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "anomaly"]);
+  const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "withdrawn", "absent", "anomaly"]);
   const filter = validFilters.has(requestedFilter) ? requestedFilter : "all";
   const visible = records.filter(({ volunteer, status }) => {
     const matchesStatus = filter === "all" || status === filter;
@@ -240,7 +268,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   });
   const counts = records.reduce<Record<AttendanceStatus, number>>(
     (totals, record) => ({ ...totals, [record.status]: totals[record.status] + 1 }),
-    { pending: 0, signed_in: 0, signed_out: 0, anomaly: 0 },
+    { pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0 },
   );
 
   const successCode = parameter(parameters, "success");
@@ -315,6 +343,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               <article className="metric-card"><span className="metric-value">{counts.pending}</span><span className="metric-label">Not arrived</span></article>
               <article className="metric-card"><span className="metric-value">{counts.signed_in}</span><span className="metric-label">Checked in</span></article>
               <article className="metric-card"><span className="metric-value">{counts.signed_out}</span><span className="metric-label">Checked out</span></article>
+              <article className="metric-card"><span className="metric-value">{counts.withdrawn}</span><span className="metric-label">Withdrawn</span></article>
+              <article className="metric-card"><span className="metric-value">{counts.absent}</span><span className="metric-label">Absent</span></article>
             </section>
 
             <section className="section panel phaseone-admin-section" aria-labelledby="attendance-roster-title">
@@ -368,7 +398,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               <form className="phaseone-attendance-filters" method="get">
                 <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
                 <div className="form-field"><label htmlFor="q">Search</label><input id="q" name="q" defaultValue={query} placeholder="Name, volunteer ID or contact number" /></div>
-                <div className="form-field"><label htmlFor="status">Status</label><select id="status" name="status" defaultValue={filter}><option value="all">All</option><option value="pending">Not arrived</option><option value="signed_in">Checked in</option><option value="signed_out">Checked out</option><option value="anomaly">Needs review</option></select></div>
+                <div className="form-field"><label htmlFor="status">Status</label><select id="status" name="status" defaultValue={filter}><option value="all">All</option><option value="pending">Not arrived</option><option value="signed_in">Checked in</option><option value="signed_out">Checked out</option><option value="withdrawn">Withdrawn</option><option value="absent">Absent</option><option value="anomaly">Needs review</option></select></div>
                 <button className="button button-secondary" type="submit">Apply filters</button>
               </form>
 
@@ -396,18 +426,42 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                     <dl className="phaseone-attendance-times">
                       <div><dt>Check-in</dt><dd>{attendance?.signed_in_at ? formatSingaporeDateTime(attendance.signed_in_at) : "Not recorded"}</dd></div>
                       <div><dt>Check-out</dt><dd>{attendance?.signed_out_at ? formatSingaporeDateTime(attendance.signed_out_at) : "Not recorded"}</dd></div>
+                      {(status === "withdrawn" || status === "absent") ? (
+                        <div><dt>Status marked</dt><dd>{attendance?.non_attendance_marked_at ? formatSingaporeDateTime(attendance.non_attendance_marked_at) : "Not recorded"}</dd></div>
+                      ) : null}
                     </dl>
 
                     {status === "pending" ? (
+                      <div className="phaseone-pending-actions">
+                        <QuickAttendanceButton
+                          action="mark_sign_in"
+                          eventId={id}
+                          rosterId={volunteer.id}
+                          timeslotId={selectedTimeslot.id}
+                        />
+                        <QuickAttendanceButton
+                          action="mark_withdrawn"
+                          eventId={id}
+                          rosterId={volunteer.id}
+                          timeslotId={selectedTimeslot.id}
+                        />
+                        <QuickAttendanceButton
+                          action="mark_absent"
+                          eventId={id}
+                          rosterId={volunteer.id}
+                          timeslotId={selectedTimeslot.id}
+                        />
+                      </div>
+                    ) : status === "signed_in" ? (
                       <QuickAttendanceButton
-                        action="mark_sign_in"
+                        action="mark_sign_out"
                         eventId={id}
                         rosterId={volunteer.id}
                         timeslotId={selectedTimeslot.id}
                       />
-                    ) : status === "signed_in" ? (
+                    ) : status === "withdrawn" || status === "absent" ? (
                       <QuickAttendanceButton
-                        action="mark_sign_out"
+                        action="clear_non_attendance"
                         eventId={id}
                         rosterId={volunteer.id}
                         timeslotId={selectedTimeslot.id}
@@ -422,8 +476,23 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         <input name="eventId" type="hidden" value={id} />
                         <input name="rosterId" type="hidden" value={volunteer.id} />
                         <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
-                        <div className="form-field"><label htmlFor={`action-${volunteer.id}`}>Correction</label><select id={`action-${volunteer.id}`} name="action" defaultValue={attendance?.signed_in_at ? (attendance.signed_out_at ? "clear_sign_out" : "mark_sign_out") : "mark_sign_in"}><option value="mark_sign_in">Set or correct check-in</option><option value="mark_sign_out">Set or correct check-out</option><option value="clear_sign_in">Clear check-in</option><option value="clear_sign_out">Clear check-out</option></select></div>
-                        <div className="form-field"><label htmlFor={`timestamp-${volunteer.id}`}>Timestamp</label><input id={`timestamp-${volunteer.id}`} name="timestamp" type="datetime-local" defaultValue={toSingaporeDateTimeLocal(attendance?.signed_out_at ?? attendance?.signed_in_at ?? null)} /><p className="muted">Leave blank to use the current time. Singapore time.</p></div>
+                        <div className="form-field">
+                          <label htmlFor={`action-${volunteer.id}`}>Correction</label>
+                          <select
+                            id={`action-${volunteer.id}`}
+                            name="action"
+                            defaultValue={attendance?.non_attendance_status ? "clear_non_attendance" : attendance?.signed_in_at ? (attendance.signed_out_at ? "clear_sign_out" : "mark_sign_out") : "mark_sign_in"}
+                          >
+                            <option value="mark_sign_in">Set or correct check-in</option>
+                            <option value="mark_sign_out">Set or correct check-out</option>
+                            <option value="clear_sign_in">Clear check-in</option>
+                            <option value="clear_sign_out">Clear check-out</option>
+                            <option value="mark_withdrawn">Mark withdrawn</option>
+                            <option value="mark_absent">Mark absent</option>
+                            <option value="clear_non_attendance">Clear withdrawn/absent status</option>
+                          </select>
+                        </div>
+                        <div className="form-field"><label htmlFor={`timestamp-${volunteer.id}`}>Timestamp</label><input id={`timestamp-${volunteer.id}`} name="timestamp" type="datetime-local" defaultValue={toSingaporeDateTimeLocal(attendance?.non_attendance_marked_at ?? attendance?.signed_out_at ?? attendance?.signed_in_at ?? null)} /><p className="muted">Leave blank to use the current time. Singapore time.</p></div>
                         <div className="form-field phaseone-attendance-reason"><label htmlFor={`reason-${volunteer.id}`}>Reason</label><input id={`reason-${volunteer.id}`} name="reason" minLength={5} maxLength={500} required placeholder="Required audit reason" /></div>
                         <button className="button button-secondary" type="submit">Save correction</button>
                       </form>
