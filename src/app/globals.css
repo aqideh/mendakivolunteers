@@ -76,24 +76,38 @@ a {
 .brand-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.72rem;
   min-height: 2.75rem;
   color: #ffffff;
   text-decoration: none;
-  font-weight: 800;
-  letter-spacing: -0.02em;
 }
 
 .brand-logo {
-  width: 6.5rem;
-  height: 2.5rem;
+  width: 3rem;
+  height: 3rem;
   flex: 0 0 auto;
-  border-radius: 0.4rem;
-  object-fit: cover;
+  object-fit: contain;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 0.06rem;
+  line-height: 1;
+}
+
+.brand-name {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.055em;
 }
 
 .brand-title {
-  line-height: 1.15;
+  color: #bce8e5;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .header-status {
