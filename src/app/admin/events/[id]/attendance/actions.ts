@@ -10,7 +10,15 @@ import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 const attendanceActionSchema = z.object({
   eventId: z.string().uuid(),
   rosterId: z.string().uuid(),
-  action: z.enum(["mark_sign_in", "mark_sign_out", "clear_sign_in", "clear_sign_out"]),
+  action: z.enum([
+    "mark_sign_in",
+    "mark_sign_out",
+    "clear_sign_in",
+    "clear_sign_out",
+    "mark_withdrawn",
+    "mark_absent",
+    "clear_non_attendance",
+  ]),
   timestamp: z.preprocess(
     (value) => {
       if (typeof value !== "string" || !value.trim()) return null;
@@ -22,10 +30,18 @@ const attendanceActionSchema = z.object({
   reason: z.string().trim().min(5).max(500),
 });
 
+const quickAttendanceActionSchema = z.enum([
+  "mark_sign_in",
+  "mark_sign_out",
+  "mark_withdrawn",
+  "mark_absent",
+  "clear_non_attendance",
+]);
+
 const quickAttendanceSchema = z.object({
   eventId: z.string().uuid(),
   rosterId: z.string().uuid(),
-  action: z.enum(["mark_sign_in", "mark_sign_out"]),
+  action: quickAttendanceActionSchema,
   timeslotId: z.string().uuid().optional(),
 });
 
@@ -40,15 +56,27 @@ const walkInSchema = z.object({
   submitIntent: z.enum(["add_and_check_in", "add_only"]),
 });
 
+type QuickAttendanceAction = z.infer<typeof quickAttendanceActionSchema>;
+type NonAttendanceStatus = "withdrawn" | "absent";
+
 export type QuickAttendanceResult =
   | {
       ok: true;
-      action: "mark_sign_in" | "mark_sign_out";
+      action: QuickAttendanceAction;
       signedInAt: string | null;
       signedOutAt: string | null;
+      nonAttendanceStatus: NonAttendanceStatus | null;
       updatedAt: string | null;
     }
   | { ok: false; error: string };
+
+const quickActionReasons: Record<QuickAttendanceAction, string> = {
+  mark_sign_in: "Staff check-in",
+  mark_sign_out: "Staff check-out",
+  mark_withdrawn: "Staff marked volunteer as withdrawn",
+  mark_absent: "Staff marked volunteer as absent",
+  clear_non_attendance: "Staff cleared volunteer non-attendance status",
+};
 
 function encode(value: string): string {
   return encodeURIComponent(value);
@@ -155,7 +183,7 @@ export async function addWalkInVolunteer(formData: FormData) {
 export async function recordAttendanceQuickAction(input: {
   eventId: string;
   rosterId: string;
-  action: "mark_sign_in" | "mark_sign_out";
+  action: QuickAttendanceAction;
   timeslotId?: string | undefined;
 }): Promise<QuickAttendanceResult> {
   const parsed = quickAttendanceSchema.safeParse(input);
@@ -171,7 +199,7 @@ export async function recordAttendanceQuickAction(input: {
     p_roster_id: parsed.data.rosterId,
     p_action: parsed.data.action,
     p_timestamp: null,
-    p_reason: parsed.data.action === "mark_sign_in" ? "Staff check-in" : "Staff check-out",
+    p_reason: quickActionReasons[parsed.data.action],
     p_changed_by: userId,
   });
 
@@ -188,6 +216,7 @@ export async function recordAttendanceQuickAction(input: {
   const attendance = data as {
     signed_in_at?: string | null;
     signed_out_at?: string | null;
+    non_attendance_status?: NonAttendanceStatus | null;
     updated_at?: string | null;
   } | null;
 
@@ -196,6 +225,7 @@ export async function recordAttendanceQuickAction(input: {
     action: parsed.data.action,
     signedInAt: attendance?.signed_in_at ?? null,
     signedOutAt: attendance?.signed_out_at ?? null,
+    nonAttendanceStatus: attendance?.non_attendance_status ?? null,
     updatedAt: attendance?.updated_at ?? null,
   };
 }

@@ -6,13 +6,51 @@ import { useFormStatus } from "react-dom";
 
 import { recordAttendanceQuickAction } from "@/app/admin/events/[id]/attendance/actions";
 
-type AttendanceAction = "mark_sign_in" | "mark_sign_out";
+export type AttendanceQuickAction =
+  | "mark_sign_in"
+  | "mark_sign_out"
+  | "mark_withdrawn"
+  | "mark_absent"
+  | "clear_non_attendance";
 
 type QuickAttendanceButtonProps = {
   eventId: string;
   rosterId: string;
   timeslotId: string;
-  action: AttendanceAction;
+  action: AttendanceQuickAction;
+};
+
+const labels: Record<AttendanceQuickAction, { idle: string; pending: string; success: string; message: string }> = {
+  mark_sign_in: {
+    idle: "Check in now",
+    pending: "Checking in…",
+    success: "Checked in ✓",
+    message: "Check-in recorded.",
+  },
+  mark_sign_out: {
+    idle: "Check out now",
+    pending: "Checking out…",
+    success: "Checked out ✓",
+    message: "Check-out recorded.",
+  },
+  mark_withdrawn: {
+    idle: "Withdrawn",
+    pending: "Marking withdrawn…",
+    success: "Withdrawn ✓",
+    message: "Volunteer marked as withdrawn.",
+  },
+  mark_absent: {
+    idle: "Absent",
+    pending: "Marking absent…",
+    success: "Absent ✓",
+    message: "Volunteer marked as absent.",
+  },
+  clear_non_attendance: {
+    idle: "Undo status",
+    pending: "Clearing status…",
+    success: "Status cleared ✓",
+    message: "Non-attendance status cleared.",
+  },
 };
 
 export function QuickAttendanceButton({
@@ -26,11 +64,8 @@ export function QuickAttendanceButton({
   const [, startRefresh] = useTransition();
   const [outcome, setOutcome] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
-
-  const isCheckIn = action === "mark_sign_in";
-  const idleLabel = isCheckIn ? "Check in now" : "Check out now";
-  const pendingLabel = isCheckIn ? "Checking in…" : "Checking out…";
-  const successLabel = isCheckIn ? "Checked in ✓" : "Checked out ✓";
+  const copy = labels[action];
+  const isPrimaryAction = action === "mark_sign_in" || action === "mark_sign_out";
 
   function submit() {
     if (isSaving || outcome === "success") return;
@@ -52,10 +87,8 @@ export function QuickAttendanceButton({
       }
 
       setOutcome("success");
-      setMessage(isCheckIn ? "Check-in recorded." : "Check-out recorded.");
+      setMessage(copy.message);
 
-      // Reconcile metrics, timestamps and audit history without blocking the
-      // immediate success state shown on this row.
       startRefresh(() => router.refresh());
     });
   }
@@ -64,12 +97,12 @@ export function QuickAttendanceButton({
     <div className="phaseone-quick-action-wrap">
       <button
         aria-busy={isSaving}
-        className="button button-primary phaseone-checkin-action"
+        className={`${isPrimaryAction ? "button button-primary" : "button button-secondary"} phaseone-checkin-action`}
         disabled={isSaving || outcome === "success"}
         onClick={submit}
         type="button"
       >
-        {isSaving ? pendingLabel : outcome === "success" ? successLabel : idleLabel}
+        {isSaving ? copy.pending : outcome === "success" ? copy.success : copy.idle}
       </button>
       {message ? (
         <p

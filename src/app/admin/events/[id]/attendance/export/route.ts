@@ -56,7 +56,7 @@ export async function GET(
       .order("volunteer_name"),
     admin
       .from("phaseone_attendance")
-      .select("roster_id, signed_in_at, signed_out_at, updated_at")
+      .select("roster_id, signed_in_at, signed_out_at, non_attendance_status, non_attendance_marked_at, updated_at")
       .eq("event_id", id),
   ]);
 
@@ -78,13 +78,17 @@ export async function GET(
   const rows = rosterResult.data.map((volunteer) => {
     const attendance = attendanceByRoster.get(volunteer.id);
     const timeslot = timeslotById.get(volunteer.timeslot_id);
-    const status = attendance?.signed_out_at
-      ? attendance.signed_in_at
-        ? "checked_out"
-        : "anomaly_check_out_without_check_in"
-      : attendance?.signed_in_at
-        ? "checked_in"
-        : "not_arrived";
+    const status = attendance?.non_attendance_status === "withdrawn"
+      ? "withdrawn"
+      : attendance?.non_attendance_status === "absent"
+        ? "absent"
+        : attendance?.signed_out_at
+          ? attendance.signed_in_at
+            ? "checked_out"
+            : "anomaly_check_out_without_check_in"
+          : attendance?.signed_in_at
+            ? "checked_in"
+            : "not_arrived";
     return [
       timeslot ? singaporeDate(timeslot.starts_at) : null,
       timeslot ? shiftLabel(timeslot) : null,
@@ -97,6 +101,7 @@ export async function GET(
       volunteer.tshirt_size,
       volunteer.entry_method === "walk_in" ? "Last-minute" : "Imported",
       status,
+      attendance?.non_attendance_marked_at,
       attendance?.signed_in_at,
       attendance?.signed_out_at,
       attendance?.updated_at,
@@ -115,6 +120,7 @@ export async function GET(
     "tshirt_size",
     "roster_source",
     "attendance_status",
+    "non_attendance_marked_at",
     "checked_in_at",
     "checked_out_at",
     "last_updated_at",
