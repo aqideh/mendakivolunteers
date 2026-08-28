@@ -314,8 +314,12 @@
   }
 
   .portal-header .brand-logo {
-    width: 5rem;
-    height: 1.95rem;
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .portal-header .brand-name {
+    font-size: 0.96rem;
   }
 
   .portal-header .brand-title {
