@@ -72,7 +72,7 @@ export default async function NewsPage() {
           </section>
         )}
       </main>
-      <footer className="site-footer">MENDAKI Volunteer Portal</footer>
+      <footer className="site-footer">KELUARGA — MENDAKI Volunteer App</footer>
     </div>
   );
 }
