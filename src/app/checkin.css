@@ -123,6 +123,11 @@
   background: #f7faf9;
 }
 
+.phaseone-checkin-card[data-status="withdrawn"],
+.phaseone-checkin-card[data-status="absent"] {
+  background: var(--surface-subtle, #f8faf9);
+}
+
 .phaseone-checkin-card .phaseone-attendance-summary {
   gap: 0.5rem;
 }
@@ -162,6 +167,11 @@
 .phaseone-checkin-card .phaseone-attendance-times dd {
   margin-top: 0.1rem;
   font-size: 0.82rem;
+}
+
+.phaseone-pending-actions {
+  display: grid;
+  gap: 0.4rem;
 }
 
 .phaseone-quick-action-wrap {
@@ -229,8 +239,17 @@
     grid-column: 1 / -1;
   }
 
+  .phaseone-pending-actions {
+    grid-template-columns: repeat(3, minmax(8rem, auto));
+    grid-column: 1 / -1;
+  }
+
   .phaseone-checkin-action {
     min-width: 9.5rem;
     width: auto;
+  }
+
+  .phaseone-pending-actions .phaseone-checkin-action {
+    width: 100%;
   }
 }
