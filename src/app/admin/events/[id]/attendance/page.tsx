@@ -8,6 +8,7 @@ import {
   applyAttendanceChange,
 } from "@/app/admin/events/[id]/attendance/actions";
 import {
+  BulkCheckoutButton,
   QuickAttendanceButton,
   WalkInSubmitButtons,
 } from "@/components/phaseone/attendance-quick-action";
@@ -356,7 +357,14 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   <p className="eyebrow">{singaporeDateLabel(selectedTimeslot.starts_at)} · {timeslotLabel(selectedTimeslot)}</p>
                   <h2 id="attendance-roster-title">Volunteer roster</h2>
                 </div>
-                <span className="status-pill">{visible.length} shown{activeFilterLabel ? ` · ${activeFilterLabel}` : ""}</span>
+                <div className="actions">
+                  <span className="status-pill">{visible.length} shown{activeFilterLabel ? ` · ${activeFilterLabel}` : ""}</span>
+                  <BulkCheckoutButton
+                    checkedInCount={counts.signed_in}
+                    eventId={id}
+                    timeslotId={selectedTimeslot.id}
+                  />
+                </div>
               </div>
 
               <details className="phaseone-walk-in">

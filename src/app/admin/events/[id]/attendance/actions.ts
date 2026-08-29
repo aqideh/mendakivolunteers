@@ -45,6 +45,11 @@ const quickAttendanceSchema = z.object({
   timeslotId: z.string().uuid().optional(),
 });
 
+const bulkCheckoutSchema = z.object({
+  eventId: z.string().uuid(),
+  timeslotId: z.string().uuid(),
+});
+
 const walkInSchema = z.object({
   eventId: z.string().uuid(),
   timeslotId: z.string().uuid(),
@@ -69,6 +74,10 @@ export type QuickAttendanceResult =
       updatedAt: string | null;
     }
   | { ok: false; error: string };
+
+export type BulkCheckoutResult =
+  | { ok: true; checkedOut: number }
+  | { ok: false; checkedOut: number; error: string };
 
 const quickActionReasons: Record<QuickAttendanceAction, string> = {
   mark_sign_in: "Staff check-in",
@@ -228,6 +237,111 @@ export async function recordAttendanceQuickAction(input: {
     nonAttendanceStatus: attendance?.non_attendance_status ?? null,
     updatedAt: attendance?.updated_at ?? null,
   };
+}
+
+export async function checkoutAllCurrentParticipants(input: {
+  eventId: string;
+  timeslotId: string;
+}): Promise<BulkCheckoutResult> {
+  const parsed = bulkCheckoutSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, checkedOut: 0, error: "Bulk check-out could not be read." };
+  }
+
+  const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
+  const { userId } = await requireEventManager(returnPath);
+  const admin = getPhaseOneAdminClient();
+  const [rosterResult, attendanceResult] = await Promise.all([
+    admin
+      .from("phaseone_roster")
+      .select("id")
+      .eq("event_id", parsed.data.eventId)
+      .eq("timeslot_id", parsed.data.timeslotId)
+      .limit(2000),
+    admin
+      .from("phaseone_attendance")
+      .select("roster_id, signed_in_at, signed_out_at, non_attendance_status")
+      .eq("event_id", parsed.data.eventId)
+      .limit(2000),
+  ]);
+
+  if (rosterResult.error || attendanceResult.error) {
+    console.error("Unable to load bulk check-out candidates", {
+      eventId: parsed.data.eventId,
+      timeslotId: parsed.data.timeslotId,
+      rosterCode: rosterResult.error?.code,
+      attendanceCode: attendanceResult.error?.code,
+    });
+    return { ok: false, checkedOut: 0, error: "Checked-in volunteers could not be loaded." };
+  }
+
+  const rosterIds = new Set((rosterResult.data ?? []).map((row) => row.id));
+  const eligibleRosterIds = (attendanceResult.data ?? [])
+    .filter((row) =>
+      rosterIds.has(row.roster_id)
+      && row.signed_in_at
+      && !row.signed_out_at
+      && !row.non_attendance_status,
+    )
+    .map((row) => row.roster_id);
+
+  if (eligibleRosterIds.length === 0) {
+    return { ok: true, checkedOut: 0 };
+  }
+
+  const sharedTimestamp = new Date().toISOString();
+  let checkedOut = 0;
+  let failed = 0;
+  const batchSize = 20;
+
+  for (let index = 0; index < eligibleRosterIds.length; index += batchSize) {
+    const batch = eligibleRosterIds.slice(index, index + batchSize);
+    const results = await Promise.all(
+      batch.map(async (rosterId) => {
+        const { error } = await admin.rpc("phaseone_apply_attendance_transition", {
+          p_event_id: parsed.data.eventId,
+          p_roster_id: rosterId,
+          p_action: "mark_sign_out",
+          p_timestamp: sharedTimestamp,
+          p_reason: "Staff bulk check-out",
+          p_changed_by: userId,
+        });
+        return { rosterId, error };
+      }),
+    );
+
+    for (const result of results) {
+      if (!result.error) {
+        checkedOut += 1;
+        continue;
+      }
+
+      // A concurrent individual check-out has already achieved the desired final state.
+      if (result.error.message?.toLowerCase().includes("already checked out")) {
+        continue;
+      }
+
+      failed += 1;
+      console.error("Unable to bulk check out volunteer", {
+        code: result.error.code,
+        eventId: parsed.data.eventId,
+        timeslotId: parsed.data.timeslotId,
+        rosterId: result.rosterId,
+      });
+    }
+  }
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+
+  if (failed > 0) {
+    return {
+      ok: false,
+      checkedOut,
+      error: `${checkedOut} volunteer${checkedOut === 1 ? "" : "s"} checked out, but ${failed} could not be updated. Refresh and retry the remaining checked-in volunteers.`,
+    };
+  }
+
+  return { ok: true, checkedOut };
 }
 
 // Retained as a progressively enhanced fallback for any existing form callers.
