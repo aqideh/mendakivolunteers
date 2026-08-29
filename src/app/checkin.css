@@ -43,22 +43,50 @@
   margin: 0.7rem 0 0.9rem;
   border: 1px solid var(--border);
   border-radius: 0.7rem;
-  padding: 0.9rem;
   background: var(--surface-subtle, #f8faf9);
+  overflow: hidden;
 }
 
-.phaseone-walk-in-header {
-  margin-bottom: 0.8rem;
+.phaseone-walk-in-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 800;
+  list-style: none;
 }
 
-.phaseone-walk-in-header h3 {
-  margin: 0.08rem 0 0.2rem;
-  font-size: 1.05rem;
+.phaseone-walk-in-summary::-webkit-details-marker {
+  display: none;
 }
 
-.phaseone-walk-in-header p,
-.phaseone-walk-in-note {
-  margin-bottom: 0;
+.phaseone-walk-in-summary::after {
+  content: "+";
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.phaseone-walk-in[open] .phaseone-walk-in-summary::after {
+  content: "−";
+}
+
+.phaseone-walk-in-summary-hint {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.phaseone-walk-in-body {
+  padding: 0 0.9rem 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.phaseone-walk-in-body > .muted {
+  margin: 0.75rem 0;
 }
 
 .phaseone-walk-in-form,
@@ -102,6 +130,10 @@
 
 .phaseone-attendance-filters {
   margin: 0.7rem 0 0.9rem;
+}
+
+.phaseone-mobile-filter {
+  display: none;
 }
 
 .phaseone-attendance-list {
@@ -215,6 +247,367 @@
 
 .phaseone-attendance-edit[open] summary {
   margin-bottom: 0.7rem;
+}
+
+@media (max-width: 759px) {
+  .phaseone-operations-page {
+    padding-bottom: 5.5rem;
+  }
+
+  .phaseone-operations-header {
+    gap: 0.65rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .phaseone-operations-header h1 {
+    font-size: clamp(1.45rem, 7vw, 1.9rem);
+    line-height: 1.05;
+  }
+
+  .phaseone-operations-header .muted {
+    margin-bottom: 0;
+  }
+
+  .phaseone-operations-header .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.4rem;
+  }
+
+  .phaseone-operations-header .actions .button {
+    min-height: 2.35rem;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.76rem;
+    line-height: 1.15;
+  }
+
+  .phaseone-shift-picker {
+    padding: 0.7rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .phaseone-shift-picker .section-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .phaseone-shift-picker .section-header h2 {
+    font-size: 1rem;
+  }
+
+  .phaseone-shift-day {
+    gap: 0.35rem;
+    padding-top: 0.5rem;
+  }
+
+  .phaseone-shift-day > strong {
+    font-size: 0.76rem;
+  }
+
+  .phaseone-shift-day .actions {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+    scrollbar-width: none;
+  }
+
+  .phaseone-shift-day .actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .phaseone-shift-day .button {
+    min-height: 2.1rem;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.74rem;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .phaseone-attendance-metrics {
+    display: flex;
+    gap: 0.4rem;
+    margin: 0.55rem 0;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .phaseone-attendance-metrics::-webkit-scrollbar {
+    display: none;
+  }
+
+  .phaseone-attendance-metrics .metric-card {
+    flex: 0 0 auto;
+    min-width: 5.8rem;
+    min-height: auto;
+    padding: 0.55rem 0.65rem;
+    gap: 0.05rem;
+    scroll-snap-align: start;
+  }
+
+  .phaseone-attendance-metrics .metric-value {
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .phaseone-attendance-metrics .metric-label {
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+
+  .phaseone-admin-section {
+    padding: 0.7rem;
+  }
+
+  .phaseone-roster-heading {
+    margin-bottom: 0.15rem;
+  }
+
+  .phaseone-roster-heading h2 {
+    font-size: 1.15rem;
+  }
+
+  .phaseone-roster-heading .status-pill {
+    font-size: 0.68rem;
+    padding: 0.25rem 0.45rem;
+  }
+
+  .phaseone-walk-in {
+    margin: 0.55rem 0 0.6rem;
+  }
+
+  .phaseone-walk-in-summary {
+    min-height: 2.65rem;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.84rem;
+  }
+
+  .phaseone-walk-in-summary-hint {
+    font-size: 0.68rem;
+  }
+
+  .phaseone-walk-in-body {
+    padding: 0 0.7rem 0.7rem;
+  }
+
+  .phaseone-walk-in-body > .muted {
+    margin: 0.6rem 0;
+    font-size: 0.78rem;
+  }
+
+  .phaseone-desktop-filters {
+    display: none;
+  }
+
+  .phaseone-mobile-filter {
+    display: block;
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.5rem));
+    z-index: 80;
+  }
+
+  .phaseone-mobile-filter > summary {
+    display: grid;
+    place-items: center;
+    position: relative;
+    width: 3.25rem;
+    height: 3.25rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--foreground, #111827);
+    color: var(--background, #ffffff);
+    box-shadow: 0 0.7rem 1.8rem rgb(15 23 42 / 24%);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .phaseone-mobile-filter > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .phaseone-mobile-filter > summary svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: currentColor;
+  }
+
+  .phaseone-mobile-filter-dot {
+    display: none;
+    position: absolute;
+    top: 0.2rem;
+    right: 0.2rem;
+    width: 0.62rem;
+    height: 0.62rem;
+    border: 2px solid var(--background, #ffffff);
+    border-radius: 999px;
+    background: #dc2626;
+  }
+
+  .phaseone-mobile-filter[data-active="true"] .phaseone-mobile-filter-dot {
+    display: block;
+  }
+
+  .phaseone-mobile-filter[open] > summary {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.5rem));
+  }
+
+  .phaseone-mobile-filter-panel {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4rem);
+    left: 1rem;
+    max-width: 30rem;
+    margin-left: auto;
+    padding: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--background, #ffffff);
+    box-shadow: 0 0.9rem 2.5rem rgb(15 23 42 / 22%);
+  }
+
+  .phaseone-mobile-filter-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .phaseone-mobile-filter-heading .muted {
+    margin: 0;
+    font-size: 0.75rem;
+  }
+
+  .phaseone-mobile-filter-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 0.65fr);
+    gap: 0.55rem;
+    align-items: end;
+  }
+
+  .phaseone-mobile-filter-form .form-field {
+    gap: 0.25rem;
+  }
+
+  .phaseone-mobile-filter-form label {
+    font-size: 0.72rem;
+  }
+
+  .phaseone-mobile-filter-form input,
+  .phaseone-mobile-filter-form select {
+    min-height: 2.45rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.82rem;
+  }
+
+  .phaseone-mobile-filter-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 1 / -1;
+    gap: 0.45rem;
+  }
+
+  .phaseone-mobile-filter-actions .button {
+    min-height: 2.4rem;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.8rem;
+  }
+
+  .phaseone-attendance-list {
+    gap: 0.38rem;
+  }
+
+  .phaseone-checkin-card {
+    gap: 0.4rem;
+    padding: 0.52rem 0.58rem;
+    border-radius: 0.6rem;
+  }
+
+  .phaseone-checkin-card .phaseone-attendance-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.35rem;
+  }
+
+  .phaseone-checkin-card .phaseone-attendance-summary h3 {
+    margin: 0.02rem 0 0.05rem;
+    font-size: 0.94rem;
+    line-height: 1.12;
+  }
+
+  .phaseone-checkin-card .phaseone-attendance-summary p {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+
+  .phaseone-checkin-card .record-kicker {
+    font-size: 0.62rem;
+    line-height: 1.1;
+  }
+
+  .phaseone-checkin-card .status-pill {
+    padding: 0.22rem 0.4rem;
+    font-size: 0.65rem;
+  }
+
+  .phaseone-checkin-card .phaseone-attendance-times {
+    display: flex;
+    gap: 0.35rem 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .phaseone-checkin-card .phaseone-attendance-times div {
+    min-width: 0;
+    padding-top: 0.25rem;
+  }
+
+  .phaseone-checkin-card .phaseone-attendance-times dt {
+    font-size: 0.61rem;
+  }
+
+  .phaseone-checkin-card .phaseone-attendance-times dd {
+    margin-top: 0;
+    font-size: 0.72rem;
+  }
+
+  .phaseone-pending-actions {
+    grid-template-columns: 1.25fr repeat(2, minmax(0, 0.85fr));
+    gap: 0.3rem;
+  }
+
+  .phaseone-quick-action-wrap {
+    gap: 0.2rem;
+  }
+
+  .phaseone-checkin-action {
+    min-height: 2.15rem;
+    padding: 0.32rem 0.35rem;
+    font-size: 0.73rem;
+    line-height: 1.1;
+  }
+
+  .phaseone-inline-action-success,
+  .phaseone-inline-action-error {
+    font-size: 0.7rem;
+  }
+
+  .phaseone-attendance-edit {
+    padding-top: 0.32rem;
+  }
+
+  .phaseone-attendance-edit summary {
+    font-size: 0.7rem;
+  }
+
+  .phaseone-attendance-edit[open] summary {
+    margin-bottom: 0.55rem;
+  }
 }
 
 @media (min-width: 760px) {
