@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 
-import { recordAttendanceQuickAction } from "@/app/admin/events/[id]/attendance/actions";
+import {
+  checkoutAllCurrentParticipants,
+  recordAttendanceQuickAction,
+} from "@/app/admin/events/[id]/attendance/actions";
 
 export type AttendanceQuickAction =
   | "mark_sign_in"
@@ -18,6 +21,12 @@ type QuickAttendanceButtonProps = {
   rosterId: string;
   timeslotId: string;
   action: AttendanceQuickAction;
+};
+
+type BulkCheckoutButtonProps = {
+  eventId: string;
+  timeslotId: string;
+  checkedInCount: number;
 };
 
 const labels: Record<AttendanceQuickAction, { idle: string; pending: string; success: string; message: string }> = {
@@ -103,6 +112,70 @@ export function QuickAttendanceButton({
         type="button"
       >
         {isSaving ? copy.pending : outcome === "success" ? copy.success : copy.idle}
+      </button>
+      {message ? (
+        <p
+          className={outcome === "error" ? "phaseone-inline-action-error" : "phaseone-inline-action-success"}
+          role={outcome === "error" ? "alert" : "status"}
+        >
+          {message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function BulkCheckoutButton({
+  eventId,
+  timeslotId,
+  checkedInCount,
+}: BulkCheckoutButtonProps) {
+  const router = useRouter();
+  const [isSaving, startSaving] = useTransition();
+  const [, startRefresh] = useTransition();
+  const [outcome, setOutcome] = useState<"idle" | "success" | "error">("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  function submit() {
+    if (isSaving || checkedInCount === 0) return;
+
+    const confirmed = window.confirm(
+      `Check out all ${checkedInCount} currently checked-in volunteer${checkedInCount === 1 ? "" : "s"} for this shift?`,
+    );
+    if (!confirmed) return;
+
+    setOutcome("idle");
+    setMessage(null);
+    startSaving(async () => {
+      const result = await checkoutAllCurrentParticipants({ eventId, timeslotId });
+
+      if (!result.ok) {
+        setOutcome("error");
+        setMessage(result.error);
+        startRefresh(() => router.refresh());
+        return;
+      }
+
+      setOutcome("success");
+      setMessage(
+        result.checkedOut === 0
+          ? "No volunteers were still checked in."
+          : `${result.checkedOut} volunteer${result.checkedOut === 1 ? "" : "s"} checked out.`,
+      );
+      startRefresh(() => router.refresh());
+    });
+  }
+
+  return (
+    <div className="phaseone-bulk-checkout">
+      <button
+        aria-busy={isSaving}
+        className="button button-secondary phaseone-bulk-checkout-button"
+        disabled={isSaving || checkedInCount === 0}
+        onClick={submit}
+        type="button"
+      >
+        {isSaving ? "Checking everyone out…" : `Check out all (${checkedInCount})`}
       </button>
       {message ? (
         <p
