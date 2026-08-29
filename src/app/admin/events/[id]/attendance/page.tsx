@@ -270,6 +270,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     (totals, record) => ({ ...totals, [record.status]: totals[record.status] + 1 }),
     { pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0 },
   );
+  const activeFilterLabel = filter === "all"
+    ? query ? "Search" : null
+    : statusLabel(filter as AttendanceStatus);
 
   const successCode = parameter(parameters, "success");
   const successMessage = successCode === "attendance_recorded"
@@ -295,8 +298,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   return (
     <div className="site-shell">
       <PortalHeader status="Roster / check-in" dashboard />
-      <main className="page-frame">
-        <div className="dashboard-header">
+      <main className="page-frame phaseone-operations-page">
+        <div className="dashboard-header phaseone-operations-header">
           <div>
             <p className="eyebrow">Staff event operations</p>
             <h1>{event.title}</h1>
@@ -353,54 +356,100 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   <p className="eyebrow">{singaporeDateLabel(selectedTimeslot.starts_at)} · {timeslotLabel(selectedTimeslot)}</p>
                   <h2 id="attendance-roster-title">Volunteer roster</h2>
                 </div>
-                <span className="status-pill">{visible.length} shown</span>
+                <span className="status-pill">{visible.length} shown{activeFilterLabel ? ` · ${activeFilterLabel}` : ""}</span>
               </div>
 
-              <section className="phaseone-walk-in" aria-labelledby="walk-in-title">
-                <div className="phaseone-walk-in-header">
-                  <div>
-                    <p className="eyebrow">Event-day registration</p>
-                    <h3 id="walk-in-title">+ Walk-in volunteer</h3>
-                    <p className="muted">Add someone who was not on the original roster. They will be attached to this selected shift.</p>
-                  </div>
+              <details className="phaseone-walk-in">
+                <summary className="phaseone-walk-in-summary">
+                  <span>+ Walk-in volunteer</span>
+                  <span className="phaseone-walk-in-summary-hint">Add on the day</span>
+                </summary>
+                <div className="phaseone-walk-in-body">
+                  <p className="muted">Add someone who was not on the original roster. They will be attached to this selected shift.</p>
+                  <form action={addWalkInVolunteer} className="phaseone-walk-in-form">
+                    <input name="eventId" type="hidden" value={id} />
+                    <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
+                    <div className="phaseone-walk-in-grid">
+                      <div className="form-field">
+                        <label htmlFor="walk-in-name">Name</label>
+                        <input id="walk-in-name" name="volunteerName" maxLength={200} required autoComplete="name" />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="walk-in-mobile">Contact number</label>
+                        <input id="walk-in-mobile" name="mobile" maxLength={50} autoComplete="tel" inputMode="tel" />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="walk-in-email">Email</label>
+                        <input id="walk-in-email" name="email" maxLength={320} type="email" autoComplete="email" />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="walk-in-id">Volunteer ID</label>
+                        <input id="walk-in-id" name="volunteerKey" maxLength={100} />
+                        <p className="muted">Optional.</p>
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="walk-in-shirt">T-shirt size</label>
+                        <input id="walk-in-shirt" name="tshirtSize" maxLength={20} placeholder="e.g. M" />
+                      </div>
+                    </div>
+                    <WalkInSubmitButtons />
+                    <p className="muted phaseone-walk-in-note">This creates an operational event roster entry only; it does not create a portal account or official YM Hub registration.</p>
+                  </form>
                 </div>
-                <form action={addWalkInVolunteer} className="phaseone-walk-in-form">
-                  <input name="eventId" type="hidden" value={id} />
-                  <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
-                  <div className="phaseone-walk-in-grid">
-                    <div className="form-field">
-                      <label htmlFor="walk-in-name">Name</label>
-                      <input id="walk-in-name" name="volunteerName" maxLength={200} required autoComplete="name" />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="walk-in-mobile">Contact number</label>
-                      <input id="walk-in-mobile" name="mobile" maxLength={50} autoComplete="tel" inputMode="tel" />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="walk-in-email">Email</label>
-                      <input id="walk-in-email" name="email" maxLength={320} type="email" autoComplete="email" />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="walk-in-id">Volunteer ID</label>
-                      <input id="walk-in-id" name="volunteerKey" maxLength={100} />
-                      <p className="muted">Optional.</p>
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="walk-in-shirt">T-shirt size</label>
-                      <input id="walk-in-shirt" name="tshirtSize" maxLength={20} placeholder="e.g. M" />
-                    </div>
-                  </div>
-                  <WalkInSubmitButtons />
-                  <p className="muted phaseone-walk-in-note">This creates an operational event roster entry only; it does not create a portal account or official YM Hub registration.</p>
-                </form>
-              </section>
+              </details>
 
-              <form className="phaseone-attendance-filters" method="get">
+              <form className="phaseone-attendance-filters phaseone-desktop-filters" method="get">
                 <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
                 <div className="form-field"><label htmlFor="q">Search</label><input id="q" name="q" defaultValue={query} placeholder="Name, volunteer ID or contact number" /></div>
                 <div className="form-field"><label htmlFor="status">Status</label><select id="status" name="status" defaultValue={filter}><option value="all">All</option><option value="pending">Not arrived</option><option value="signed_in">Checked in</option><option value="signed_out">Checked out</option><option value="withdrawn">Withdrawn</option><option value="absent">Absent</option><option value="anomaly">Needs review</option></select></div>
                 <button className="button button-secondary" type="submit">Apply filters</button>
               </form>
+
+              <details
+                className="phaseone-mobile-filter"
+                data-active={filter !== "all" || query ? "true" : undefined}
+              >
+                <summary aria-label="Filter roster" title="Filter roster">
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M4 5h16l-6.25 7.1v5.15l-3.5 1.75v-6.9L4 5Z" />
+                  </svg>
+                  <span className="phaseone-mobile-filter-dot" aria-hidden="true" />
+                </summary>
+                <div className="phaseone-mobile-filter-panel">
+                  <div className="phaseone-mobile-filter-heading">
+                    <strong>Filter roster</strong>
+                    <span className="muted">{visible.length} shown</span>
+                  </div>
+                  <form className="phaseone-mobile-filter-form" method="get">
+                    <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
+                    <div className="form-field">
+                      <label htmlFor="mobile-q">Search</label>
+                      <input id="mobile-q" name="q" defaultValue={query} placeholder="Name, ID or contact" />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="mobile-status">Status</label>
+                      <select id="mobile-status" name="status" defaultValue={filter}>
+                        <option value="all">All</option>
+                        <option value="pending">Not arrived</option>
+                        <option value="signed_in">Checked in</option>
+                        <option value="signed_out">Checked out</option>
+                        <option value="withdrawn">Withdrawn</option>
+                        <option value="absent">Absent</option>
+                        <option value="anomaly">Needs review</option>
+                      </select>
+                    </div>
+                    <div className="phaseone-mobile-filter-actions">
+                      <button className="button button-primary" type="submit">Apply</button>
+                      <Link
+                        className="button button-secondary"
+                        href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(selectedTimeslot.id)}`}
+                      >
+                        Clear
+                      </Link>
+                    </div>
+                  </form>
+                </div>
+              </details>
 
               <div className="phaseone-attendance-list">
                 {visible.map(({ volunteer, attendance, status }) => (
@@ -423,13 +472,15 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       <span className="status-pill" data-state={status}>{statusLabel(status)}</span>
                     </div>
 
-                    <dl className="phaseone-attendance-times">
-                      <div><dt>Check-in</dt><dd>{attendance?.signed_in_at ? formatSingaporeDateTime(attendance.signed_in_at) : "Not recorded"}</dd></div>
-                      <div><dt>Check-out</dt><dd>{attendance?.signed_out_at ? formatSingaporeDateTime(attendance.signed_out_at) : "Not recorded"}</dd></div>
-                      {(status === "withdrawn" || status === "absent") ? (
-                        <div><dt>Status marked</dt><dd>{attendance?.non_attendance_marked_at ? formatSingaporeDateTime(attendance.non_attendance_marked_at) : "Not recorded"}</dd></div>
-                      ) : null}
-                    </dl>
+                    {attendance?.signed_in_at || attendance?.signed_out_at || status === "withdrawn" || status === "absent" ? (
+                      <dl className="phaseone-attendance-times">
+                        {attendance?.signed_in_at ? <div><dt>Check-in</dt><dd>{formatSingaporeDateTime(attendance.signed_in_at)}</dd></div> : null}
+                        {attendance?.signed_out_at ? <div><dt>Check-out</dt><dd>{formatSingaporeDateTime(attendance.signed_out_at)}</dd></div> : null}
+                        {(status === "withdrawn" || status === "absent") ? (
+                          <div><dt>Status marked</dt><dd>{attendance?.non_attendance_marked_at ? formatSingaporeDateTime(attendance.non_attendance_marked_at) : "Not recorded"}</dd></div>
+                        ) : null}
+                      </dl>
+                    ) : null}
 
                     {status === "pending" ? (
                       <div className="phaseone-pending-actions">
