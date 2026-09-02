@@ -44,21 +44,27 @@ begin
         or attendance.volunteer_id = target_volunteer_id
     ),
     ledger_sources as (
-      select distinct
+      select distinct on (ledger.volunteer_id, ledger.source_record_id)
         ledger.volunteer_id,
-        ledger.source_record_id
+        ledger.source_record_id,
+        ledger.source_title,
+        ledger.source_occurred_at
       from gamification.point_ledger_entries as ledger
       where ledger.source_kind = 'ymhub_verified_attendance'
         and (
           target_volunteer_id is null
           or ledger.volunteer_id = target_volunteer_id
         )
+      order by ledger.volunteer_id, ledger.source_record_id, ledger.id desc
     )
     select
       coalesce(source_records.volunteer_id, ledger_sources.volunteer_id) as volunteer_id,
       coalesce(source_records.source_record_id, ledger_sources.source_record_id) as source_record_id,
-      source_records.source_title,
-      source_records.activity_starts_at,
+      coalesce(source_records.source_title, ledger_sources.source_title) as source_title,
+      coalesce(
+        source_records.activity_starts_at,
+        ledger_sources.source_occurred_at
+      ) as source_occurred_at,
       source_records.state,
       source_records.verified_hours,
       source_records.verified_at,
@@ -102,10 +108,10 @@ begin
       from gamification.point_rules as rules
       where rules.source_kind = 'ymhub_verified_attendance'
         and rules.status in ('active', 'retired')
-        and source_row.activity_starts_at >= rules.effective_from
+        and source_row.source_occurred_at >= rules.effective_from
         and (
           rules.effective_until is null
-          or source_row.activity_starts_at < rules.effective_until
+          or source_row.source_occurred_at < rules.effective_until
         )
       order by rules.effective_from desc, rules.version desc
       limit 1;
@@ -154,6 +160,7 @@ begin
       rule_id,
       source_kind,
       source_record_id,
+      source_occurred_at,
       source_updated_at,
       source_title,
       entry_kind,
@@ -165,6 +172,7 @@ begin
       applicable_rule_id,
       'ymhub_verified_attendance',
       source_row.source_record_id,
+      source_row.source_occurred_at,
       coalesce(source_row.source_updated_at, now()),
       coalesce(source_row.source_title, 'Removed YM Hub attendance record'),
       entry_kind,
@@ -312,6 +320,7 @@ begin
         select
           ledger.id::text as id,
           ledger.source_record_id,
+          ledger.source_occurred_at,
           ledger.source_title,
           ledger.entry_kind,
           ledger.points_delta,
