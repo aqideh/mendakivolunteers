@@ -17,7 +17,7 @@ export default async function ConfirmSignInPage() {
     <div className="site-shell">
       <header className="site-header">
         <BrandLockup href="/" priority />
-        <p className="header-status">Secure account access</p>
+        <p className="header-status">Secure KELUARGA access</p>
       </header>
 
       <main className="auth-layout">
@@ -25,7 +25,7 @@ export default async function ConfirmSignInPage() {
           <p className="eyebrow">Secure access</p>
           <h1 id="confirm-title">Verifying secure link</h1>
           <p className="muted">
-            Keep this page open while the portal verifies your one-time link. If
+            Keep this page open while KELUARGA verifies your one-time link. If
             this is a password-recovery link, you will be asked to choose a new
             password here.
           </p>
