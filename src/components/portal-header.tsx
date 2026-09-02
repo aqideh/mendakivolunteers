@@ -3,21 +3,22 @@ import Link from "next/link";
 import { BrandLockup } from "@/components/brand-lockup";
 import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { createClient } from "@/lib/supabase/server";
-import type { AppRole } from "@/types/database";
 
-type PortalHeaderProps = {
-  status?: string;
+export async function PortalHeader({
+  status,
+  dashboard = false,
+  lite = false,
+}: {
+  status: string;
   dashboard?: boolean;
   lite?: boolean;
-};
-
-export async function PortalHeader({ status, dashboard }: PortalHeaderProps) {
+}) {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   const isSignedIn = !error && Boolean(userId);
-
   let canManageEvents = false;
+
   if (dashboard && isSignedIn && userId) {
     const { data: roleRows, error: rolesError } = await supabase
       .schema("core")
@@ -30,8 +31,9 @@ export async function PortalHeader({ status, dashboard }: PortalHeaderProps) {
         rolesCode: rolesError.code,
       });
     } else {
-      const roles = (roleRows ?? []).map(({ role }) => role) as AppRole[];
-      canManageEvents = hasEventManagerRole(roles);
+      canManageEvents = hasEventManagerRole(
+        (roleRows ?? []).map(({ role }) => role),
+      );
     }
   }
 
@@ -50,7 +52,7 @@ export async function PortalHeader({ status, dashboard }: PortalHeaderProps) {
           <Link href="/login">Sign in</Link>
         )}
       </nav>
-      {status ? <p className="header-status">{status}</p> : null}
+      {!lite ? <p className="header-status">{status}</p> : null}
     </header>
   );
 }
