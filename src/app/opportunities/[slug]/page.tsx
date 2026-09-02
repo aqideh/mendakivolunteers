@@ -113,9 +113,14 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
           <aside className="panel source-boundary">
             <h2>Registration is managed in YM Hub</h2>
             <p>
-              This portal lists the opportunity but does not create or manage
-              your registration. The link opens the official YM Hub registration
-              destination.
+              YM Hub uses a separate sign-in from KELUARGA. Register using your
+              usual YM Hub account, then use the same email address when signing
+              in to KELUARGA so your Event Guide can be matched more easily.
+            </p>
+            <p className="muted">
+              Registration updates are not immediate during the batch-integration
+              phase. Your Event Guide will appear after the next data or roster
+              update.
             </p>
             <a
               className="button button-primary"
@@ -123,13 +128,14 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
               target="_blank"
               rel="noopener noreferrer"
             >
-              Register on YM Hub
+              Continue to YM Hub registration
             </a>
           </aside>
         </article>
       </main>
       <footer className="site-footer">
-        Official registration status remains in YM Hub.
+        Official registration status remains in YM Hub. KELUARGA uses a separate
+        sign-in for Event Guides and volunteer services.
       </footer>
     </div>
   );

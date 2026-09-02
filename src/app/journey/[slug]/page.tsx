@@ -28,6 +28,7 @@ import styles from "./journey-detail.module.css";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
+  title: "Event Guide",
   robots: { index: false, follow: false },
   referrer: "no-referrer" as const,
 };
@@ -107,8 +108,8 @@ export default async function EventGuidePage({ params, searchParams }: EventGuid
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to load event guide", { code: error.code, slug });
-    throw new Error("Event guide details could not be loaded");
+    console.error("Unable to load Event Guide", { code: error.code, slug });
+    throw new Error("Event Guide details could not be loaded");
   }
   if (!volunteerEvent) notFound();
 
@@ -184,11 +185,11 @@ export default async function EventGuidePage({ params, searchParams }: EventGuid
 
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Event guide" lite />
+      <PortalHeader status="Event Guide" dashboard />
       <main className="phaseone-frame">
-        <Link className="back-link" href="/journey">← Your Volunteer Journey</Link>
+        <Link className="back-link" href="/journey">← Your Event Guides</Link>
         <article className={styles.card}>
-          <p className="phaseone-opportunity-date">Volunteer event</p>
+          <p className="phaseone-opportunity-date">Registered volunteer event</p>
           <h1>{volunteerEvent.title}</h1>
           <dl className="phaseone-opportunity-details">
             <div><dt>Timeslots</dt><dd>{timeslots.length}</dd></div>

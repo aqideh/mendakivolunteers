@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { authorizeEventGuideSlug } from "@/lib/phaseone/event-guide-access";
 import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
 import { createClientKey, verifyPin } from "@/lib/phaseone/event-access";
 import {
@@ -56,6 +57,26 @@ export async function POST(
     return json({ error: "Event access requires JSON." }, 415);
   }
 
+  const authorization = await authorizeEventGuideSlug(slug);
+  if (authorization.state === "signed_out") {
+    return json({ error: "Sign in to KELUARGA to use this Event Guide." }, 401);
+  }
+  if (
+    authorization.state === "inactive" ||
+    authorization.state === "not_registered"
+  ) {
+    return json(
+      { error: "This Event Guide is not available to your KELUARGA account." },
+      403,
+    );
+  }
+  if (authorization.state === "not_found") {
+    return json({ error: "Event Guide not found." }, 404);
+  }
+  if (authorization.state === "unavailable") {
+    return json({ error: "Event access is unavailable." }, 503);
+  }
+
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return json({ error: "Enter the action PIN." }, 400);
@@ -76,7 +97,7 @@ export async function POST(
   const { data: event, error } = await supabase
     .from("phaseone_events")
     .select(pinColumns)
-    .eq("slug", slug)
+    .eq("id", authorization.event.id)
     .eq("is_published", true)
     .maybeSingle();
 

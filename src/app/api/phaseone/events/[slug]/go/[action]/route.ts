@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { authorizeEventGuideSlug } from "@/lib/phaseone/event-guide-access";
 import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
 import {
   evaluatePackageActionRedirect,
@@ -33,13 +34,41 @@ export async function GET(
     );
   }
 
+  const authorization = await authorizeEventGuideSlug(slug);
+  if (authorization.state === "signed_out") {
+    return redirect(
+      new URL(
+        `/login?next=${encodeURIComponent(`/journey/${slug}`)}`,
+        request.url,
+      ),
+    );
+  }
+  if (authorization.state === "inactive") {
+    return redirect(new URL("/login?error=account_inactive", request.url));
+  }
+  if (authorization.state === "not_registered") {
+    return redirect(new URL("/journey?error=not_registered", request.url));
+  }
+  if (authorization.state === "not_found") {
+    return NextResponse.json(
+      { error: "Event Guide not found." },
+      { status: 404, headers: packagePrivateResponseHeaders },
+    );
+  }
+  if (authorization.state === "unavailable") {
+    return NextResponse.json(
+      { error: "Event access is unavailable." },
+      { status: 503, headers: packagePrivateResponseHeaders },
+    );
+  }
+
   const supabase = getPhaseOneAdminClient();
   const { data: event, error } = await supabase
     .from("phaseone_events")
     .select(
       "id, sign_in_url, sign_out_url, sign_in_pin_updated_at, sign_out_pin_updated_at",
     )
-    .eq("slug", slug)
+    .eq("id", authorization.event.id)
     .eq("is_published", true)
     .maybeSingle();
 
