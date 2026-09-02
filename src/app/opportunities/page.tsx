@@ -6,7 +6,8 @@ import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 
 export const metadata: Metadata = {
   title: "Volunteer opportunities",
-  description: "Browse upcoming MENDAKI volunteer opportunities and register through Volunteer.gov.sg.",
+  description:
+    "Browse upcoming MENDAKI volunteer opportunities and continue to the official registration portal.",
 };
 
 export const dynamic = "force-dynamic";
@@ -22,13 +23,16 @@ export default async function OpportunitiesPage() {
           <p className="eyebrow">MENDAKI volunteer opportunities</p>
           <h1>Volunteer with the community.</h1>
           <p className="lede">
-            Browse upcoming opportunities below. Registration and confirmation are
-            completed securely on Volunteer.gov.sg.
+            Browse without signing in. When you choose an opportunity, registration
+            and confirmation are completed through the official registration portal.
           </p>
         </section>
 
         {opportunities.length > 0 ? (
-          <section className="phaseone-opportunity-list" aria-label="Upcoming volunteer opportunities">
+          <section
+            className="phaseone-opportunity-list"
+            aria-label="Upcoming volunteer opportunities"
+          >
             {opportunities.map((opportunity) => (
               <article className="phaseone-opportunity-card" key={opportunity.id}>
                 <div className="phaseone-opportunity-image" aria-hidden="true">
@@ -45,12 +49,17 @@ export default async function OpportunitiesPage() {
                   </p>
                   <h2>{opportunity.title}</h2>
                   {opportunity.summary ? (
-                    <p className="phaseone-opportunity-summary">{opportunity.summary}</p>
+                    <p className="phaseone-opportunity-summary">
+                      {opportunity.summary}
+                    </p>
                   ) : null}
                   <dl className="phaseone-opportunity-details">
                     <div>
                       <dt>Venue</dt>
-                      <dd>{opportunity.venue ?? "See Volunteer.gov.sg for details"}</dd>
+                      <dd>
+                        {opportunity.venue ??
+                          "See the registration portal for details"}
+                      </dd>
                     </div>
                     {opportunity.schedule_text ? (
                       <div>
@@ -82,14 +91,15 @@ export default async function OpportunitiesPage() {
           <section className="panel empty-state phaseone-empty-state">
             <h2>No upcoming opportunities right now.</h2>
             <p className="muted">
-              New MENDAKI opportunities will appear here after they are published on
-              Volunteer.gov.sg.
+              New MENDAKI opportunities will appear here after they are published
+              through the official registration process.
             </p>
           </section>
         )}
       </main>
       <footer className="site-footer">
-        Opportunity registration is managed on Volunteer.gov.sg.
+        Opportunity registration is managed through the official registration
+        portal. Browsing KELUARGA does not require an account.
       </footer>
     </div>
   );
