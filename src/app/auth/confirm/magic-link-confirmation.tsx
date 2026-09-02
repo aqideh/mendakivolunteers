@@ -47,7 +47,7 @@ export function MagicLinkConfirmation() {
       currentUrl.searchParams.get("error_description");
     const nextPath = getSafeRedirectPath(
       currentUrl.searchParams.get("next"),
-      "/dashboard",
+      "/journey",
     );
     const isRecovery = rawType === "recovery";
 
