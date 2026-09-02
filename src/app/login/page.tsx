@@ -88,7 +88,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <p className="muted">
                 Staff and existing password users can sign in below.
               </p>
-              <LoginForm nextPath={nextPath} />
+              <LoginForm nextPath={nextPath} initialError={undefined} />
             </div>
           </details>
 
