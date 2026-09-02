@@ -1,8 +1,8 @@
 "use client";
 
-import type { EmailOtpType } from "@supabase/supabase-js";
+import type { EmailOtpType, SupabaseClient } from "@supabase/supabase-js";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 
 import {
   getRecoveryLinkType,
@@ -47,7 +47,7 @@ export function MagicLinkConfirmation() {
       currentUrl.searchParams.get("error_description");
     const nextPath = getSafeRedirectPath(
       currentUrl.searchParams.get("next"),
-      "/journey",
+      "/dashboard",
     );
     const isRecovery = rawType === "recovery";
 
@@ -117,6 +117,23 @@ export function MagicLinkConfirmation() {
           status: "recovery",
           message: "Recovery link verified. Choose a new password below.",
         });
+        return;
+      }
+
+      const accountClient = supabase as unknown as SupabaseClient;
+      const { data: linkResult, error: linkError } = await accountClient
+        .schema("core")
+        .rpc("link_current_account_by_verified_email");
+
+      if (linkError) {
+        console.error("Verified KELUARGA account could not be linked", {
+          code: linkError.code,
+          message: linkError.message,
+        });
+      }
+
+      if (linkResult === "account_inactive") {
+        window.location.replace("/login?error=account_inactive");
         return;
       }
 
@@ -204,7 +221,9 @@ export function MagicLinkConfirmation() {
               minLength={12}
               maxLength={128}
               value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                setNewPassword(event.target.value)
+              }
               required
               disabled={state.status === "saving"}
             />
@@ -224,7 +243,9 @@ export function MagicLinkConfirmation() {
               minLength={12}
               maxLength={128}
               value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                setConfirmPassword(event.target.value)
+              }
               required
               disabled={state.status === "saving"}
             />
