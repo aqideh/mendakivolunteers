@@ -12,7 +12,11 @@ const initialState: VolunteerSignInState = {
   message: "",
 };
 
-export function VolunteerSignInForm() {
+type VolunteerSignInFormProps = Readonly<{
+  nextPath: string;
+}>;
+
+export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
   const [state, formAction, pending] = useActionState(
     requestVolunteerSignInLink,
     initialState,
@@ -20,6 +24,7 @@ export function VolunteerSignInForm() {
 
   return (
     <form action={formAction} noValidate>
+      <input type="hidden" name="next" value={nextPath} />
       <div className="form-field">
         <label htmlFor="volunteer-email">Email address</label>
         <input
@@ -34,8 +39,8 @@ export function VolunteerSignInForm() {
           aria-describedby="volunteer-email-help"
         />
         <span className="form-help" id="volunteer-email-help">
-          Use the same email address you used when registering for the volunteer
-          activity.
+          Use the email address linked to your official volunteer profile or event
+          registration.
         </span>
       </div>
 
