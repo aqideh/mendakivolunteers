@@ -108,6 +108,44 @@ create trigger point_rules_protect_history
 before update or delete on gamification.point_rules
 for each row execute function gamification.protect_point_rule_history();
 
+create or replace function gamification.prevent_point_rule_overlap()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, gamification
+as $$
+begin
+  if new.status not in ('active', 'retired') then
+    return new;
+  end if;
+
+  perform pg_advisory_xact_lock(
+    hashtextextended('point-rule:' || new.source_kind::text, 0)
+  );
+
+  if exists (
+    select 1
+    from gamification.point_rules as existing
+    where existing.id <> new.id
+      and existing.source_kind = new.source_kind
+      and existing.status in ('active', 'retired')
+      and tstzrange(
+        existing.effective_from,
+        existing.effective_until,
+        '[)'
+      ) && tstzrange(new.effective_from, new.effective_until, '[)')
+  ) then
+    raise exception 'Point rule effective periods cannot overlap'
+      using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger point_rules_prevent_overlap
+before insert or update on gamification.point_rules
+for each row execute function gamification.prevent_point_rule_overlap();
+
 create table gamification.point_ledger_entries (
   id bigint generated always as identity primary key,
   volunteer_id uuid not null references core.volunteers (id) on delete restrict,
