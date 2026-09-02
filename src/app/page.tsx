@@ -31,13 +31,14 @@ const steps = [
   {
     number: "02",
     title: "Register",
-    description: "Continue securely to Volunteer.gov.sg to register your interest.",
+    description:
+      "Continue to the official registration portal. It uses a separate sign-in from KELUARGA.",
   },
   {
     number: "03",
-    title: "Volunteer",
+    title: "Prepare and volunteer",
     description:
-      "Get the schedule, briefing and event-day information you need to volunteer confidently.",
+      "Sign in to KELUARGA to open the Event Guide for activities you are registered for.",
   },
 ];
 
@@ -65,7 +66,7 @@ export default async function Home() {
                 Explore opportunities
               </Link>
               <Link className="button button-secondary" href="/journey">
-                View your journey
+                Open Event Guide
               </Link>
             </div>
 
