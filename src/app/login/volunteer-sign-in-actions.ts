@@ -29,49 +29,66 @@ export async function requestVolunteerSignInLink(
   }
 
   const email = parsedEmail.data.toLowerCase();
-  const admin = getPhaseOneAdminClient();
-  const { data: rosterMatch, error: rosterError } = await admin
-    .from("phaseone_roster")
-    .select("volunteer_name")
-    .eq("email_normalized", email)
-    .order("uploaded_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (rosterError) {
-    console.error("Unable to verify volunteer email eligibility", {
-      code: rosterError.code,
-    });
-    return {
-      status: "error",
-      message: "A sign-in link could not be sent right now. Try again shortly.",
-    };
-  }
-
-  // Keep the response indistinguishable for addresses that are not yet present
-  // in a controlled event roster. This avoids exposing registration membership.
-  if (!rosterMatch) {
-    return { status: "success", message: genericSuccessMessage };
-  }
 
   try {
     const supabase = await createClient();
     const { appUrl } = getPublicConfig();
-    const { error } = await supabase.auth.signInWithOtp({
+    const emailRedirectTo = new URL("/auth/confirm", appUrl).toString();
+
+    // Existing KELUARGA accounts can always request a one-time sign-in link,
+    // including volunteers who currently have no upcoming assignments.
+    const existingAccountAttempt = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo,
+      },
+    });
+
+    if (!existingAccountAttempt.error) {
+      return { status: "success", message: genericSuccessMessage };
+    }
+
+    const admin = getPhaseOneAdminClient();
+    const { data: rosterMatch, error: rosterError } = await admin
+      .from("phaseone_roster")
+      .select("volunteer_name")
+      .eq("email_normalized", email)
+      .order("uploaded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (rosterError) {
+      console.error("Unable to verify volunteer email eligibility", {
+        code: rosterError.code,
+      });
+      return {
+        status: "error",
+        message: "A sign-in link could not be sent right now. Try again shortly.",
+      };
+    }
+
+    // Keep the response indistinguishable for addresses that are not yet present
+    // in a controlled event roster. This avoids exposing registration membership.
+    if (!rosterMatch) {
+      return { status: "success", message: genericSuccessMessage };
+    }
+
+    const newRosterAccountAttempt = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: new URL("/auth/confirm", appUrl).toString(),
+        emailRedirectTo,
         data: {
           full_name: rosterMatch.volunteer_name,
         },
       },
     });
 
-    if (error) {
+    if (newRosterAccountAttempt.error) {
       console.error("Volunteer magic-link request failed", {
-        code: error.code,
-        status: error.status,
+        code: newRosterAccountAttempt.error.code,
+        status: newRosterAccountAttempt.error.status,
       });
       return {
         status: "error",
