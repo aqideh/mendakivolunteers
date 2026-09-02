@@ -2,7 +2,11 @@ import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getYmHubSyncOutcome, type YmHubSyncOutcome } from "@/lib/ymhub/read-model";
-import type { AccountStatus, AppRole } from "@/types/database";
+import type {
+  AccountStatus,
+  AppRole,
+  YmHubRegistrationState,
+} from "@/types/database";
 
 export type EventGuideViewer = Readonly<{
   userId: string;
@@ -13,6 +17,7 @@ export type EventGuideViewer = Readonly<{
   volunteerId: string | null;
   rosterEventIds: ReadonlySet<string>;
   registeredActivityIds: ReadonlySet<string>;
+  excludedActivityIds: ReadonlySet<string>;
   registrationSyncOutcome: YmHubSyncOutcome | "not_linked";
   registrationsSyncedAt: string | null;
 }>;
@@ -42,6 +47,30 @@ export type EventGuideAuthorizationResult =
 function normalizedEmail(value: string | null | undefined): string | null {
   const email = value?.trim().toLowerCase();
   return email || null;
+}
+
+function classifyRegistrationStates(
+  registrations: readonly {
+    ymhub_activity_id: string;
+    state: YmHubRegistrationState;
+  }[],
+) {
+  const registered = new Set<string>();
+  const excluded = new Set<string>();
+
+  for (const registration of registrations) {
+    const activityId = registration.ymhub_activity_id.trim();
+    if (!activityId) continue;
+
+    if (registration.state === "registered") {
+      registered.add(activityId);
+      excluded.delete(activityId);
+    } else if (!registered.has(activityId)) {
+      excluded.add(activityId);
+    }
+  }
+
+  return { registered, excluded };
 }
 
 export async function getEventGuideViewer(): Promise<EventGuideViewerResult> {
@@ -119,6 +148,7 @@ export async function getEventGuideViewer(): Promise<EventGuideViewerResult> {
         volunteerId: volunteerResult.data?.id ?? null,
         rosterEventIds: new Set<string>(),
         registeredActivityIds: new Set<string>(),
+        excludedActivityIds: new Set<string>(),
         registrationSyncOutcome: volunteerResult.data ? "not_synced" : "not_linked",
         registrationsSyncedAt: null,
       },
@@ -147,9 +177,8 @@ export async function getEventGuideViewer(): Promise<EventGuideViewerResult> {
     ? admin
         .schema("ymhub")
         .from("registration_snapshots")
-        .select("ymhub_activity_id")
+        .select("ymhub_activity_id, state")
         .eq("volunteer_id", volunteerResult.data.id)
-        .eq("state", "registered")
         .limit(2000)
     : Promise.resolve({ data: [], error: null });
 
@@ -173,6 +202,12 @@ export async function getEventGuideViewer(): Promise<EventGuideViewerResult> {
   const registrationSyncOutcome = volunteerResult.data
     ? getYmHubSyncOutcome(syncStatus)
     : "not_linked";
+  const registrationStates = classifyRegistrationStates(
+    (registrationsResult.data ?? []) as {
+      ymhub_activity_id: string;
+      state: YmHubRegistrationState;
+    }[],
+  );
 
   return {
     state: "authenticated",
@@ -186,11 +221,8 @@ export async function getEventGuideViewer(): Promise<EventGuideViewerResult> {
       rosterEventIds: new Set(
         (rosterResult.data ?? []).map(({ event_id }) => String(event_id)),
       ),
-      registeredActivityIds: new Set(
-        (registrationsResult.data ?? []).map(({ ymhub_activity_id }) =>
-          String(ymhub_activity_id),
-        ),
-      ),
+      registeredActivityIds: registrationStates.registered,
+      excludedActivityIds: registrationStates.excluded,
       registrationSyncOutcome,
       registrationsSyncedAt: syncStatus?.registrations_synced_at ?? null,
     },
@@ -205,7 +237,10 @@ export async function getPermittedEventGuideIds(
   }
 
   const permitted = new Set(viewer.rosterEventIds);
-  if (viewer.registeredActivityIds.size === 0) {
+  if (
+    viewer.registeredActivityIds.size === 0 &&
+    viewer.excludedActivityIds.size === 0
+  ) {
     return permitted;
   }
 
@@ -248,16 +283,20 @@ export async function getPermittedEventGuideIds(
   }
 
   for (const event of events) {
-    const directActivityId = event.ymhub_activity_id?.trim();
-    const externalActivityId = event.external_opportunity_id
-      ? externalSourceKeys.get(event.external_opportunity_id)
-      : null;
+    const activityIds = [
+      event.ymhub_activity_id?.trim(),
+      event.external_opportunity_id
+        ? externalSourceKeys.get(event.external_opportunity_id)
+        : null,
+    ].filter((value): value is string => Boolean(value));
 
-    if (
-      (directActivityId && viewer.registeredActivityIds.has(directActivityId)) ||
-      (externalActivityId && viewer.registeredActivityIds.has(externalActivityId))
-    ) {
+    if (activityIds.some((activityId) => viewer.registeredActivityIds.has(activityId))) {
       permitted.add(event.id);
+      continue;
+    }
+
+    if (activityIds.some((activityId) => viewer.excludedActivityIds.has(activityId))) {
+      permitted.delete(event.id);
     }
   }
 
