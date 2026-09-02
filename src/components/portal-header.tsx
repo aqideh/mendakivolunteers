@@ -41,6 +41,7 @@ export async function PortalHeader({ status, dashboard }: PortalHeaderProps) {
       <nav className="site-nav" aria-label="Primary navigation">
         <Link href="/opportunities">Opportunities</Link>
         <Link href="/journey">Event Guide</Link>
+        <Link href="/points">Points</Link>
         <Link href="/news">News</Link>
         {canManageEvents ? <Link href="/admin/events">Event Operations</Link> : null}
         {isSignedIn ? (
