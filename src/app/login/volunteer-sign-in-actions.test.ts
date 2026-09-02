@@ -72,14 +72,15 @@ describe("volunteer email sign-in", () => {
     ).toBe("AsyncFunction");
   });
 
-  it("sends an existing KELUARGA account a link without consulting the roster", async () => {
+  it("lets an existing non-rostered KELUARGA account request a link without creating a user", async () => {
     const result = await volunteerSignInActions.requestVolunteerSignInLink(
       { status: "idle", message: "" },
       formData(" Existing.Volunteer@Example.Test "),
     );
 
     expect(result.status).toBe("success");
-    expect(signInWithOtpMock).toHaveBeenCalledTimes(1);
+    expect(rosterMaybeSingleMock).toHaveBeenCalledOnce();
+    expect(signInWithOtpMock).toHaveBeenCalledOnce();
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "existing.volunteer@example.test",
       options: {
@@ -88,15 +89,9 @@ describe("volunteer email sign-in", () => {
           "https://mendakivolunteers.vercel.app/auth/confirm",
       },
     });
-    expect(rosterMaybeSingleMock).not.toHaveBeenCalled();
   });
 
   it("creates a passwordless KELUARGA account for a rostered email", async () => {
-    signInWithOtpMock
-      .mockResolvedValueOnce({
-        error: { code: "user_not_found", status: 400 },
-      })
-      .mockResolvedValueOnce({ error: null });
     rosterMaybeSingleMock.mockResolvedValue({
       data: { volunteer_name: "Registered Volunteer" },
       error: null,
@@ -108,8 +103,8 @@ describe("volunteer email sign-in", () => {
     );
 
     expect(result.status).toBe("success");
-    expect(signInWithOtpMock).toHaveBeenCalledTimes(2);
-    expect(signInWithOtpMock).toHaveBeenLastCalledWith({
+    expect(signInWithOtpMock).toHaveBeenCalledOnce();
+    expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "registered@example.test",
       options: {
         shouldCreateUser: true,
@@ -120,10 +115,11 @@ describe("volunteer email sign-in", () => {
     });
   });
 
-  it("does not reveal that an unknown address is not rostered", async () => {
+  it("does not create an account or reveal that an unknown address is not rostered", async () => {
     signInWithOtpMock.mockResolvedValue({
       error: { code: "user_not_found", status: 400 },
     });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const result = await volunteerSignInActions.requestVolunteerSignInLink(
       { status: "idle", message: "" },
@@ -132,7 +128,14 @@ describe("volunteer email sign-in", () => {
 
     expect(result.status).toBe("success");
     expect(result.message).toContain("If this email is linked");
-    expect(signInWithOtpMock).toHaveBeenCalledTimes(1);
+    expect(signInWithOtpMock).toHaveBeenCalledWith({
+      email: "unknown@example.test",
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo:
+          "https://mendakivolunteers.vercel.app/auth/confirm",
+      },
+    });
   });
 
   it("rejects an invalid email before calling Supabase", async () => {
@@ -148,26 +151,50 @@ describe("volunteer email sign-in", () => {
     expect(signInWithOtpMock).not.toHaveBeenCalled();
   });
 
-  it("reports a delivery failure without exposing account state", async () => {
-    signInWithOtpMock
-      .mockResolvedValueOnce({
-        error: { code: "user_not_found", status: 400 },
-      })
-      .mockResolvedValueOnce({
-        error: { code: "over_email_send_rate_limit", status: 429 },
-      });
+  it("keeps delivery failures non-disclosing while retaining them in server logs", async () => {
+    signInWithOtpMock.mockResolvedValue({
+      error: { code: "over_email_send_rate_limit", status: 429 },
+    });
     rosterMaybeSingleMock.mockResolvedValue({
       data: { volunteer_name: "Registered Volunteer" },
       error: null,
     });
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
 
     const result = await volunteerSignInActions.requestVolunteerSignInLink(
       { status: "idle", message: "" },
       formData("registered@example.test"),
     );
 
-    expect(result.status).toBe("error");
-    expect(result.message).not.toContain("registered");
+    expect(result.status).toBe("success");
+    expect(result.message).not.toContain("registered@example.test");
+    expect(consoleError).toHaveBeenCalledWith(
+      "Volunteer magic-link request was not delivered",
+      expect.objectContaining({
+        code: "over_email_send_rate_limit",
+        rosterEligible: true,
+      }),
+    );
+  });
+
+  it("reports an eligibility lookup failure without exposing roster membership", async () => {
+    rosterMaybeSingleMock.mockResolvedValue({
+      data: null,
+      error: { code: "PGRST000" },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await volunteerSignInActions.requestVolunteerSignInLink(
+      { status: "idle", message: "" },
+      formData("volunteer@example.test"),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "A sign-in link could not be sent right now. Try again shortly.",
+    });
+    expect(signInWithOtpMock).not.toHaveBeenCalled();
   });
 });
