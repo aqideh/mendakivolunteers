@@ -74,7 +74,7 @@ otp_length = 6
 otp_expiry = 3600
 
 [auth.email.template.magic_link]
-subject = "Your MENDAKI Volunteer Portal sign-in link"
+subject = "Your KELUARGA Event Guide sign-in link"
 content_path = "./supabase/templates/magic_link.html"
 
 [analytics]
