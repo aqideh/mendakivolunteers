@@ -116,6 +116,7 @@ create table gamification.point_ledger_entries (
   source_record_id text not null check (
     char_length(source_record_id) between 1 and 128
   ),
+  source_occurred_at timestamptz not null,
   source_updated_at timestamptz not null,
   source_title text not null check (char_length(source_title) between 1 and 240),
   entry_kind gamification.point_entry_kind not null,
