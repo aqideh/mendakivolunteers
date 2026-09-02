@@ -1,6 +1,6 @@
 begin;
 
-select plan(53);
+select plan(54);
 
 select has_schema('gamification', 'gamification schema exists');
 select has_table('gamification', 'point_rules', 'point rules table exists');
@@ -357,6 +357,39 @@ insert into gamification.point_rules (
   '2026-01-01T00:00:00Z',
   'active',
   now()
+);
+
+select throws_ok(
+  $$
+    insert into gamification.point_rules (
+      stable_key,
+      version,
+      name,
+      description,
+      source_kind,
+      calculation_method,
+      points_value,
+      effective_from,
+      effective_until,
+      status,
+      activated_at
+    ) values (
+      'overlapping-retired-rule',
+      1,
+      'Overlapping retired rule',
+      'This test rule overlaps the active verified-attendance period.',
+      'ymhub_verified_attendance',
+      'flat',
+      5,
+      '2026-07-01T00:00:00Z',
+      '2026-09-01T00:00:00Z',
+      'retired',
+      now()
+    )
+  $$,
+  '23514',
+  'Point rule effective periods cannot overlap',
+  'effective point-rule periods cannot overlap'
 );
 
 insert into ymhub.attendance_snapshots (
