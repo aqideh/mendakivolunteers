@@ -14,7 +14,7 @@ import {
   getVerifiedHoursForRecord,
   getYmHubSyncOutcome,
 } from "@/lib/ymhub/read-model";
-import type { Database } from "@/types/database";
+import type { AccountStatus, Database } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -56,6 +56,19 @@ function readParameter(
   return Array.isArray(value) ? value[0] : value;
 }
 
+function accountStatusLabel(status: AccountStatus): string {
+  switch (status) {
+    case "pending_link":
+      return "Profile matching in progress";
+    case "active":
+      return "Active";
+    case "suspended":
+      return "Suspended";
+    case "closed":
+      return "Closed";
+  }
+}
+
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
@@ -67,7 +80,8 @@ export default async function DashboardPage({
     redirect("/login");
   }
 
-  const [accountResult, volunteerResult, rolesResult] = await Promise.all([
+  const [userResult, accountResult, volunteerResult, rolesResult] = await Promise.all([
+    supabase.auth.getUser(),
     supabase
       .schema("core")
       .from("user_accounts")
@@ -91,11 +105,15 @@ export default async function DashboardPage({
   ]);
 
   const hasReadError = Boolean(
-    accountResult.error || volunteerResult.error || rolesResult.error,
+    userResult.error ||
+      accountResult.error ||
+      volunteerResult.error ||
+      rolesResult.error,
   );
 
   if (hasReadError) {
     console.error("Unable to load volunteer dashboard", {
+      userCode: userResult.error?.code,
       accountCode: accountResult.error?.code,
       volunteerCode: volunteerResult.error?.code,
       rolesCode: rolesResult.error?.code,
@@ -110,8 +128,9 @@ export default async function DashboardPage({
   const account = accountResult.data;
   const volunteer = volunteerResult.data;
   const roles = rolesResult.data.map(({ role }) => role);
+  const authUser = userResult.data.user;
 
-  if (!account || roles.length === 0) {
+  if (!account || !authUser || roles.length === 0) {
     throw new Error("Volunteer account invariants are incomplete");
   }
 
@@ -181,23 +200,31 @@ export default async function DashboardPage({
   const parameters = await searchParams;
   const errorCode = readParameter(parameters, "error");
   const errorMessage = errorCode ? dashboardErrors[errorCode] : undefined;
+  const displayName = account.display_name?.trim() || "Volunteer";
 
   return (
     <div className="site-shell">
-      <PortalHeader status="Authenticated volunteer view" dashboard />
+      <PortalHeader status="KELUARGA account" dashboard />
 
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
-            <p className="eyebrow">Volunteer account</p>
-            <h1>Volunteer dashboard</h1>
+            <p className="eyebrow">Your KELUARGA account</p>
+            <h1>Welcome, {displayName}</h1>
             <p className="muted">
-              Review your portal identity link and access volunteer services.
+              Use KELUARGA for Event Guides and volunteer updates. YM Hub remains
+              the official system for registration, attendance and verified hours.
             </p>
           </div>
           <div className="actions">
+            <Link className="button button-primary" href="/journey">
+              Open Event Guide
+            </Link>
+            <Link className="button button-secondary" href="/opportunities">
+              View opportunities
+            </Link>
             {canManageContent ? (
-              <Link className="button button-primary" href="/admin/content">
+              <Link className="button button-secondary" href="/admin/content">
                 Manage content
               </Link>
             ) : null}
@@ -220,77 +247,86 @@ export default async function DashboardPage({
           </div>
         ) : null}
 
-        <section className="panel" aria-labelledby="identity-title">
-          <p className="eyebrow">Identity boundary</p>
-          <h2 id="identity-title">Account and YM Hub link</h2>
+        <section className="panel" aria-labelledby="profile-title">
+          <p className="eyebrow">Profile</p>
+          <h2 id="profile-title">Your KELUARGA profile</h2>
+          <p className="muted">
+            This login is separate from YM Hub. Use the same email address in both
+            systems where possible so your records can be matched reliably.
+          </p>
           <dl className="data-list">
             <div className="data-row">
-              <dt>Supabase user ID</dt>
-              <dd>{userId}</dd>
+              <dt>Name</dt>
+              <dd>{displayName}</dd>
             </div>
             <div className="data-row">
-              <dt>Account status</dt>
+              <dt>Email</dt>
+              <dd>{authUser.email ?? "Not available"}</dd>
+            </div>
+            <div className="data-row">
+              <dt>KELUARGA account</dt>
               <dd>
                 <span className="status-pill">
-                  {account.status}
+                  {accountStatusLabel(account.status)}
                 </span>
               </dd>
             </div>
             <div className="data-row">
-              <dt>YM Hub volunteer ID</dt>
-              <dd>{volunteer?.ymhub_volunteer_id ?? "Not linked"}</dd>
+              <dt>Official volunteer profile</dt>
+              <dd>{volunteer ? "Linked to YM Hub" : "Pending next data update"}</dd>
             </div>
-            <div className="data-row">
-              <dt>YM Hub status</dt>
-              <dd>{volunteer?.ymhub_status ?? "Not available"}</dd>
-            </div>
-            <div className="data-row">
-              <dt>Application roles</dt>
-              <dd>{roles.join(", ")}</dd>
-            </div>
+            {volunteer?.last_synced_at ? (
+              <div className="data-row">
+                <dt>Profile last updated</dt>
+                <dd>{formatSingaporeDateTime(volunteer.last_synced_at)}</dd>
+              </div>
+            ) : null}
           </dl>
         </section>
 
         {!volunteer ? (
           <section className="section notice" aria-labelledby="link-title">
-            <h2 id="link-title">Volunteer identity not linked</h2>
+            <h2 id="link-title">Official profile matching is in progress</h2>
             <p>
-              A controlled linking workflow will match this authenticated account
-              to the authoritative YM Hub volunteer ID. Volunteers cannot claim an
-              ID by entering it directly.
+              You can still open Event Guides matched through the verified email
+              on an event roster. Your official registration history and verified
+              hours will appear after your YM Hub profile is linked through the
+              next approved data update.
             </p>
+            <Link className="text-link" href="/journey">
+              View your Event Guides
+            </Link>
           </section>
         ) : null}
 
         {volunteer && ymHubReadModel ? (
           <section className="section" aria-labelledby="ymhub-title">
-            <p className="eyebrow">Authoritative volunteer records</p>
+            <p className="eyebrow">Official volunteer record</p>
             <h2 id="ymhub-title">Your YM Hub activity</h2>
 
             {syncOutcome === "not_synced" ? (
               <div className="notice" role="status">
-                <h3>YM Hub data has not been synchronised</h3>
+                <h3>Official activity data has not been imported yet</h3>
                 <p>
-                  Registration and attendance records are unavailable. The portal
-                  does not show substitute data while the first authoritative sync
-                  is pending.
+                  Event Guides may still be matched through your current event
+                  roster. Registration history, verified attendance and hours will
+                  appear after the first successful YM Hub data update.
                 </p>
               </div>
             ) : null}
 
             {syncOutcome === "failed" ? (
               <div className="notice notice-error" role="alert">
-                <h3>The latest YM Hub sync failed</h3>
+                <h3>The latest YM Hub data update did not complete</h3>
                 {syncStatus?.last_successful_at ? (
                   <p>
                     Records below, where present, are from the last successful
-                    sync at {formatSingaporeDateTime(syncStatus.last_successful_at)}.
-                    No replacement records have been generated.
+                    update at {formatSingaporeDateTime(syncStatus.last_successful_at)}.
                   </p>
                 ) : (
                   <p>
-                    No authoritative sync has completed, so registration and
-                    attendance records remain unavailable.
+                    No authoritative update has completed, so official registration
+                    and attendance records remain unavailable.
                   </p>
                 )}
               </div>
@@ -326,7 +362,7 @@ export default async function DashboardPage({
                   <span className="metric-value metric-value-date">
                     {formatSingaporeDateTime(syncStatus.last_successful_at)}
                   </span>
-                  <span className="metric-label">Last successful sync</span>
+                  <span className="metric-label">Last data update</span>
                 </article>
               </div>
             ) : null}
@@ -337,15 +373,17 @@ export default async function DashboardPage({
                   <div>
                     <h3>Registrations</h3>
                     <p className="muted">
-                      Synced {formatSingaporeDateTime(syncStatus.registrations_synced_at)}
+                      Updated {formatSingaporeDateTime(syncStatus.registrations_synced_at)}
                     </p>
                   </div>
                 </div>
                 {ymHubReadModel.registrations.length === 0 ? (
-                  <p className="empty-state">
-                    YM Hub returned no registration records in the last successful
-                    registration sync.
-                  </p>
+                  <div className="panel empty-state">
+                    <p>You are not registered for any upcoming events.</p>
+                    <Link className="text-link" href="/opportunities">
+                      View volunteer opportunities
+                    </Link>
+                  </div>
                 ) : (
                   <div className="record-list">
                     {ymHubReadModel.registrations.map((registration) => (
@@ -369,7 +407,7 @@ export default async function DashboardPage({
               </div>
             ) : syncStatus ? (
               <div className="notice read-model-section" role="status">
-                Registration records have not completed an authoritative sync.
+                Registration records have not completed an authoritative data update.
               </div>
             ) : null}
 
@@ -379,14 +417,14 @@ export default async function DashboardPage({
                   <div>
                     <h3>Attendance</h3>
                     <p className="muted">
-                      Synced {formatSingaporeDateTime(syncStatus.attendance_synced_at)}
+                      Updated {formatSingaporeDateTime(syncStatus.attendance_synced_at)}
                     </p>
                   </div>
                 </div>
                 {ymHubReadModel.attendanceRecords.length === 0 ? (
                   <p className="empty-state">
-                    YM Hub returned no attendance records in the last successful
-                    attendance sync.
+                    YM Hub returned no official attendance records in the latest
+                    successful update.
                   </p>
                 ) : (
                   <div className="record-list">
@@ -417,21 +455,31 @@ export default async function DashboardPage({
               </div>
             ) : syncStatus ? (
               <div className="notice read-model-section" role="status">
-                Attendance records have not completed an authoritative sync.
+                Attendance records have not completed an authoritative data update.
               </div>
             ) : null}
           </section>
         ) : null}
 
         <section className="section" aria-labelledby="available-title">
-          <p className="eyebrow">Available modules</p>
-          <h2 id="available-title">Volunteer content</h2>
+          <p className="eyebrow">Volunteer services</p>
+          <h2 id="available-title">What you can do in KELUARGA</h2>
           <div className="card-grid">
             <article className="card">
-              <h3>Opportunity discovery</h3>
+              <h3>Event Guide</h3>
               <p className="muted">
-                Browse app-managed listings and continue to YM Hub when ready to
-                register.
+                View the briefing, reporting time, directions and event-day steps
+                for activities matched to your registration or roster.
+              </p>
+              <Link className="text-link" href="/journey">
+                Open Event Guide
+              </Link>
+            </article>
+            <article className="card">
+              <h3>Volunteer opportunities</h3>
+              <p className="muted">
+                Browse opportunities in KELUARGA, then continue to the official
+                registration portal using its separate sign-in.
               </p>
               <Link className="text-link" href="/opportunities">
                 Browse opportunities
@@ -440,73 +488,50 @@ export default async function DashboardPage({
             <article className="card">
               <h3>Volunteer news</h3>
               <p className="muted">
-                Read portal announcements managed independently of official CRM
-                records.
+                Read MENDAKI volunteer announcements and programme updates.
               </p>
               <Link className="text-link" href="/news">
                 Read news
               </Link>
             </article>
-            <article className="card">
-              <h3>Volunteer pathways</h3>
-              <p className="muted">
-                See your starting point and explore potential roles across four
-                volunteering pathways.
-              </p>
-              {canManagePathways ? (
-                <Link className="text-link" href="/admin/pathways">
-                  Manage pathway map
-                </Link>
-              ) : null}
-            </article>
-            <article className="card">
-              <h3>Native CMS</h3>
-              <p className="muted">
-                Editors prepare drafts. Publishers schedule, publish, and archive
-                content with revision history.
-              </p>
-              {canManageContent ? (
-                <Link className="text-link" href="/admin/content">
-                  Open content management
-                </Link>
-              ) : (
-                <span className="muted">Staff permission required</span>
-              )}
-            </article>
           </div>
         </section>
 
-        <section className="section" aria-labelledby="next-title">
-          <p className="eyebrow">Next delivery slices</p>
-          <h2 id="next-title">Attendance and verified rewards</h2>
-          <div className="card-grid">
-            <article className="card">
-              <h3>Attendance capture</h3>
-              <p className="muted">
-                Check-in and staff handoff records that remain distinct from
-                official YM Hub verification.
-              </p>
-            </article>
-            <article className="card">
-              <h3>Verified rewards</h3>
-              <p className="muted">
-                On-demand downstream attendance checks and idempotent points from
-                verified YM Hub records.
-              </p>
-            </article>
-            <article className="card">
-              <h3>Referrals</h3>
-              <p className="muted">
-                Random referral codes with rewards only after a referred volunteer
-                reaches a verified milestone.
-              </p>
-            </article>
-          </div>
-        </section>
+        {canManageContent || canManagePathways ? (
+          <section className="section" aria-labelledby="staff-tools-title">
+            <p className="eyebrow">Staff tools</p>
+            <h2 id="staff-tools-title">Management access</h2>
+            <div className="card-grid">
+              {canManageContent ? (
+                <article className="card">
+                  <h3>Content management</h3>
+                  <p className="muted">
+                    Prepare, review and publish opportunity and news content.
+                  </p>
+                  <Link className="text-link" href="/admin/content">
+                    Open content management
+                  </Link>
+                </article>
+              ) : null}
+              {canManagePathways ? (
+                <article className="card">
+                  <h3>Volunteer pathways</h3>
+                  <p className="muted">
+                    Edit and publish the volunteer pathway map.
+                  </p>
+                  <Link className="text-link" href="/admin/pathways">
+                    Manage pathway map
+                  </Link>
+                </article>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
       </main>
 
       <footer className="site-footer">
-        Official registration and verified attendance remain in YM Hub.
+        KELUARGA and YM Hub use separate sign-ins. Official registration and
+        verified attendance remain in YM Hub.
       </footer>
     </div>
   );
