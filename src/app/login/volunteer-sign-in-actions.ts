@@ -31,24 +31,6 @@ export async function requestVolunteerSignInLink(
   const email = parsedEmail.data.toLowerCase();
 
   try {
-    const supabase = await createClient();
-    const { appUrl } = getPublicConfig();
-    const emailRedirectTo = new URL("/auth/confirm", appUrl).toString();
-
-    // Existing KELUARGA accounts can always request a one-time sign-in link,
-    // including volunteers who currently have no upcoming assignments.
-    const existingAccountAttempt = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo,
-      },
-    });
-
-    if (!existingAccountAttempt.error) {
-      return { status: "success", message: genericSuccessMessage };
-    }
-
     const admin = getPhaseOneAdminClient();
     const { data: rosterMatch, error: rosterError } = await admin
       .from("phaseone_roster")
@@ -68,33 +50,31 @@ export async function requestVolunteerSignInLink(
       };
     }
 
-    // Keep the response indistinguishable for addresses that are not yet present
-    // in a controlled event roster. This avoids exposing registration membership.
-    if (!rosterMatch) {
-      return { status: "success", message: genericSuccessMessage };
-    }
+    const supabase = await createClient();
+    const { appUrl } = getPublicConfig();
+    const emailRedirectTo = new URL("/auth/confirm", appUrl).toString();
+    const options = rosterMatch
+      ? {
+          shouldCreateUser: true,
+          emailRedirectTo,
+          data: { full_name: rosterMatch.volunteer_name },
+        }
+      : {
+          // Existing KELUARGA users can still sign in when they have no current
+          // roster entry. Unknown addresses do not create an account.
+          shouldCreateUser: false,
+          emailRedirectTo,
+        };
+    const { error } = await supabase.auth.signInWithOtp({ email, options });
 
-    const newRosterAccountAttempt = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo,
-        data: {
-          full_name: rosterMatch.volunteer_name,
-        },
-      },
-    });
-
-    if (newRosterAccountAttempt.error) {
-      console.error("Volunteer magic-link request failed", {
-        code: newRosterAccountAttempt.error.code,
-        status: newRosterAccountAttempt.error.status,
+    // Do not expose whether the address has an existing account or roster match.
+    // Delivery and eligibility failures are retained in server logs for support.
+    if (error) {
+      console.error("Volunteer magic-link request was not delivered", {
+        code: error.code,
+        status: error.status,
+        rosterEligible: Boolean(rosterMatch),
       });
-      return {
-        status: "error",
-        message:
-          "A sign-in link could not be sent right now. Wait a minute and try again.",
-      };
     }
   } catch (error) {
     console.error("Volunteer magic-link sign-in is not configured", error);
