@@ -64,20 +64,20 @@ select ok(
   'authenticated clients cannot select briefing destinations'
 );
 select ok(
-  has_column_privilege('anon', 'public.phaseone_events', 'has_sign_in_pin', 'SELECT'),
-  'anonymous clients can select the sign-in PIN flag'
+  not has_column_privilege('anon', 'public.phaseone_events', 'has_sign_in_pin', 'SELECT'),
+  'anonymous clients cannot select the sign-in PIN flag directly'
 );
 select ok(
-  has_column_privilege('anon', 'public.phaseone_events', 'has_sign_out_pin', 'SELECT'),
-  'anonymous clients can select the sign-out PIN flag'
+  not has_column_privilege('anon', 'public.phaseone_events', 'has_sign_out_pin', 'SELECT'),
+  'anonymous clients cannot select the sign-out PIN flag directly'
 );
 select ok(
-  has_column_privilege('authenticated', 'public.phaseone_events', 'has_sign_in_pin', 'SELECT'),
-  'authenticated clients can select the sign-in PIN flag'
+  not has_column_privilege('authenticated', 'public.phaseone_events', 'has_sign_in_pin', 'SELECT'),
+  'authenticated clients cannot bypass Event Guide authorization to select the sign-in PIN flag'
 );
 select ok(
-  has_column_privilege('authenticated', 'public.phaseone_events', 'has_sign_out_pin', 'SELECT'),
-  'authenticated clients can select the sign-out PIN flag'
+  not has_column_privilege('authenticated', 'public.phaseone_events', 'has_sign_out_pin', 'SELECT'),
+  'authenticated clients cannot bypass Event Guide authorization to select the sign-out PIN flag'
 );
 
 select ok(
@@ -123,17 +123,17 @@ select ok(
 );
 
 select ok(
-  has_column_privilege('anon', 'public.phaseone_events', 'briefing_available_at', 'SELECT'),
-  'anonymous clients can select briefing release metadata'
+  not has_column_privilege('anon', 'public.phaseone_events', 'briefing_available_at', 'SELECT'),
+  'anonymous clients cannot select briefing release metadata directly'
 );
 select ok(
-  has_column_privilege(
+  not has_column_privilege(
     'authenticated',
     'public.phaseone_events',
     'briefing_available_at',
     'SELECT'
   ),
-  'authenticated clients can select briefing release metadata'
+  'authenticated clients cannot bypass Event Guide authorization to select briefing release metadata'
 );
 
 select ok(
@@ -353,5 +353,3 @@ select ok(
 
 select * from finish();
 rollback;
-
-
