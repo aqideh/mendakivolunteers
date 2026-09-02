@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { PortalHeader } from "@/components/portal-header";
+import {
+  getEventGuideViewer,
+  getPermittedEventGuideIds,
+} from "@/lib/phaseone/event-guide-access";
 import { buildDirectionsLinks } from "@/lib/phaseone/directions";
 import {
   formatTimeslotDate,
@@ -9,18 +14,45 @@ import {
   getVisibleVolunteerPackages,
   singaporeDateKey,
   type VolunteerPackage,
+  type VolunteerPackageGroups,
 } from "@/lib/phaseone/packages";
 
 import styles from "./journey.module.css";
 
 export const metadata: Metadata = {
-  title: "Your Volunteer Journey",
+  title: "Event Guide",
   description:
-    "Find schedules, directions, preparation guidance, briefings, sign-in and sign-out resources for MENDAKI volunteer events.",
+    "View schedules, directions, preparation guidance, briefings and event-day steps for MENDAKI activities you are registered for.",
   robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
+
+type JourneyPageProps = Readonly<{
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}>;
+
+function parameter(
+  values: Record<string, string | string[] | undefined>,
+  key: string,
+): string | undefined {
+  const value = values[key];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function filterGroups(
+  groups: VolunteerPackageGroups,
+  permittedEventIds: ReadonlySet<string> | null,
+): VolunteerPackageGroups {
+  if (!permittedEventIds) return groups;
+  const permitted = (volunteerEvent: VolunteerPackage) =>
+    permittedEventIds.has(volunteerEvent.id);
+  return {
+    today: groups.today.filter(permitted),
+    upcoming: groups.upcoming.filter(permitted),
+    recentlyCompleted: groups.recentlyCompleted.filter(permitted),
+  };
+}
 
 function DateBadge({ volunteerEvent }: { volunteerEvent: VolunteerPackage }) {
   const first = volunteerEvent.timeslots[0];
@@ -89,8 +121,8 @@ function EventGuideCard({ volunteerEvent }: { volunteerEvent: VolunteerPackage }
     volunteerEvent.timeslots.length === 1
       ? `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}`
       : dateCount === 1
-        ? `${volunteerEvent.timeslots.length} timeslots · ${formatTimeslotDate(first.starts_at)}`
-        : `${volunteerEvent.timeslots.length} timeslots across ${dateCount} days`;
+        ? `${volunteerEvent.timeslots.length} shifts · ${formatTimeslotDate(first.starts_at)}`
+        : `${volunteerEvent.timeslots.length} shifts across ${dateCount} days`;
 
   return (
     <article className={styles.card}>
@@ -125,75 +157,115 @@ function EventGuideCard({ volunteerEvent }: { volunteerEvent: VolunteerPackage }
           className={`button button-primary ${styles.cta}`}
           href={`/journey/${volunteerEvent.slug}`}
         >
-          View event guide
+          Open Event Guide
         </Link>
       </div>
     </article>
   );
 }
 
-function JourneySection({
+function EventGuideSection({
   title,
   events,
-  emptyMessage,
 }: {
   title: string;
   events: VolunteerPackage[];
-  emptyMessage: string;
 }) {
+  if (events.length === 0) return null;
   const id = `${title.toLowerCase().replaceAll(" ", "-")}-title`;
   return (
     <section className="section" aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
-      {events.length > 0 ? (
-        <div className={styles.list}>
-          {events.map((volunteerEvent) => (
-            <EventGuideCard key={volunteerEvent.id} volunteerEvent={volunteerEvent} />
-          ))}
-        </div>
-      ) : (
-        <div className="panel empty-state phaseone-empty-state">
-          <p className="muted">{emptyMessage}</p>
-        </div>
-      )}
+      <div className={styles.list}>
+        {events.map((volunteerEvent) => (
+          <EventGuideCard key={volunteerEvent.id} volunteerEvent={volunteerEvent} />
+        ))}
+      </div>
     </section>
   );
 }
 
-export default async function JourneyPage() {
-  const events = await getVisibleVolunteerPackages();
+export default async function JourneyPage({ searchParams }: JourneyPageProps) {
+  const viewerResult = await getEventGuideViewer();
+  if (viewerResult.state === "signed_out") {
+    redirect(`/login?next=${encodeURIComponent("/journey")}`);
+  }
+  if (viewerResult.state === "inactive") {
+    redirect("/login?error=account_inactive");
+  }
+  if (viewerResult.state === "unavailable") {
+    throw new Error("Event Guide access could not be verified");
+  }
+
+  const [allEvents, permittedEventIds] = await Promise.all([
+    getVisibleVolunteerPackages(),
+    getPermittedEventGuideIds(viewerResult.viewer),
+  ]);
+  const events = filterGroups(allEvents, permittedEventIds);
+  const hasCurrentRegistration = events.today.length > 0 || events.upcoming.length > 0;
+  const parameters = await searchParams;
+  const error = parameter(parameters, "error");
 
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Your Volunteer Journey" lite />
+      <PortalHeader status="Event Guide" dashboard />
       <main className="phaseone-frame">
         <section className="phaseone-intro">
-          <p className="eyebrow">Before, during and after volunteering</p>
-          <h1>Your Volunteer Journey.</h1>
+          <p className="eyebrow">For activities you are registered for</p>
+          <h1>Your Event Guides.</h1>
           <p className="lede">
-            Find the schedule, briefing, directions and event-day steps for MENDAKI
-            volunteer activities.
+            Find your reporting time, briefing, directions and event-day steps.
+            KELUARGA and YM Hub use separate sign-ins, and registration updates may
+            appear after the next data update.
           </p>
         </section>
 
-        <JourneySection
-          title="Today"
-          events={events.today}
-          emptyMessage="There are no volunteer events scheduled for today."
-        />
-        <JourneySection
-          title="Upcoming"
-          events={events.upcoming}
-          emptyMessage="There are no upcoming volunteer events."
-        />
-        <JourneySection
+        {viewerResult.viewer.isStaffPreview ? (
+          <div className="notice" role="status">
+            <strong>Staff preview.</strong> You can see all published Event Guides.
+            Volunteers see only guides matched to their registration or event roster.
+          </div>
+        ) : null}
+
+        {error === "not_registered" ? (
+          <div className="notice notice-error" role="alert">
+            That Event Guide is not available to this KELUARGA account. Sign in with
+            the same email address used for the event registration, or contact the
+            volunteer team if the registration was recent.
+          </div>
+        ) : null}
+
+        {!viewerResult.viewer.isStaffPreview &&
+        viewerResult.viewer.registrationSyncOutcome === "failed" ? (
+          <div className="notice notice-error" role="status">
+            The latest YM Hub registration update did not complete. Event roster
+            matches are still shown while the data issue is being resolved.
+          </div>
+        ) : null}
+
+        {!hasCurrentRegistration ? (
+          <section className="panel empty-state phaseone-empty-state" aria-labelledby="no-events-title">
+            <h2 id="no-events-title">No upcoming Event Guides</h2>
+            <p>
+              You are not registered for any upcoming events. Check out our
+              available volunteer opportunities.
+            </p>
+            <Link className="button button-primary" href="/opportunities">
+              View volunteer opportunities
+            </Link>
+          </section>
+        ) : null}
+
+        <EventGuideSection title="Today" events={events.today} />
+        <EventGuideSection title="Upcoming" events={events.upcoming} />
+        <EventGuideSection
           title="Recently completed"
           events={events.recentlyCompleted}
-          emptyMessage="There are no recently completed volunteer events."
         />
       </main>
       <footer className="site-footer">
-        Event guides are prepared and published by the MENDAKI event team.
+        Registration is managed in YM Hub. KELUARGA shows the latest available
+        registration and event-roster information.
       </footer>
     </div>
   );
