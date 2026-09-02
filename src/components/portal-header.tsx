@@ -40,10 +40,14 @@ export async function PortalHeader({ status, dashboard }: PortalHeaderProps) {
       <BrandLockup href="/" priority />
       <nav className="site-nav" aria-label="Primary navigation">
         <Link href="/opportunities">Opportunities</Link>
-        <Link href="/journey">My Journey</Link>
+        <Link href="/journey">Event Guide</Link>
         <Link href="/news">News</Link>
         {canManageEvents ? <Link href="/admin/events">Event Operations</Link> : null}
-        {isSignedIn ? <Link href="/dashboard">Dashboard</Link> : null}
+        {isSignedIn ? (
+          <Link href="/dashboard">Dashboard</Link>
+        ) : (
+          <Link href="/login">Sign in</Link>
+        )}
       </nav>
       {status ? <p className="header-status">{status}</p> : null}
     </header>
