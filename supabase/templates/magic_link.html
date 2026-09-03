@@ -2,13 +2,20 @@
 <html lang="en">
   <body>
     <h2>Sign in to KELUARGA</h2>
-    <p>Use the one-time link below to open your MENDAKI volunteer Event Guides.</p>
     <p>
-      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/journey">
-        Open KELUARGA Event Guide
+      Use the one-time link below to open your KELUARGA account, including your
+      Event Guides, official activity information and points when available.
+    </p>
+    <p>
+      <a href="{{ .RedirectTo }}&amp;token_hash={{ .TokenHash }}&amp;type=email">
+        Open KELUARGA
       </a>
     </p>
-    <p>This is your KELUARGA sign-in. YM Hub uses a separate sign-in.</p>
+    <p>
+      The link signs your browser into KELUARGA. You will not need another email
+      on every visit while your browser session remains active.
+    </p>
+    <p>KELUARGA and the official registration portal use separate sign-ins.</p>
     <p>If you did not request this link, you can ignore this email.</p>
   </body>
 </html>

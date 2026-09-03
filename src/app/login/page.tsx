@@ -54,9 +54,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p className="eyebrow">Your KELUARGA account</p>
           <h1 id="sign-in-title">Sign in</h1>
           <p className="muted">
-            KELUARGA and YM Hub use separate sign-ins. For KELUARGA, volunteers
-            can use a one-time email link instead of remembering another password.
+            Opportunities and news remain available without signing in. Sign in
+            only when you need personal Event Guides, upcoming registrations,
+            official activity records or points.
           </p>
+
+          {initialError ? (
+            <div className="notice notice-error" role="alert">
+              {initialError}
+            </div>
+          ) : null}
 
           {passwordReset === "success" ? (
             <div className="notice notice-success" role="status">
@@ -67,10 +74,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <section aria-labelledby="volunteer-sign-in-title">
             <h2 id="volunteer-sign-in-title">Volunteer email sign-in</h2>
             <p className="muted">
-              Use the same email address you used when registering for the event.
-              The link will take you to your Event Guides.
+              The one-time email link signs this browser into your KELUARGA
+              account. You remain signed in until the session ends, you clear the
+              browser data, or you sign out; a new email is not required for every
+              visit.
             </p>
-            <VolunteerSignInForm />
+            <VolunteerSignInForm nextPath={nextPath} />
           </section>
 
           <details className="phaseone-disclosure">
@@ -79,14 +88,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <p className="muted">
                 Staff and existing password users can sign in below.
               </p>
-              <LoginForm nextPath={nextPath} initialError={initialError} />
+              <LoginForm nextPath={nextPath} initialError={undefined} />
             </div>
           </details>
 
           <p className="muted">
-            Not registered for an activity?{" "}
+            Prefer to continue without signing in?{" "}
             <Link className="text-link" href="/opportunities">
-              View volunteer opportunities
+              Browse volunteer opportunities
             </Link>
             .
           </p>
