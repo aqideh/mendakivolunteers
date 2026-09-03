@@ -11,28 +11,53 @@
   padding: clamp(1.5rem, 5vw, 4.5rem);
   color: #ffffff;
   background:
-    radial-gradient(circle at 82% 14%, rgba(255, 211, 75, 0.28), transparent 22rem),
-    radial-gradient(circle at 18% 95%, rgba(255, 255, 255, 0.12), transparent 18rem),
-    linear-gradient(135deg, #0d4c86, #0a315c 72%);
+    radial-gradient(circle at 82% 14%, rgba(255, 211, 75, 0.3), transparent 22rem),
+    radial-gradient(circle at 18% 95%, rgba(255, 255, 255, 0.14), transparent 18rem),
+    linear-gradient(135deg, #0d4c86, #0a315c 62%, #0f6b70);
+  background-size: 125% 125%;
   box-shadow: 0 24px 60px rgba(20, 43, 56, 0.2);
+  animation:
+    heroReveal 720ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    heroGradient 14s ease-in-out 900ms infinite alternate;
+}
+
+.hero::before,
+.hero::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.hero::before {
+  top: -4rem;
+  left: 42%;
+  width: 9rem;
+  height: 9rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  animation: orbitFloat 8s ease-in-out infinite;
 }
 
 .hero::after {
-  position: absolute;
   right: -5rem;
   bottom: -7rem;
   width: 18rem;
   height: 18rem;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 4rem;
-  content: "";
   transform: rotate(18deg);
+  animation: shapeDrift 10s ease-in-out infinite alternate;
 }
 
 .heroCopy,
 .outcomePanel {
   position: relative;
   z-index: 1;
+}
+
+.heroCopy {
+  animation: copyEnter 620ms cubic-bezier(0.22, 1, 0.36, 1) 100ms both;
 }
 
 .eyebrow {
@@ -52,7 +77,9 @@
   height: 0.65rem;
   border-radius: 0.2rem;
   background: #ffd34b;
+  box-shadow: 0 0 0 0 rgba(255, 211, 75, 0.45);
   content: "";
+  animation: eyebrowPulse 2.6s ease-out infinite;
 }
 
 .heroCopy h1 {
@@ -65,6 +92,10 @@
 
 .heroCopy h1 span {
   display: block;
+}
+
+.heroCopy h1 span:last-child {
+  color: #d9f7ee;
 }
 
 .lede {
@@ -84,8 +115,13 @@
 .actions :global(.button-secondary) {
   border-color: rgba(255, 255, 255, 0.58);
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
+}
+
+.actions :global(.button-secondary:hover) {
+  border-color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .opportunityStat {
@@ -97,13 +133,23 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 1rem;
   padding: 0.85rem 1rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 220ms ease;
+}
+
+.opportunityStat:hover {
+  background: rgba(255, 255, 255, 0.13);
+  transform: translateY(-3px) rotate(-0.5deg);
 }
 
 .opportunityStat strong {
   min-width: 2ch;
   font-size: clamp(2.2rem, 6vw, 3.5rem);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
@@ -119,7 +165,9 @@
   border-radius: 1.35rem;
   padding: clamp(1rem, 3vw, 1.4rem);
   background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(14px);
+  animation: panelEnter 660ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both;
 }
 
 .outcomeKicker {
@@ -148,6 +196,35 @@
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 12px 24px rgba(5, 30, 56, 0.12);
   font-weight: 820;
+  animation: pillEnter 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease;
+}
+
+.outcomePill:nth-child(1) {
+  animation-delay: 330ms;
+}
+
+.outcomePill:nth-child(2) {
+  animation-delay: 390ms;
+}
+
+.outcomePill:nth-child(3) {
+  animation-delay: 450ms;
+}
+
+.outcomePill:nth-child(4) {
+  animation-delay: 510ms;
+}
+
+.outcomePill:hover {
+  box-shadow: 0 16px 30px rgba(5, 30, 56, 0.18);
+  transform: translateX(-5px);
+}
+
+.outcomePill:hover .outcomeEmoji {
+  transform: rotate(-8deg) scale(1.12);
 }
 
 .outcomeEmoji {
@@ -159,6 +236,7 @@
   border-radius: 999px;
   background: #edf5fb;
   font-size: 1.15rem;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .path {
@@ -184,6 +262,27 @@
   gap: 1rem;
   border-bottom: 1px solid var(--border);
   padding: 1.15rem 0;
+  animation: pathEnter 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    padding 200ms ease,
+    background-color 200ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pathStep:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.pathStep:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.pathStep:hover {
+  border-radius: 0.8rem;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+  background: rgba(230, 244, 239, 0.52);
+  transform: translateX(4px);
 }
 
 .pathNumber {
@@ -220,10 +319,115 @@
   }
 }
 
+@keyframes heroReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes heroGradient {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes copyEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes panelEnter {
+  from {
+    opacity: 0;
+    transform: translateX(22px) rotate(1deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(0);
+  }
+}
+
+@keyframes pillEnter {
+  from {
+    opacity: 0;
+    transform: translateX(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes pathEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes orbitFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(1.5rem, 1rem, 0) scale(1.08);
+  }
+}
+
+@keyframes shapeDrift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(18deg);
+  }
+  to {
+    transform: translate3d(-1.5rem, -1rem, 0) rotate(26deg);
+  }
+}
+
+@keyframes eyebrowPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 211, 75, 0.42);
+  }
+  65%,
+  100% {
+    box-shadow: 0 0 0 0.55rem rgba(255, 211, 75, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero,
+  .hero::before,
+  .hero::after,
+  .heroCopy,
+  .outcomePanel,
   .outcomePill,
-  .opportunityStat {
-    scroll-behavior: auto;
+  .pathStep,
+  .eyebrow::before {
+    animation: none;
+  }
+
+  .outcomePill:hover,
+  .outcomePill:hover .outcomeEmoji,
+  .opportunityStat:hover,
+  .pathStep:hover {
+    transform: none;
   }
 }

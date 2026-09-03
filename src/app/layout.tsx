@@ -5,6 +5,7 @@ import "./content.css";
 import "./phaseone.css";
 import "./checkin.css";
 import "./opportunity-image.css";
+import "./motion.css";
 
 export const metadata: Metadata = {
   title: {
