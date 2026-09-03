@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { BrandLockup } from "@/components/brand-lockup";
+import { PortalNav } from "@/components/portal-nav";
 import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,18 +39,10 @@ export async function PortalHeader({
   return (
     <header className="site-header portal-header">
       <BrandLockup href="/" priority />
-      <nav className="site-nav" aria-label="Primary navigation">
-        <Link href="/opportunities">Opportunities</Link>
-        <Link href="/journey">Event Guide</Link>
-        <Link href="/points">Points</Link>
-        <Link href="/news">News</Link>
-        {canManageEvents ? <Link href="/admin/events">Event Operations</Link> : null}
-        {isSignedIn ? (
-          <Link href="/dashboard">Dashboard</Link>
-        ) : (
-          <Link href="/login">Sign in</Link>
-        )}
-      </nav>
+      <PortalNav
+        canManageEvents={canManageEvents}
+        isSignedIn={isSignedIn}
+      />
       {!lite ? <p className="header-status">{status}</p> : null}
     </header>
   );
