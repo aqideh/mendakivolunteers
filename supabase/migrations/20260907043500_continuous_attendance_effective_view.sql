@@ -7,8 +7,25 @@ select
   roster.event_id,
   roster.id as roster_id,
   attendance.id,
-  coalesce(attendance.signed_in_at, session.checked_in_at) as signed_in_at,
-  coalesce(attendance.signed_out_at, session.checked_out_at) as signed_out_at,
+  coalesce(
+    attendance.signed_in_at,
+    case
+      when session.id is not null
+        and (session.checked_out_at is null or session.checked_out_at >= timeslot.starts_at)
+        then session.checked_in_at
+      else null
+    end
+  ) as signed_in_at,
+  coalesce(
+    attendance.signed_out_at,
+    case
+      when session.id is not null
+        and session.checked_out_at is not null
+        and session.checked_out_at >= timeslot.starts_at
+        then session.checked_out_at
+      else null
+    end
+  ) as signed_out_at,
   attendance.non_attendance_status,
   attendance.non_attendance_marked_at,
   greatest(
@@ -21,6 +38,8 @@ select
   session.checked_out_at as session_checked_out_at,
   linked.continuation_type
 from public.phaseone_roster roster
+join public.phaseone_event_timeslots timeslot
+  on timeslot.id = roster.timeslot_id
 left join public.phaseone_attendance attendance
   on attendance.event_id = roster.event_id
   and attendance.roster_id = roster.id
@@ -43,6 +62,6 @@ revoke all on public.phaseone_attendance_effective from anon, authenticated;
 grant select on public.phaseone_attendance_effective to service_role;
 
 comment on view public.phaseone_attendance_effective is
-  'Server-only operational read model. Carries an open event-day attendance session across linked shift roster rows without writing synthetic check-in records.';
+  'Server-only operational read model. Carries an event-day attendance session across linked shifts while leaving later shifts unattended when the volunteer checked out before that shift began.';
 
 commit;
