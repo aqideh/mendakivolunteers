@@ -151,6 +151,24 @@ export default async function ContentAdminPage({
           </div>
         </div>
 
+        <nav className={styles.sectionIndex} aria-label="Content sections">
+          {canManageJourneys ? (
+            <a className={styles.sectionLink} href="#event-guides">
+              <span>Event guides</span>
+              <span className={styles.sectionCount}>{journeys.length}</span>
+            </a>
+          ) : null}
+          <a className={styles.sectionLink} href="#opportunities">
+            <span>Opportunities</span>
+            <span className={styles.sectionCount}>{opportunities.length}</span>
+            <span className={styles.sectionStatus}>Read-only</span>
+          </a>
+          <a className={styles.sectionLink} href="#news-posts">
+            <span>News posts</span>
+            <span className={styles.sectionCount}>{newsPosts.length}</span>
+          </a>
+        </nav>
+
         {successMessage ? (
           <div className="notice notice-success" role="status">
             {successMessage}
@@ -163,15 +181,21 @@ export default async function ContentAdminPage({
         ) : null}
 
         {canManageJourneys ? (
-          <section className={`section ${styles.section}`} aria-labelledby="journeys-title">
-            <div className="section-header">
+          <section
+            id="event-guides"
+            className={`section ${styles.section}`}
+            aria-labelledby="journeys-title"
+          >
+            <div className={`section-header ${styles.sectionHeader}`}>
               <div>
-                <p className="eyebrow">Volunteer operations</p>
                 <h2 id="journeys-title">Event guides</h2>
+                <p className={styles.sectionMeta}>
+                  {journeys.length} current · {pastJourneys.length} past
+                </p>
               </div>
               <div className="actions">
                 <Link className="text-link" href="/admin/events/past">
-                  Past events ({pastJourneys.length})
+                  Past events
                 </Link>
                 <Link className="text-link" href="/journey">
                   View public journeys
@@ -253,18 +277,21 @@ export default async function ContentAdminPage({
           </section>
         ) : null}
 
-        <section className={`section ${styles.section}`} aria-labelledby="opportunities-title">
-          <div className="section-header">
+        <section
+          id="opportunities"
+          className={`section ${styles.section}`}
+          aria-labelledby="opportunities-title"
+        >
+          <div className={`section-header ${styles.sectionHeader}`}>
             <div>
-              <p className="eyebrow">Read-only listings</p>
               <h2 id="opportunities-title">Opportunities</h2>
+              <p className={styles.sectionMeta}>
+                {opportunities.length} listings · Read-only
+              </p>
             </div>
             <Link className="text-link" href="/opportunities">
               View public listings
             </Link>
-          </div>
-          <div className="notice" role="status">
-            Opportunity creation and editing are temporarily paused.
           </div>
           <div className="table-wrap">
             <table className="content-table">
@@ -302,11 +329,17 @@ export default async function ContentAdminPage({
           </div>
         </section>
 
-        <section className={`section ${styles.section}`} aria-labelledby="news-title">
-          <div className="section-header">
+        <section
+          id="news-posts"
+          className={`section ${styles.section}`}
+          aria-labelledby="news-title"
+        >
+          <div className={`section-header ${styles.sectionHeader}`}>
             <div>
-              <p className="eyebrow">News feed</p>
               <h2 id="news-title">News posts</h2>
+              <p className={styles.sectionMeta}>
+                {newsPosts.length} posts · {access.canPublish ? "Publisher access" : "Editor access"}
+              </p>
             </div>
             <Link className="text-link" href="/news">
               View public news
@@ -357,22 +390,6 @@ export default async function ContentAdminPage({
               </tbody>
             </table>
           </div>
-        </section>
-
-        <section
-          className={`section panel ${styles.section}`}
-          aria-labelledby="workflow-title"
-        >
-          <p className="eyebrow">Publishing control</p>
-          <h2 id="workflow-title">Role-based workflow</h2>
-          <p>
-            Event-guide access is limited to attendance managers and administrators.
-            News editors can create drafts, while publishers and administrators can
-            schedule and publish posts.
-          </p>
-          <p className="muted">
-            Current news access: {access.canPublish ? "Publisher" : "Editor"}
-          </p>
         </section>
       </main>
       <footer className="site-footer">MENDAKI Volunteer Portal CMS</footer>
