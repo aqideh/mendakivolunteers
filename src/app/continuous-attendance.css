@@ -57,6 +57,10 @@
   white-space: nowrap;
 }
 
+.phaseone-checkin-card[data-status="pending"] .phaseone-continuation-badge {
+  display: none;
+}
+
 .phaseone-continuous-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
