@@ -6,6 +6,7 @@ import { useFormStatus } from "react-dom";
 
 import {
   checkoutAllCurrentParticipants,
+  extendAttendanceToShift,
   recordAttendanceQuickAction,
 } from "@/app/admin/events/[id]/attendance/actions";
 
@@ -27,6 +28,14 @@ type BulkCheckoutButtonProps = {
   eventId: string;
   timeslotId: string;
   checkedInCount: number;
+};
+
+type ExtendAttendanceButtonProps = {
+  eventId: string;
+  rosterId: string;
+  currentTimeslotId: string;
+  targetTimeslotId: string;
+  targetLabel: string;
 };
 
 const labels: Record<AttendanceQuickAction, { idle: string; pending: string; success: string; message: string }> = {
@@ -125,6 +134,71 @@ export function QuickAttendanceButton({
   );
 }
 
+export function ExtendAttendanceButton({
+  eventId,
+  rosterId,
+  currentTimeslotId,
+  targetTimeslotId,
+  targetLabel,
+}: ExtendAttendanceButtonProps) {
+  const router = useRouter();
+  const [isSaving, startSaving] = useTransition();
+  const [, startRefresh] = useTransition();
+  const [outcome, setOutcome] = useState<"idle" | "success" | "error">("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  function submit() {
+    if (isSaving || outcome === "success") return;
+
+    setOutcome("idle");
+    setMessage(null);
+    startSaving(async () => {
+      const result = await extendAttendanceToShift({
+        eventId,
+        sourceRosterId: rosterId,
+        targetTimeslotId,
+        currentTimeslotId,
+      });
+
+      if (!result.ok) {
+        setOutcome("error");
+        setMessage(result.error);
+        return;
+      }
+
+      setOutcome("success");
+      setMessage(
+        result.status === "already_scheduled"
+          ? `Already scheduled for ${targetLabel}. Continuous attendance is active.`
+          : `Extended into ${targetLabel}. No second check-in is needed.`,
+      );
+      startRefresh(() => router.refresh());
+    });
+  }
+
+  return (
+    <div className="phaseone-quick-action-wrap phaseone-extension-action">
+      <button
+        aria-busy={isSaving}
+        className="button button-secondary phaseone-checkin-action"
+        disabled={isSaving || outcome === "success"}
+        onClick={submit}
+        type="button"
+      >
+        {isSaving ? `Extending to ${targetLabel}…` : outcome === "success" ? `Continuing to ${targetLabel} ✓` : `Extend to ${targetLabel}`}
+      </button>
+      {message ? (
+        <p
+          className={outcome === "error" ? "phaseone-inline-action-error" : "phaseone-inline-action-success"}
+          role={outcome === "error" ? "alert" : "status"}
+        >
+          {message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function BulkCheckoutButton({
   eventId,
   timeslotId,
@@ -140,7 +214,7 @@ export function BulkCheckoutButton({
     if (isSaving || checkedInCount === 0) return;
 
     const confirmed = window.confirm(
-      `Check out all ${checkedInCount} currently checked-in volunteer${checkedInCount === 1 ? "" : "s"} for this shift?`,
+      `Check out all ${checkedInCount} currently checked-in volunteer${checkedInCount === 1 ? "" : "s"} for this shift? Continuous volunteers will be checked out of their whole event-day session.`,
     );
     if (!confirmed) return;
 
