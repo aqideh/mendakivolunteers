@@ -17,6 +17,7 @@ import {
   sortTimeslots,
   type VolunteerTimeslot,
 } from "@/lib/phaseone/packages";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = {
   title: "Content management",
@@ -129,17 +130,16 @@ export default async function ContentAdminPage({
   return (
     <div className="site-shell">
       <PortalHeader status="Content management" dashboard />
-      <main className="page-frame">
-        <div className="dashboard-header">
-          <div>
-            <p className="eyebrow">Native CMS</p>
+      <main className={`page-frame ${styles.page}`}>
+        <div className={`dashboard-header ${styles.header}`}>
+          <div className={styles.headerCopy}>
             <h1>Manage volunteer content</h1>
-            <p className="muted">
+            <p className={`muted ${styles.description}`}>
               Manage event guides and news here. Opportunity listings remain visible,
               but creation and editing are temporarily paused.
             </p>
           </div>
-          <div className="actions">
+          <div className={`actions ${styles.actions}`}>
             {canManageJourneys ? (
               <Link className="button button-primary" href="/admin/events/new">
                 New event guide
@@ -163,7 +163,7 @@ export default async function ContentAdminPage({
         ) : null}
 
         {canManageJourneys ? (
-          <section className="section" aria-labelledby="journeys-title">
+          <section className={`section ${styles.section}`} aria-labelledby="journeys-title">
             <div className="section-header">
               <div>
                 <p className="eyebrow">Volunteer operations</p>
@@ -253,7 +253,7 @@ export default async function ContentAdminPage({
           </section>
         ) : null}
 
-        <section className="section" aria-labelledby="opportunities-title">
+        <section className={`section ${styles.section}`} aria-labelledby="opportunities-title">
           <div className="section-header">
             <div>
               <p className="eyebrow">Read-only listings</p>
@@ -302,7 +302,7 @@ export default async function ContentAdminPage({
           </div>
         </section>
 
-        <section className="section" aria-labelledby="news-title">
+        <section className={`section ${styles.section}`} aria-labelledby="news-title">
           <div className="section-header">
             <div>
               <p className="eyebrow">News feed</p>
@@ -359,7 +359,10 @@ export default async function ContentAdminPage({
           </div>
         </section>
 
-        <section className="section panel" aria-labelledby="workflow-title">
+        <section
+          className={`section panel ${styles.section}`}
+          aria-labelledby="workflow-title"
+        >
           <p className="eyebrow">Publishing control</p>
           <h2 id="workflow-title">Role-based workflow</h2>
           <p>
