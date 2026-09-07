@@ -4,6 +4,7 @@ import "./globals.css";
 import "./content.css";
 import "./phaseone.css";
 import "./checkin.css";
+import "./admin-events.css";
 import "./opportunity-image.css";
 import "./motion.css";
 

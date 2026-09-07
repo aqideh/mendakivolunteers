@@ -1,0 +1,181 @@
+.phaseone-events-mobile-list {
+  display: none;
+}
+
+@media (max-width: 759px) {
+  .phaseone-events-admin-page {
+    width: min(100% - 1rem, 44rem);
+    padding-top: 0.8rem;
+    padding-bottom: 2rem;
+  }
+
+  .phaseone-events-admin-header {
+    gap: 0.55rem;
+    margin-bottom: 0.7rem;
+    padding: 0.85rem;
+  }
+
+  .phaseone-events-admin-header .eyebrow {
+    margin-bottom: 0.28rem;
+    font-size: 0.66rem;
+  }
+
+  .phaseone-events-admin-header h1 {
+    margin-bottom: 0.18rem;
+    font-size: 1.55rem;
+    line-height: 1.02;
+  }
+
+  .phaseone-events-admin-description {
+    margin-bottom: 0;
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .phaseone-events-admin-top-actions {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  .phaseone-events-admin-top-actions .button {
+    min-height: 2.2rem;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.1;
+  }
+
+  .phaseone-events-desktop-table {
+    display: none;
+  }
+
+  .phaseone-events-mobile-list {
+    display: grid;
+    gap: 0.48rem;
+  }
+
+  .phaseone-events-mobile-card {
+    border: 1px solid var(--border-soft, var(--border));
+    border-radius: 0.75rem;
+    padding: 0.7rem;
+    background: var(--surface-raised, var(--surface));
+    box-shadow: 0 6px 18px rgb(20 43 56 / 8%);
+  }
+
+  .phaseone-events-mobile-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: start;
+  }
+
+  .phaseone-events-mobile-heading h2 {
+    margin-bottom: 0.16rem;
+    font-size: 0.98rem;
+    line-height: 1.13;
+    letter-spacing: -0.015em;
+  }
+
+  .phaseone-events-mobile-heading .status-pill {
+    padding: 0.22rem 0.4rem;
+    font-size: 0.63rem;
+    line-height: 1.15;
+  }
+
+  .phaseone-events-mobile-schedule {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.73rem;
+    line-height: 1.25;
+  }
+
+  .phaseone-events-mobile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.48rem;
+  }
+
+  .phaseone-events-mobile-meta span {
+    border-radius: 999px;
+    padding: 0.18rem 0.38rem;
+    background: var(--surface-subtle);
+    color: var(--muted);
+    font-size: 0.64rem;
+    font-weight: 750;
+  }
+
+  .phaseone-events-mobile-meta span[data-ready="true"] {
+    background: var(--accent-soft);
+    color: #0c6651;
+  }
+
+  .phaseone-events-mobile-meta span[data-ready="false"] {
+    background: var(--warning-soft);
+    color: #745400;
+  }
+
+  .phaseone-events-mobile-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.72fr) 2.35rem;
+    gap: 0.34rem;
+    margin-top: 0.55rem;
+    align-items: stretch;
+  }
+
+  .phaseone-events-mobile-actions .button {
+    min-height: 2.25rem;
+    padding: 0.38rem 0.45rem;
+    border-radius: 0.55rem;
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .phaseone-events-mobile-more {
+    position: relative;
+  }
+
+  .phaseone-events-mobile-more > summary {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-height: 2.25rem;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 0.55rem;
+    background: #ffffff;
+    color: var(--brand);
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+  }
+
+  .phaseone-events-mobile-more > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .phaseone-events-mobile-more-menu {
+    position: absolute;
+    right: 0;
+    z-index: 70;
+    display: grid;
+    min-width: 11.5rem;
+    gap: 0.65rem;
+    margin-top: 0.35rem;
+    padding: 0.72rem;
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+    background: #ffffff;
+    box-shadow: 0 12px 30px rgb(20 43 56 / 20%);
+  }
+
+  .phaseone-events-mobile-more-menu .text-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-size: 0.76rem;
+  }
+}
