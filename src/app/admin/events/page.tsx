@@ -31,6 +31,48 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
   return Array.isArray(value) ? value[0] : value;
 }
 
+function eventSchedule(event: AdminEventSummary) {
+  const first = getAdminEventFirstScheduledTimeslot(event);
+  if (!first) return "Schedule not set";
+
+  return `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}`;
+}
+
+function MobileEventActions({ event }: Readonly<{ event: AdminEventSummary }>) {
+  return (
+    <div className="phaseone-events-mobile-actions">
+      <Link
+        className="button button-primary phaseone-events-mobile-roster"
+        href={`/admin/events/${event.id}/attendance`}
+      >
+        Roster / check-in
+      </Link>
+      <Link
+        className="button button-secondary phaseone-events-mobile-edit"
+        href={`/admin/events/${event.id}/edit`}
+      >
+        Edit
+      </Link>
+      <details className="phaseone-events-mobile-more">
+        <summary aria-label={`More actions for ${event.title}`}>•••</summary>
+        <div className="phaseone-events-mobile-more-menu">
+          <form action={duplicateEvent}>
+            <input type="hidden" name="eventId" value={event.id} />
+            <button className="text-link button-reset" type="submit">
+              Duplicate event guide
+            </button>
+          </form>
+          {event.is_published ? (
+            <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">
+              View event guide ↗
+            </Link>
+          ) : null}
+        </div>
+      </details>
+    </div>
+  );
+}
+
 export default async function EventsAdminPage({ searchParams }: PageProps) {
   await requireEventManager();
   const admin = getPhaseOneAdminClient();
@@ -75,24 +117,57 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
   return (
     <div className="site-shell">
       <PortalHeader status="Event operations" dashboard />
-      <main className="page-frame">
-        <div className="dashboard-header">
+      <main className="page-frame phaseone-events-admin-page">
+        <div className="dashboard-header phaseone-events-admin-header">
           <div>
-            <p className="eyebrow">Phase-one operations</p>
-            <h1>Manage event guides</h1>
-            <p className="muted">Configure schedules, briefing release, attendance links, separate PINs and volunteer rosters.</p>
+            <p className="eyebrow">Staff event operations</p>
+            <h1>Event guides</h1>
+            <p className="muted phaseone-events-admin-description">
+              Schedules, rosters, check-in and event-guide settings.
+            </p>
           </div>
-          <div className="actions">
+          <div className="actions phaseone-events-admin-top-actions">
             <Link className="button button-secondary" href="/admin/events/past">
-              Past events ({past.length})
+              Past ({past.length})
             </Link>
-            <Link className="button button-primary" href="/admin/events/new">New event guide</Link>
+            <Link className="button button-primary" href="/admin/events/new">
+              + New event
+            </Link>
           </div>
         </div>
 
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
-        <div className="table-wrap">
+        <section className="phaseone-events-mobile-list" aria-label="Current event guides">
+          {events.map((event) => {
+            const listingStatus = getPackageListingStatus(event.timeslots, event.is_published);
+            const pinReady = event.has_sign_in_pin && event.has_sign_out_pin;
+
+            return (
+              <article className="phaseone-events-mobile-card" key={event.id}>
+                <div className="phaseone-events-mobile-heading">
+                  <div>
+                    <h2>{event.title}</h2>
+                    <p className="phaseone-events-mobile-schedule">{eventSchedule(event)}</p>
+                  </div>
+                  <span className="status-pill">{listingStatus}</span>
+                </div>
+
+                <div className="phaseone-events-mobile-meta">
+                  {event.timeslots.length > 1 ? <span>{event.timeslots.length} shifts</span> : null}
+                  <span data-ready={pinReady}>{pinReady ? "PINs ready" : "PIN setup needed"}</span>
+                </div>
+
+                <MobileEventActions event={event} />
+              </article>
+            );
+          })}
+          {events.length === 0 ? (
+            <div className="panel empty-state">No current or recent event guides.</div>
+          ) : null}
+        </section>
+
+        <div className="table-wrap phaseone-events-desktop-table">
           <table className="content-table">
             <thead><tr><th>Event</th><th>Schedule</th><th>Access</th><th>Visibility</th><th>Actions</th></tr></thead>
             <tbody>
