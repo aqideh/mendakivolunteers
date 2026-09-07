@@ -50,6 +50,13 @@ const bulkCheckoutSchema = z.object({
   timeslotId: z.string().uuid(),
 });
 
+const extendAttendanceSchema = z.object({
+  eventId: z.string().uuid(),
+  sourceRosterId: z.string().uuid(),
+  targetTimeslotId: z.string().uuid(),
+  currentTimeslotId: z.string().uuid(),
+});
+
 const walkInSchema = z.object({
   eventId: z.string().uuid(),
   timeslotId: z.string().uuid(),
@@ -78,6 +85,14 @@ export type QuickAttendanceResult =
 export type BulkCheckoutResult =
   | { ok: true; checkedOut: number }
   | { ok: false; checkedOut: number; error: string };
+
+export type ExtendAttendanceResult =
+  | {
+      ok: true;
+      status: "extended" | "already_scheduled";
+      targetRosterId: string | null;
+    }
+  | { ok: false; error: string };
 
 const quickActionReasons: Record<QuickAttendanceAction, string> = {
   mark_sign_in: "Staff check-in",
@@ -239,6 +254,50 @@ export async function recordAttendanceQuickAction(input: {
   };
 }
 
+export async function extendAttendanceToShift(input: {
+  eventId: string;
+  sourceRosterId: string;
+  targetTimeslotId: string;
+  currentTimeslotId: string;
+}): Promise<ExtendAttendanceResult> {
+  const parsed = extendAttendanceSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Shift extension could not be read." };
+  }
+
+  const returnPath = attendancePath(parsed.data.eventId, parsed.data.currentTimeslotId);
+  const { userId } = await requireEventManager(returnPath);
+  const admin = getPhaseOneAdminClient();
+  const { data, error } = await admin.rpc("phaseone_extend_attendance_session", {
+    p_event_id: parsed.data.eventId,
+    p_source_roster_id: parsed.data.sourceRosterId,
+    p_target_timeslot_id: parsed.data.targetTimeslotId,
+    p_changed_by: userId,
+  });
+
+  if (error) {
+    console.error("Unable to extend volunteer into next shift", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+      sourceRosterId: parsed.data.sourceRosterId,
+      targetTimeslotId: parsed.data.targetTimeslotId,
+    });
+    return { ok: false, error: error.message || "Volunteer could not be extended into the next shift." };
+  }
+
+  const result = data as {
+    status?: "extended" | "already_scheduled";
+    target_roster_id?: string | null;
+  } | null;
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  return {
+    ok: true,
+    status: result?.status === "already_scheduled" ? "already_scheduled" : "extended",
+    targetRosterId: result?.target_roster_id ?? null,
+  };
+}
+
 export async function checkoutAllCurrentParticipants(input: {
   eventId: string;
   timeslotId: string;
@@ -259,7 +318,7 @@ export async function checkoutAllCurrentParticipants(input: {
       .eq("timeslot_id", parsed.data.timeslotId)
       .limit(2000),
     admin
-      .from("phaseone_attendance")
+      .from("phaseone_attendance_effective")
       .select("roster_id, signed_in_at, signed_out_at, non_attendance_status")
       .eq("event_id", parsed.data.eventId)
       .limit(2000),
@@ -316,7 +375,6 @@ export async function checkoutAllCurrentParticipants(input: {
         continue;
       }
 
-      // A concurrent individual check-out has already achieved the desired final state.
       if (result.error.message?.toLowerCase().includes("already checked out")) {
         continue;
       }
@@ -344,7 +402,6 @@ export async function checkoutAllCurrentParticipants(input: {
   return { ok: true, checkedOut };
 }
 
-// Retained as a progressively enhanced fallback for any existing form callers.
 export async function recordAttendanceAction(formData: FormData) {
   const eventId = String(formData.get("eventId") ?? "");
   const parsed = quickAttendanceSchema.safeParse({

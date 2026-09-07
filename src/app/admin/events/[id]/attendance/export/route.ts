@@ -55,8 +55,8 @@ export async function GET(
       .eq("event_id", id)
       .order("volunteer_name"),
     admin
-      .from("phaseone_attendance")
-      .select("roster_id, signed_in_at, signed_out_at, non_attendance_status, non_attendance_marked_at, updated_at")
+      .from("phaseone_attendance_effective")
+      .select("roster_id, signed_in_at, signed_out_at, non_attendance_status, non_attendance_marked_at, updated_at, session_id, session_checked_in_at, session_checked_out_at, continuation_type")
       .eq("event_id", id),
   ]);
 
@@ -105,6 +105,10 @@ export async function GET(
       attendance?.signed_in_at,
       attendance?.signed_out_at,
       attendance?.updated_at,
+      attendance?.session_id,
+      attendance?.continuation_type,
+      attendance?.session_checked_in_at,
+      attendance?.session_checked_out_at,
     ].map(csvCell).join(",");
   });
 
@@ -124,6 +128,10 @@ export async function GET(
     "checked_in_at",
     "checked_out_at",
     "last_updated_at",
+    "attendance_session_id",
+    "continuous_attendance_type",
+    "event_day_checked_in_at",
+    "event_day_checked_out_at",
   ].map(csvCell).join(",");
   const csv = [header, ...rows].join("\r\n");
   const safeSlug = eventResult.data.slug.replace(/[^a-z0-9-]/g, "-");
