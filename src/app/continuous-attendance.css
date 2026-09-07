@@ -1,0 +1,147 @@
+.phaseone-handover {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0.9rem 0 0;
+  padding: 1rem 1.1rem;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 42%, white);
+}
+
+.phaseone-handover-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.phaseone-handover-heading .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.phaseone-handover-heading h2 {
+  margin-bottom: 0;
+  font-size: 1.2rem;
+}
+
+.phaseone-handover-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.phaseone-handover-metrics span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.6rem;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.phaseone-handover-metrics strong {
+  color: var(--brand);
+  font-size: 0.9rem;
+}
+
+.phaseone-handover > .muted {
+  margin-bottom: 0;
+  font-size: 0.84rem;
+}
+
+.phaseone-continuation-badge {
+  color: #0b5f4d;
+  background: #e4f5ef;
+  white-space: nowrap;
+}
+
+.phaseone-continuous-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.phaseone-extension-action .button {
+  color: var(--brand);
+  background: #f8fbfc;
+}
+
+.phaseone-inherited-note {
+  margin: 0;
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 759px) {
+  .phaseone-handover {
+    gap: 0.55rem;
+    margin-top: 0.55rem;
+    padding: 0.65rem 0.7rem;
+    border-radius: 0.7rem;
+  }
+
+  .phaseone-handover-heading {
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .phaseone-handover-heading h2 {
+    font-size: 0.98rem;
+    line-height: 1.15;
+  }
+
+  .phaseone-handover-heading .text-link {
+    flex: 0 0 auto;
+    font-size: 0.7rem;
+  }
+
+  .phaseone-handover-metrics {
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    overflow-x: auto;
+    padding-bottom: 0.08rem;
+    scrollbar-width: none;
+  }
+
+  .phaseone-handover-metrics::-webkit-scrollbar {
+    display: none;
+  }
+
+  .phaseone-handover-metrics span {
+    flex: 0 0 auto;
+    padding: 0.24rem 0.45rem;
+    font-size: 0.68rem;
+  }
+
+  .phaseone-handover-metrics strong {
+    font-size: 0.78rem;
+  }
+
+  .phaseone-handover > .muted {
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  .phaseone-continuation-badge {
+    padding: 0.22rem 0.42rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  .phaseone-continuous-actions {
+    gap: 0.35rem;
+  }
+
+  .phaseone-continuous-actions .phaseone-checkin-action {
+    min-height: 2.5rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .phaseone-continuous-actions {
+    grid-template-columns: 1fr;
+  }
+}
