@@ -32,25 +32,39 @@ security invoker
 set search_path = public, pg_temp
 as $$
 begin
-  if nullif(btrim(new.attendance_person_key), '') is not null then
+  if tg_op = 'INSERT' then
+    new.attendance_person_key := case
+      when nullif(btrim(new.attendance_person_key), '') is not null
+        then lower(btrim(new.attendance_person_key))
+      when nullif(btrim(new.volunteer_key), '') is not null
+        then 'id:' || lower(btrim(new.volunteer_key))
+      when nullif(btrim(new.email), '') is not null
+        then 'email:' || lower(btrim(new.email))
+      else 'event:' || gen_random_uuid()::text
+    end;
+    return new;
+  end if;
+
+  if new.attendance_person_key is distinct from old.attendance_person_key then
     new.attendance_person_key := lower(btrim(new.attendance_person_key));
     return new;
   end if;
 
-  new.attendance_person_key := case
-    when nullif(btrim(new.volunteer_key), '') is not null
-      then 'id:' || lower(btrim(new.volunteer_key))
-    when nullif(btrim(new.email), '') is not null
-      then 'email:' || lower(btrim(new.email))
-    else 'event:' || gen_random_uuid()::text
-  end;
+  if old.attendance_person_key like 'event:%' then
+    if nullif(btrim(new.volunteer_key), '') is not null then
+      new.attendance_person_key := 'id:' || lower(btrim(new.volunteer_key));
+    elsif nullif(btrim(new.email), '') is not null then
+      new.attendance_person_key := 'email:' || lower(btrim(new.email));
+    end if;
+  end if;
 
   return new;
 end;
 $$;
 
 create trigger phaseone_roster_assign_attendance_person_key
-before insert or update of attendance_person_key on public.phaseone_roster
+before insert or update of volunteer_key, email, attendance_person_key
+on public.phaseone_roster
 for each row execute function public.phaseone_assign_attendance_person_key();
 
 comment on column public.phaseone_roster.attendance_person_key is
@@ -151,22 +165,13 @@ begin
   select * into v_roster
   from public.phaseone_roster
   where id = p_roster_id and event_id = p_event_id;
-
-  if not found then
-    raise exception 'Roster record does not belong to this event';
-  end if;
+  if not found then raise exception 'Roster record does not belong to this event'; end if;
 
   select * into v_timeslot
   from public.phaseone_event_timeslots
   where id = v_roster.timeslot_id and event_id = p_event_id;
-
-  if not found or v_timeslot.status = 'cancelled' then
-    raise exception 'Shift is unavailable for this event';
-  end if;
-
-  if p_checked_in_at is null then
-    raise exception 'Continuous attendance requires a check-in timestamp';
-  end if;
+  if not found or v_timeslot.status = 'cancelled' then raise exception 'Shift is unavailable for this event'; end if;
+  if p_checked_in_at is null then raise exception 'Continuous attendance requires a check-in timestamp'; end if;
 
   v_date := timezone('Asia/Singapore', v_timeslot.starts_at)::date;
 
@@ -182,19 +187,9 @@ begin
 
   if not found then
     insert into public.phaseone_attendance_sessions (
-      event_id,
-      attendance_date,
-      person_key,
-      origin_roster_id,
-      checked_in_at,
-      checked_in_by
+      event_id, attendance_date, person_key, origin_roster_id, checked_in_at, checked_in_by
     ) values (
-      p_event_id,
-      v_date,
-      v_roster.attendance_person_key,
-      p_roster_id,
-      p_checked_in_at,
-      p_changed_by
+      p_event_id, v_date, v_roster.attendance_person_key, p_roster_id, p_checked_in_at, p_changed_by
     )
     on conflict do nothing
     returning * into v_session;
@@ -214,17 +209,10 @@ begin
     end if;
   end if;
 
-  if v_session.id is null then
-    raise exception 'Continuous attendance session could not be created';
-  end if;
+  if v_session.id is null then raise exception 'Continuous attendance session could not be created'; end if;
 
   insert into public.phaseone_attendance_session_shifts (
-    session_id,
-    event_id,
-    roster_id,
-    timeslot_id,
-    continuation_type,
-    linked_by
+    session_id, event_id, roster_id, timeslot_id, continuation_type, linked_by
   ) values (
     v_session.id,
     p_event_id,
@@ -232,18 +220,11 @@ begin
     v_roster.timeslot_id,
     case when v_session.origin_roster_id = p_roster_id then 'origin' else 'scheduled' end,
     p_changed_by
-  )
-  on conflict (session_id, roster_id) do nothing;
+  ) on conflict (session_id, roster_id) do nothing;
 
-  if v_roster.attendance_person_key like 'id:%'
-    or v_roster.attendance_person_key like 'email:%' then
+  if v_roster.attendance_person_key like 'id:%' or v_roster.attendance_person_key like 'email:%' then
     insert into public.phaseone_attendance_session_shifts (
-      session_id,
-      event_id,
-      roster_id,
-      timeslot_id,
-      continuation_type,
-      linked_by
+      session_id, event_id, roster_id, timeslot_id, continuation_type, linked_by
     )
     select
       v_session.id,
@@ -253,8 +234,7 @@ begin
       case when candidate.id = v_session.origin_roster_id then 'origin' else 'scheduled' end,
       p_changed_by
     from public.phaseone_roster candidate
-    join public.phaseone_event_timeslots candidate_slot
-      on candidate_slot.id = candidate.timeslot_id
+    join public.phaseone_event_timeslots candidate_slot on candidate_slot.id = candidate.timeslot_id
     left join public.phaseone_attendance candidate_attendance
       on candidate_attendance.event_id = candidate.event_id
       and candidate_attendance.roster_id = candidate.id
@@ -269,41 +249,22 @@ begin
 
   select count(*) into v_linked_count
   from public.phaseone_attendance_session_shifts
-  where session_id = v_session.id
-    and roster_id <> v_session.origin_roster_id;
+  where session_id = v_session.id and roster_id <> v_session.origin_roster_id;
 
   if v_created then
     insert into public.phaseone_attendance_session_audit (
-      session_id,
-      event_id,
-      roster_id,
-      action,
-      metadata,
-      changed_by
+      session_id, event_id, roster_id, action, metadata, changed_by
     ) values (
-      v_session.id,
-      p_event_id,
-      p_roster_id,
-      'session_opened',
-      jsonb_build_object('checked_in_at', p_checked_in_at),
-      p_changed_by
+      v_session.id, p_event_id, p_roster_id, 'session_opened',
+      jsonb_build_object('checked_in_at', p_checked_in_at), p_changed_by
     );
 
     if v_linked_count > 0 then
       insert into public.phaseone_attendance_session_audit (
-        session_id,
-        event_id,
-        roster_id,
-        action,
-        metadata,
-        changed_by
+        session_id, event_id, roster_id, action, metadata, changed_by
       ) values (
-        v_session.id,
-        p_event_id,
-        p_roster_id,
-        'scheduled_shifts_linked',
-        jsonb_build_object('linked_shift_count', v_linked_count),
-        p_changed_by
+        v_session.id, p_event_id, p_roster_id, 'scheduled_shifts_linked',
+        jsonb_build_object('linked_shift_count', v_linked_count), p_changed_by
       );
     end if;
   end if;
@@ -339,60 +300,35 @@ declare
   v_open record;
   v_closed_count integer := 0;
 begin
-  select * into v_roster
-  from public.phaseone_roster
-  where id = p_roster_id and event_id = p_event_id;
-
-  if not found then
-    raise exception 'Roster record does not belong to this event';
-  end if;
-
-  select * into v_timeslot
-  from public.phaseone_event_timeslots
-  where id = v_roster.timeslot_id and event_id = p_event_id;
-
-  if not found then
-    raise exception 'Shift is unavailable for this event';
-  end if;
+  select * into v_roster from public.phaseone_roster where id = p_roster_id and event_id = p_event_id;
+  if not found then raise exception 'Roster record does not belong to this event'; end if;
+  select * into v_timeslot from public.phaseone_event_timeslots where id = v_roster.timeslot_id and event_id = p_event_id;
+  if not found then raise exception 'Shift is unavailable for this event'; end if;
 
   v_date := timezone('Asia/Singapore', v_timeslot.starts_at)::date;
-
   select * into v_session
   from public.phaseone_attendance_sessions
   where event_id = p_event_id
     and attendance_date = v_date
     and person_key = v_roster.attendance_person_key
     and checked_out_at is null
-  order by checked_in_at
-  limit 1
-  for update;
+  order by checked_in_at limit 1 for update;
 
-  if not found then
-    return null;
-  end if;
-
-  if v_effective_timestamp < v_session.checked_in_at then
-    raise exception 'Check-out cannot be before the event-day check-in';
-  end if;
+  if not found then return null; end if;
+  if v_effective_timestamp < v_session.checked_in_at then raise exception 'Check-out cannot be before the event-day check-in'; end if;
 
   for v_open in
     select attendance.roster_id
     from public.phaseone_attendance_session_shifts linked
     join public.phaseone_attendance attendance
-      on attendance.event_id = linked.event_id
-      and attendance.roster_id = linked.roster_id
+      on attendance.event_id = linked.event_id and attendance.roster_id = linked.roster_id
     where linked.session_id = v_session.id
       and attendance.signed_in_at is not null
       and attendance.signed_out_at is null
       and attendance.non_attendance_status is null
   loop
     perform public.phaseone_apply_attendance_change(
-      p_event_id,
-      v_open.roster_id,
-      'mark_sign_out',
-      v_effective_timestamp,
-      p_reason,
-      p_changed_by
+      p_event_id, v_open.roster_id, 'mark_sign_out', v_effective_timestamp, p_reason, p_changed_by
     );
     v_closed_count := v_closed_count + 1;
   end loop;
@@ -405,21 +341,10 @@ begin
   returning * into v_session;
 
   insert into public.phaseone_attendance_session_audit (
-    session_id,
-    event_id,
-    roster_id,
-    action,
-    metadata,
-    changed_by
+    session_id, event_id, roster_id, action, metadata, changed_by
   ) values (
-    v_session.id,
-    p_event_id,
-    p_roster_id,
-    'session_closed',
-    jsonb_build_object(
-      'checked_out_at', v_effective_timestamp,
-      'direct_attendance_rows_closed', v_closed_count
-    ),
+    v_session.id, p_event_id, p_roster_id, 'session_closed',
+    jsonb_build_object('checked_out_at', v_effective_timestamp, 'direct_attendance_rows_closed', v_closed_count),
     p_changed_by
   );
 
@@ -453,34 +378,18 @@ declare
   v_existing_type text;
   v_created boolean := false;
 begin
-  if not exists (select 1 from auth.users where id = p_changed_by) then
-    raise exception 'Staff user not found';
-  end if;
+  if not exists (select 1 from auth.users where id = p_changed_by) then raise exception 'Staff user not found'; end if;
 
-  select * into v_source
-  from public.phaseone_roster
-  where id = p_source_roster_id and event_id = p_event_id;
+  select * into v_source from public.phaseone_roster where id = p_source_roster_id and event_id = p_event_id;
+  if not found then raise exception 'Source roster record does not belong to this event'; end if;
 
-  if not found then
-    raise exception 'Source roster record does not belong to this event';
-  end if;
-
-  select * into v_source_slot
-  from public.phaseone_event_timeslots
-  where id = v_source.timeslot_id and event_id = p_event_id;
-
+  select * into v_source_slot from public.phaseone_event_timeslots where id = v_source.timeslot_id and event_id = p_event_id;
   select * into v_target_slot
   from public.phaseone_event_timeslots
-  where id = p_target_timeslot_id
-    and event_id = p_event_id
-    and status <> 'cancelled';
+  where id = p_target_timeslot_id and event_id = p_event_id and status <> 'cancelled';
+  if v_target_slot.id is null then raise exception 'Target shift is unavailable for this event'; end if;
 
-  if v_target_slot.id is null then
-    raise exception 'Target shift is unavailable for this event';
-  end if;
-
-  if timezone('Asia/Singapore', v_source_slot.starts_at)::date
-      <> timezone('Asia/Singapore', v_target_slot.starts_at)::date
+  if timezone('Asia/Singapore', v_source_slot.starts_at)::date <> timezone('Asia/Singapore', v_target_slot.starts_at)::date
     or v_target_slot.starts_at <= v_source_slot.starts_at then
     raise exception 'A shift extension must move to a later shift on the same day';
   end if;
@@ -491,13 +400,8 @@ begin
     and attendance_date = timezone('Asia/Singapore', v_source_slot.starts_at)::date
     and person_key = v_source.attendance_person_key
     and checked_out_at is null
-  order by checked_in_at
-  limit 1
-  for update;
-
-  if not found then
-    raise exception 'Volunteer is not currently checked in';
-  end if;
+  order by checked_in_at limit 1 for update;
+  if not found then raise exception 'Volunteer is not currently checked in'; end if;
 
   select id into v_target_roster_id
   from public.phaseone_roster
@@ -508,29 +412,12 @@ begin
 
   if v_target_roster_id is null then
     insert into public.phaseone_roster (
-      event_id,
-      timeslot_id,
-      volunteer_key,
-      volunteer_name,
-      email,
-      mobile,
-      tshirt_size,
-      entry_method,
-      attendance_person_key,
-      uploaded_by,
-      uploaded_at
+      event_id, timeslot_id, volunteer_key, volunteer_name, email, mobile,
+      tshirt_size, entry_method, attendance_person_key, uploaded_by, uploaded_at
     ) values (
-      p_event_id,
-      p_target_timeslot_id,
-      v_source.volunteer_key,
-      v_source.volunteer_name,
-      v_source.email,
-      v_source.mobile,
-      v_source.tshirt_size,
-      'walk_in',
-      v_source.attendance_person_key,
-      p_changed_by,
-      now()
+      p_event_id, p_target_timeslot_id, v_source.volunteer_key, v_source.volunteer_name,
+      v_source.email, v_source.mobile, v_source.tshirt_size, 'walk_in',
+      v_source.attendance_person_key, p_changed_by, now()
     )
     on conflict do nothing
     returning id into v_target_roster_id;
@@ -557,38 +444,16 @@ begin
 
   if v_existing_type is null then
     insert into public.phaseone_attendance_session_shifts (
-      session_id,
-      event_id,
-      roster_id,
-      timeslot_id,
-      continuation_type,
-      linked_by
+      session_id, event_id, roster_id, timeslot_id, continuation_type, linked_by
     ) values (
-      v_session.id,
-      p_event_id,
-      v_target_roster_id,
-      p_target_timeslot_id,
-      'extended_on_site',
-      p_changed_by
+      v_session.id, p_event_id, v_target_roster_id, p_target_timeslot_id, 'extended_on_site', p_changed_by
     );
 
     insert into public.phaseone_attendance_session_audit (
-      session_id,
-      event_id,
-      roster_id,
-      action,
-      metadata,
-      changed_by
+      session_id, event_id, roster_id, action, metadata, changed_by
     ) values (
-      v_session.id,
-      p_event_id,
-      v_target_roster_id,
-      'shift_extended',
-      jsonb_build_object(
-        'source_roster_id', p_source_roster_id,
-        'target_timeslot_id', p_target_timeslot_id,
-        'roster_created', v_created
-      ),
+      v_session.id, p_event_id, v_target_roster_id, 'shift_extended',
+      jsonb_build_object('source_roster_id', p_source_roster_id, 'target_timeslot_id', p_target_timeslot_id, 'roster_created', v_created),
       p_changed_by
     );
 
@@ -623,58 +488,30 @@ declare
   v_timeslot public.phaseone_event_timeslots%rowtype;
   v_open_session public.phaseone_attendance_sessions%rowtype;
   v_result jsonb;
+  v_session_result jsonb;
   v_date date;
 begin
-  if p_action not in (
-    'mark_sign_in',
-    'mark_sign_out',
-    'mark_withdrawn',
-    'mark_absent',
-    'clear_non_attendance'
-  ) then
+  if p_action not in ('mark_sign_in', 'mark_sign_out', 'mark_withdrawn', 'mark_absent', 'clear_non_attendance') then
     raise exception 'Unsupported attendance transition';
   end if;
-  if not exists (select 1 from auth.users where id = p_changed_by) then
-    raise exception 'Staff user not found';
-  end if;
+  if not exists (select 1 from auth.users where id = p_changed_by) then raise exception 'Staff user not found'; end if;
 
-  select * into v_roster
-  from public.phaseone_roster
-  where id = p_roster_id and event_id = p_event_id;
-
-  if not found then
-    raise exception 'Roster record does not belong to this event';
-  end if;
-
-  select * into v_timeslot
-  from public.phaseone_event_timeslots
-  where id = v_roster.timeslot_id and event_id = p_event_id;
-
-  if not found then
-    raise exception 'Shift is unavailable for this event';
-  end if;
+  select * into v_roster from public.phaseone_roster where id = p_roster_id and event_id = p_event_id;
+  if not found then raise exception 'Roster record does not belong to this event'; end if;
+  select * into v_timeslot from public.phaseone_event_timeslots where id = v_roster.timeslot_id and event_id = p_event_id;
+  if not found then raise exception 'Shift is unavailable for this event'; end if;
 
   v_date := timezone('Asia/Singapore', v_timeslot.starts_at)::date;
-
   select * into v_open_session
   from public.phaseone_attendance_sessions
-  where event_id = p_event_id
-    and attendance_date = v_date
-    and person_key = v_roster.attendance_person_key
-    and checked_out_at is null
-  order by checked_in_at
-  limit 1
-  for update;
+  where event_id = p_event_id and attendance_date = v_date
+    and person_key = v_roster.attendance_person_key and checked_out_at is null
+  order by checked_in_at limit 1 for update;
 
   if p_action = 'mark_sign_out' and v_open_session.id is not null then
-    select public.phaseone_close_attendance_session(
-      p_event_id,
-      p_roster_id,
-      p_timestamp,
-      p_reason,
-      p_changed_by
-    ) into v_result;
-    return v_result;
+    return public.phaseone_close_attendance_session(
+      p_event_id, p_roster_id, p_timestamp, p_reason, p_changed_by
+    );
   end if;
 
   insert into public.phaseone_attendance (event_id, roster_id)
@@ -687,26 +524,15 @@ begin
   for update;
 
   if p_action = 'mark_sign_in' then
-    if v_attendance.non_attendance_status is not null then
-      raise exception 'Volunteer is marked as %', v_attendance.non_attendance_status;
-    end if;
+    if v_attendance.non_attendance_status is not null then raise exception 'Volunteer is marked as %', v_attendance.non_attendance_status; end if;
     if v_open_session.id is not null then
       insert into public.phaseone_attendance_session_shifts (
-        session_id,
-        event_id,
-        roster_id,
-        timeslot_id,
-        continuation_type,
-        linked_by
+        session_id, event_id, roster_id, timeslot_id, continuation_type, linked_by
       ) values (
-        v_open_session.id,
-        p_event_id,
-        p_roster_id,
-        v_roster.timeslot_id,
+        v_open_session.id, p_event_id, p_roster_id, v_roster.timeslot_id,
         case when v_open_session.origin_roster_id = p_roster_id then 'origin' else 'scheduled' end,
         p_changed_by
-      )
-      on conflict (session_id, roster_id) do nothing;
+      ) on conflict (session_id, roster_id) do nothing;
 
       return jsonb_build_object(
         'session_id', v_open_session.id,
@@ -718,57 +544,31 @@ begin
         'already_on_site', true
       );
     end if;
-    if v_attendance.signed_in_at is not null then
-      raise exception 'Volunteer is already checked in';
-    end if;
-    if v_attendance.signed_out_at is not null then
-      raise exception 'Cannot check in after check-out has been recorded';
-    end if;
+    if v_attendance.signed_in_at is not null then raise exception 'Volunteer is already checked in'; end if;
+    if v_attendance.signed_out_at is not null then raise exception 'Cannot check in after check-out has been recorded'; end if;
   elsif p_action = 'mark_sign_out' then
-    if v_attendance.non_attendance_status is not null then
-      raise exception 'Volunteer is marked as %', v_attendance.non_attendance_status;
-    end if;
-    if v_attendance.signed_in_at is null then
-      raise exception 'Volunteer must be checked in before check-out';
-    end if;
-    if v_attendance.signed_out_at is not null then
-      raise exception 'Volunteer is already checked out';
-    end if;
+    if v_attendance.non_attendance_status is not null then raise exception 'Volunteer is marked as %', v_attendance.non_attendance_status; end if;
+    if v_attendance.signed_in_at is null then raise exception 'Volunteer must be checked in before check-out'; end if;
+    if v_attendance.signed_out_at is not null then raise exception 'Volunteer is already checked out'; end if;
   elsif p_action in ('mark_withdrawn', 'mark_absent') then
-    if v_open_session.id is not null then
-      raise exception 'Volunteer is currently checked in';
-    end if;
-    if v_attendance.non_attendance_status is not null then
-      raise exception 'Volunteer is already marked as %', v_attendance.non_attendance_status;
-    end if;
-    if v_attendance.signed_in_at is not null or v_attendance.signed_out_at is not null then
-      raise exception 'Attendance has already been recorded for this volunteer';
-    end if;
+    if v_open_session.id is not null then raise exception 'Volunteer is currently checked in'; end if;
+    if v_attendance.non_attendance_status is not null then raise exception 'Volunteer is already marked as %', v_attendance.non_attendance_status; end if;
+    if v_attendance.signed_in_at is not null or v_attendance.signed_out_at is not null then raise exception 'Attendance has already been recorded for this volunteer'; end if;
   else
-    if v_attendance.non_attendance_status is null then
-      raise exception 'Volunteer is not marked as withdrawn or absent';
-    end if;
+    if v_attendance.non_attendance_status is null then raise exception 'Volunteer is not marked as withdrawn or absent'; end if;
   end if;
 
   select public.phaseone_apply_attendance_change(
-    p_event_id,
-    p_roster_id,
-    p_action,
-    p_timestamp,
-    p_reason,
-    p_changed_by
+    p_event_id, p_roster_id, p_action, p_timestamp, p_reason, p_changed_by
   ) into v_result;
 
   if p_action = 'mark_sign_in' then
     select public.phaseone_open_attendance_session(
-      p_event_id,
-      p_roster_id,
-      (v_result->>'signed_in_at')::timestamptz,
-      p_changed_by
-    ) into v_open_session;
+      p_event_id, p_roster_id, (v_result->>'signed_in_at')::timestamptz, p_changed_by
+    ) into v_session_result;
 
     v_result := v_result || jsonb_build_object(
-      'session_id', v_open_session->>'session_id',
+      'session_id', v_session_result->>'session_id',
       'continuous', true
     );
   end if;
@@ -777,23 +577,15 @@ begin
 end;
 $$;
 
-revoke all on function public.phaseone_open_attendance_session(uuid, uuid, timestamptz, uuid)
-  from public, anon, authenticated;
-revoke all on function public.phaseone_close_attendance_session(uuid, uuid, timestamptz, text, uuid)
-  from public, anon, authenticated;
-revoke all on function public.phaseone_extend_attendance_session(uuid, uuid, uuid, uuid)
-  from public, anon, authenticated;
-revoke all on function public.phaseone_apply_attendance_transition(uuid, uuid, text, timestamptz, text, uuid)
-  from public, anon, authenticated;
+revoke all on function public.phaseone_open_attendance_session(uuid, uuid, timestamptz, uuid) from public, anon, authenticated;
+revoke all on function public.phaseone_close_attendance_session(uuid, uuid, timestamptz, text, uuid) from public, anon, authenticated;
+revoke all on function public.phaseone_extend_attendance_session(uuid, uuid, uuid, uuid) from public, anon, authenticated;
+revoke all on function public.phaseone_apply_attendance_transition(uuid, uuid, text, timestamptz, text, uuid) from public, anon, authenticated;
 
-grant execute on function public.phaseone_open_attendance_session(uuid, uuid, timestamptz, uuid)
-  to service_role;
-grant execute on function public.phaseone_close_attendance_session(uuid, uuid, timestamptz, text, uuid)
-  to service_role;
-grant execute on function public.phaseone_extend_attendance_session(uuid, uuid, uuid, uuid)
-  to service_role;
-grant execute on function public.phaseone_apply_attendance_transition(uuid, uuid, text, timestamptz, text, uuid)
-  to service_role;
+grant execute on function public.phaseone_open_attendance_session(uuid, uuid, timestamptz, uuid) to service_role;
+grant execute on function public.phaseone_close_attendance_session(uuid, uuid, timestamptz, text, uuid) to service_role;
+grant execute on function public.phaseone_extend_attendance_session(uuid, uuid, uuid, uuid) to service_role;
+grant execute on function public.phaseone_apply_attendance_transition(uuid, uuid, text, timestamptz, text, uuid) to service_role;
 
 -- Preserve live check-ins when this migration is deployed. Existing open rows are
 -- grouped by safe event-day identity into one continuous session; no attendance
@@ -814,40 +606,19 @@ with open_rows as (
     and attendance.non_attendance_status is null
 ), origins as (
   select distinct on (event_id, attendance_date, person_key)
-    event_id,
-    attendance_date,
-    person_key,
-    roster_id,
-    signed_in_at,
-    checked_in_by
+    event_id, attendance_date, person_key, roster_id, signed_in_at, checked_in_by
   from open_rows
   order by event_id, attendance_date, person_key, signed_in_at, roster_id
 )
 insert into public.phaseone_attendance_sessions (
-  event_id,
-  attendance_date,
-  person_key,
-  origin_roster_id,
-  checked_in_at,
-  checked_in_by
+  event_id, attendance_date, person_key, origin_roster_id, checked_in_at, checked_in_by
 )
-select
-  event_id,
-  attendance_date,
-  person_key,
-  roster_id,
-  signed_in_at,
-  checked_in_by
+select event_id, attendance_date, person_key, roster_id, signed_in_at, checked_in_by
 from origins
 on conflict do nothing;
 
 insert into public.phaseone_attendance_session_shifts (
-  session_id,
-  event_id,
-  roster_id,
-  timeslot_id,
-  continuation_type,
-  linked_by
+  session_id, event_id, roster_id, timeslot_id, continuation_type, linked_by
 )
 select
   session.id,
@@ -858,13 +629,10 @@ select
   session.checked_in_by
 from public.phaseone_attendance_sessions session
 join public.phaseone_roster roster
-  on roster.event_id = session.event_id
-  and roster.attendance_person_key = session.person_key
-join public.phaseone_event_timeslots timeslot
-  on timeslot.id = roster.timeslot_id
+  on roster.event_id = session.event_id and roster.attendance_person_key = session.person_key
+join public.phaseone_event_timeslots timeslot on timeslot.id = roster.timeslot_id
 left join public.phaseone_attendance attendance
-  on attendance.event_id = roster.event_id
-  and attendance.roster_id = roster.id
+  on attendance.event_id = roster.event_id and attendance.roster_id = roster.id
 where session.checked_out_at is null
   and timeslot.status <> 'cancelled'
   and timezone('Asia/Singapore', timeslot.starts_at)::date = session.attendance_date
@@ -873,12 +641,7 @@ where session.checked_out_at is null
 on conflict (session_id, roster_id) do nothing;
 
 insert into public.phaseone_attendance_session_audit (
-  session_id,
-  event_id,
-  roster_id,
-  action,
-  metadata,
-  changed_by
+  session_id, event_id, roster_id, action, metadata, changed_by
 )
 select
   session.id,
