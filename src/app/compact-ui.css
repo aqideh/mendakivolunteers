@@ -1,8 +1,9 @@
-.compact-page {
+.site-shell > .page-frame:has(> .dashboard-header) {
   padding-top: clamp(0.9rem, 2vw, 1.5rem);
   padding-bottom: clamp(2rem, 4vw, 3rem);
 }
 
+.site-shell > .page-frame > .dashboard-header,
 .compact-dashboard-header {
   align-items: center;
   gap: 1rem;
@@ -15,10 +16,12 @@
   box-shadow: none;
 }
 
+.site-shell > .page-frame > .dashboard-header::after,
 .compact-dashboard-header::after {
   display: none;
 }
 
+.site-shell > .page-frame > .dashboard-header h1,
 .compact-dashboard-header h1 {
   margin-bottom: 0.18rem;
   font-size: clamp(1.65rem, 3vw, 2.35rem);
@@ -26,10 +29,12 @@
   letter-spacing: -0.035em;
 }
 
+.site-shell > .page-frame > .dashboard-header .eyebrow,
 .compact-dashboard-header .eyebrow {
   margin-bottom: 0.35rem;
 }
 
+.site-shell > .page-frame > .dashboard-header .muted,
 .compact-dashboard-description {
   max-width: 52rem;
   margin-bottom: 0;
@@ -37,25 +42,59 @@
   line-height: 1.4;
 }
 
+.site-shell > .page-frame > .dashboard-header > .actions,
 .compact-top-actions {
   flex: 0 0 auto;
   gap: 0.45rem;
 }
 
+.site-shell > .page-frame > .dashboard-header > .actions .button,
 .compact-top-actions .button {
   min-height: 2.4rem;
   padding: 0.5rem 0.78rem;
   font-size: 0.84rem;
 }
 
-.compact-section-index {
+.narrow-frame > .page-intro {
+  margin-bottom: 1rem;
+}
+
+.narrow-frame > .page-intro h1 {
+  max-width: none;
+  margin-bottom: 0.3rem;
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.narrow-frame > .page-intro .eyebrow {
+  margin-bottom: 0.35rem;
+}
+
+.narrow-frame > .page-intro .lede {
+  margin-bottom: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.compact-page {
+  padding-top: clamp(0.9rem, 2vw, 1.5rem);
+  padding-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.compact-section-index,
+.phaseone-task-nav {
   position: sticky;
   top: 0;
   z-index: 30;
+  display: block;
   margin: 0 0 1.15rem;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: none;
   backdrop-filter: blur(10px);
 }
 
@@ -65,8 +104,8 @@
   backdrop-filter: none;
 }
 
-.compact-section-index-track {
-  display: flex;
+.compact-section-index-track,
+.phaseone-task-nav {
   align-items: center;
   gap: 0.1rem;
   min-width: 0;
@@ -74,19 +113,32 @@
   scrollbar-width: none;
 }
 
-.compact-section-index-track::-webkit-scrollbar {
+.compact-section-index-track {
+  display: flex;
+}
+
+.phaseone-task-nav {
+  display: flex;
+}
+
+.compact-section-index-track::-webkit-scrollbar,
+.phaseone-task-nav::-webkit-scrollbar {
   display: none;
 }
 
-.compact-section-index-link {
+.compact-section-index-link,
+.phaseone-task-nav a {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   gap: 0.35rem;
   min-height: 2.7rem;
-  padding: 0.35rem 0.75rem;
+  border: 0;
   border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 0.35rem 0.75rem;
   color: var(--ink);
+  background: transparent;
   text-decoration: none;
   font-size: 0.86rem;
   font-weight: 780;
@@ -94,9 +146,12 @@
 }
 
 .compact-section-index-link:hover,
-.compact-section-index-link:focus-visible {
+.compact-section-index-link:focus-visible,
+.phaseone-task-nav a:hover,
+.phaseone-task-nav a:focus-visible {
   border-bottom-color: var(--brand);
   color: var(--brand);
+  background: transparent;
 }
 
 .compact-section-index-count,
@@ -122,8 +177,12 @@
   margin-right: 0.35rem;
 }
 
-.compact-section {
+.compact-section,
+.phaseone-admin-section {
   scroll-margin-top: 4rem;
+}
+
+.compact-section {
   margin-top: clamp(1.5rem, 3vw, 2.4rem);
 }
 
@@ -201,31 +260,49 @@
   font-weight: 800;
 }
 
-.compact-page-intro {
-  margin-bottom: 1rem;
+.dashboard-flat-links .card-grid {
+  display: block;
+  border-top: 1px solid var(--border);
 }
 
-.compact-page-intro h1 {
-  max-width: none;
-  margin-bottom: 0.3rem;
-  font-size: clamp(1.65rem, 3vw, 2.35rem);
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+.dashboard-flat-links .card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.2rem 1rem;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.9rem 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.compact-page-intro .lede {
-  margin-bottom: 0;
-  font-size: 0.95rem;
-  line-height: 1.45;
+.dashboard-flat-links .card h3,
+.dashboard-flat-links .card p {
+  margin: 0;
+}
+
+.dashboard-flat-links .card p {
+  grid-column: 1;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.dashboard-flat-links .card .text-link {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 @media (max-width: 760px) {
+  .site-shell > .page-frame:has(> .dashboard-header),
   .compact-page {
     width: min(100% - 1rem, 72rem);
     padding-top: 0.7rem;
     padding-bottom: 2rem;
   }
 
+  .site-shell > .page-frame > .dashboard-header,
   .compact-dashboard-header {
     align-items: flex-start;
     gap: 0.65rem;
@@ -233,32 +310,38 @@
     padding-bottom: 0.65rem;
   }
 
+  .site-shell > .page-frame > .dashboard-header h1,
   .compact-dashboard-header h1 {
     font-size: 1.45rem;
   }
 
+  .site-shell > .page-frame > .dashboard-header .muted,
   .compact-dashboard-description {
     font-size: 0.78rem;
     line-height: 1.32;
   }
 
+  .site-shell > .page-frame > .dashboard-header > .actions,
   .compact-top-actions {
     width: 100%;
     gap: 0.35rem;
   }
 
+  .site-shell > .page-frame > .dashboard-header > .actions .button,
   .compact-top-actions .button {
     min-height: 2.15rem;
     padding: 0.38rem 0.52rem;
     font-size: 0.75rem;
   }
 
-  .compact-section-index {
+  .compact-section-index,
+  .phaseone-task-nav {
     margin-inline: -0.5rem;
     padding-inline: 0.5rem;
   }
 
-  .compact-section-index-link {
+  .compact-section-index-link,
+  .phaseone-task-nav a {
     min-height: 2.45rem;
     padding-inline: 0.58rem;
     font-size: 0.78rem;
@@ -268,8 +351,12 @@
     display: none;
   }
 
-  .compact-section {
+  .compact-section,
+  .phaseone-admin-section {
     scroll-margin-top: 3.5rem;
+  }
+
+  .compact-section {
     margin-top: 1.25rem;
   }
 
@@ -281,5 +368,15 @@
   .flat-link-row {
     align-items: flex-start;
     padding: 0.8rem 0;
+  }
+
+  .dashboard-flat-links .card {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-flat-links .card .text-link {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 0.35rem;
   }
 }
