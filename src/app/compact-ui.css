@@ -1,0 +1,474 @@
+.site-shell > .page-frame:has(> .dashboard-header) {
+  padding-top: clamp(0.9rem, 2vw, 1.5rem);
+  padding-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.site-shell > .page-frame > .dashboard-header,
+.compact-dashboard-header {
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+  border: 0;
+  border-radius: 0;
+  padding: 0 0 0.85rem;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+.site-shell > .page-frame > .dashboard-header::after,
+.compact-dashboard-header::after {
+  display: none;
+}
+
+.site-shell > .page-frame > .dashboard-header h1,
+.compact-dashboard-header h1 {
+  margin-bottom: 0.18rem;
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.site-shell > .page-frame > .dashboard-header .eyebrow,
+.compact-dashboard-header .eyebrow {
+  margin-bottom: 0.35rem;
+}
+
+.site-shell > .page-frame > .dashboard-header .muted,
+.compact-dashboard-description {
+  max-width: 52rem;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.site-shell > .page-frame > .dashboard-header > .actions,
+.compact-top-actions {
+  flex: 0 0 auto;
+  gap: 0.45rem;
+}
+
+.site-shell > .page-frame > .dashboard-header > .actions .button,
+.compact-top-actions .button {
+  min-height: 2.4rem;
+  padding: 0.5rem 0.78rem;
+  font-size: 0.84rem;
+}
+
+.narrow-frame > .page-intro {
+  margin-bottom: 1rem;
+}
+
+.narrow-frame > .page-intro h1 {
+  max-width: none;
+  margin-bottom: 0.3rem;
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.narrow-frame > .page-intro .eyebrow {
+  margin-bottom: 0.35rem;
+}
+
+.narrow-frame > .page-intro .lede {
+  margin-bottom: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.compact-page {
+  padding-top: clamp(0.9rem, 2vw, 1.5rem);
+  padding-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.compact-section-index,
+.phaseone-task-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: block;
+  margin: 0 0 1.15rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+}
+
+.compact-section-index-subtle {
+  position: static;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.compact-section-index-track,
+.phaseone-task-nav {
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.compact-section-index-track {
+  display: flex;
+}
+
+.phaseone-task-nav {
+  display: flex;
+}
+
+.compact-section-index-track::-webkit-scrollbar,
+.phaseone-task-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.compact-section-index-link,
+.phaseone-task-nav a {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.7rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 0.35rem 0.75rem;
+  color: var(--ink);
+  background: transparent;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 780;
+  white-space: nowrap;
+}
+
+.compact-section-index-link:hover,
+.compact-section-index-link:focus-visible,
+.phaseone-task-nav a:hover,
+.phaseone-task-nav a:focus-visible {
+  border-bottom-color: var(--brand);
+  color: var(--brand);
+  background: transparent;
+}
+
+.compact-section-index-count,
+.compact-section-index-status {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.compact-section-index-count {
+  display: inline-flex;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  background: var(--surface-subtle);
+}
+
+.compact-section-index-status::before {
+  content: "·";
+  margin-right: 0.35rem;
+}
+
+.compact-section,
+.phaseone-admin-section {
+  scroll-margin-top: 4rem;
+}
+
+.compact-section {
+  margin-top: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+.compact-section:first-of-type {
+  margin-top: 0;
+}
+
+.compact-section-header {
+  align-items: flex-end;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.compact-section-header h2,
+.compact-section-header h3 {
+  margin-bottom: 0.08rem;
+}
+
+.compact-section-meta {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.flat-section,
+.phaseone-admin-section.panel,
+.phaseone-shift-picker.panel,
+.phaseone-handover.panel,
+section[aria-labelledby="past-event-filters"].panel,
+section[aria-labelledby="profile-title"].panel,
+section[aria-labelledby="points-balance-title"].panel,
+section.panel:has(#pathway-map-settings-title),
+section.panel:has(#pathway-phases-title),
+section.panel:has(#pathway-tracks-title),
+section.panel:has(#pathway-stages-title) {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phaseone-admin-section > .section-header,
+.phaseone-shift-picker > .section-header,
+section[aria-labelledby="past-event-filters"] > .section-header {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.phaseone-handover {
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding-block: 0.85rem !important;
+}
+
+.phaseone-attendance-metrics,
+.metric-grid[aria-label="YM Hub summary"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-block: 1rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.phaseone-attendance-metrics .metric-card,
+.metric-grid[aria-label="YM Hub summary"] .metric-card {
+  display: grid;
+  flex: 1 1 8rem;
+  min-width: 0;
+  min-height: auto;
+  gap: 0.15rem;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.72rem 0.9rem;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.phaseone-attendance-metrics .metric-card:last-child,
+.metric-grid[aria-label="YM Hub summary"] .metric-card:last-child {
+  border-right: 0;
+}
+
+.phaseone-attendance-metrics .metric-value,
+.metric-grid[aria-label="YM Hub summary"] .metric-value {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+.phaseone-attendance-metrics .metric-label,
+.metric-grid[aria-label="YM Hub summary"] .metric-label {
+  font-size: 0.72rem;
+}
+
+.flat-link-list,
+section[aria-labelledby="available-title"] .card-grid,
+section[aria-labelledby="staff-tools-title"] .card-grid {
+  display: block;
+  border-top: 1px solid var(--border);
+}
+
+.flat-link-row,
+section[aria-labelledby="available-title"] .card,
+section[aria-labelledby="staff-tools-title"] .card {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.9rem 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.flat-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+section[aria-labelledby="available-title"] .card,
+section[aria-labelledby="staff-tools-title"] .card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.2rem 1rem;
+  align-items: center;
+}
+
+section[aria-labelledby="available-title"] .card h3,
+section[aria-labelledby="available-title"] .card p,
+section[aria-labelledby="staff-tools-title"] .card h3,
+section[aria-labelledby="staff-tools-title"] .card p {
+  margin: 0;
+}
+
+section[aria-labelledby="available-title"] .card p,
+section[aria-labelledby="staff-tools-title"] .card p {
+  grid-column: 1;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+section[aria-labelledby="available-title"] .card .text-link,
+section[aria-labelledby="staff-tools-title"] .card .text-link {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.flat-link-row:hover strong,
+.flat-link-row:focus-visible strong {
+  color: var(--brand);
+}
+
+.flat-link-row-copy {
+  min-width: 0;
+}
+
+.flat-link-row-copy strong {
+  display: block;
+  margin-bottom: 0.1rem;
+}
+
+.flat-link-row-copy span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.flat-link-row-action {
+  flex: 0 0 auto;
+  color: var(--brand);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .site-shell > .page-frame:has(> .dashboard-header),
+  .compact-page {
+    width: min(100% - 1rem, 72rem);
+    padding-top: 0.7rem;
+    padding-bottom: 2rem;
+  }
+
+  .site-shell > .page-frame > .dashboard-header,
+  .compact-dashboard-header {
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin-bottom: 0.7rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .site-shell > .page-frame > .dashboard-header h1,
+  .compact-dashboard-header h1 {
+    font-size: 1.45rem;
+  }
+
+  .site-shell > .page-frame > .dashboard-header .muted,
+  .compact-dashboard-description {
+    font-size: 0.78rem;
+    line-height: 1.32;
+  }
+
+  .site-shell > .page-frame > .dashboard-header > .actions,
+  .compact-top-actions {
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  .site-shell > .page-frame > .dashboard-header > .actions .button,
+  .compact-top-actions .button {
+    min-height: 2.15rem;
+    padding: 0.38rem 0.52rem;
+    font-size: 0.75rem;
+  }
+
+  .compact-section-index,
+  .phaseone-task-nav {
+    margin-inline: -0.5rem;
+    padding-inline: 0.5rem;
+  }
+
+  .compact-section-index-link,
+  .phaseone-task-nav a {
+    min-height: 2.45rem;
+    padding-inline: 0.58rem;
+    font-size: 0.78rem;
+  }
+
+  .compact-section-index-status {
+    display: none;
+  }
+
+  .compact-section,
+  .phaseone-admin-section {
+    scroll-margin-top: 3.5rem;
+  }
+
+  .compact-section {
+    margin-top: 1.25rem;
+  }
+
+  .compact-section-header {
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .phaseone-attendance-metrics,
+  .metric-grid[aria-label="YM Hub summary"] {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .phaseone-attendance-metrics::-webkit-scrollbar,
+  .metric-grid[aria-label="YM Hub summary"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  .phaseone-attendance-metrics .metric-card,
+  .metric-grid[aria-label="YM Hub summary"] .metric-card {
+    flex: 0 0 auto;
+    min-width: 6.2rem;
+    padding: 0.62rem 0.7rem;
+  }
+
+  .flat-link-row {
+    align-items: flex-start;
+    padding: 0.8rem 0;
+  }
+
+  section[aria-labelledby="available-title"] .card,
+  section[aria-labelledby="staff-tools-title"] .card {
+    grid-template-columns: 1fr;
+  }
+
+  section[aria-labelledby="available-title"] .card .text-link,
+  section[aria-labelledby="staff-tools-title"] .card .text-link {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 0.35rem;
+  }
+}

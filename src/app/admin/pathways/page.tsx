@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
+import { SectionIndex } from "@/components/section-index";
 import { requirePathwayManager } from "@/lib/auth/pathway-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import {
@@ -72,6 +73,23 @@ export default async function AdminPathwaysPage({
   const successMessage = successCode ? successMessages[successCode] : undefined;
   const errorMessage = readParameter(parameters, "error");
 
+  const sectionItems = [
+    {
+      href: "#current-version",
+      label: "Current version",
+      status: draft ? `Draft v${draft.versionNumber}` : "No draft",
+    },
+    ...(draft
+      ? [
+          { href: "#pathway-map-settings-title", label: "Map settings" },
+          { href: "#pathway-phases-title", label: "Phases", count: draft.phases.length },
+          { href: "#pathway-tracks-title", label: "Tracks", count: draft.tracks.length },
+          { href: "#pathway-stages-title", label: "Stages", count: draft.stages.length },
+        ]
+      : []),
+    { href: "#version-history", label: "Version history", count: versions.length },
+  ];
+
   return (
     <div className="site-shell">
       <PortalHeader status="Pathway management" dashboard />
@@ -101,6 +119,8 @@ export default async function AdminPathwaysPage({
           </div>
         </div>
 
+        <SectionIndex items={sectionItems} label="Pathway management sections" />
+
         {successMessage ? (
           <div className="notice notice-success" role="status">
             {successMessage}
@@ -112,11 +132,19 @@ export default async function AdminPathwaysPage({
           </div>
         ) : null}
 
-        <section className="panel" aria-labelledby="pathway-publishing-title">
-          <div className="section-header">
+        <section
+          className="flat-section compact-section"
+          id="current-version"
+          aria-labelledby="pathway-publishing-title"
+        >
+          <div className="section-header compact-section-header">
             <div>
-              <p className="eyebrow">Publishing control</p>
               <h2 id="pathway-publishing-title">Current version</h2>
+              <p className="compact-section-meta">
+                {draft
+                  ? `Draft version ${draft.versionNumber} is ready to edit. Saving does not change the volunteer-facing map.`
+                  : "No draft is open. Create one from the current published version before editing."}
+              </p>
             </div>
             {draft ? (
               <form action={publishPathwayDraft}>
@@ -134,20 +162,19 @@ export default async function AdminPathwaysPage({
               </form>
             )}
           </div>
-          <p className="muted">
-            {draft
-              ? `Draft version ${draft.versionNumber} is available. Saving it does not change the volunteer-facing map.`
-              : "No draft is open. Create one from the current published version before editing."}
-          </p>
         </section>
 
         {draft ? <PathwayEditor pathwayMap={draft} /> : null}
 
-        <section className="section" aria-labelledby="pathway-history-title">
-          <div className="section-header">
+        <section
+          className="compact-section"
+          id="version-history"
+          aria-labelledby="pathway-history-title"
+        >
+          <div className="section-header compact-section-header">
             <div>
-              <p className="eyebrow">Audit trail</p>
               <h2 id="pathway-history-title">Version history</h2>
+              <p className="compact-section-meta">{versions.length} saved versions</p>
             </div>
           </div>
           <div className="table-wrap">

@@ -8,6 +8,7 @@ import "./admin-events.css";
 import "./continuous-attendance.css";
 import "./opportunity-image.css";
 import "./motion.css";
+import "./compact-ui.css";
 
 export const metadata: Metadata = {
   title: {
