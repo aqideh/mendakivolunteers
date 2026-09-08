@@ -100,14 +100,14 @@ export function EventForm({
         <input name="id" type="hidden" value={event?.id ?? recoveryEventId ?? ""} />
       ) : null}
 
-      <div className="form-field">
+      <div className="form-field event-form-anchor" id="event-schedule">
         <label htmlFor="title">Event title</label>
         <input defaultValue={event?.title} id="title" maxLength={160} name="title" required />
       </div>
 
       <TimeslotEditor initialTimeslots={initialTimeslots} />
 
-      <fieldset className="phaseone-admin-fieldset">
+      <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-location">
         <legend>Location</legend>
         <div className="form-field">
           <label htmlFor="venue">Venue</label>
@@ -125,7 +125,7 @@ export function EventForm({
         </div>
       </fieldset>
 
-      <fieldset className="phaseone-admin-fieldset">
+      <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-preparation">
         <legend>Volunteer preparation</legend>
         <div className="form-field">
           <label htmlFor="attireNotes">Attire reminder</label>
@@ -151,7 +151,7 @@ export function EventForm({
         </div>
       </fieldset>
 
-      <details className="phaseone-disclosure">
+      <details className="phaseone-disclosure event-form-anchor" id="event-links">
         <summary>Volunteer links</summary>
         <div className="phaseone-disclosure-body">
           <div className="form-field">
@@ -186,7 +186,11 @@ export function EventForm({
         </div>
       </details>
 
-      <details className="phaseone-disclosure" open={Boolean(event?.has_sign_in_pin || event?.has_sign_out_pin || event?.sign_in_url || event?.sign_out_url)}>
+      <details
+        className="phaseone-disclosure event-form-anchor"
+        id="event-attendance-settings"
+        open={Boolean(event?.has_sign_in_pin || event?.has_sign_out_pin || event?.sign_in_url || event?.sign_out_url)}
+      >
         <summary>Attendance settings</summary>
         <div className="phaseone-disclosure-body">
           <p className="muted">Only configure these controls when volunteers need in-app check-in or check-out.</p>
@@ -241,7 +245,7 @@ export function EventForm({
         </div>
       </details>
 
-      <details className="phaseone-disclosure">
+      <details className="phaseone-disclosure event-form-anchor" id="event-advanced">
         <summary>Advanced event settings</summary>
         <div className="phaseone-disclosure-body">
           <div className="form-field">
