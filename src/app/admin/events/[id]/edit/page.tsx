@@ -131,9 +131,9 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         </div>
 
         <nav className="phaseone-task-nav" aria-label="Event editor sections">
-          <a href="#guide">Guide details</a>
-          <a href="#programme">Programme</a>
-          <a href="#roster">Roster</a>
+          <a href="#guide">Guide · {event.is_published ? "Published" : "Draft"}</a>
+          <a href="#programme">Programme · {rundownImages.length}</a>
+          <a href="#roster">Roster · {rosterCountResult.count ?? 0}</a>
           <Link href={`/admin/events/${id}/attendance`}>Attendance</Link>
         </nav>
 
