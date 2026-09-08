@@ -81,10 +81,10 @@ export default async function AdminPathwaysPage({
     },
     ...(draft
       ? [
-          { href: "#map-settings", label: "Map settings" },
-          { href: "#phases", label: "Phases", count: draft.phases.length },
-          { href: "#tracks", label: "Tracks", count: draft.tracks.length },
-          { href: "#stages", label: "Stages", count: draft.stages.length },
+          { href: "#pathway-map-settings-title", label: "Map settings" },
+          { href: "#pathway-phases-title", label: "Phases", count: draft.phases.length },
+          { href: "#pathway-tracks-title", label: "Tracks", count: draft.tracks.length },
+          { href: "#pathway-stages-title", label: "Stages", count: draft.stages.length },
         ]
       : []),
     { href: "#version-history", label: "Version history", count: versions.length },
