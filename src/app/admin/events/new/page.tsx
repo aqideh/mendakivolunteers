@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { EventForm } from "@/components/phaseone/event-form";
 import { PortalHeader } from "@/components/portal-header";
+import { SectionIndex } from "@/components/section-index";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
@@ -39,10 +40,23 @@ export default async function NewEventPage({ searchParams }: PageProps) {
       <PortalHeader status="New event guide" dashboard />
       <main className="page-frame narrow-frame">
         <section className="page-intro">
-          <p className="eyebrow">Phase-one operations</p>
+          <p className="eyebrow">Event operations</p>
           <h1>Create event guide</h1>
-          <p className="lede">Configure the schedule, briefing release, attendance forms and separate action PINs.</p>
+          <p className="lede">Configure the schedule, volunteer information and attendance settings.</p>
         </section>
+
+        <SectionIndex
+          label="Event guide form sections"
+          items={[
+            { href: "#title", label: "Schedule" },
+            { href: "#venue", label: "Location" },
+            { href: "#attireNotes", label: "Preparation" },
+            { href: "#whatsappUrl", label: "Volunteer links" },
+            { href: "#signInUrl", label: "Attendance" },
+            { href: "#externalOpportunityId", label: "Advanced" },
+          ]}
+        />
+
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
         <EventForm opportunities={opportunities} />
       </main>
