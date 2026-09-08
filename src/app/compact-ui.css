@@ -209,7 +209,17 @@
   line-height: 1.3;
 }
 
-.flat-section {
+.flat-section,
+.phaseone-admin-section.panel,
+.phaseone-shift-picker.panel,
+.phaseone-handover.panel,
+section[aria-labelledby="past-event-filters"].panel,
+section[aria-labelledby="profile-title"].panel,
+section[aria-labelledby="points-balance-title"].panel,
+section.panel:has(#pathway-map-settings-title),
+section.panel:has(#pathway-phases-title),
+section.panel:has(#pathway-tracks-title),
+section.panel:has(#pathway-stages-title) {
   border: 0;
   border-radius: 0;
   padding: 0;
@@ -217,8 +227,77 @@
   box-shadow: none;
 }
 
-.flat-link-list {
+.phaseone-admin-section > .section-header,
+.phaseone-shift-picker > .section-header,
+section[aria-labelledby="past-event-filters"] > .section-header {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.phaseone-handover {
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding-block: 0.85rem !important;
+}
+
+.phaseone-attendance-metrics,
+.metric-grid[aria-label="YM Hub summary"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-block: 1rem;
   border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.phaseone-attendance-metrics .metric-card,
+.metric-grid[aria-label="YM Hub summary"] .metric-card {
+  display: grid;
+  flex: 1 1 8rem;
+  min-width: 0;
+  min-height: auto;
+  gap: 0.15rem;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.72rem 0.9rem;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.phaseone-attendance-metrics .metric-card:last-child,
+.metric-grid[aria-label="YM Hub summary"] .metric-card:last-child {
+  border-right: 0;
+}
+
+.phaseone-attendance-metrics .metric-value,
+.metric-grid[aria-label="YM Hub summary"] .metric-value {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+.phaseone-attendance-metrics .metric-label,
+.metric-grid[aria-label="YM Hub summary"] .metric-label {
+  font-size: 0.72rem;
+}
+
+.flat-link-list,
+section[aria-labelledby="available-title"] .card-grid,
+section[aria-labelledby="staff-tools-title"] .card-grid {
+  display: block;
+  border-top: 1px solid var(--border);
+}
+
+.flat-link-row,
+section[aria-labelledby="available-title"] .card,
+section[aria-labelledby="staff-tools-title"] .card {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.9rem 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .flat-link-row {
@@ -226,10 +305,36 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-bottom: 1px solid var(--border);
-  padding: 0.9rem 0;
   color: var(--ink);
   text-decoration: none;
+}
+
+section[aria-labelledby="available-title"] .card,
+section[aria-labelledby="staff-tools-title"] .card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.2rem 1rem;
+  align-items: center;
+}
+
+section[aria-labelledby="available-title"] .card h3,
+section[aria-labelledby="available-title"] .card p,
+section[aria-labelledby="staff-tools-title"] .card h3,
+section[aria-labelledby="staff-tools-title"] .card p {
+  margin: 0;
+}
+
+section[aria-labelledby="available-title"] .card p,
+section[aria-labelledby="staff-tools-title"] .card p {
+  grid-column: 1;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+section[aria-labelledby="available-title"] .card .text-link,
+section[aria-labelledby="staff-tools-title"] .card .text-link {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 .flat-link-row:hover strong,
@@ -258,40 +363,6 @@
   color: var(--brand);
   font-size: 0.82rem;
   font-weight: 800;
-}
-
-.dashboard-flat-links .card-grid {
-  display: block;
-  border-top: 1px solid var(--border);
-}
-
-.dashboard-flat-links .card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.2rem 1rem;
-  align-items: center;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  padding: 0.9rem 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.dashboard-flat-links .card h3,
-.dashboard-flat-links .card p {
-  margin: 0;
-}
-
-.dashboard-flat-links .card p {
-  grid-column: 1;
-  font-size: 0.84rem;
-  line-height: 1.35;
-}
-
-.dashboard-flat-links .card .text-link {
-  grid-column: 2;
-  grid-row: 1 / span 2;
 }
 
 @media (max-width: 760px) {
@@ -365,16 +436,37 @@
     gap: 0.45rem;
   }
 
+  .phaseone-attendance-metrics,
+  .metric-grid[aria-label="YM Hub summary"] {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .phaseone-attendance-metrics::-webkit-scrollbar,
+  .metric-grid[aria-label="YM Hub summary"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  .phaseone-attendance-metrics .metric-card,
+  .metric-grid[aria-label="YM Hub summary"] .metric-card {
+    flex: 0 0 auto;
+    min-width: 6.2rem;
+    padding: 0.62rem 0.7rem;
+  }
+
   .flat-link-row {
     align-items: flex-start;
     padding: 0.8rem 0;
   }
 
-  .dashboard-flat-links .card {
+  section[aria-labelledby="available-title"] .card,
+  section[aria-labelledby="staff-tools-title"] .card {
     grid-template-columns: 1fr;
   }
 
-  .dashboard-flat-links .card .text-link {
+  section[aria-labelledby="available-title"] .card .text-link,
+  section[aria-labelledby="staff-tools-title"] .card .text-link {
     grid-column: 1;
     grid-row: auto;
     margin-top: 0.35rem;
