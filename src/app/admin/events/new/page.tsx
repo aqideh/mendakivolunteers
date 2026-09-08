@@ -48,12 +48,12 @@ export default async function NewEventPage({ searchParams }: PageProps) {
         <SectionIndex
           label="Event guide form sections"
           items={[
-            { href: "#title", label: "Schedule" },
-            { href: "#venue", label: "Location" },
-            { href: "#attireNotes", label: "Preparation" },
-            { href: "#whatsappUrl", label: "Volunteer links" },
-            { href: "#signInUrl", label: "Attendance" },
-            { href: "#externalOpportunityId", label: "Advanced" },
+            { href: "#event-schedule", label: "Schedule" },
+            { href: "#event-location", label: "Location" },
+            { href: "#event-preparation", label: "Preparation" },
+            { href: "#event-links", label: "Volunteer links" },
+            { href: "#event-attendance-settings", label: "Attendance" },
+            { href: "#event-advanced", label: "Advanced" },
           ]}
         />
 
