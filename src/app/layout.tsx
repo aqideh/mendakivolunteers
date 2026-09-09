@@ -9,6 +9,7 @@ import "./continuous-attendance.css";
 import "./opportunity-image.css";
 import "./motion.css";
 import "./compact-ui.css";
+import "./volunteer-insights.css";
 
 export const metadata: Metadata = {
   title: {
