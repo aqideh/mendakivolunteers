@@ -42,6 +42,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
     return NextResponse.json({ error: "Accepted insights could not be exported." }, { status: 500 });
   }
 
+  const eventTitle = eventResult.data.title;
   const headers = [
     "Source Insight ID",
     "KELUARGA Person Key",
@@ -70,13 +71,13 @@ export async function GET(_request: Request, { params }: RouteProps) {
       insight.value,
       insight.detail ?? "",
       insight.source_type,
-      eventResult.data.title,
+      eventTitle,
       insight.captured_at,
     ];
   });
 
   const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
-  const filename = `maklom-volunteer-insights-${safeFilename(eventResult.data.title)}.csv`;
+  const filename = `maklom-volunteer-insights-${safeFilename(eventTitle)}.csv`;
 
   return new NextResponse(`\uFEFF${csv}`, {
     headers: {
