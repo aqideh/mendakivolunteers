@@ -93,7 +93,13 @@ export async function addVolunteerInsight(formData: FormData) {
 
   revalidatePath(attendancePath);
   revalidatePath(`/admin/events/${parsed.data.eventId}/insights`);
-  redirect(`${attendancePath}?success=insight_saved&highlight=${encode(parsed.data.rosterId)}`);
+  const returnTimeslotId = parsed.data.timeslotId ?? roster.timeslot_id;
+  const returnQuery = new URLSearchParams({
+    success: "insight_saved",
+    highlight: parsed.data.rosterId,
+  });
+  if (returnTimeslotId) returnQuery.set("timeslot", returnTimeslotId);
+  redirect(`${attendancePath}?${returnQuery.toString()}#roster-${encode(parsed.data.rosterId)}`);
 }
 
 export async function reviewVolunteerInsight(formData: FormData) {

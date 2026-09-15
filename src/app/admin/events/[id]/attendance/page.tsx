@@ -7,6 +7,7 @@ import {
   addWalkInVolunteer,
   applyAttendanceChange,
 } from "@/app/admin/events/[id]/attendance/actions";
+import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import {
   BulkCheckoutButton,
   ExtendAttendanceButton,
@@ -362,7 +363,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
         ? "Last-minute volunteer added and checked in."
         : successCode === "walk_in_added"
           ? "Last-minute volunteer added to the roster."
-          : undefined;
+          : successCode === "insight_saved"
+            ? "Volunteer insight saved for review."
+            : undefined;
   const errorMessage = parameter(parameters, "error");
   const event = eventResult.data;
 
@@ -660,6 +663,66 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                           timeslotId={selectedTimeslot.id}
                         />
                       ) : null}
+
+                      <details className="phaseone-inline-insight">
+                        <summary>
+                          <span>+ Add insight</span>
+                          <span className="phaseone-inline-insight-hint">Skill, interest, connection, etc.</span>
+                        </summary>
+                        <form action={addVolunteerInsight} className="insight-capture-form phaseone-inline-insight-form">
+                          <input name="eventId" type="hidden" value={id} />
+                          <input name="rosterId" type="hidden" value={volunteer.id} />
+                          <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
+                          <div className="insight-capture-grid">
+                            <div className="form-field">
+                              <label htmlFor={`insight-category-${volunteer.id}`}>What did you learn?</label>
+                              <select id={`insight-category-${volunteer.id}`} name="category" defaultValue="interest">
+                                <option value="interest">Interest</option>
+                                <option value="skill">Skill</option>
+                                <option value="experience">Experience</option>
+                                <option value="connection">Connection / affiliation</option>
+                                <option value="role_preference">Role preference</option>
+                                <option value="availability">Availability</option>
+                                <option value="language">Language</option>
+                                <option value="development">Development interest</option>
+                                <option value="follow_up">Follow-up</option>
+                                <option value="note">Other useful note</option>
+                              </select>
+                            </div>
+                            <div className="form-field">
+                              <label htmlFor={`insight-source-${volunteer.id}`}>Source</label>
+                              <select id={`insight-source-${volunteer.id}`} name="sourceType" defaultValue="volunteer_shared">
+                                <option value="volunteer_shared">Volunteer told me</option>
+                                <option value="staff_observed">Staff observed</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="form-field">
+                            <label htmlFor={`insight-value-${volunteer.id}`}>Insight</label>
+                            <input
+                              id={`insight-value-${volunteer.id}`}
+                              name="value"
+                              maxLength={240}
+                              placeholder="e.g. Interested in mentoring, photography, weekends"
+                              required
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label htmlFor={`insight-detail-${volunteer.id}`}>Context <span className="muted">optional</span></label>
+                            <textarea
+                              id={`insight-detail-${volunteer.id}`}
+                              name="detail"
+                              maxLength={1500}
+                              rows={2}
+                              placeholder="Short factual context that will help someone understand this later"
+                            />
+                          </div>
+                          <div className="phaseone-inline-insight-actions">
+                            <button className="button button-primary" type="submit">Save insight</button>
+                            <Link className="text-link" href={`/admin/events/${id}/insights`}>Review all insights</Link>
+                          </div>
+                        </form>
+                      </details>
 
                       {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
 
