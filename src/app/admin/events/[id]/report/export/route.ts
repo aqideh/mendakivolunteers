@@ -166,27 +166,33 @@ export async function GET(_request: Request, { params }: RouteProps) {
     return NextResponse.json({ error: "Event could not be loaded." }, { status: 404 });
   }
 
-  const failedDataset = [
-    ["timeslots", timeslotsResult],
-    ["roster", rosterResult],
-    ["attendance", attendanceResult],
-    ["insights", insightsResult],
-    ["reviews", reviewsResult],
-  ].find(([, result]) => result.error || !result.data);
+  const event = eventResult.data;
 
-  if (failedDataset) {
-    console.error("Event report export unavailable", {
-      eventId: id,
-      dataset: failedDataset[0],
-      code: failedDataset[1].error?.code,
-    });
+  if (timeslotsResult.error || !timeslotsResult.data) {
+    console.error("Event report export unavailable", { eventId: id, dataset: "timeslots", code: timeslotsResult.error?.code });
+    return NextResponse.json({ error: "Event report export is unavailable." }, { status: 500 });
+  }
+  if (rosterResult.error || !rosterResult.data) {
+    console.error("Event report export unavailable", { eventId: id, dataset: "roster", code: rosterResult.error?.code });
+    return NextResponse.json({ error: "Event report export is unavailable." }, { status: 500 });
+  }
+  if (attendanceResult.error || !attendanceResult.data) {
+    console.error("Event report export unavailable", { eventId: id, dataset: "attendance", code: attendanceResult.error?.code });
+    return NextResponse.json({ error: "Event report export is unavailable." }, { status: 500 });
+  }
+  if (insightsResult.error || !insightsResult.data) {
+    console.error("Event report export unavailable", { eventId: id, dataset: "insights", code: insightsResult.error?.code });
+    return NextResponse.json({ error: "Event report export is unavailable." }, { status: 500 });
+  }
+  if (reviewsResult.error || !reviewsResult.data) {
+    console.error("Event report export unavailable", { eventId: id, dataset: "reviews", code: reviewsResult.error?.code });
     return NextResponse.json({ error: "Event report export is unavailable." }, { status: 500 });
   }
 
   const timeslotById = new Map((timeslotsResult.data as Timeslot[]).map((timeslot) => [timeslot.id, timeslot]));
-  const attendanceByRoster = new Map(attendanceResult.data!.map((record) => [record.roster_id, record]));
-  const insightsByPerson = groupByPersonKey((insightsResult.data ?? []) as Insight[]);
-  const reviewsByPerson = groupByPersonKey((reviewsResult.data ?? []) as Review[]);
+  const attendanceByRoster = new Map(attendanceResult.data.map((record) => [record.roster_id, record]));
+  const insightsByPerson = groupByPersonKey(insightsResult.data as Insight[]);
+  const reviewsByPerson = groupByPersonKey(reviewsResult.data as Review[]);
 
   const headers = [
     "event_title",
@@ -225,7 +231,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
     "follow_up_required",
   ];
 
-  const rows = rosterResult.data!.map((volunteer) => {
+  const rows = rosterResult.data.map((volunteer) => {
     const timeslot = timeslotById.get(volunteer.timeslot_id);
     const attendance = attendanceByRoster.get(volunteer.id);
     const personKey = volunteer.attendance_person_key;
@@ -236,8 +242,8 @@ export async function GET(_request: Request, { params }: RouteProps) {
       : "";
 
     const values: Array<string | null | undefined> = [
-      eventResult.data.title,
-      eventResult.data.venue,
+      event.title,
+      event.venue,
       timeslot ? singaporeDate(timeslot.starts_at) : null,
       timeslot ? shiftLabel(timeslot) : null,
       timeslot?.starts_at,
@@ -276,7 +282,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
   });
 
   const csv = [headers.map(csvCell).join(","), ...rows].join("\r\n");
-  const filename = `${safeFilename(eventResult.data.title)}-event-report.csv`;
+  const filename = `${safeFilename(event.title)}-event-report.csv`;
 
   return new NextResponse(`\uFEFF${csv}`, {
     status: 200,
