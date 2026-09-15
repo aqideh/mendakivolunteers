@@ -137,6 +137,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           <a href="#roster">Roster · {rosterCountResult.count ?? 0}</a>
           <Link href={`/admin/events/${id}/insights`}>Insights</Link>
           <Link href={`/admin/events/${id}/attendance`}>Attendance</Link>
+          <Link href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
+          <Link href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
         </nav>
 
         {successMessage ? <div className="notice notice-success" role="status">{successMessage}</div> : null}
