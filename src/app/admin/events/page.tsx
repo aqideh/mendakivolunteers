@@ -56,6 +56,9 @@ function MobileEventActions({ event }: Readonly<{ event: AdminEventSummary }>) {
       <details className="phaseone-events-mobile-more">
         <summary aria-label={`More actions for ${event.title}`}>•••</summary>
         <div className="phaseone-events-mobile-more-menu">
+          <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
+            Download event report
+          </a>
           <form action={duplicateEvent}>
             <input type="hidden" name="eventId" value={event.id} />
             <button className="text-link button-reset" type="submit">
@@ -186,6 +189,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                       <div className="actions">
                         <Link className="text-link" href={`/admin/events/${event.id}/attendance`}>Roster / check-in</Link>
                         <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
+                        <a className="text-link" href={`/admin/events/${event.id}/report/export`}>Download event report</a>
                         <form action={duplicateEvent}>
                           <input type="hidden" name="eventId" value={event.id} />
                           <button className="text-link button-reset" type="submit">Duplicate journey</button>
