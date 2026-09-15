@@ -194,6 +194,7 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
                       <div className="actions">
                         <Link className="text-link" href={`/admin/events/${event.id}/attendance`}>Roster / check-in</Link>
                         <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
+                        <a className="text-link" href={`/admin/events/${event.id}/report/export`}>Download event report</a>
                         <form action={duplicateEvent}>
                           <input type="hidden" name="eventId" value={event.id} />
                           <button className="text-link button-reset" type="submit">Duplicate journey</button>
