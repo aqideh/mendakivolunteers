@@ -73,7 +73,7 @@ export function WalkInEditForm({
           </div>
         </div>
         <button className="button button-secondary" type="submit">Save corrected details</button>
-        <p className="muted">Use this only to fix the walk-in roster entry. Existing attendance, insights and reviews remain linked to the same event volunteer identity.</p>
+        <p className="muted">The correction applies across this walk-in volunteer&apos;s shifts for the event. Attendance, insights and reviews remain linked to the same volunteer identity.</p>
       </form>
     </details>
   );

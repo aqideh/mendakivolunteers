@@ -1,6 +1,6 @@
 begin;
 
-select plan(10);
+select plan(12);
 
 select has_table(
   'public',
@@ -157,11 +157,48 @@ select attendance_person_key
 from public.phaseone_roster
 where id = '75000000-0000-4000-8000-000000000005';
 
+insert into public.phaseone_event_timeslots (
+  id,
+  event_id,
+  label,
+  starts_at
+)
+values (
+  '75000000-0000-4000-8000-000000000006',
+  '75000000-0000-4000-8000-000000000002',
+  'Afternoon',
+  '2026-09-15 05:00:00+00'
+);
+
+insert into public.phaseone_roster (
+  id,
+  event_id,
+  timeslot_id,
+  volunteer_name,
+  entry_method,
+  attendance_person_key,
+  uploaded_by
+)
+select
+  '75000000-0000-4000-8000-000000000007',
+  '75000000-0000-4000-8000-000000000002',
+  '75000000-0000-4000-8000-000000000006',
+  'Walk In Typo',
+  'walk_in',
+  attendance_person_key,
+  '75000000-0000-4000-8000-000000000001'
+from walk_in_identity_before;
+
 update public.phaseone_roster
 set volunteer_name = 'Walk In Corrected',
     email = 'walk-in-corrected@example.test',
     mobile = '91234567'
-where id = '75000000-0000-4000-8000-000000000005';
+where event_id = '75000000-0000-4000-8000-000000000002'
+  and attendance_person_key = (
+    select attendance_person_key
+    from walk_in_identity_before
+  )
+  and entry_method = 'walk_in';
 
 select is(
   (
@@ -184,6 +221,37 @@ select is(
   ),
   'Walk In Corrected',
   'walk-in name corrections are stored'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.phaseone_roster
+    where event_id = '75000000-0000-4000-8000-000000000002'
+      and attendance_person_key = (
+        select attendance_person_key
+        from walk_in_identity_before
+      )
+      and volunteer_name = 'Walk In Corrected'
+      and email = 'walk-in-corrected@example.test'
+      and mobile = '91234567'
+  ),
+  2,
+  'walk-in corrections apply to every shift row for the same event volunteer'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.phaseone_roster
+    where event_id = '75000000-0000-4000-8000-000000000002'
+      and attendance_person_key = (
+        select attendance_person_key
+        from walk_in_identity_before
+      )
+  ),
+  2,
+  'cross-shift walk-in corrections keep both roster rows on one volunteer identity'
 );
 
 select * from finish();

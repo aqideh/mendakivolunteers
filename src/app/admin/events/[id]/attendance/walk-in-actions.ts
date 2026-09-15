@@ -44,7 +44,7 @@ export async function updateWalkInVolunteerDetails(formData: FormData) {
 
   const { data: roster, error: rosterError } = await admin
     .from("phaseone_roster")
-    .select("id, entry_method")
+    .select("id, entry_method, attendance_person_key")
     .eq("id", parsed.data.rosterId)
     .eq("event_id", parsed.data.eventId)
     .maybeSingle();
@@ -56,7 +56,7 @@ export async function updateWalkInVolunteerDetails(formData: FormData) {
     redirect(`${returnPath}&error=${encode("Only walk-in volunteer details can be edited here.")}`);
   }
 
-  const { error } = await admin
+  const { data: updatedRows, error } = await admin
     .from("phaseone_roster")
     .update({
       volunteer_name: parsed.data.volunteerName,
@@ -64,23 +64,27 @@ export async function updateWalkInVolunteerDetails(formData: FormData) {
       mobile: parsed.data.mobile || null,
       dietary_requirements: parsed.data.dietaryRequirements || null,
     })
-    .eq("id", parsed.data.rosterId)
     .eq("event_id", parsed.data.eventId)
-    .eq("entry_method", "walk_in");
+    .eq("attendance_person_key", roster.attendance_person_key)
+    .eq("entry_method", "walk_in")
+    .select("id");
 
-  if (error) {
+  if (error || !updatedRows || updatedRows.length === 0) {
     console.error("Unable to update walk-in volunteer details", {
-      code: error.code,
+      code: error?.code,
       eventId: parsed.data.eventId,
       rosterId: parsed.data.rosterId,
+      attendancePersonKey: roster.attendance_person_key,
     });
-    const message = error.code === "23505"
+    const message = error?.code === "23505"
       ? "Those corrected details match another volunteer already on this shift."
       : "Walk-in volunteer details could not be updated.";
     redirect(`${returnPath}&error=${encode(message)}`);
   }
 
   revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance/monitor`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance/reconciliation`);
   revalidatePath(`/admin/events/${parsed.data.eventId}/insights`);
   redirect(`${returnPath}&success=walk_in_updated&highlight=${encode(parsed.data.rosterId)}#roster-${encode(parsed.data.rosterId)}`);
 }
