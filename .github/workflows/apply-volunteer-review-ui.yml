@@ -1,0 +1,124 @@
+name: Apply volunteer review UI
+
+on:
+  push:
+    branches:
+      - volunteer-reviews
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: volunteer-reviews
+
+      - name: Patch attendance and insights pages
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          attendance_path = Path('src/app/admin/events/[id]/attendance/page.tsx')
+          page = attendance_path.read_text()
+
+          import_marker = '''} from "@/components/phaseone/attendance-quick-action";\n'''
+          imports = '''} from "@/components/phaseone/attendance-quick-action";\nimport { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";\nimport { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";\n'''
+          if 'VolunteerReviewForm' not in page:
+              assert import_marker in page
+              page = page.replace(import_marker, imports, 1)
+
+          success_old = '''          : successCode === "insight_saved"\n            ? "Volunteer insight saved for review."\n            : undefined;'''
+          success_new = '''          : successCode === "insight_saved"\n            ? "Volunteer insight saved for review."\n            : successCode === "review_saved"\n              ? "Volunteer review saved."\n              : successCode === "walk_in_updated"\n                ? "Walk-in volunteer details updated."\n                : undefined;'''
+          if success_old in page:
+              page = page.replace(success_old, success_new, 1)
+
+          card_marker = '''                      {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}\n'''
+          card_controls = '''                      <VolunteerReviewForm\n                        eventId={id}\n                        rosterId={volunteer.id}\n                        timeslotId={selectedTimeslot.id}\n                      />\n\n                      {volunteer.entry_method === "walk_in" ? (\n                        <WalkInEditForm\n                          email={volunteer.email}\n                          eventId={id}\n                          mobile={volunteer.mobile}\n                          rosterId={volunteer.id}\n                          timeslotId={selectedTimeslot.id}\n                          volunteerName={volunteer.volunteer_name}\n                        />\n                      ) : null}\n\n'''
+          if '<VolunteerReviewForm' not in page:
+              assert card_marker in page
+              page = page.replace(card_marker, card_controls + card_marker, 1)
+
+          attendance_path.write_text(page)
+
+          insights_path = Path('src/app/admin/events/[id]/insights/page.tsx')
+          insights = insights_path.read_text()
+
+          labels_marker = '''const sourceLabels: Record<string, string> = {\n  volunteer_shared: "Volunteer shared",\n  staff_observed: "Staff observed",\n};\n'''
+          labels_new = labels_marker + '''\nconst behaviorLabels: Record<string, string> = {\n  proactive: "Proactive",\n  punctual: "Punctual",\n  reliable: "Reliable",\n  good_teamwork: "Good teamwork",\n  engaged: "Engaged",\n  takes_initiative: "Takes initiative",\n  communicates_well: "Communicates well",\n  good_with_participants: "Good with participants",\n  follows_instructions: "Follows instructions",\n  safety_conscious: "Safety-conscious",\n  late: "Late",\n  unreliable: "Reliability concern",\n  disengaged: "Disengaged",\n  teamwork_concern: "Teamwork concern",\n  did_not_follow_instructions: "Did not follow instructions",\n  inappropriate_conduct: "Inappropriate conduct",\n  participant_interaction_concern: "Participant interaction concern",\n  safety_concern: "Safety / compliance concern",\n  communication_concern: "Communication concern",\n  left_early: "Left early",\n};\n'''
+          if 'const behaviorLabels' not in insights:
+              assert labels_marker in insights
+              insights = insights.replace(labels_marker, labels_new, 1)
+
+          insights = insights.replace(
+              'const [eventResult, rosterResult, insightsResult] = await Promise.all([',
+              'const [eventResult, rosterResult, insightsResult, reviewsResult] = await Promise.all([',
+              1,
+          )
+
+          query_marker = '''    admin\n      .from("phaseone_volunteer_insights")\n      .select("id, roster_id, category, value, detail, source_type, review_status, captured_at, volunteer_person_key, phaseone_roster(volunteer_name, volunteer_key, email, mobile)")\n      .eq("event_id", id)\n      .order("captured_at", { ascending: false })\n      .limit(2000),\n  ]);'''
+          query_new = '''    admin\n      .from("phaseone_volunteer_insights")\n      .select("id, roster_id, category, value, detail, source_type, review_status, captured_at, volunteer_person_key, phaseone_roster(volunteer_name, volunteer_key, email, mobile)")\n      .eq("event_id", id)\n      .order("captured_at", { ascending: false })\n      .limit(2000),\n    admin\n      .from("phaseone_volunteer_reviews")\n      .select("id, roster_id, volunteer_person_key, rating, positive_behaviors, concern_behaviors, comments, follow_up_required, reviewed_at, phaseone_roster(volunteer_name, volunteer_key, email, mobile)")\n      .eq("event_id", id)\n      .order("reviewed_at", { ascending: false })\n      .limit(2000),\n  ]);'''
+          if '.from("phaseone_volunteer_reviews")' not in insights:
+              assert query_marker in insights
+              insights = insights.replace(query_marker, query_new, 1)
+
+          error_old = '''  if (rosterResult.error || !rosterResult.data || insightsResult.error || !insightsResult.data) {\n    throw new Error("Volunteer insights could not be loaded");\n  }'''
+          error_new = '''  if (\n    rosterResult.error || !rosterResult.data\n    || insightsResult.error || !insightsResult.data\n    || reviewsResult.error || !reviewsResult.data\n  ) {\n    throw new Error("Volunteer insights and reviews could not be loaded");\n  }'''
+          if error_old in insights:
+              insights = insights.replace(error_old, error_new, 1)
+
+          calc_marker = '''  for (const insight of insights) {\n    insightCountByPerson.set(insight.volunteer_person_key, (insightCountByPerson.get(insight.volunteer_person_key) ?? 0) + 1);\n  }\n'''
+          calc_new = calc_marker + '''\n  const reviews = reviewsResult.data;\n  const reviewVolunteerCount = new Set(reviews.map((review) => review.volunteer_person_key)).size;\n  const followUpCount = reviews.filter((review) => review.follow_up_required).length;\n  const averageRating = reviews.length\n    ? reviews.reduce((total, review) => total + review.rating, 0) / reviews.length\n    : null;\n'''
+          if 'const reviews = reviewsResult.data' not in insights:
+              assert calc_marker in insights
+              insights = insights.replace(calc_marker, calc_new, 1)
+
+          insights = insights.replace(
+              'Capture useful things staff learn on the ground, then review them before handing accepted insights to MakLom.',
+              'Capture useful things staff learn on the ground and keep event-level volunteer performance reviews in one place.',
+              1,
+          )
+
+          nav_marker = '''            <a className="compact-section-index-link" href="#capture">Capture <span className="compact-section-index-count">{volunteers.length}</span></a>\n            <a className="compact-section-index-link" href="#review">Review <span className="compact-section-index-count">{submitted.length}</span></a>'''
+          nav_new = '''            <a className="compact-section-index-link" href="#capture">Capture <span className="compact-section-index-count">{volunteers.length}</span></a>\n            <a className="compact-section-index-link" href="#performance-reviews">Reviews <span className="compact-section-index-count">{reviews.length}</span></a>\n            <a className="compact-section-index-link" href="#review">Review <span className="compact-section-index-count">{submitted.length}</span></a>'''
+          if 'href="#performance-reviews"' not in insights:
+              assert nav_marker in insights
+              insights = insights.replace(nav_marker, nav_new, 1)
+
+          summary_marker = '''          <span><strong>{accepted.length}</strong> handoff-ready</span>\n'''
+          summary_new = '''          <span><strong>{accepted.length}</strong> accepted</span>\n          <span><strong>{reviews.length}</strong> staff reviews</span>\n          <span><strong>{reviewVolunteerCount}</strong> volunteers reviewed</span>\n          <span><strong>{averageRating === null ? "—" : averageRating.toFixed(1)}</strong> avg rating</span>\n          <span><strong>{followUpCount}</strong> need follow-up</span>\n'''
+          if '{reviews.length}</strong> staff reviews' not in insights:
+              assert summary_marker in insights
+              insights = insights.replace(summary_marker, summary_new, 1)
+
+          review_section_marker = '''        <section className="compact-section" id="review" aria-labelledby="review-title">\n'''
+          review_section = '''        <section className="compact-section" id="performance-reviews" aria-labelledby="performance-reviews-title">\n          <div className="section-header compact-section-header">\n            <div>\n              <h2 id="performance-reviews-title">Volunteer performance reviews</h2>\n              <p className="compact-section-meta">Event-level staff assessments. Ratings describe performance in the assigned role, while behaviour tags and follow-up flags provide operational context.</p>\n            </div>\n          </div>\n          <div className="volunteer-performance-review-list">\n            {reviews.map((review) => {\n              const roster = Array.isArray(review.phaseone_roster) ? review.phaseone_roster[0] : review.phaseone_roster;\n              const positiveBehaviors = (review.positive_behaviors ?? []) as string[];\n              const concernBehaviors = (review.concern_behaviors ?? []) as string[];\n              return (\n                <article className="volunteer-performance-review-row" key={review.id}>\n                  <div className="volunteer-performance-review-person">\n                    <strong>{roster?.volunteer_name ?? "Unknown volunteer"}</strong>\n                    <span className="muted">{roster?.volunteer_key ?? roster?.email ?? roster?.mobile ?? "No matching identifier"}</span>\n                  </div>\n                  <div className="volunteer-performance-review-content">\n                    <span className="volunteer-performance-review-stars" aria-label={`${review.rating} out of 5 stars`}>\n                      {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}\n                    </span>\n                    <span className="muted">Staff review · {formatSingaporeDateTime(review.reviewed_at)}</span>\n                    {positiveBehaviors.length || concernBehaviors.length ? (\n                      <div className="volunteer-performance-review-tags">\n                        {positiveBehaviors.map((behavior) => <span key={`positive-${review.id}-${behavior}`}>+ {behaviorLabels[behavior] ?? behavior.replaceAll("_", " ")}</span>)}\n                        {concernBehaviors.map((behavior) => <span key={`concern-${review.id}-${behavior}`}>! {behaviorLabels[behavior] ?? behavior.replaceAll("_", " ")}</span>)}\n                      </div>\n                    ) : null}\n                    {review.comments ? <p>{review.comments}</p> : null}\n                    {review.follow_up_required ? <span className="volunteer-review-follow-up-pill">Requires follow-up</span> : null}\n                  </div>\n                </article>\n              );\n            })}\n            {reviews.length === 0 ? <p className="empty-state">No volunteer reviews have been submitted for this event yet.</p> : null}\n          </div>\n        </section>\n\n'''
+          if 'id="performance-reviews"' not in insights:
+              assert review_section_marker in insights
+              insights = insights.replace(review_section_marker, review_section + review_section_marker, 1)
+
+          insights = insights.replace(
+              '<div className="section-header compact-section-header"><div><h2 id="accepted-title">Accepted</h2><p className="compact-section-meta">These rows are eligible for MakLom handoff.</p></div></div>',
+              '<div className="section-header compact-section-header"><div><h2 id="accepted-title">Accepted</h2><p className="compact-section-meta">These insights have passed staff review.</p></div></div>',
+              1,
+          )
+
+          insights_path.write_text(insights)
+          PY
+
+      - name: Commit patched UI
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/admin/events/'[id]'/attendance/page.tsx src/app/admin/events/'[id]'/insights/page.tsx
+          if git diff --cached --quiet; then
+            echo "No UI changes to commit"
+          else
+            git commit -m "Integrate volunteer reviews into event operations"
+            git push origin HEAD:volunteer-reviews
+          fi
