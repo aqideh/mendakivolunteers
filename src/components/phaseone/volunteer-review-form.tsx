@@ -47,7 +47,7 @@ export function VolunteerReviewForm({ eventId, rosterId, timeslotId }: Volunteer
         <fieldset className="phaseone-review-rating">
           <legend>Overall performance</legend>
           <div className="phaseone-star-rating" aria-label="Overall performance out of 5 stars">
-            {[1, 2, 3, 4, 5].map((rating) => (
+            {[5, 4, 3, 2, 1].map((rating) => (
               <label key={rating}>
                 <input name="rating" type="radio" value={rating} required={rating === 1} />
                 <span aria-hidden="true">★</span>
