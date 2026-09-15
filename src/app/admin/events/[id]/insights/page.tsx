@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PortalHeader } from "@/components/portal-header";
+import { VolunteerReviewsSection } from "@/components/phaseone/volunteer-reviews-section";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -96,6 +97,7 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
         <nav className="compact-section-index" aria-label="Volunteer insight sections">
           <div className="compact-section-index-track">
             <a className="compact-section-index-link" href="#capture">Capture <span className="compact-section-index-count">{volunteers.length}</span></a>
+            <a className="compact-section-index-link" href="#reviews">Reviews</a>
             <a className="compact-section-index-link" href="#review">Review <span className="compact-section-index-count">{submitted.length}</span></a>
             <a className="compact-section-index-link" href="#accepted">Accepted <span className="compact-section-index-count">{accepted.length}</span></a>
             <a className="compact-section-index-link" href="#dismissed">Dismissed <span className="compact-section-index-count">{dismissed.length}</span></a>
@@ -163,6 +165,8 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
             {volunteers.length === 0 ? <p className="empty-state">No volunteers are on this event roster yet.</p> : null}
           </div>
         </section>
+
+        <VolunteerReviewsSection eventId={id} />
 
         <section className="compact-section" id="review" aria-labelledby="review-title">
           <div className="section-header compact-section-header">
