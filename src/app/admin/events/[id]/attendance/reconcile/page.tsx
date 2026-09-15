@@ -46,6 +46,10 @@ function latest(values: string[]) {
   return values.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
 }
 
+function currentTimeMs() {
+  return Date.now();
+}
+
 export default async function AttendanceReconciliationPage({ params }: Props) {
   const { id } = await params;
   await requireEventManager(`/admin/events/${id}/attendance/reconcile`);
@@ -82,7 +86,7 @@ export default async function AttendanceReconciliationPage({ params }: Props) {
     windows.set(key, current);
   }
 
-  const nowMs = Date.now();
+  const nowMs = currentTimeMs();
   const exceptions: ExceptionRow[] = [];
   const seen = new Set<string>();
 
@@ -173,7 +177,7 @@ export default async function AttendanceReconciliationPage({ params }: Props) {
           <div className={styles.ruleGrid}>
             <div><strong>High</strong><p>Open sessions after scheduled end, duplicate shift identities, or impossible check-in/check-out ordering.</p></div>
             <div><strong>Medium</strong><p>Completed shifts with no attendance and no absent/withdrawn status.</p></div>
-            <div><strong>Review only</strong><p>Event-day attendance more than 90 minutes outside the volunteer's scheduled window.</p></div>
+            <div><strong>Review only</strong><p>Event-day attendance more than 90 minutes outside the volunteer&apos;s scheduled window.</p></div>
           </div>
           <p className="muted">There is no separate “resolve” button. Correct the underlying attendance or roster record and the exception disappears automatically, preserving one source of truth and the existing audit trail.</p>
         </section>
