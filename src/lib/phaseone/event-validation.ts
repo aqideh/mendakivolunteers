@@ -153,6 +153,10 @@ export const rosterRowSchema = z.object({
     (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
     z.string().max(20).nullable(),
   ),
+  dietary_requirements: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
+    z.string().max(500).nullable(),
+  ),
 });
 
 function rosterMatchKey(row: z.infer<typeof rosterRowSchema>): string {

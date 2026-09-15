@@ -14,6 +14,7 @@ const walkInEditSchema = z.object({
   volunteerName: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(320).optional().or(z.literal("")),
   mobile: z.string().trim().max(50).optional(),
+  dietaryRequirements: z.string().trim().max(500).optional(),
 });
 
 function encode(value: string): string {
@@ -29,6 +30,7 @@ export async function updateWalkInVolunteerDetails(formData: FormData) {
     volunteerName: formData.get("volunteerName"),
     email: formData.get("email") || "",
     mobile: formData.get("mobile") || undefined,
+    dietaryRequirements: formData.get("dietaryRequirements") || undefined,
   });
 
   const fallbackPath = `/admin/events/${encode(eventId)}/attendance`;
@@ -60,6 +62,7 @@ export async function updateWalkInVolunteerDetails(formData: FormData) {
       volunteer_name: parsed.data.volunteerName,
       email: parsed.data.email || null,
       mobile: parsed.data.mobile || null,
+      dietary_requirements: parsed.data.dietaryRequirements || null,
     })
     .eq("id", parsed.data.rosterId)
     .eq("event_id", parsed.data.eventId)

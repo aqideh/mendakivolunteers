@@ -7,6 +7,7 @@ type WalkInEditFormProps = {
   volunteerName: string;
   email: string | null;
   mobile: string | null;
+  dietaryRequirements: string | null;
 };
 
 export function WalkInEditForm({
@@ -16,6 +17,7 @@ export function WalkInEditForm({
   volunteerName,
   email,
   mobile,
+  dietaryRequirements,
 }: WalkInEditFormProps) {
   return (
     <details className="phaseone-walk-in-edit">
@@ -56,6 +58,17 @@ export function WalkInEditForm({
               maxLength={320}
               name="email"
               type="email"
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor={`walk-in-edit-dietary-${rosterId}`}>Meal / dietary requirements</label>
+            <textarea
+              defaultValue={dietaryRequirements ?? ""}
+              id={`walk-in-edit-dietary-${rosterId}`}
+              maxLength={500}
+              name="dietaryRequirements"
+              placeholder="e.g. Vegetarian; peanut allergy"
+              rows={2}
             />
           </div>
         </div>

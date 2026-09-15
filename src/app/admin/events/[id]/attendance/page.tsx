@@ -237,7 +237,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size, entry_method, attendance_person_key")
+      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(2000),
@@ -345,6 +345,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       volunteer.email,
       volunteer.mobile,
       volunteer.tshirt_size,
+      volunteer.dietary_requirements,
     ].filter(Boolean).join(" ").toLowerCase();
     return matchesStatus && (!query || haystack.includes(query));
   });
@@ -511,6 +512,10 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         <label htmlFor="walk-in-shirt">T-shirt size</label>
                         <input id="walk-in-shirt" name="tshirtSize" maxLength={20} placeholder="e.g. M" />
                       </div>
+                      <div className="form-field">
+                        <label htmlFor="walk-in-dietary">Meal / dietary requirements</label>
+                        <textarea id="walk-in-dietary" name="dietaryRequirements" maxLength={500} placeholder="e.g. Vegetarian; peanut allergy" rows={2} />
+                      </div>
                     </div>
                     <WalkInSubmitButtons />
                     <p className="muted phaseone-walk-in-note">This creates an operational event roster entry only; it does not create a portal account or official YM Hub registration.</p>
@@ -603,6 +608,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                           </div>
                           <h3>{volunteer.volunteer_name}</h3>
                           <p className="muted">{volunteer.mobile ?? "No contact number"} · T-shirt: {volunteer.tshirt_size ?? "—"}</p>
+                          <p className="muted"><strong>Meal / dietary:</strong> {volunteer.dietary_requirements ?? "—"}</p>
                         </div>
                         <span className="status-pill" data-state={status}>{statusLabel(status)}</span>
                       </div>
@@ -681,6 +687,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                           email={volunteer.email}
                           eventId={id}
                           mobile={volunteer.mobile}
+                          dietaryRequirements={volunteer.dietary_requirements}
                           rosterId={volunteer.id}
                           timeslotId={selectedTimeslot.id}
                           volunteerName={volunteer.volunteer_name}

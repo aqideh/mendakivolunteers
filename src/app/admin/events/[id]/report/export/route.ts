@@ -139,7 +139,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
       .limit(5000),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size, entry_method, attendance_person_key")
+      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(10000),
@@ -207,6 +207,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
     "contact_number",
     "email",
     "tshirt_size",
+    "dietary_requirements",
     "roster_source",
     "attendance_status",
     "non_attendance_marked_at",
@@ -254,6 +255,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
       volunteer.mobile,
       volunteer.email,
       volunteer.tshirt_size,
+      volunteer.dietary_requirements,
       volunteer.entry_method === "walk_in" ? "Last-minute" : "Imported",
       attendanceStatus(attendance),
       attendance?.non_attendance_marked_at,

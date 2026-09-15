@@ -63,6 +63,7 @@ export async function GET(
     "contact_number",
     "email",
     "tshirt_size",
+    "dietary_requirements",
     "volunteer_id",
     "date",
     "shift",
@@ -71,9 +72,10 @@ export async function GET(
   ].map(csvCell).join(",");
 
   const instruction =
-    "Enter one volunteer per row. volunteer_name is required. volunteer_id, contact_number, email and tshirt_size are optional. Duplicate this row for more volunteers in the same shift. Keep date, shift and timeslot_id unchanged.";
+    "Enter one volunteer per row. volunteer_name is required. volunteer_id, contact_number, email, tshirt_size and dietary_requirements are optional. Use dietary_requirements for meal preferences, dietary needs or allergies. Duplicate this row for more volunteers in the same shift. Keep date, shift and timeslot_id unchanged.";
 
   const rows = timeslotsResult.data.map((timeslot) => [
+    "",
     "",
     "",
     "",
