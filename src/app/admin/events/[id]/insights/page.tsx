@@ -30,6 +30,29 @@ const sourceLabels: Record<string, string> = {
   staff_observed: "Staff observed",
 };
 
+const behaviorLabels: Record<string, string> = {
+  proactive: "Proactive",
+  punctual: "Punctual",
+  reliable: "Reliable",
+  good_teamwork: "Good teamwork",
+  engaged: "Engaged",
+  takes_initiative: "Takes initiative",
+  communicates_well: "Communicates well",
+  good_with_participants: "Good with participants",
+  follows_instructions: "Follows instructions",
+  safety_conscious: "Safety-conscious",
+  late: "Late",
+  unreliable: "Reliability concern",
+  disengaged: "Disengaged",
+  teamwork_concern: "Teamwork concern",
+  did_not_follow_instructions: "Did not follow instructions",
+  inappropriate_conduct: "Inappropriate conduct",
+  participant_interaction_concern: "Participant interaction concern",
+  safety_concern: "Safety / compliance concern",
+  communication_concern: "Communication concern",
+  left_early: "Left early",
+};
+
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function VolunteerInsightsPage({ params }: PageProps) {
@@ -37,7 +60,7 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
   await requireEventManager(`/admin/events/${id}/insights`);
   const admin = getPhaseOneAdminClient();
 
-  const [eventResult, rosterResult, insightsResult] = await Promise.all([
+  const [eventResult, rosterResult, insightsResult, reviewsResult] = await Promise.all([
     admin.from("phaseone_events").select("id, title, venue").eq("id", id).maybeSingle(),
     admin
       .from("phaseone_roster")
@@ -51,12 +74,22 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
       .eq("event_id", id)
       .order("captured_at", { ascending: false })
       .limit(2000),
+    admin
+      .from("phaseone_volunteer_reviews")
+      .select("id, roster_id, volunteer_person_key, rating, positive_behaviors, concern_behaviors, comments, follow_up_required, reviewed_at, phaseone_roster(volunteer_name, volunteer_key, email, mobile)")
+      .eq("event_id", id)
+      .order("reviewed_at", { ascending: false })
+      .limit(2000),
   ]);
 
   if (eventResult.error) throw new Error("Event could not be loaded");
   if (!eventResult.data) notFound();
-  if (rosterResult.error || !rosterResult.data || insightsResult.error || !insightsResult.data) {
-    throw new Error("Volunteer insights could not be loaded");
+  if (
+    rosterResult.error || !rosterResult.data
+    || insightsResult.error || !insightsResult.data
+    || reviewsResult.error || !reviewsResult.data
+  ) {
+    throw new Error("Volunteer insights and reviews could not be loaded");
   }
 
   const rosterByPerson = new Map<string, (typeof rosterResult.data)[number]>();
@@ -77,6 +110,13 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
     insightCountByPerson.set(insight.volunteer_person_key, (insightCountByPerson.get(insight.volunteer_person_key) ?? 0) + 1);
   }
 
+  const reviews = reviewsResult.data;
+  const reviewVolunteerCount = new Set(reviews.map((review) => review.volunteer_person_key)).size;
+  const followUpCount = reviews.filter((review) => review.follow_up_required).length;
+  const averageRating = reviews.length
+    ? reviews.reduce((total, review) => total + review.rating, 0) / reviews.length
+    : null;
+
   return (
     <div className="site-shell">
       <PortalHeader status="Volunteer insights" dashboard />
@@ -85,7 +125,7 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
           <div>
             <p className="eyebrow">Event operations</p>
             <h1>{eventResult.data.title}</h1>
-            <p className="muted">Capture useful things staff learn on the ground, then review them before handing accepted insights to MakLom.</p>
+            <p className="muted">Capture useful things staff learn on the ground and keep event-level volunteer performance reviews in one place.</p>
           </div>
           <div className="actions">
             <Link className="button button-secondary" href={`/admin/events/${id}/attendance`}>Roster / attendance</Link>
@@ -96,6 +136,7 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
         <nav className="compact-section-index" aria-label="Volunteer insight sections">
           <div className="compact-section-index-track">
             <a className="compact-section-index-link" href="#capture">Capture <span className="compact-section-index-count">{volunteers.length}</span></a>
+            <a className="compact-section-index-link" href="#performance-reviews">Reviews <span className="compact-section-index-count">{reviews.length}</span></a>
             <a className="compact-section-index-link" href="#review">Review <span className="compact-section-index-count">{submitted.length}</span></a>
             <a className="compact-section-index-link" href="#accepted">Accepted <span className="compact-section-index-count">{accepted.length}</span></a>
             <a className="compact-section-index-link" href="#dismissed">Dismissed <span className="compact-section-index-count">{dismissed.length}</span></a>
@@ -106,7 +147,11 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
           <span><strong>{insights.length}</strong> captured</span>
           <span><strong>{volunteerCount}</strong> volunteers enriched</span>
           <span><strong>{submitted.length}</strong> need review</span>
-          <span><strong>{accepted.length}</strong> handoff-ready</span>
+          <span><strong>{accepted.length}</strong> accepted</span>
+          <span><strong>{reviews.length}</strong> staff reviews</span>
+          <span><strong>{reviewVolunteerCount}</strong> volunteers reviewed</span>
+          <span><strong>{averageRating === null ? "—" : averageRating.toFixed(1)}</strong> avg rating</span>
+          <span><strong>{followUpCount}</strong> need follow-up</span>
         </section>
 
         <section className="compact-section" id="capture" aria-labelledby="capture-title">
@@ -164,6 +209,45 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
           </div>
         </section>
 
+        <section className="compact-section" id="performance-reviews" aria-labelledby="performance-reviews-title">
+          <div className="section-header compact-section-header">
+            <div>
+              <h2 id="performance-reviews-title">Volunteer performance reviews</h2>
+              <p className="compact-section-meta">Event-level staff assessments. Ratings describe performance in the assigned role, while behaviour tags and follow-up flags provide operational context.</p>
+            </div>
+          </div>
+          <div className="volunteer-performance-review-list">
+            {reviews.map((review) => {
+              const roster = Array.isArray(review.phaseone_roster) ? review.phaseone_roster[0] : review.phaseone_roster;
+              const positiveBehaviors = (review.positive_behaviors ?? []) as string[];
+              const concernBehaviors = (review.concern_behaviors ?? []) as string[];
+              return (
+                <article className="volunteer-performance-review-row" key={review.id}>
+                  <div className="volunteer-performance-review-person">
+                    <strong>{roster?.volunteer_name ?? "Unknown volunteer"}</strong>
+                    <span className="muted">{roster?.volunteer_key ?? roster?.email ?? roster?.mobile ?? "No matching identifier"}</span>
+                  </div>
+                  <div className="volunteer-performance-review-content">
+                    <span className="volunteer-performance-review-stars" aria-label={`${review.rating} out of 5 stars`}>
+                      {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                    </span>
+                    <span className="muted">Staff review · {formatSingaporeDateTime(review.reviewed_at)}</span>
+                    {positiveBehaviors.length || concernBehaviors.length ? (
+                      <div className="volunteer-performance-review-tags">
+                        {positiveBehaviors.map((behavior) => <span key={`positive-${review.id}-${behavior}`}>+ {behaviorLabels[behavior] ?? behavior.replaceAll("_", " ")}</span>)}
+                        {concernBehaviors.map((behavior) => <span key={`concern-${review.id}-${behavior}`}>! {behaviorLabels[behavior] ?? behavior.replaceAll("_", " ")}</span>)}
+                      </div>
+                    ) : null}
+                    {review.comments ? <p>{review.comments}</p> : null}
+                    {review.follow_up_required ? <span className="volunteer-review-follow-up-pill">Requires follow-up</span> : null}
+                  </div>
+                </article>
+              );
+            })}
+            {reviews.length === 0 ? <p className="empty-state">No volunteer reviews have been submitted for this event yet.</p> : null}
+          </div>
+        </section>
+
         <section className="compact-section" id="review" aria-labelledby="review-title">
           <div className="section-header compact-section-header">
             <div><h2 id="review-title">Needs review</h2><p className="compact-section-meta">Accept only information that is useful, factual and appropriate for the volunteer profile.</p></div>
@@ -205,7 +289,7 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
         </section>
 
         <section className="compact-section" id="accepted" aria-labelledby="accepted-title">
-          <div className="section-header compact-section-header"><div><h2 id="accepted-title">Accepted</h2><p className="compact-section-meta">These rows are eligible for MakLom handoff.</p></div></div>
+          <div className="section-header compact-section-header"><div><h2 id="accepted-title">Accepted</h2><p className="compact-section-meta">These insights have passed staff review.</p></div></div>
           <div className="insight-history-list">
             {accepted.map((insight) => {
               const roster = Array.isArray(insight.phaseone_roster) ? insight.phaseone_roster[0] : insight.phaseone_roster;
