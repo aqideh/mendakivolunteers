@@ -65,6 +65,7 @@ const walkInSchema = z.object({
   email: z.string().trim().email().max(320).optional().or(z.literal("")),
   mobile: z.string().trim().max(50).optional(),
   tshirtSize: z.string().trim().max(20).optional(),
+  dietaryRequirements: z.string().trim().max(500).optional(),
   submitIntent: z.enum(["add_and_check_in", "add_only"]),
 });
 
@@ -128,6 +129,7 @@ export async function addWalkInVolunteer(formData: FormData) {
     email: formData.get("email") || "",
     mobile: formData.get("mobile") || undefined,
     tshirtSize: formData.get("tshirtSize") || undefined,
+    dietaryRequirements: formData.get("dietaryRequirements") || undefined,
     submitIntent: formData.get("submitIntent"),
   });
 
@@ -146,6 +148,7 @@ export async function addWalkInVolunteer(formData: FormData) {
     p_email: parsed.data.email || null,
     p_mobile: parsed.data.mobile || null,
     p_tshirt_size: parsed.data.tshirtSize || null,
+    p_dietary_requirements: parsed.data.dietaryRequirements || null,
     p_check_in: parsed.data.submitIntent === "add_and_check_in",
     p_changed_by: userId,
   });

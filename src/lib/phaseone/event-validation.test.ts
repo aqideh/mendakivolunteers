@@ -94,6 +94,7 @@ describe("shift-aware roster validation", () => {
       email: "volunteer@example.com",
       mobile: "91234567",
       tshirt_size: "M",
+      dietary_requirements: "Vegetarian; peanut allergy",
     };
   }
 
@@ -163,12 +164,24 @@ describe("shift-aware roster validation", () => {
       eventId,
       mode: "merge",
       fileName: "roster.csv",
-      rows: [{ ...row(morningId), mobile: " 91234567 ", tshirt_size: " L " }],
+      rows: [{ ...row(morningId), mobile: " 91234567 ", tshirt_size: " L ", dietary_requirements: " Vegetarian; peanut allergy " }],
     });
 
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
     expect(parsed.data.rows[0]?.mobile).toBe("91234567");
     expect(parsed.data.rows[0]?.tshirt_size).toBe("L");
+    expect(parsed.data.rows[0]?.dietary_requirements).toBe("Vegetarian; peanut allergy");
+  });
+
+  it("rejects dietary requirements longer than 500 characters", () => {
+    const parsed = rosterImportSchema.safeParse({
+      eventId,
+      mode: "merge",
+      fileName: "roster.csv",
+      rows: [{ ...row(morningId), dietary_requirements: "x".repeat(501) }],
+    });
+
+    expect(parsed.success).toBe(false);
   });
 });
