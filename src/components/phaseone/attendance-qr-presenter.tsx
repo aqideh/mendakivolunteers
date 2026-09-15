@@ -7,7 +7,8 @@ import {
   generateAttendanceQr,
   type AttendanceQrResult,
 } from "@/app/admin/events/[id]/attendance/qr/actions";
-import { attendanceQrRefreshMs } from "@/lib/phaseone/attendance-qr";
+
+const QR_REFRESH_INTERVAL_MS = (5 * 60 * 1000) - 15_000;
 
 type Props = Readonly<{
   eventId: string;
@@ -34,7 +35,7 @@ export function AttendanceQrPresenter({ eventId, timeslotId, action }: Props) {
 
   useEffect(() => {
     void refresh();
-    const timer = window.setInterval(() => void refresh(), attendanceQrRefreshMs - 15_000);
+    const timer = window.setInterval(() => void refresh(), QR_REFRESH_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [refresh]);
 
