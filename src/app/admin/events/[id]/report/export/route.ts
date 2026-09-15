@@ -37,6 +37,17 @@ type Review = {
   reviewed_at: string;
 };
 
+type Feedback = {
+  volunteer_person_key: string;
+  role_clarity: number;
+  role_satisfaction: number;
+  staff_support: number;
+  recommend: number;
+  suggestions: string | null;
+  follow_up_requested: boolean;
+  submitted_at: string;
+};
+
 function singaporeDate(value: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Singapore",
@@ -126,6 +137,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
     attendanceResult,
     insightsResult,
     reviewsResult,
+    feedbackResult,
   ] = await Promise.all([
     admin
       .from("phaseone_events")
@@ -160,6 +172,11 @@ export async function GET(_request: Request, { params }: RouteProps) {
       .eq("event_id", id)
       .order("reviewed_at", { ascending: true })
       .limit(10000),
+    admin
+      .from("phaseone_event_feedback")
+      .select("volunteer_person_key, role_clarity, role_satisfaction, staff_support, recommend, suggestions, follow_up_requested, submitted_at")
+      .eq("event_id", id)
+      .limit(10000),
   ]);
 
   if (eventResult.error || !eventResult.data) {
@@ -188,11 +205,16 @@ export async function GET(_request: Request, { params }: RouteProps) {
     console.error("Event report export unavailable", { eventId: id, dataset: "reviews", code: reviewsResult.error?.code });
     return NextResponse.json({ error: "Event report export is unavailable." }, { status: 500 });
   }
+  if (feedbackResult.error || !feedbackResult.data) {
+    console.error("Event report export unavailable", { eventId: id, dataset: "feedback", code: feedbackResult.error?.code });
+    return NextResponse.json({ error: "Event report export is unavailable." }, { status: 500 });
+  }
 
   const timeslotById = new Map((timeslotsResult.data as Timeslot[]).map((timeslot) => [timeslot.id, timeslot]));
   const attendanceByRoster = new Map(attendanceResult.data.map((record) => [record.roster_id, record]));
   const insightsByPerson = groupByPersonKey(insightsResult.data as Insight[]);
   const reviewsByPerson = groupByPersonKey(reviewsResult.data as Review[]);
+  const feedbackByPerson = new Map((feedbackResult.data as Feedback[]).map((feedback) => [feedback.volunteer_person_key, feedback]));
 
   const headers = [
     "event_title",
@@ -230,6 +252,13 @@ export async function GET(_request: Request, { params }: RouteProps) {
     "concern_behaviours",
     "review_comments",
     "follow_up_required",
+    "feedback_role_clarity",
+    "feedback_role_satisfaction",
+    "feedback_staff_support",
+    "feedback_recommend",
+    "feedback_suggestions",
+    "feedback_follow_up_requested",
+    "feedback_submitted_at",
   ];
 
   const rows = rosterResult.data.map((volunteer) => {
@@ -238,6 +267,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
     const personKey = volunteer.attendance_person_key;
     const insights = insightsByPerson.get(personKey) ?? [];
     const reviews = reviewsByPerson.get(personKey) ?? [];
+    const feedback = feedbackByPerson.get(personKey);
     const averageRating = reviews.length > 0
       ? (reviews.reduce((total, review) => total + review.rating, 0) / reviews.length).toFixed(2)
       : "";
@@ -278,6 +308,13 @@ export async function GET(_request: Request, { params }: RouteProps) {
       uniqueSorted(reviews.flatMap((review) => review.concern_behaviors ?? [])),
       reviewComments(reviews),
       reviews.some((review) => review.follow_up_required) ? "yes" : "no",
+      feedback ? String(feedback.role_clarity) : "",
+      feedback ? String(feedback.role_satisfaction) : "",
+      feedback ? String(feedback.staff_support) : "",
+      feedback ? String(feedback.recommend) : "",
+      feedback?.suggestions,
+      feedback ? (feedback.follow_up_requested ? "yes" : "no") : "",
+      feedback?.submitted_at,
     ];
 
     return values.map(csvCell).join(",");

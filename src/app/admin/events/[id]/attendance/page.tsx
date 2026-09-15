@@ -396,6 +396,12 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           </div>
           <div className="actions">
             <Link className="button button-secondary" href={`/admin/events/${id}/edit`}>Event settings / upload roster</Link>
+            {selectedTimeslot ? (
+              <>
+                <Link className="button button-primary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_in`}>Show check-in QR</Link>
+                <Link className="button button-secondary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_out`}>Show check-out QR</Link>
+              </>
+            ) : null}
             <a className="button button-secondary" href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
           </div>
         </div>
