@@ -8,6 +8,8 @@ import {
   applyAttendanceChange,
 } from "@/app/admin/events/[id]/attendance/actions";
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
+import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
+import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
 import {
   BulkCheckoutButton,
   ExtendAttendanceButton,
@@ -365,7 +367,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           ? "Last-minute volunteer added to the roster."
           : successCode === "insight_saved"
             ? "Volunteer insight saved for review."
-            : undefined;
+            : successCode === "review_saved"
+              ? "Volunteer review saved."
+              : successCode === "walk_in_updated"
+                ? "Walk-in volunteer details updated."
+                : undefined;
   const errorMessage = parameter(parameters, "error");
   const event = eventResult.data;
 
@@ -661,6 +667,23 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                           eventId={id}
                           rosterId={volunteer.id}
                           timeslotId={selectedTimeslot.id}
+                        />
+                      ) : null}
+
+                      <VolunteerReviewForm
+                        eventId={id}
+                        rosterId={volunteer.id}
+                        timeslotId={selectedTimeslot.id}
+                      />
+
+                      {volunteer.entry_method === "walk_in" ? (
+                        <WalkInEditForm
+                          email={volunteer.email}
+                          eventId={id}
+                          mobile={volunteer.mobile}
+                          rosterId={volunteer.id}
+                          timeslotId={selectedTimeslot.id}
+                          volunteerName={volunteer.volunteer_name}
                         />
                       ) : null}
 
