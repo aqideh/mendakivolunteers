@@ -1,0 +1,165 @@
+.metrics {
+  margin: 0.8rem 0 1rem;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.compactList {
+  display: grid;
+  gap: 0;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.listRow:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.listRow strong {
+  font-size: 0.92rem;
+}
+
+.listRow p {
+  margin: 0.12rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.shiftGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.7rem;
+}
+
+.shiftCard {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+}
+
+.shiftCard p {
+  margin: 0.1rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.shiftStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.shiftStats span {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.shiftStats b {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.exceptionList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.exceptionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.exceptionRow:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.exceptionRow[data-severity="high"] {
+  border-left: 3px solid currentColor;
+  padding-left: 0.7rem;
+}
+
+.exceptionMain h3 {
+  margin: 0.25rem 0 0.12rem;
+  font-size: 1rem;
+}
+
+.exceptionMain p {
+  margin: 0.08rem 0;
+  font-size: 0.8rem;
+}
+
+.exceptionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+}
+
+.severity {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.64rem;
+  font-weight: 800;
+  padding: 0.18rem 0.34rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.exceptionActions {
+  flex: 0 0 auto;
+}
+
+.ruleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.ruleGrid p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 760px) {
+  .twoColumn,
+  .ruleGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .exceptionRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .exceptionActions .button {
+    width: 100%;
+  }
+
+  .shiftStats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
