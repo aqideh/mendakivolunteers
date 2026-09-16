@@ -18,10 +18,13 @@ import {
   Text,
   Textarea,
   TextInput,
+  type ActionIconProps,
+  type BadgeProps,
+  type ButtonProps,
 } from "@mantine/core";
 
-export type KButtonProps = ComponentProps<typeof Button>;
-export type KActionIconProps = ComponentProps<typeof ActionIcon>;
+export type KButtonProps = ButtonProps;
+export type KActionIconProps = ActionIconProps;
 export type KTextInputProps = ComponentProps<typeof TextInput>;
 export type KTextareaProps = ComponentProps<typeof Textarea>;
 export type KNumberInputProps = ComponentProps<typeof NumberInput>;
@@ -29,7 +32,7 @@ export type KSelectProps = ComponentProps<typeof Select>;
 export type KCheckboxProps = ComponentProps<typeof Checkbox>;
 export type KRadioProps = ComponentProps<typeof Radio>;
 export type KSwitchProps = ComponentProps<typeof Switch>;
-export type KBadgeProps = ComponentProps<typeof Badge>;
+export type KBadgeProps = BadgeProps;
 export type KAlertProps = ComponentProps<typeof Alert>;
 export type KModalProps = ComponentProps<typeof Modal>;
 export type KDrawerProps = ComponentProps<typeof Drawer>;
