@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, ComponentPropsWithoutRef, ReactNode } from "react";
 import {
   ActionIcon,
   Alert,
@@ -23,7 +23,7 @@ import {
   type ButtonProps,
 } from "@mantine/core";
 
-export type KButtonProps = ButtonProps;
+export type KButtonProps = ButtonProps & ComponentPropsWithoutRef<"button">;
 export type KActionIconProps = ActionIconProps;
 export type KTextInputProps = ComponentProps<typeof TextInput>;
 export type KTextareaProps = ComponentProps<typeof Textarea>;
