@@ -1,4 +1,5 @@
 import { updateWalkInVolunteerDetails } from "@/app/admin/events/[id]/attendance/walk-in-actions";
+import { KButton, KTextarea, KTextInput } from "@/components/ui/keluarga-ui";
 
 type WalkInEditFormProps = {
   eventId: string;
@@ -27,52 +28,48 @@ export function WalkInEditForm({
         <input name="rosterId" type="hidden" value={rosterId} />
         <input name="timeslotId" type="hidden" value={timeslotId} />
         <div className="phaseone-walk-in-edit-grid">
-          <div className="form-field">
-            <label htmlFor={`walk-in-edit-name-${rosterId}`}>Name</label>
-            <input
-              autoComplete="name"
-              defaultValue={volunteerName}
-              id={`walk-in-edit-name-${rosterId}`}
-              maxLength={200}
-              name="volunteerName"
-              required
-            />
-          </div>
-          <div className="form-field">
-            <label htmlFor={`walk-in-edit-mobile-${rosterId}`}>Contact number</label>
-            <input
-              autoComplete="tel"
-              defaultValue={mobile ?? ""}
-              id={`walk-in-edit-mobile-${rosterId}`}
-              inputMode="tel"
-              maxLength={50}
-              name="mobile"
-            />
-          </div>
-          <div className="form-field">
-            <label htmlFor={`walk-in-edit-email-${rosterId}`}>Email</label>
-            <input
-              autoComplete="email"
-              defaultValue={email ?? ""}
-              id={`walk-in-edit-email-${rosterId}`}
-              maxLength={320}
-              name="email"
-              type="email"
-            />
-          </div>
-          <div className="form-field">
-            <label htmlFor={`walk-in-edit-dietary-${rosterId}`}>Meal / dietary requirements</label>
-            <textarea
-              defaultValue={dietaryRequirements ?? ""}
-              id={`walk-in-edit-dietary-${rosterId}`}
-              maxLength={500}
-              name="dietaryRequirements"
-              placeholder="e.g. Vegetarian; peanut allergy"
-              rows={2}
-            />
-          </div>
+          <KTextInput
+            autoComplete="name"
+            className="form-field"
+            defaultValue={volunteerName}
+            id={`walk-in-edit-name-${rosterId}`}
+            label="Name"
+            maxLength={200}
+            name="volunteerName"
+            required
+          />
+          <KTextInput
+            autoComplete="tel"
+            className="form-field"
+            defaultValue={mobile ?? ""}
+            id={`walk-in-edit-mobile-${rosterId}`}
+            inputMode="tel"
+            label="Contact number"
+            maxLength={50}
+            name="mobile"
+          />
+          <KTextInput
+            autoComplete="email"
+            className="form-field"
+            defaultValue={email ?? ""}
+            id={`walk-in-edit-email-${rosterId}`}
+            label="Email"
+            maxLength={320}
+            name="email"
+            type="email"
+          />
+          <KTextarea
+            className="form-field"
+            defaultValue={dietaryRequirements ?? ""}
+            id={`walk-in-edit-dietary-${rosterId}`}
+            label="Meal / dietary requirements"
+            maxLength={500}
+            name="dietaryRequirements"
+            placeholder="e.g. Vegetarian; peanut allergy"
+            rows={2}
+          />
         </div>
-        <button className="button button-secondary" type="submit">Save corrected details</button>
+        <KButton type="submit" variant="light">Save corrected details</KButton>
         <p className="muted">The correction applies across this walk-in volunteer&apos;s shifts for the event. Attendance, insights and reviews remain linked to the same volunteer identity.</p>
       </form>
     </details>
