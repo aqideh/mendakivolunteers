@@ -11,6 +11,7 @@ import {
   Menu,
   Modal,
   NumberInput,
+  Radio,
   Select,
   Stack,
   Switch,
@@ -26,6 +27,7 @@ export type KTextareaProps = ComponentProps<typeof Textarea>;
 export type KNumberInputProps = ComponentProps<typeof NumberInput>;
 export type KSelectProps = ComponentProps<typeof Select>;
 export type KCheckboxProps = ComponentProps<typeof Checkbox>;
+export type KRadioProps = ComponentProps<typeof Radio>;
 export type KSwitchProps = ComponentProps<typeof Switch>;
 export type KBadgeProps = ComponentProps<typeof Badge>;
 export type KAlertProps = ComponentProps<typeof Alert>;
@@ -59,6 +61,10 @@ export function KSelect({ radius = "md", size = "sm", ...props }: KSelectProps) 
 
 export function KCheckbox({ radius = "sm", size = "sm", ...props }: KCheckboxProps) {
   return <Checkbox radius={radius} size={size} {...props} />;
+}
+
+export function KRadio({ size = "sm", ...props }: KRadioProps) {
+  return <Radio size={size} {...props} />;
 }
 
 export function KSwitch({ radius = "xl", size = "sm", ...props }: KSwitchProps) {
