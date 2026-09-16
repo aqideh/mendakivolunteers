@@ -1,6 +1,8 @@
 # KELUARGA
 
-KELUARGA is the volunteer-facing web application for MENDAKI. It supplements YM Hub; YM Hub remains authoritative for volunteer identity, registration, verified attendance, and verified hours.
+KELUARGA is MENDAKI's volunteer companion and event-operations web application. It supplements YM Hub; **YM Hub remains authoritative for volunteer identity, registration, official attendance, and verified volunteer hours.**
+
+KELUARGA currently provides public volunteer content, staff event-day operations, volunteer-development tools, and read-only personal views of authoritative records imported from YM Hub.
 
 ## Production ownership
 
@@ -17,14 +19,64 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 
 ## Current capabilities
 
-- Public opportunity, news, and volunteer pathway pages.
-- Volunteer journey pages with briefing, sign-in, and sign-out controls.
-- Supabase-backed staff authentication and password setup.
-- Staff content, pathway, event, roster, attendance, and account administration.
-- Attendance CSV export with spreadsheet-formula neutralization.
-- Supabase migrations, Row Level Security policies, and pgTAP database tests.
-- Scheduled Volunteer.gov.sg opportunity import through Vercel Cron.
-- Read-only YM Hub projection foundations; production Salesforce synchronization is not enabled.
+### Volunteer-facing
+
+- Public landing page, opportunities and news.
+- Event Guides with venue, directions, briefing, programme information and shift details.
+- Passwordless volunteer sign-in and protected account dashboard.
+- Read-only YM Hub registration, official attendance and verified-hours presentation when authoritative snapshots are available.
+- Points UI and append-only gamification foundation based only on verified YM Hub attendance.
+- Public volunteer Pathways skill tree.
+
+### Staff-facing
+
+- Role-gated content, pathway, staff-access and event administration.
+- Multi-day events and multiple shifts/timeslots.
+- CSV/pasted roster import, roster templates and optional Volunteer ID.
+- Walk-in/last-minute volunteers, dietary requirements and contact corrections.
+- Check-in/check-out, absent/withdrawn states, audited corrections and bulk checkout.
+- Continuous attendance across adjacent shifts and spontaneous shift extensions.
+- Live attendance monitor and reconciliation view.
+- QR attendance/feedback foundation.
+- Attendance and event-report exports.
+- Volunteer Insights with staff review/accept/dismiss workflow.
+- Volunteer Reviews with 1–5 event-role performance rating, behaviour tags, comments and follow-up flags.
+- Event reporting combining roster, attendance, insights, reviews and volunteer feedback.
+
+### Platform and integration
+
+- Supabase migrations, Row Level Security policies and pgTAP database tests.
+- GitHub Actions validation for lint, type checking, tests, builds, dependency audit and database checks.
+- Scheduled Volunteer.gov.sg opportunity import through Vercel Cron as a transitional source.
+- Read-only YM Hub projection foundations and volunteer sync-state model.
+- Controlled batch processing is the immediate YM Hub/Salesforce integration direction; direct production Salesforce synchronization is not enabled.
+
+## System boundaries
+
+KELUARGA's event-day attendance is an **operational record**, not automatically an official volunteering record. Staff may use it for event operations, reconciliation and downstream export, but official attendance and verified hours remain YM Hub-owned.
+
+Likewise:
+
+- roster check-in alone cannot award points;
+- `attendance_person_key` is an event-level continuity key, not a canonical organisation-wide volunteer ID;
+- Volunteer Insights and Reviews do not automatically overwrite a central volunteer profile;
+- automatic MakLom handoff is currently deferred.
+
+## Project documentation
+
+Start with [docs/README.md](docs/README.md).
+
+Key project records:
+
+- [Feature inventory](docs/feature-inventory.md) — implemented capability on `main`.
+- [Development roadmap](docs/development-roadmap.md) — upcoming work, dependencies and sequencing.
+- [Known issues and technical debt](docs/known-issues.md) — confirmed bugs, limitations, deferred work and regression watch-points.
+- [Current system architecture](docs/architecture/current-system.md) — data ownership, identity, integrations and architecture invariants.
+- [Launch and batch-integration decision record](docs/operations/launch-readiness-and-batch-integration-direction.md).
+- [Production handover](docs/operations/production-handover.md).
+- [Threat model](docs/security/threat-model.md).
+
+When adding a material user-visible feature, update the feature inventory and roadmap in the same pull request. Confirmed material defects should be tracked as GitHub Issues and reflected in the known-issues register where useful.
 
 ## Local setup
 
@@ -94,6 +146,7 @@ src/app                    Next.js routes and server actions
 src/components             Shared application components
 src/lib/auth               Server-side authorization helpers
 src/lib/content            Content validation and time utilities
+src/lib/gamification       Points presentation/read model
 src/lib/phaseone           Deployed event and attendance domain
 src/lib/pathways           Versioned volunteer pathway loading and validation
 src/lib/supabase           Browser, server, and session clients
@@ -101,7 +154,5 @@ src/lib/security           Security and serialization helpers
 src/lib/ymhub              Read-only YM Hub presentation invariants
 supabase/migrations        Ordered production database migrations
 supabase/tests/database    pgTAP database and RLS tests
-docs                       Architecture, roadmap, and operations notes
+docs                       Product, architecture, roadmap, security and operations records
 ```
-
-See [docs/operations/production-handover.md](docs/operations/production-handover.md) for the release, migration, rollback, and handover procedure.
