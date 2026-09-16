@@ -46,6 +46,8 @@ Exit criteria: shared primitives are documented, accessible, compact on mobile a
 
 ## Step 3 — small staff workflows
 
+**Status:** started. Walk-in volunteer editing and volunteer reviews now use the shared KELUARGA Mantine primitives; volunteer insight capture and other small event-management forms remain to be migrated.
+
 Migrate self-contained interactive workflows before large pages:
 
 - walk-in volunteer editing;
