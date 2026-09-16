@@ -15,7 +15,7 @@ KELUARGA will adopt Mantine incrementally. Mantine is a component toolkit inside
 
 ## Step 1 — foundation
 
-**Status:** in progress on `mantine-step-1-foundation`.
+**Status:** complete on `mantine-step-1-foundation`.
 
 - Add `@mantine/core` and `@mantine/hooks`.
 - Add the root `MantineProvider` and required stylesheet / color-scheme setup.
@@ -26,6 +26,8 @@ KELUARGA will adopt Mantine incrementally. Mantine is a component toolkit inside
 Exit criteria: existing application behavior remains unchanged and lint, type-check, tests, production build, dependency audit and database tests pass.
 
 ## Step 2 — KELUARGA primitives
+
+**Status:** in progress on `mantine-step-1-foundation`.
 
 Create a small, opinionated application layer for the Mantine components we intend to use repeatedly. Initial targets:
 
