@@ -1,132 +1,382 @@
 # Development roadmap
 
-This roadmap preserves YM Hub as the system of record for volunteer identity,
-registration, verified attendance, and verified hours. Each phase must fail
-closed when an authoritative dependency is unavailable: the application must
-show an explicit unavailable state or error and must never substitute mock,
-cached, or fabricated operational data.
+**Last reviewed:** 16 September 2026
 
-## Phase 0: repository baseline and release controls
+This roadmap reflects the current deployed implementation rather than the original phase plan. It preserves one non-negotiable boundary: **YM Hub remains the system of record for volunteer identity, registration, official attendance and verified volunteer hours.** KELUARGA event-day attendance is operational evidence until reconciled downstream.
 
-Status: complete when the `main` validation workflow passes.
+## Status labels
 
-- Remove obsolete branches, duplicate deployment paths, dead runtime adapters,
-  and duplicate documentation.
-- Pin the supported Node.js major and commit a reproducible npm lockfile.
-- Require explicit environment, sign-up, and registration-host configuration.
-- Enforce approved HTTPS registration hosts and physical-opportunity locations.
-- Add request-specific Content Security Policy headers and production HSTS.
-- Keep production deployment blocked until the real YM Hub adapter is verified.
+- **Live** — implemented on `main` and used by the application.
+- **Foundation live** — schema/read path exists, but production value depends on policy or upstream data.
+- **Planned** — agreed future work, not yet implemented.
+- **Blocked / dependency** — requires external data, approval or operating process.
+- **Deferred** — intentionally not being built now.
+- **Decision required** — product/operations/security rule must be settled before implementation.
 
-Exit criteria: lint, unit tests, type checks, production build, dependency audit,
-database reset, and pgTAP tests pass from a clean checkout of `main`.
+## 1. Platform, security and release controls
 
-## Phase 1: platform and identity foundation
+**Status: Live**
 
-Status: implemented; production integration remains gated by Phase 3.
+Implemented:
 
-- Supabase authentication and protected volunteer routes.
-- Separate application account, internal volunteer, and YM Hub identifiers.
-- Database roles, forced Row Level Security, account-link cases, and audit events.
+- Next.js/Vercel application.
+- Supabase Auth and PostgreSQL backend.
+- role-gated staff functions;
+- Row Level Security and privileged server/service-role boundaries;
+- forward-only database migrations;
+- pgTAP database/RLS tests;
+- Vitest application tests;
+- lint, type-check, production build and dependency audit in CI;
+- production-readiness checks;
+- security headers, redirect validation and CSV injection protection;
+- production handover/runbook documentation.
 
-Exit criteria: identity and authorization invariants remain covered by database
-tests, with no browser capability to assign roles or alter YM Hub projections.
+Ongoing work:
 
-## Phase 2: opportunity and news CMS
+- keep dependencies patched;
+- preserve regression coverage when adding operational features;
+- periodically rerun security/source scans for DTI review;
+- document material architecture changes in the same pull request.
 
-Status: implemented.
+## 2. Public volunteer companion and CMS
 
-- Public opportunity and news publishing.
-- Staff editor and publisher workflows with revision history.
-- YM Hub registration link-outs without app-owned registration state.
+**Status: Live**
 
-Exit criteria: publication transitions, registration URLs, revisions, grants,
-and Row Level Security remain enforced by PostgreSQL and covered by tests.
+Implemented:
 
-## Phase 3: read-only YM Hub integration
+- landing page;
+- opportunity discovery;
+- news;
+- KELUARGA-managed opportunity/news CMS;
+- external registration link-outs;
+- Event Guides with venue, directions, briefing and programme information;
+- published volunteer pathways.
 
-Status: in progress. The secure database projection, sync-state model, RLS, and
-volunteer dashboard read path are implemented. Salesforce connectivity remains
-blocked on reviewed API mappings and non-production tenant access.
+### Next work
 
-- Obtain reviewed Salesforce object and field API names, permission scopes,
-  record volumes, and change semantics.
-- Implement one server-only, read-only adapter with typed canonical mappings.
-- Reconcile volunteer identity and status into the existing projection tables.
-- Add idempotency, freshness indicators, observability, health checks, and
-  explicit unavailable states.
-- Deploy a staging environment for UI acceptance testing after the hosting
-  project and staging Supabase project are provisioned.
-- Remove the production deployment block only after integration, security,
-  failure-mode, and reconciliation tests pass against a non-production tenant.
+**Decision required:** confirm the long-term public name and destination of the official registration system and keep all UI copy consistent.
 
-Exit criteria: no Salesforce credential reaches the browser; outages cannot
-produce substitute records; stale records are visibly marked; mapping changes
-are versioned and audited.
+**Decision required:** confirm which Event Guide content can be public and which content requires authentication, assignment, access code or signed-link access.
 
-## Phase 4: volunteer pathways
+**Planned:** retire or narrow the transitional Volunteer.gov.sg opportunity sync once the authoritative/approved opportunity feed is settled.
 
-Status: implemented for map management; individual positioning is planned.
+## 3. Staff event operations
 
-- Publish a shared Explorer starting point, four colour-coded tracks, and five
-  ordered development phases.
-- Manage pathway maps through role-gated drafts, previews, immutable published
-  versions, forced Row Level Security, and audit events.
-- Keep role options structured rather than parsing slash-separated display copy.
-- Add individual volunteer stage positioning only through a future staff-managed
-  workflow using stable stage keys and the internal `core.volunteers.id`.
-- Do not infer or automatically advance positions from registration or attendance
-  records without approved criteria and staff confirmation.
+**Status: Live**
 
-Exit criteria: volunteers only read the active published version; drafts remain
-staff-only; publication is atomic; published versions are immutable; RLS and
-version transitions are covered by pgTAP tests.
+Implemented:
 
-## Phase 5: attendance capture and staff handoff
+- event creation/editing;
+- multi-day/multi-shift timeslots;
+- roster upload/paste/template;
+- optional Volunteer ID;
+- walk-ins;
+- dietary/contact/T-shirt fields;
+- check-in/check-out;
+- absent/withdrawn states;
+- bulk checkout;
+- audited corrections;
+- continuous attendance across shifts;
+- live attendance monitor;
+- attendance reconciliation view;
+- attendance export;
+- QR attendance/feedback foundation;
+- Past Events search/filter/sort;
+- compact mobile event-operations UI.
 
-Status: planned; depends on Phase 3 and an approved operating process.
+### Next work
 
-- Capture check-in intent or evidence without claiming verified attendance.
-- Provide staff exception handling, deduplication, and handoff tracking.
-- Reconcile capture records to authoritative YM Hub attendance records.
-- Define offline, privacy, retention, accessibility, and device-support rules
-  before selecting QR, kiosk, or staff-assisted interaction patterns.
+**Planned:** complete formal export-batch tracking for operational attendance sent to YM Hub, including:
 
-Exit criteria: the interface distinguishes captured, submitted, rejected, and
-verified states; only a downstream verified YM Hub record counts as attendance.
+- batch IDs;
+- source attendance IDs;
+- assignment matching;
+- walk-in/missing-assignment exceptions;
+- duplicate-export prevention;
+- accepted/rejected downstream outcome where available.
 
-## Phase 6: volunteer history and engagement
+**Planned:** continue event-day UAT with realistic multi-shift rosters, walk-ins, early checkouts and incomplete attendance.
 
-Status: planned; depends on verified Phase 5 data.
+**Planned:** define explicit retention/support procedures for event-operation data and exported files.
 
-- Show authoritative participation history and verified hours.
-- Add points, badges, referrals, or recognition only after policy, appeals,
-  expiry, anti-abuse, and privacy requirements are approved.
-- Keep derived rewards traceable to immutable verified source records.
+## 4. YM Hub / Salesforce integration
 
-Exit criteria: calculations are deterministic, auditable, reversible through
-documented correction workflows, and never awarded from capture-only records.
+**Status: Foundation live; production integration still incomplete**
 
-## Phase 7: controlled production rollout
+Already implemented:
 
-Status: planned across all production-facing phases.
+- `core` account/volunteer identity model;
+- `ymhub` projection schema;
+- registration snapshots;
+- attendance snapshots;
+- sync/freshness state;
+- dashboard read path;
+- verified-hours presentation;
+- gamification reconciliation contract.
 
-- Complete security review, data-protection review, accessibility testing,
-  recovery exercises, operational runbooks, and support training.
-- Roll out to staff and volunteer cohorts with measurable service objectives.
-- Monitor authentication, integration freshness, reconciliation exceptions,
-  content operations, and user outcomes without collecting unnecessary data.
+### Immediate integration direction — controlled batch processing
 
-Exit criteria: named service owners accept the runbooks and residual risks,
-recovery objectives are tested, and production release checks pass on `main`.
+**Status: Planned / external dependency**
+
+The current repo decision record specifies controlled batch files as the immediate integration mechanism.
+
+Target inbound source sets:
+
+1. Person Account;
+2. Volunteer Initiative;
+3. Job Position Shift;
+4. Job Position Assignment.
+
+Build a staff-only batch workflow with:
+
+- versioned expected templates;
+- schema/header validation;
+- preview before commit;
+- stable Salesforce source IDs;
+- checksum/duplicate-file detection;
+- atomic or explicitly documented partial-failure behaviour;
+- import counts and history;
+- uploader/time/source metadata;
+- exception reports;
+- previous successful snapshot retention;
+- freshness/failure state surfaced to volunteers/staff.
+
+### Identity linking
+
+**Status: Foundation live; operational workflow planned**
+
+Use the identity chain:
+
+```text
+Supabase Auth user
+        -> core.user_accounts
+        -> core.volunteers
+        -> Salesforce/YM Hub source ID
+```
+
+Planned:
+
+- controlled account invitations/linking;
+- exact source-ID matching where available;
+- email verification;
+- exception queue for ambiguous matches;
+- support workflow for missing/incorrect links.
+
+Do not allow volunteers to claim a profile by typing an unverified source ID or email address.
+
+### Future direct API
+
+**Status: Blocked / future**
+
+After DTI/security approval, replace the batch ingestion mechanism with a server-only, least-privilege Salesforce/YM Hub adapter.
+
+The adapter should populate the existing `ymhub` projection model so volunteer pages do not need to be redesigned.
+
+Requirements:
+
+- no Salesforce credential in browser code;
+- typed field mappings;
+- idempotent upserts;
+- explicit freshness/failure states;
+- auditability and observability;
+- safe handling of deletions, merges, status corrections and changed upstream records;
+- batch import/export retained as fallback/recovery where useful.
+
+### SSO
+
+**Status: Not in current phase**
+
+KELUARGA and YM Hub remain separate login/session systems. Reassess SSO only as a separate identity project if later approved.
+
+## 5. Personal volunteer dashboard
+
+**Status: UI/read model live; production usefulness depends on YM Hub data**
+
+Implemented:
+
+- linked/unlinked account states;
+- imported registrations;
+- imported official attendance;
+- verified hours;
+- sync/failure state handling.
+
+### Next work
+
+**Planned:** populate and operate the production YM Hub projections reliably through the batch integration.
+
+**Planned:** ensure all personal authoritative data surfaces show last successful sync/freshness information and distinguish `not yet synchronised` from a true empty record.
+
+**Planned:** support staff resolution of identity/assignment exceptions before broad volunteer account rollout.
+
+## 6. Gamification and recognition
+
+**Status: Foundation live; policy and authoritative data dependencies remain**
+
+Implemented:
+
+- versioned point-rule model;
+- flat-points and per-hour rules;
+- append-only point ledger;
+- adjustments/reversals;
+- account-scoped points UI;
+- reconciliation from verified YM Hub attendance.
+
+### Next work
+
+**Policy dependency:** approve point values, eligible activity rules, effective dates, corrections/appeals and any anti-abuse controls before activating production rules.
+
+**Integration dependency:** only reconcile points after a successful authoritative YM Hub attendance import.
+
+**Planned:** add badges/milestones only after the same provenance and correction rules are defined.
+
+**Planned:** referral rewards only after an authoritative referral outcome can confirm the referred person reached the required eligibility/registration milestone.
+
+## 7. Volunteer pathways
+
+**Status: Map management live; personal positioning planned**
+
+Implemented:
+
+- Explorer start;
+- four pathway tracks;
+- stages/roles;
+- staff draft/preview/publish workflow;
+- immutable published versions;
+- role-gated management.
+
+### Next work
+
+**Planned:** assign individual volunteers to a current pathway stage.
+
+Requirements:
+
+- use stable stage keys and `core.volunteers.id`;
+- staff-managed changes;
+- audit history;
+- clear volunteer-facing current position;
+- no automatic advancement merely from attendance/registration unless explicit criteria are approved.
+
+**Future:** pathway recommendations using reviewed skills/interests/experience may be considered, but should remain explainable and staff-overridable.
+
+## 8. Volunteer Insights and Reviews
+
+**Status: Live**
+
+Implemented:
+
+- inline event insight capture;
+- structured categories and source type;
+- submitted/accepted/dismissed review flow;
+- volunteer reviews with 1–5 event-role performance rating;
+- positive/concern behaviour tags;
+- comments/follow-up flag;
+- multiple staff reviewers;
+- integration into event reporting/export.
+
+### Next work
+
+**Planned:** cross-event staff view of accepted insights/review history where operationally useful, with appropriate access controls and context.
+
+**Decision required:** define retention, visibility and correction rules before reviews become a major longitudinal decision input.
+
+**Deferred:** automatic MakLom handoff.
+
+If the MakLom handoff is reactivated, use an inbox/matching/review workflow. Do not write accepted event observations directly into the canonical central volunteer profile.
+
+## 9. Feedback and impact reporting
+
+**Status: Event-level foundation live; longitudinal analytics planned**
+
+Implemented:
+
+- event feedback capture;
+- event report export including roster, attendance, continuous-attendance state, dietary data, insights, reviews and feedback.
+
+### Next work
+
+**Planned:** define an impact reporting model that separates:
+
+- unique volunteers;
+- deployments/roster rows;
+- event participations;
+- shifts;
+- attendance sessions;
+- verified volunteer hours;
+- repeat engagement;
+- feedback outcomes;
+- skill/interest development where evidence exists.
+
+**Planned:** create cross-event dashboards only after metric definitions are approved so multi-shift volunteers are not double counted unintentionally.
+
+Potential future metrics include deployment count, attendance rate, repeat participation, retention, contribution mix and feedback trends. Each metric must state its denominator and deduplication rule.
+
+## 10. MakLom integration
+
+**Status: Deferred**
+
+Current state:
+
+- no server-to-server write;
+- no automatic volunteer-profile mutation;
+- KELUARGA insights may be manually exported.
+
+Future option:
+
+```text
+KELUARGA accepted insight
+        -> MakLom inbox
+        -> identity matching
+        -> human review/edit/dismiss
+        -> optional canonical profile attribute
+```
+
+Do not use KELUARGA `attendance_person_key` as the canonical MakLom identity.
+
+## 11. Prioritised delivery order
+
+### P0 — protect and operationalise what is already live
+
+1. Maintain CI/security/database regression coverage.
+2. Complete realistic event-day UAT for attendance, continuous shifts, walk-ins, QR and reconciliation.
+3. Keep Event Guide access policy and registration destination copy explicit.
+4. Maintain operational runbooks, support ownership and rollback procedures.
+
+### P1 — make the YM Hub batch integration operational
+
+1. Obtain/freeze source templates, field mappings and status mappings.
+2. Build the batch import centre and exception reporting.
+3. Implement identity-link exception/support workflow.
+4. Implement formal attendance export-batch tracking and downstream reconciliation.
+5. Test deletions, merges, changed registrations and corrected attendance.
+
+### P2 — broaden reliable personalised volunteer features
+
+1. Operate reliable production registration/attendance snapshots.
+2. Show freshness/staleness consistently.
+3. Roll out personal account linking/support at scale.
+4. Activate gamification rules only after policy approval and verified data flow.
+5. Add individual pathway positioning.
+
+### P3 — improve volunteer-management intelligence
+
+1. Cross-event insights/review views.
+2. Longitudinal impact reporting.
+3. Referral outcome integration.
+4. Optional MakLom reviewed inbox if the product decision changes.
+
+### P4 — future enterprise integration
+
+1. Complete required source/security review.
+2. Introduce server-only Salesforce/YM Hub API adapter if approved.
+3. Retain recovery/batch paths.
+4. Assess SSO separately if there is a later organisational requirement.
 
 ## Delivery rules
 
-- `main` is the integration and release branch; every direct change must leave
-  it deployable or deliberately blocked by an explicit release gate.
-- Database changes use forward-only Supabase migrations and accompanying pgTAP
-  coverage.
-- External integrations are server-only, least-privilege, observable, and
-  fail closed.
-- A phase is complete only when its exit criteria are automated where possible
-  and the remaining manual evidence is recorded.
+- `main` remains deployable production code.
+- Use short-lived branches and pull requests for changes.
+- Database changes require forward-only migrations and pgTAP coverage where applicable.
+- User-facing feature changes should update `docs/feature-inventory.md` and this roadmap.
+- Newly confirmed material defects should be tracked as GitHub Issues and reflected in `docs/known-issues.md`.
+- External integrations stay server-only, least-privilege, observable and fail closed.
+- Do not represent a foundation/schema as a live operational integration until real source data and workflows are running.
