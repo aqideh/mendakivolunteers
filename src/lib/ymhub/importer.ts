@@ -1,5 +1,6 @@
 export const ymHubImportTemplateVersion = "1.0-20260915";
-export const ymHubImportMaxBytes = 3_500_000;
+export const ymHubImportMaxFileBytes = 2_000_000;
+export const ymHubImportMaxTotalBytes = 3_500_000;
 
 export const ymHubDatasetKeys = [
   "person_accounts",
