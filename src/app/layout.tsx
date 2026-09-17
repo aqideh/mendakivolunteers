@@ -19,6 +19,7 @@ import "./opportunity-image.css";
 import "./motion.css";
 import "./compact-ui.css";
 import "./volunteer-insights.css";
+import "./field-roster.css";
 
 export const metadata: Metadata = {
   title: {

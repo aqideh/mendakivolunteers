@@ -12,11 +12,11 @@ type VolunteerReviewFormProps = {
 };
 
 const ratingOptions = [
-  { value: 5, stars: "★★★★★", label: "Excellent" },
-  { value: 4, stars: "★★★★☆", label: "Good" },
-  { value: 3, stars: "★★★☆☆", label: "Meets expectations" },
-  { value: 2, stars: "★★☆☆☆", label: "Needs improvement" },
-  { value: 1, stars: "★☆☆☆☆", label: "Significant concerns" },
+  { value: 5, label: "Excellent" },
+  { value: 4, label: "Good" },
+  { value: 3, label: "Meets expectations" },
+  { value: 2, label: "Needs improvement" },
+  { value: 1, label: "Significant concerns" },
 ];
 
 export function VolunteerReviewForm({ eventId, rosterId, timeslotId }: VolunteerReviewFormProps) {
@@ -24,25 +24,25 @@ export function VolunteerReviewForm({ eventId, rosterId, timeslotId }: Volunteer
     <details className="phaseone-volunteer-review">
       <summary>
         <span>★ Review volunteer</span>
-        <span className="phaseone-volunteer-review-hint">Performance &amp; behaviour</span>
+        <span className="phaseone-volunteer-review-hint">Quick rating + optional notes</span>
       </summary>
       <form action={saveVolunteerReview} className="volunteer-review-form">
         <input name="eventId" type="hidden" value={eventId} />
         <input name="rosterId" type="hidden" value={rosterId} />
         <input name="timeslotId" type="hidden" value={timeslotId} />
 
-        <fieldset className="volunteer-review-fieldset">
-          <legend>Overall performance</legend>
-          <p className="muted">Rate how effectively the volunteer performed their assigned role at this event.</p>
+        <fieldset className="volunteer-review-fieldset volunteer-review-rating-fieldset">
+          <legend>How did they do?</legend>
+          <p className="muted volunteer-review-rating-help">Choose the closest overall rating. Add detail only when it is useful.</p>
           <div className="volunteer-review-rating-options">
             {ratingOptions.map((option) => (
               <KRadio
                 className="volunteer-review-rating"
                 key={option.value}
                 label={(
-                  <span>
-                    <span className="volunteer-review-stars" aria-hidden="true">{option.stars}</span>{" "}
-                    <span>{option.label}</span>
+                  <span className="volunteer-review-rating-copy">
+                    <strong className="volunteer-review-score">{option.value}★</strong>
+                    <span className="volunteer-review-rating-label">{option.label}</span>
                   </span>
                 )}
                 name="rating"
@@ -53,59 +53,67 @@ export function VolunteerReviewForm({ eventId, rosterId, timeslotId }: Volunteer
           </div>
         </fieldset>
 
-        <fieldset className="volunteer-review-fieldset">
-          <legend>Positive behaviours <span className="muted">optional</span></legend>
-          <div className="volunteer-review-tags">
-            {positiveBehaviorOptions.map((option) => (
-              <KCheckbox
-                className="volunteer-review-tag"
-                key={option.value}
-                label={option.label}
-                name="positiveBehaviors"
-                value={option.value}
-              />
-            ))}
+        <details className="volunteer-review-more">
+          <summary>
+            <span>+ Add detail</span>
+            <span>Strengths, concerns, context or follow-up</span>
+          </summary>
+          <div className="volunteer-review-more-body">
+            <fieldset className="volunteer-review-fieldset">
+              <legend>What went well? <span className="muted">optional</span></legend>
+              <div className="volunteer-review-tags">
+                {positiveBehaviorOptions.map((option) => (
+                  <KCheckbox
+                    className="volunteer-review-tag"
+                    key={option.value}
+                    label={option.label}
+                    name="positiveBehaviors"
+                    value={option.value}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="volunteer-review-fieldset">
+              <legend>Anything to flag? <span className="muted">optional</span></legend>
+              <div className="volunteer-review-tags volunteer-review-tags-concern">
+                {concernBehaviorOptions.map((option) => (
+                  <KCheckbox
+                    className="volunteer-review-tag"
+                    key={option.value}
+                    label={option.label}
+                    name="concernBehaviors"
+                    value={option.value}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <KTextarea
+              id={`review-comment-${rosterId}`}
+              label={<>Context <span className="muted">optional</span></>}
+              maxLength={1500}
+              name="comment"
+              placeholder="Short factual note or example, if needed."
+              rows={2}
+            />
+
+            <KCheckbox
+              className="volunteer-review-follow-up"
+              label={(
+                <span>
+                  <strong>Requires staff follow-up</strong>
+                  <small>Use only when something should be discussed or acted on.</small>
+                </span>
+              )}
+              name="followUpRequired"
+            />
           </div>
-        </fieldset>
+        </details>
 
-        <fieldset className="volunteer-review-fieldset">
-          <legend>Behaviours of concern <span className="muted">optional</span></legend>
-          <div className="volunteer-review-tags volunteer-review-tags-concern">
-            {concernBehaviorOptions.map((option) => (
-              <KCheckbox
-                className="volunteer-review-tag"
-                key={option.value}
-                label={option.label}
-                name="concernBehaviors"
-                value={option.value}
-              />
-            ))}
-          </div>
-        </fieldset>
-
-        <KTextarea
-          id={`review-comment-${rosterId}`}
-          label={<>Context <span className="muted">optional</span></>}
-          maxLength={1500}
-          name="comment"
-          placeholder="Record factual context or an example of the behaviour observed."
-          rows={3}
-        />
-
-        <KCheckbox
-          className="volunteer-review-follow-up"
-          label={(
-            <span>
-              <strong>Requires staff follow-up</strong>
-              <small>Use for something that should be discussed or acted on. A low rating alone does not create a follow-up.</small>
-            </span>
-          )}
-          name="followUpRequired"
-        />
-
-        <div className="phaseone-inline-insight-actions">
+        <div className="phaseone-inline-insight-actions volunteer-review-actions">
           <KButton type="submit">Save review</KButton>
-          <small className="muted">Submitting again updates your review for this volunteer at this event.</small>
+          <small className="muted">Saving again updates your review for this event.</small>
         </div>
       </form>
     </details>
