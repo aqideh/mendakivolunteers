@@ -237,7 +237,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
+      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(2000),
@@ -344,6 +344,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       volunteer.volunteer_name,
       volunteer.email,
       volunteer.mobile,
+      volunteer.age == null ? null : String(volunteer.age),
       volunteer.tshirt_size,
       volunteer.dietary_requirements,
     ].filter(Boolean).join(" ").toLowerCase();
@@ -512,6 +513,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         <input id="walk-in-email" name="email" maxLength={320} type="email" autoComplete="email" />
                       </div>
                       <div className="form-field">
+                        <label htmlFor="walk-in-age">Age</label>
+                        <input id="walk-in-age" name="age" type="number" min={0} max={120} inputMode="numeric" />
+                        <p className="muted">Optional.</p>
+                      </div>
+                      <div className="form-field">
                         <label htmlFor="walk-in-id">Volunteer ID</label>
                         <input id="walk-in-id" name="volunteerKey" maxLength={100} />
                         <p className="muted">Optional.</p>
@@ -589,6 +595,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   const linkedNextShift = nextShiftLink(effectiveAttendance?.session_id);
                   const isCarryover = effectiveAttendance?.continuation_type === "scheduled";
                   const isExtended = effectiveAttendance?.continuation_type === "extended_on_site";
+                  const isUnder18 = volunteer.age !== null && volunteer.age < 18;
                   const usesInheritedSession = Boolean(
                     effectiveAttendance?.session_id
                     && effectiveAttendance.session_checked_in_at
@@ -600,6 +607,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       className="phaseone-attendance-card phaseone-checkin-card"
                       data-highlighted={highlightedRosterId === volunteer.id ? "true" : undefined}
                       data-status={status}
+                      data-underage={isUnder18 ? "true" : undefined}
                       id={`roster-${volunteer.id}`}
                       key={volunteer.id}
                     >
@@ -607,6 +615,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         <div>
                           <div className="phaseone-roster-meta">
                             <p className="record-kicker">{volunteer.volunteer_key ?? "No volunteer ID"}</p>
+                            {isUnder18 ? <span className="status-pill phaseone-underage-badge">Under 18</span> : null}
                             {volunteer.entry_method === "walk_in" ? <span className="status-pill phaseone-walk-in-badge">Walk-in</span> : null}
                             {isCarryover ? <span className="status-pill phaseone-continuation-badge">Continuing from earlier shift</span> : null}
                             {isExtended ? <span className="status-pill phaseone-continuation-badge">Extended from earlier shift</span> : null}
@@ -615,7 +624,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             ) : null}
                           </div>
                           <h3>{volunteer.volunteer_name}</h3>
-                          <p className="muted">{volunteer.mobile ?? "No contact number"} · T-shirt: {volunteer.tshirt_size ?? "—"}</p>
+                          <p className="muted">{volunteer.mobile ?? "No contact number"} · Age: {volunteer.age ?? "—"} · T-shirt: {volunteer.tshirt_size ?? "—"}</p>
                           <p className="muted"><strong>Meal / dietary:</strong> {volunteer.dietary_requirements ?? "—"}</p>
                         </div>
                         <span className="status-pill" data-state={status}>{statusLabel(status)}</span>
@@ -692,6 +701,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
 
                       {volunteer.entry_method === "walk_in" ? (
                         <WalkInEditForm
+                          age={volunteer.age}
                           email={volunteer.email}
                           eventId={id}
                           mobile={volunteer.mobile}
