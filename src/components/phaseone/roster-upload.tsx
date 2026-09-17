@@ -22,6 +22,7 @@ type RosterRow = Readonly<{
   volunteer_name: string;
   email: string | null;
   mobile: string | null;
+  age: number | null;
   tshirt_size: string | null;
   dietary_requirements: string | null;
 }>;
@@ -152,6 +153,7 @@ function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): Pa
     volunteer_name: ["volunteer_name", "name", "full_name"],
     email: ["email", "email_address"],
     mobile: ["mobile", "phone", "mobile_number", "contact_number"],
+    age: ["age", "volunteer_age"],
     tshirt_size: ["tshirt_size", "t_shirt_size", "shirt_size", "size"],
     dietary_requirements: ["dietary_requirements", "dietary_requirement", "meal_preference", "meal_preferences", "dietary", "allergies", "allergy", "food_requirements"],
     date: ["date", "shift_date", "event_date"],
@@ -165,6 +167,7 @@ function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): Pa
   const nameIndex = column("volunteer_name");
   const emailIndex = column("email");
   const mobileIndex = column("mobile");
+  const ageIndex = column("age");
   const tshirtIndex = column("tshirt_size");
   const dietaryIndex = column("dietary_requirements");
   const dateIndex = column("date");
@@ -200,10 +203,12 @@ function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): Pa
     const volunteerName = values[nameIndex]?.trim() ?? "";
     const email = emailIndex >= 0 ? values[emailIndex]?.trim() || null : null;
     const mobile = mobileIndex >= 0 ? values[mobileIndex]?.trim() || null : null;
+    const ageValue = ageIndex >= 0 ? values[ageIndex]?.trim() || null : null;
+    const parsedAge = ageValue && /^\d+$/.test(ageValue) ? Number(ageValue) : null;
     const tshirtSize = tshirtIndex >= 0 ? values[tshirtIndex]?.trim() || null : null;
     const dietaryRequirements = dietaryIndex >= 0 ? values[dietaryIndex]?.trim() || null : null;
 
-    const hasVolunteerData = Boolean(volunteerKey || volunteerName || email || mobile || tshirtSize || dietaryRequirements);
+    const hasVolunteerData = Boolean(volunteerKey || volunteerName || email || mobile || ageValue || tshirtSize || dietaryRequirements);
     if (!hasVolunteerData) {
       ignoredHelperRows += 1;
       return;
@@ -216,6 +221,7 @@ function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): Pa
     if (volunteerKey && volunteerKey.length > 120) diagnostics.push({ row: rowNumber, code: "ID_TOO_LONG", message: "volunteer_id must be 120 characters or fewer." });
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) diagnostics.push({ row: rowNumber, code: "INVALID_EMAIL", message: `Email does not look valid: ${email}` });
     if (mobile && mobile.length > 40) diagnostics.push({ row: rowNumber, code: "CONTACT_TOO_LONG", message: "contact_number must be 40 characters or fewer." });
+    if (ageValue && (parsedAge === null || parsedAge < 0 || parsedAge > 120)) diagnostics.push({ row: rowNumber, code: "INVALID_AGE", message: "age must be a whole number from 0 to 120." });
     if (tshirtSize && tshirtSize.length > 20) diagnostics.push({ row: rowNumber, code: "SIZE_TOO_LONG", message: "tshirt_size must be 20 characters or fewer." });
     if (dietaryRequirements && dietaryRequirements.length > 500) diagnostics.push({ row: rowNumber, code: "DIETARY_TOO_LONG", message: "dietary_requirements must be 500 characters or fewer." });
 
@@ -249,6 +255,7 @@ function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): Pa
         volunteer_name: volunteerName,
         email,
         mobile,
+        age: parsedAge,
         tshirt_size: tshirtSize,
         dietary_requirements: dietaryRequirements,
       });
@@ -336,8 +343,8 @@ export function RosterUpload({
           id="pastedRoster"
           onChange={(event) => setPastedRoster(event.target.value)}
           placeholder={activeTimeslots.length > 1
-            ? "volunteer_name\tcontact_number\temail\tdate\tshift\nNur Aisyah\t91234567\taisyah@example.com\t2026-08-29\tMorning"
-            : "volunteer_name\tcontact_number\temail\nNur Aisyah\t91234567\taisyah@example.com"}
+            ? "volunteer_name\tcontact_number\temail\tage\tdate\tshift\nNur Aisyah\t91234567\taisyah@example.com\t17\t2026-08-29\tMorning"
+            : "volunteer_name\tcontact_number\temail\tage\nNur Aisyah\t91234567\taisyah@example.com\t17"}
           rows={6}
           value={pastedRoster}
         />
@@ -373,7 +380,7 @@ export function RosterUpload({
           <p><strong>Accepted columns</strong></p>
           <ul className="phaseone-compact-list">
             <li><code>volunteer_name</code> — required</li>
-            <li><code>contact_number</code>, <code>email</code>, <code>volunteer_id</code>, <code>tshirt_size</code>, <code>dietary_requirements</code> — optional</li>
+            <li><code>contact_number</code>, <code>email</code>, <code>age</code>, <code>volunteer_id</code>, <code>tshirt_size</code>, <code>dietary_requirements</code> — optional</li>
             {activeTimeslots.length > 1 ? <li><code>date</code> and <code>shift</code> — required for multi-shift events unless using the downloaded template</li> : null}
           </ul>
           {activeTimeslots.length > 1 ? (
@@ -451,7 +458,7 @@ export function RosterUpload({
           </div>
           <div className="table-wrap">
             <table className="content-table phaseone-roster-summary-table">
-              <thead><tr><th>Name</th>{activeTimeslots.length > 1 ? <th>Shift</th> : null}<th>Contact</th><th>Meal / dietary</th></tr></thead>
+              <thead><tr><th>Name</th>{activeTimeslots.length > 1 ? <th>Shift</th> : null}<th>Age</th><th>Contact</th><th>Meal / dietary</th></tr></thead>
               <tbody>
                 {preview.map((row, index) => {
                   const timeslot = timeslotById.get(row.timeslot_id);
@@ -460,6 +467,7 @@ export function RosterUpload({
                     <tr key={`${row.timeslot_id}-${matchKey(row)}-${index}`}>
                       <td>{row.volunteer_name}</td>
                       {activeTimeslots.length > 1 ? <td>{timeslot ? `${singaporeDate(timeslot.starts_at)} · ${timeslotLabel(timeslot)}` : "—"}</td> : null}
+                      <td>{row.age ?? "—"}</td>
                       <td>{contact}</td>
                       <td>{row.dietary_requirements ?? "—"}</td>
                     </tr>

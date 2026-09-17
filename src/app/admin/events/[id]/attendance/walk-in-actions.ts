@@ -7,6 +7,13 @@ import { z } from "zod";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
+const optionalAge = z.preprocess((value) => {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string" && !value.trim()) return null;
+  if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value.trim());
+  return value;
+}, z.number().int("Age must be a whole number.").min(0).max(120).nullable());
+
 const walkInEditSchema = z.object({
   eventId: z.string().uuid(),
   rosterId: z.string().uuid(),
@@ -14,6 +21,7 @@ const walkInEditSchema = z.object({
   volunteerName: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(320).optional().or(z.literal("")),
   mobile: z.string().trim().max(50).optional(),
+  age: optionalAge,
   dietaryRequirements: z.string().trim().max(500).optional(),
 });
 
@@ -30,6 +38,7 @@ export async function updateWalkInVolunteerDetails(formData: FormData) {
     volunteerName: formData.get("volunteerName"),
     email: formData.get("email") || "",
     mobile: formData.get("mobile") || undefined,
+    age: formData.get("age") || null,
     dietaryRequirements: formData.get("dietaryRequirements") || undefined,
   });
 
@@ -62,6 +71,7 @@ export async function updateWalkInVolunteerDetails(formData: FormData) {
       volunteer_name: parsed.data.volunteerName,
       email: parsed.data.email || null,
       mobile: parsed.data.mobile || null,
+      age: parsed.data.age,
       dietary_requirements: parsed.data.dietaryRequirements || null,
     })
     .eq("event_id", parsed.data.eventId)
