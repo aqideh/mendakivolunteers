@@ -20,6 +20,13 @@ const optionalText = (maximum: number) =>
     z.string().max(maximum).nullable(),
   );
 
+const optionalAge = z.preprocess((value) => {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string" && !value.trim()) return null;
+  if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value.trim());
+  return value;
+}, z.number().int("Age must be a whole number.").min(0).max(120).nullable());
+
 const requiredSingaporeDateTime = z.preprocess((value) => {
   if (typeof value !== "string" || !value.trim()) return value;
   return isValidSingaporeDateTimeLocal(value)
@@ -149,6 +156,7 @@ export const rosterRowSchema = z.object({
     (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
     z.string().max(40).nullable(),
   ),
+  age: optionalAge,
   tshirt_size: z.preprocess(
     (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
     z.string().max(20).nullable(),
