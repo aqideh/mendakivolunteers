@@ -1,3 +1,14 @@
+import {
+  hasBlockingYmHubDiagnostics,
+  parseYmHubCsv,
+  type YmHubActivityRow,
+  type YmHubAssignmentRow,
+  type YmHubDatasetKey as ParserDatasetKey,
+  type YmHubDiagnostic,
+  type YmHubPersonAccountRow,
+  type YmHubShiftRow,
+} from "./batch-import";
+
 export const ymHubImportTemplateVersion = "1.0-20260915";
 export const ymHubImportMaxFileBytes = 2_000_000;
 export const ymHubImportMaxTotalBytes = 3_500_000;
@@ -39,32 +50,9 @@ export type YmHubPersonAccount = Readonly<{
   official_hours_24_months: number | null;
 }>;
 
-export type YmHubActivity = Readonly<{
-  ymhub_activity_id: string;
-  title: string;
-  is_ad_hoc: boolean;
-  starts_on: string;
-  ends_on: string;
-  source_status: string;
-  published: true;
-}>;
-
-export type YmHubShift = Readonly<{
-  ymhub_shift_id: string;
-  ymhub_activity_id: string;
-  job_position_name: string;
-  starts_at: string;
-  ends_at: string;
-}>;
-
-export type YmHubAssignment = Readonly<{
-  ymhub_assignment_id: string;
-  ymhub_volunteer_id: string;
-  ymhub_activity_id: string;
-  ymhub_shift_id: string | null;
-  source_status: string;
-  actual_duration: number | null;
-}>;
+export type YmHubActivity = YmHubActivityRow;
+export type YmHubShift = YmHubShiftRow;
+export type YmHubAssignment = YmHubAssignmentRow;
 
 export type YmHubParsedImport = Readonly<{
   valid: boolean;
@@ -116,10 +104,10 @@ export const ymHubDatasetDefinitions: Readonly<Record<YmHubDatasetKey, DatasetDe
     label: "Job Position Shifts",
     headers: [
       "Job Position Shift ID",
-      "Job Position: Related Volunteer Initiative: Volunteer Initiative ID",
+      "Related Volunteer Initiative",
       "Job Position Name",
-      "Start Date & Time",
-      "End Date & Time",
+      "Start Date + Start Time",
+      "End Date + End Time",
     ],
   },
   job_position_assignments: {
@@ -135,517 +123,192 @@ export const ymHubDatasetDefinitions: Readonly<Record<YmHubDatasetKey, DatasetDe
   },
 };
 
-function issue(
+const parserKeyByDataset: Readonly<Record<YmHubDatasetKey, ParserDatasetKey>> = {
+  person_accounts: "personAccounts",
+  volunteer_initiatives: "volunteerInitiatives",
+  job_position_shifts: "jobPositionShifts",
+  job_position_assignments: "jobPositionAssignments",
+};
+
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  const source = text.replace(/^\uFEFF/, "");
+  let row: string[] = [];
+  let value = "";
+  let quoted = false;
+
+  const pushValue = () => {
+    row.push(value.trim());
+    value = "";
+  };
+  const pushRow = () => {
+    pushValue();
+    if (row.some((cell) => cell.length > 0)) rows.push(row);
+    row = [];
+  };
+
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source.charAt(index);
+    if (character === '"') {
+      if (quoted && source.charAt(index + 1) === '"') {
+        value += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+      continue;
+    }
+    if (character === "," && !quoted) {
+      pushValue();
+      continue;
+    }
+    if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && source.charAt(index + 1) === "\n") index += 1;
+      pushRow();
+      continue;
+    }
+    value += character;
+  }
+  if (quoted) throw new Error("CSV contains an unclosed quoted field");
+  if (value.length > 0 || row.length > 0) pushRow();
+  return rows;
+}
+
+function convertDiagnostic(dataset: YmHubDatasetKey, diagnostic: YmHubDiagnostic): YmHubImportIssue {
+  return {
+    severity: diagnostic.severity,
+    code: diagnostic.code,
+    message: diagnostic.message,
+    dataset,
+    ...(diagnostic.row === null ? {} : { row: diagnostic.row }),
+  };
+}
+
+function countRows(text: string): number {
+  try {
+    return Math.max(parseCsv(text).length - 1, 0);
+  } catch {
+    return 0;
+  }
+}
+
+function personRows(rows: readonly YmHubPersonAccountRow[]): YmHubPersonAccount[] {
+  return rows.map((row) => ({
+    ymhub_volunteer_id: row.ymhub_volunteer_id,
+    display_name: row.display_name,
+    primary_email_normalized: row.email?.toLowerCase() ?? null,
+    mobile: row.mobile,
+    official_hours_12_months: row.official_hours_12_months,
+    official_hours_24_months: row.official_hours_24_months,
+  }));
+}
+
+function pushIssue(
   issues: YmHubImportIssue[],
   severity: YmHubIssueSeverity,
   code: string,
   message: string,
   dataset?: YmHubDatasetKey,
-  row?: number,
 ) {
-  const item: {
-    severity: YmHubIssueSeverity;
-    code: string;
-    message: string;
-    dataset?: YmHubDatasetKey;
-    row?: number;
-  } = { severity, code, message };
-  if (dataset !== undefined) item.dataset = dataset;
-  if (row !== undefined) item.row = row;
-  issues.push(item);
-}
-
-export function parseCsv(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let inQuotes = false;
-
-  const input = text.replace(/^\uFEFF/, "");
-  for (let index = 0; index < input.length; index += 1) {
-    const character = input[index];
-
-    if (inQuotes) {
-      if (character === '"') {
-        if (input[index + 1] === '"') {
-          field += '"';
-          index += 1;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += character;
-      }
-      continue;
-    }
-
-    if (character === '"' && field.length === 0) {
-      inQuotes = true;
-      continue;
-    }
-    if (character === ",") {
-      row.push(field);
-      field = "";
-      continue;
-    }
-    if (character === "\n" || character === "\r") {
-      if (character === "\r" && input[index + 1] === "\n") index += 1;
-      row.push(field);
-      field = "";
-      if (row.some((value) => value.trim().length > 0)) rows.push(row);
-      row = [];
-      continue;
-    }
-    field += character;
-  }
-
-  if (inQuotes) throw new Error("CSV contains an unclosed quoted field");
-  row.push(field);
-  if (row.some((value) => value.trim().length > 0)) rows.push(row);
-  return rows;
-}
-
-function parseDataset(
-  dataset: YmHubDatasetKey,
-  input: FileInput,
-  issues: YmHubImportIssue[],
-): { rows: string[][]; rowCount: number } {
-  let rows: string[][];
-  try {
-    rows = parseCsv(input.text);
-  } catch {
-    issue(
-      issues,
-      "error",
-      "CSV_SYNTAX",
-      "The CSV could not be parsed. Check quoted fields and line breaks, then export it again from Salesforce.",
-      dataset,
-    );
-    return { rows: [], rowCount: 0 };
-  }
-
-  if (rows.length === 0) {
-    issue(issues, "error", "CSV_EMPTY", "The CSV is empty.", dataset);
-    return { rows: [], rowCount: 0 };
-  }
-
-  const expected = ymHubDatasetDefinitions[dataset].headers;
-  const actual = (rows[0] ?? []).map((value) => value.trim());
-  const headersMatch =
-    actual.length === expected.length &&
-    expected.every((header, index) => actual[index] === header);
-
-  if (!headersMatch) {
-    issue(
-      issues,
-      "error",
-      "CSV_HEADERS",
-      `Header mismatch. Expected: ${expected.join(" | ")}`,
-      dataset,
-      1,
-    );
-    return { rows: [], rowCount: Math.max(rows.length - 1, 0) };
-  }
-
-  const dataRows = rows.slice(1);
-  dataRows.forEach((values, index) => {
-    if (values.length !== expected.length) {
-      issue(
-        issues,
-        "error",
-        "CSV_COLUMN_COUNT",
-        `Expected ${expected.length} columns but found ${values.length}.`,
-        dataset,
-        index + 2,
-      );
-    }
-  });
-
-  return { rows: dataRows, rowCount: dataRows.length };
-}
-
-function required(
-  value: string | undefined,
-  dataset: YmHubDatasetKey,
-  row: number,
-  fieldName: string,
-  issues: YmHubImportIssue[],
-): string | null {
-  const normalized = value?.trim() ?? "";
-  if (!normalized) {
-    issue(issues, "error", "REQUIRED_FIELD", `${fieldName} is required.`, dataset, row);
-    return null;
-  }
-  return normalized;
-}
-
-function optional(value: string | undefined): string | null {
-  const normalized = value?.trim() ?? "";
-  return normalized ? normalized : null;
-}
-
-function nonNegativeNumber(
-  value: string | undefined,
-  dataset: YmHubDatasetKey,
-  row: number,
-  fieldName: string,
-  issues: YmHubImportIssue[],
-): number | null {
-  const normalized = value?.trim() ?? "";
-  if (!normalized) return null;
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    issue(
-      issues,
-      "error",
-      "INVALID_NUMBER",
-      `${fieldName} must be a non-negative number or blank.`,
-      dataset,
-      row,
-    );
-    return null;
-  }
-  return parsed;
-}
-
-function booleanValue(
-  value: string | undefined,
-  dataset: YmHubDatasetKey,
-  row: number,
-  fieldName: string,
-  issues: YmHubImportIssue[],
-): boolean | null {
-  const normalized = value?.trim().toLowerCase() ?? "";
-  if (["1", "true", "yes", "y"].includes(normalized)) return true;
-  if (["0", "false", "no", "n"].includes(normalized)) return false;
-  issue(
-    issues,
-    "error",
-    "INVALID_BOOLEAN",
-    `${fieldName} must be 1/0 or true/false.`,
-    dataset,
-    row,
-  );
-  return null;
-}
-
-function dateValue(
-  value: string | undefined,
-  dataset: YmHubDatasetKey,
-  row: number,
-  fieldName: string,
-  issues: YmHubImportIssue[],
-): string | null {
-  const normalized = value?.trim() ?? "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-    issue(
-      issues,
-      "error",
-      "INVALID_DATE",
-      `${fieldName} must use YYYY-MM-DD.`,
-      dataset,
-      row,
-    );
-    return null;
-  }
-  const parsed = new Date(`${normalized}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== normalized) {
-    issue(issues, "error", "INVALID_DATE", `${fieldName} is not a valid date.`, dataset, row);
-    return null;
-  }
-  return normalized;
-}
-
-function singaporeTimestamp(
-  value: string | undefined,
-  dataset: YmHubDatasetKey,
-  row: number,
-  fieldName: string,
-  issues: YmHubImportIssue[],
-): string | null {
-  const normalized = value?.trim() ?? "";
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+08:00$/.test(normalized)) {
-    issue(
-      issues,
-      "error",
-      "INVALID_TIMESTAMP",
-      `${fieldName} must use YYYY-MM-DDTHH:MM:SS+08:00.`,
-      dataset,
-      row,
-    );
-    return null;
-  }
-  if (Number.isNaN(Date.parse(normalized))) {
-    issue(issues, "error", "INVALID_TIMESTAMP", `${fieldName} is not a valid timestamp.`, dataset, row);
-    return null;
-  }
-  return normalized;
-}
-
-function emailValue(
-  value: string | undefined,
-  dataset: YmHubDatasetKey,
-  row: number,
-  issues: YmHubImportIssue[],
-): string | null {
-  const normalized = value?.trim().toLowerCase() ?? "";
-  if (!normalized) {
-    issue(
-      issues,
-      "warning",
-      "MISSING_EMAIL",
-      "Email is blank. This volunteer can be imported but cannot activate a KELUARGA account until YM Hub contains an email address.",
-      dataset,
-      row,
-    );
-    return null;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) || normalized.length > 254) {
-    issue(issues, "error", "INVALID_EMAIL", "Email is not valid.", dataset, row);
-    return null;
-  }
-  return normalized;
-}
-
-function recordDuplicate(
-  seen: Map<string, number>,
-  id: string,
-  dataset: YmHubDatasetKey,
-  row: number,
-  issues: YmHubImportIssue[],
-): boolean {
-  const firstRow = seen.get(id);
-  if (firstRow !== undefined) {
-    issue(
-      issues,
-      "error",
-      "DUPLICATE_SOURCE_ID",
-      `Duplicate source ID. The same ID first appeared on row ${firstRow}.`,
-      dataset,
-      row,
-    );
-    return true;
-  }
-  seen.set(id, row);
-  return false;
+  issues.push({ severity, code, message, ...(dataset ? { dataset } : {}) });
 }
 
 export function parseYmHubImportFiles(files: YmHubImportFiles): YmHubParsedImport {
-  const issues: YmHubImportIssue[] = [];
-  const personAccounts: YmHubPersonAccount[] = [];
-  const activities: YmHubActivity[] = [];
-  const shifts: YmHubShift[] = [];
-  const allAssignments: YmHubAssignment[] = [];
-  const rowCounts = new Map<YmHubDatasetKey, number>();
+  const parsed = {
+    person_accounts: parseYmHubCsv(parserKeyByDataset.person_accounts, files.person_accounts.text),
+    volunteer_initiatives: parseYmHubCsv(parserKeyByDataset.volunteer_initiatives, files.volunteer_initiatives.text),
+    job_position_shifts: parseYmHubCsv(parserKeyByDataset.job_position_shifts, files.job_position_shifts.text),
+    job_position_assignments: parseYmHubCsv(parserKeyByDataset.job_position_assignments, files.job_position_assignments.text),
+  } as const;
 
-  const persons = parseDataset("person_accounts", files.person_accounts, issues);
-  rowCounts.set("person_accounts", persons.rowCount);
-  const personIds = new Set<string>();
-  const personSeen = new Map<string, number>();
-  const emailCounts = new Map<string, number>();
-  persons.rows.forEach((values, index) => {
-    const row = index + 2;
-    const id = required(values[0], "person_accounts", row, "Account ID", issues);
-    const name = required(values[1], "person_accounts", row, "Account Name", issues);
-    const email = emailValue(values[2], "person_accounts", row, issues);
-    const mobile = optional(values[3]);
-    const hours12 = nonNegativeNumber(
-      values[4],
-      "person_accounts",
-      row,
-      "Total Volunteer Hours (Past 12 Months)",
-      issues,
-    );
-    const hours24 = nonNegativeNumber(
-      values[5],
-      "person_accounts",
-      row,
-      "Total Volunteer Hours (Past 24 Months)",
-      issues,
-    );
-    if (!id || !name || recordDuplicate(personSeen, id, "person_accounts", row, issues)) return;
-    personIds.add(id);
-    if (email) emailCounts.set(email, (emailCounts.get(email) ?? 0) + 1);
-    personAccounts.push({
-      ymhub_volunteer_id: id,
-      display_name: name,
-      primary_email_normalized: email,
-      mobile,
-      official_hours_12_months: hours12,
-      official_hours_24_months: hours24,
-    });
-  });
-  const sharedEmailRows = [...emailCounts.values()].filter((count) => count > 1).reduce((sum, count) => sum + count, 0);
-  if (sharedEmailRows > 0) {
-    issue(
-      issues,
-      "warning",
-      "SHARED_EMAIL",
-      `${sharedEmailRows} Person Account rows share an email with another source record. They will import, but KELUARGA account linking will require review.`,
-      "person_accounts",
-    );
-  }
+  const issues: YmHubImportIssue[] = ymHubDatasetKeys.flatMap((dataset) =>
+    parsed[dataset].diagnostics.map((diagnostic) => convertDiagnostic(dataset, diagnostic)),
+  );
 
-  const activityData = parseDataset("volunteer_initiatives", files.volunteer_initiatives, issues);
-  rowCounts.set("volunteer_initiatives", activityData.rowCount);
-  const activityIds = new Set<string>();
-  const activitySeen = new Map<string, number>();
-  activityData.rows.forEach((values, index) => {
-    const row = index + 2;
-    const id = required(values[0], "volunteer_initiatives", row, "Volunteer Initiative ID", issues);
-    const title = required(values[1], "volunteer_initiatives", row, "Volunteer Initiative Name", issues);
-    const isAdHoc = booleanValue(values[2], "volunteer_initiatives", row, "Is Ad Hoc", issues);
-    const startsOn = dateValue(values[3], "volunteer_initiatives", row, "Start Date", issues);
-    const endsOn = dateValue(values[4], "volunteer_initiatives", row, "End Date", issues);
-    const status = required(values[5], "volunteer_initiatives", row, "Status", issues);
-    if (!id || !title || isAdHoc === null || !startsOn || !endsOn || !status) return;
-    if (recordDuplicate(activitySeen, id, "volunteer_initiatives", row, issues)) return;
-    if (endsOn < startsOn) {
-      issue(issues, "error", "DATE_ORDER", "End Date is before Start Date.", "volunteer_initiatives", row);
-      return;
-    }
-    activityIds.add(id);
-    activities.push({
-      ymhub_activity_id: id,
-      title,
-      is_ad_hoc: isAdHoc,
-      starts_on: startsOn,
-      ends_on: endsOn,
-      source_status: status,
-      published: true,
-    });
-  });
+  const personAccounts = personRows(parsed.person_accounts.rows as YmHubPersonAccountRow[]);
+  const activities = parsed.volunteer_initiatives.rows as YmHubActivity[];
+  const shifts = parsed.job_position_shifts.rows as YmHubShift[];
+  const assignments = parsed.job_position_assignments.rows as YmHubAssignment[];
 
-  const shiftData = parseDataset("job_position_shifts", files.job_position_shifts, issues);
-  rowCounts.set("job_position_shifts", shiftData.rowCount);
-  const shiftSeen = new Map<string, number>();
-  const shiftActivities = new Map<string, string>();
-  shiftData.rows.forEach((values, index) => {
-    const row = index + 2;
-    const id = required(values[0], "job_position_shifts", row, "Job Position Shift ID", issues);
-    const activityId = required(
-      values[1],
-      "job_position_shifts",
-      row,
-      "Related Volunteer Initiative ID",
-      issues,
-    );
-    const positionName = required(values[2], "job_position_shifts", row, "Job Position Name", issues);
-    const startsAt = singaporeTimestamp(values[3], "job_position_shifts", row, "Start Date & Time", issues);
-    const endsAt = singaporeTimestamp(values[4], "job_position_shifts", row, "End Date & Time", issues);
-    if (!id || !activityId || !positionName || !startsAt || !endsAt) return;
-    if (recordDuplicate(shiftSeen, id, "job_position_shifts", row, issues)) return;
-    if (!activityIds.has(activityId)) {
-      issue(
+  const personIds = new Set(personAccounts.map(({ ymhub_volunteer_id }) => ymhub_volunteer_id));
+  const activityIds = new Set(activities.map(({ ymhub_activity_id }) => ymhub_activity_id));
+  const shiftActivities = new Map(shifts.map(({ ymhub_shift_id, ymhub_activity_id }) => [ymhub_shift_id, ymhub_activity_id]));
+
+  for (const shift of shifts) {
+    if (!activityIds.has(shift.ymhub_activity_id)) {
+      pushIssue(
         issues,
         "error",
         "UNKNOWN_ACTIVITY_REFERENCE",
-        "The shift references a Volunteer Initiative that is not present in this batch.",
+        `Shift ${shift.ymhub_shift_id} references an Initiative that is not present in this batch.`,
         "job_position_shifts",
-        row,
       );
-      return;
     }
-    if (Date.parse(endsAt) < Date.parse(startsAt)) {
-      issue(issues, "error", "TIME_ORDER", "End Date & Time is before Start Date & Time.", "job_position_shifts", row);
-      return;
-    }
-    shiftActivities.set(id, activityId);
-    shifts.push({
-      ymhub_shift_id: id,
-      ymhub_activity_id: activityId,
-      job_position_name: positionName,
-      starts_at: startsAt,
-      ends_at: endsAt,
-    });
-  });
+  }
 
-  const assignmentData = parseDataset(
-    "job_position_assignments",
-    files.job_position_assignments,
-    issues,
-  );
-  rowCounts.set("job_position_assignments", assignmentData.rowCount);
-  const assignmentSeen = new Map<string, number>();
-  assignmentData.rows.forEach((values, index) => {
-    const row = index + 2;
-    const id = required(values[0], "job_position_assignments", row, "Job Position Assignment ID", issues);
-    const volunteerId = required(values[1], "job_position_assignments", row, "Assigned Account", issues);
-    const activityId = required(
-      values[2],
-      "job_position_assignments",
-      row,
-      "Related Volunteer Initiative",
+  let unresolvedAssignmentVolunteers = 0;
+  let unresolvedAssignmentShifts = 0;
+  for (const assignment of assignments) {
+    if (!personIds.has(assignment.ymhub_volunteer_id)) unresolvedAssignmentVolunteers += 1;
+    if (assignment.ymhub_shift_id && !shiftActivities.has(assignment.ymhub_shift_id)) {
+      unresolvedAssignmentShifts += 1;
+    }
+    const knownShiftActivity = assignment.ymhub_shift_id
+      ? shiftActivities.get(assignment.ymhub_shift_id)
+      : undefined;
+    if (knownShiftActivity && knownShiftActivity !== assignment.ymhub_activity_id) {
+      pushIssue(
+        issues,
+        "error",
+        "SHIFT_ACTIVITY_MISMATCH",
+        `Assignment ${assignment.ymhub_assignment_id} references a shift belonging to a different Initiative.`,
+        "job_position_assignments",
+      );
+    }
+  }
+
+  if (unresolvedAssignmentVolunteers > 0) {
+    pushIssue(
       issues,
+      "warning",
+      "ASSIGNMENT_VOLUNTEER_NOT_IN_BATCH",
+      `${unresolvedAssignmentVolunteers} assignment row${unresolvedAssignmentVolunteers === 1 ? "" : "s"} reference Person Accounts outside this batch. The Salesforce IDs will still be retained and can resolve on a later import.`,
+      "job_position_assignments",
     );
-    const shiftId = optional(values[3]);
-    const status = required(values[4], "job_position_assignments", row, "Status", issues);
-    const actualDuration = nonNegativeNumber(
-      values[5],
-      "job_position_assignments",
-      row,
-      "Actual Duration",
+  }
+  if (unresolvedAssignmentShifts > 0) {
+    pushIssue(
       issues,
+      "warning",
+      "ASSIGNMENT_SHIFT_NOT_IN_BATCH",
+      `${unresolvedAssignmentShifts} assignment row${unresolvedAssignmentShifts === 1 ? "" : "s"} reference shifts outside this batch. The Salesforce IDs will still be retained and can resolve on a later import.`,
+      "job_position_assignments",
     );
-    if (!id || !volunteerId || !activityId || !status) return;
-    if (recordDuplicate(assignmentSeen, id, "job_position_assignments", row, issues)) return;
+  }
 
-    if (activityIds.has(activityId)) {
-      if (!personIds.has(volunteerId)) {
-        issue(
-          issues,
-          "error",
-          "UNKNOWN_VOLUNTEER_REFERENCE",
-          "The assignment references an Assigned Account that is not present in the Person Account file.",
-          "job_position_assignments",
-          row,
-        );
-      }
-      if (shiftId && !shiftActivities.has(shiftId)) {
-        issue(
-          issues,
-          "error",
-          "UNKNOWN_SHIFT_REFERENCE",
-          "The assignment references a shift that is not present in the Job Position Shift file.",
-          "job_position_assignments",
-          row,
-        );
-      }
-      if (shiftId && shiftActivities.get(shiftId) && shiftActivities.get(shiftId) !== activityId) {
-        issue(
-          issues,
-          "error",
-          "SHIFT_ACTIVITY_MISMATCH",
-          "The assignment's shift belongs to a different Volunteer Initiative.",
-          "job_position_assignments",
-          row,
-        );
-      }
-    }
-
-    allAssignments.push({
-      ymhub_assignment_id: id,
-      ymhub_volunteer_id: volunteerId,
-      ymhub_activity_id: activityId,
-      ymhub_shift_id: shiftId,
-      source_status: status,
-      actual_duration: actualDuration,
-    });
-  });
-
-  const assignments = allAssignments.filter(({ ymhub_activity_id }) => activityIds.has(ymhub_activity_id));
-  const skippedAssignments = allAssignments.length - assignments.length;
-  if (skippedAssignments > 0) {
-    issue(
+  const sharedEmails = new Map<string, number>();
+  for (const person of personAccounts) {
+    if (!person.primary_email_normalized) continue;
+    sharedEmails.set(
+      person.primary_email_normalized,
+      (sharedEmails.get(person.primary_email_normalized) ?? 0) + 1,
+    );
+  }
+  const sharedEmailRows = [...sharedEmails.values()]
+    .filter((count) => count > 1)
+    .reduce((sum, count) => sum + count, 0);
+  if (sharedEmailRows > 0) {
+    pushIssue(
       issues,
-      "info",
-      "ASSIGNMENTS_OUT_OF_SCOPE",
-      `${skippedAssignments} assignment row${skippedAssignments === 1 ? "" : "s"} reference activities outside the Published Volunteer Initiative report and will be recorded as skipped, not imported into the current activity projection.`,
-      "job_position_assignments",
+      "warning",
+      "SHARED_EMAIL",
+      `${sharedEmailRows} Person Account rows share an email with another source record. They will import, but account linking may require staff review.`,
+      "person_accounts",
     );
   }
 
   const datasets = ymHubDatasetKeys.map((dataset): YmHubDatasetPreview => {
+    const rowCount = countRows(files[dataset].text);
     const importedRowCount =
       dataset === "person_accounts"
         ? personAccounts.length
@@ -654,7 +317,6 @@ export function parseYmHubImportFiles(files: YmHubImportFiles): YmHubParsedImpor
           : dataset === "job_position_shifts"
             ? shifts.length
             : assignments.length;
-    const rowCount = rowCounts.get(dataset) ?? 0;
     return {
       dataset,
       label: ymHubDatasetDefinitions[dataset].label,
@@ -666,8 +328,9 @@ export function parseYmHubImportFiles(files: YmHubImportFiles): YmHubParsedImpor
     };
   });
 
+  const parserBlocked = ymHubDatasetKeys.some((dataset) => hasBlockingYmHubDiagnostics(parsed[dataset]));
   return {
-    valid: !issues.some(({ severity }) => severity === "error"),
+    valid: !parserBlocked && !issues.some(({ severity }) => severity === "error"),
     issues,
     datasets,
     personAccounts,
