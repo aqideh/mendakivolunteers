@@ -5,6 +5,8 @@ import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
+import { YmHubImportForm } from "./import-form";
+
 export const metadata: Metadata = { title: "YM Hub Batch Centre" };
 export const dynamic = "force-dynamic";
 
@@ -83,7 +85,7 @@ export default async function YmHubBatchCentrePage() {
             <p className="eyebrow">Staff integration operations</p>
             <h1>YM Hub Batch Centre</h1>
             <p className="muted">
-              Track CSV handoffs between YM Hub and KELUARGA without keeping a separate manual log.
+              Validate and track CSV handoffs between YM Hub and KELUARGA without keeping a separate manual log.
             </p>
           </div>
           <div className="actions">
@@ -95,7 +97,7 @@ export default async function YmHubBatchCentrePage() {
 
         {!ready ? (
           <div className="notice" role="status">
-            The Batch Centre database foundation has not been applied to this environment yet. The page is safe to preview, but imports and attendance handoffs remain disabled.
+            The Batch Centre database foundation has not been applied to this environment yet. Imports and attendance handoffs remain disabled.
           </div>
         ) : null}
 
@@ -104,10 +106,8 @@ export default async function YmHubBatchCentrePage() {
             <p className="eyebrow">Inbound data</p>
             <h2>{summary.committed_import_batches} committed batches</h2>
             <p className="muted">Latest committed file: {formatSingaporeDateTime(summary.latest_import_at)}</p>
-            <p>
-              Person Accounts, Volunteer Initiatives, Job Position Shifts and Job Position Assignments will be validated and recorded here.
-            </p>
-            <span className="status-pill">Importer next</span>
+            <p>Person Accounts, Volunteer Initiatives, Job Position Shifts and Job Position Assignments are imported as one validated batch.</p>
+            <span className="status-pill">Importer available</span>
           </article>
 
           <article className="panel">
@@ -121,31 +121,32 @@ export default async function YmHubBatchCentrePage() {
           <article className="panel">
             <p className="eyebrow">Exceptions</p>
             <h2>{summary.open_import_exceptions} open</h2>
-            <p className="muted">
-              Invalid relationships, unknown statuses and unresolved records will be surfaced here rather than silently coerced.
-            </p>
-            <span className="status-pill">No hidden failures</span>
+            <p className="muted">Warnings and follow-up notes are retained with the batch instead of relying on a separate spreadsheet or staff memory.</p>
+            <span className="status-pill">Auditable notes</span>
           </article>
 
           <article className="panel">
             <p className="eyebrow">History</p>
             <h2>{summary.import_batches} inbound batches recorded</h2>
-            <p className="muted">
-              KELUARGA will retain periods, checksums and handoff state so staff do not need to remember what was already processed.
-            </p>
+            <p className="muted">KELUARGA retains reporting periods, checksums and handoff state so duplicate report files can be detected.</p>
             <span className="status-pill">Automatic audit trail</span>
           </article>
         </section>
 
+        <section className="panel" aria-labelledby="ymhub-import-title">
+          <p className="eyebrow">Inbound YM Hub data</p>
+          <h2 id="ymhub-import-title">Import four Salesforce reports</h2>
+          <p className="muted">
+            Export the four agreed CSV reports for the same reporting period. Preview checks exact headers, formats, duplicates inside each file and cross-file references before the commit button is enabled.
+          </p>
+          {ready ? <YmHubImportForm /> : <p>The importer will appear after the database migration is applied.</p>}
+        </section>
+
         <section className="panel">
-          <div className="dashboard-header">
-            <div>
-              <p className="eyebrow">Current integration scope</p>
-              <h2>Foundation only</h2>
-            </div>
-          </div>
+          <p className="eyebrow">Current integration scope</p>
+          <h2>Raw Salesforce statuses preserved</h2>
           <p>
-            CSV headers and Salesforce status mappings are intentionally not hard-coded yet. They will be added after the remaining YM Hub report contract items are confirmed.
+            KELUARGA does not yet translate Job Position Assignment or Volunteer Initiative statuses into a guessed lifecycle. The source values are stored unchanged until the complete YM Hub status contract is confirmed.
           </p>
         </section>
       </main>
