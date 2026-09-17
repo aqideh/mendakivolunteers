@@ -4,7 +4,7 @@ import {
   type VolunteerTimeslot,
 } from "./packages";
 
-export const adminPastEventDays = 14;
+export const adminPastEventDays = 7;
 
 export type AdminEventSummary = Readonly<{
   id: string;
