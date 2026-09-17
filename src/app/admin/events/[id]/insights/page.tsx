@@ -3,12 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PortalHeader } from "@/components/portal-header";
+import { VolunteerInsightForm } from "@/components/phaseone/volunteer-insight-form";
 import { VolunteerReviewsSection } from "@/components/phaseone/volunteer-reviews-section";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
-import { addVolunteerInsight, reviewVolunteerInsight } from "./actions";
+import { reviewVolunteerInsight } from "./actions";
 
 export const metadata: Metadata = { title: "Volunteer insights" };
 export const dynamic = "force-dynamic";
@@ -122,44 +123,12 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
                   <span><strong>{volunteer.volunteer_name}</strong><small>{volunteer.volunteer_key ?? volunteer.email ?? volunteer.mobile ?? "No volunteer ID"}</small></span>
                   <span className="insight-capture-count">{insightCountByPerson.get(volunteer.attendance_person_key) ?? 0} insights</span>
                 </summary>
-                <form action={addVolunteerInsight} className="insight-capture-form">
-                  <input name="eventId" type="hidden" value={id} />
-                  <input name="rosterId" type="hidden" value={volunteer.id} />
-                  <input name="timeslotId" type="hidden" value={volunteer.timeslot_id} />
-                  <div className="insight-capture-grid">
-                    <div className="form-field">
-                      <label htmlFor={`category-${volunteer.id}`}>What did you learn?</label>
-                      <select id={`category-${volunteer.id}`} name="category" defaultValue="skill">
-                        <option value="skill">Skill</option>
-                        <option value="interest">Interest</option>
-                        <option value="experience">Experience</option>
-                        <option value="connection">Connection / affiliation</option>
-                        <option value="role_preference">Role preference</option>
-                        <option value="availability">Availability</option>
-                        <option value="language">Language</option>
-                        <option value="development">Development interest</option>
-                        <option value="follow_up">Follow-up</option>
-                        <option value="note">Other useful note</option>
-                      </select>
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor={`source-${volunteer.id}`}>Source</label>
-                      <select id={`source-${volunteer.id}`} name="sourceType" defaultValue="volunteer_shared">
-                        <option value="volunteer_shared">Volunteer told me</option>
-                        <option value="staff_observed">Staff observed</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor={`value-${volunteer.id}`}>Insight</label>
-                    <input id={`value-${volunteer.id}`} name="value" maxLength={240} placeholder="e.g. Photography, interested in mentoring, weekends" required />
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor={`detail-${volunteer.id}`}>Context <span className="muted">optional</span></label>
-                    <textarea id={`detail-${volunteer.id}`} name="detail" maxLength={1500} rows={2} placeholder="Short factual context that will help someone understand this later" />
-                  </div>
-                  <button className="button button-primary" type="submit">Save insight</button>
-                </form>
+                <VolunteerInsightForm
+                  defaultCategory="skill"
+                  eventId={id}
+                  rosterId={volunteer.id}
+                  timeslotId={volunteer.timeslot_id}
+                />
               </details>
             ))}
             {volunteers.length === 0 ? <p className="empty-state">No volunteers are on this event roster yet.</p> : null}
