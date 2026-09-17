@@ -9,10 +9,6 @@ comment on schema integration is
 revoke all on schema integration from public, anon, authenticated;
 grant usage on schema integration to service_role;
 
--- ---------------------------------------------------------------------------
--- Batch import history
--- ---------------------------------------------------------------------------
-
 create table integration.ymhub_import_batches (
   id uuid primary key default gen_random_uuid(),
   period_start date,
@@ -99,10 +95,6 @@ create index ymhub_import_exceptions_open_idx
   on integration.ymhub_import_exceptions (import_file_id, created_at)
   where resolved_at is null;
 
--- ---------------------------------------------------------------------------
--- Attendance export history
--- ---------------------------------------------------------------------------
-
 create table integration.ymhub_export_batches (
   id uuid primary key default gen_random_uuid(),
   event_id uuid references public.phaseone_events (id) on delete set null,
@@ -165,10 +157,6 @@ create index ymhub_export_rows_batch_idx
   on integration.ymhub_export_rows (export_batch_id);
 create index ymhub_export_rows_assignment_idx
   on integration.ymhub_export_rows (ymhub_assignment_id);
-
--- ---------------------------------------------------------------------------
--- Canonical imported YM Hub objects
--- ---------------------------------------------------------------------------
 
 create table ymhub.activity_snapshots (
   id uuid primary key default gen_random_uuid(),
@@ -235,9 +223,16 @@ create table ymhub.assignment_snapshots (
   ymhub_assignment_id text not null unique check (
     char_length(ymhub_assignment_id) between 1 and 128
   ),
-  volunteer_id uuid not null references core.volunteers (id) on delete restrict,
-  ymhub_activity_id text not null references ymhub.activity_snapshots (ymhub_activity_id) on update cascade on delete restrict,
-  ymhub_shift_id text references ymhub.shift_snapshots (ymhub_shift_id) on update cascade on delete restrict,
+  ymhub_volunteer_id text not null check (
+    char_length(ymhub_volunteer_id) between 1 and 128
+  ),
+  volunteer_id uuid references core.volunteers (id) on delete set null,
+  ymhub_activity_id text not null check (
+    char_length(ymhub_activity_id) between 1 and 128
+  ),
+  ymhub_shift_id text check (
+    ymhub_shift_id is null or char_length(ymhub_shift_id) between 1 and 128
+  ),
   source_status text not null check (char_length(source_status) between 1 and 100),
   actual_duration numeric(8, 2) check (actual_duration is null or actual_duration >= 0),
   last_import_file_id uuid references integration.ymhub_import_files (id) on delete set null,
@@ -247,18 +242,16 @@ create table ymhub.assignment_snapshots (
 );
 
 comment on table ymhub.assignment_snapshots is
-  'Canonical imported Job Position Assignment record. Raw Salesforce status is preserved until the final status dictionary and lifecycle are confirmed.';
+  'Canonical imported Job Position Assignment record. Source IDs remain durable even when the related Initiative or Shift is outside a partial published report.';
 
 create index assignment_snapshots_volunteer_idx
   on ymhub.assignment_snapshots (volunteer_id, last_imported_at desc);
+create index assignment_snapshots_source_volunteer_idx
+  on ymhub.assignment_snapshots (ymhub_volunteer_id, last_imported_at desc);
 create index assignment_snapshots_activity_idx
   on ymhub.assignment_snapshots (ymhub_activity_id, ymhub_shift_id);
 create index assignment_snapshots_status_idx
   on ymhub.assignment_snapshots (source_status);
-
--- ---------------------------------------------------------------------------
--- Source-link fields used by reconciliation into existing event operations
--- ---------------------------------------------------------------------------
 
 alter table core.volunteers
   add column mobile text check (
@@ -301,10 +294,6 @@ create index phaseone_roster_volunteer_idx
 create unique index phaseone_roster_ymhub_assignment_idx
   on public.phaseone_roster (ymhub_assignment_id)
   where ymhub_assignment_id is not null;
-
--- ---------------------------------------------------------------------------
--- Update timestamps and security
--- ---------------------------------------------------------------------------
 
 create trigger ymhub_import_batches_set_updated_at
 before update on integration.ymhub_import_batches
