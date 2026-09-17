@@ -57,6 +57,13 @@ const extendAttendanceSchema = z.object({
   currentTimeslotId: z.string().uuid(),
 });
 
+const optionalAge = z.preprocess((value) => {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string" && !value.trim()) return null;
+  if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value.trim());
+  return value;
+}, z.number().int("Age must be a whole number.").min(0).max(120).nullable());
+
 const walkInSchema = z.object({
   eventId: z.string().uuid(),
   timeslotId: z.string().uuid(),
@@ -64,6 +71,7 @@ const walkInSchema = z.object({
   volunteerKey: z.string().trim().max(100).optional(),
   email: z.string().trim().email().max(320).optional().or(z.literal("")),
   mobile: z.string().trim().max(50).optional(),
+  age: optionalAge,
   tshirtSize: z.string().trim().max(20).optional(),
   dietaryRequirements: z.string().trim().max(500).optional(),
   submitIntent: z.enum(["add_and_check_in", "add_only"]),
@@ -128,6 +136,7 @@ export async function addWalkInVolunteer(formData: FormData) {
     volunteerKey: formData.get("volunteerKey") || undefined,
     email: formData.get("email") || "",
     mobile: formData.get("mobile") || undefined,
+    age: formData.get("age") || null,
     tshirtSize: formData.get("tshirtSize") || undefined,
     dietaryRequirements: formData.get("dietaryRequirements") || undefined,
     submitIntent: formData.get("submitIntent"),
@@ -147,6 +156,7 @@ export async function addWalkInVolunteer(formData: FormData) {
     p_volunteer_name: parsed.data.volunteerName,
     p_email: parsed.data.email || null,
     p_mobile: parsed.data.mobile || null,
+    p_age: parsed.data.age,
     p_tshirt_size: parsed.data.tshirtSize || null,
     p_dietary_requirements: parsed.data.dietaryRequirements || null,
     p_check_in: parsed.data.submitIntent === "add_and_check_in",
