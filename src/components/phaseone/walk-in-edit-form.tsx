@@ -8,6 +8,7 @@ type WalkInEditFormProps = {
   volunteerName: string;
   email: string | null;
   mobile: string | null;
+  age: number | null;
   dietaryRequirements: string | null;
 };
 
@@ -18,6 +19,7 @@ export function WalkInEditForm({
   volunteerName,
   email,
   mobile,
+  age,
   dietaryRequirements,
 }: WalkInEditFormProps) {
   return (
@@ -57,6 +59,17 @@ export function WalkInEditForm({
             maxLength={320}
             name="email"
             type="email"
+          />
+          <KTextInput
+            className="form-field"
+            defaultValue={age ?? ""}
+            id={`walk-in-edit-age-${rosterId}`}
+            inputMode="numeric"
+            label="Age"
+            max={120}
+            min={0}
+            name="age"
+            type="number"
           />
           <KTextarea
             className="form-field"
