@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
+    serverActions: {
+      bodySizeLimit: "4mb",
+    },
   },
   images: {
     remotePatterns: [

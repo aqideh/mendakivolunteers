@@ -1,0 +1,16 @@
+.form { display: grid; gap: 1rem; }
+.periodGrid, .fileGrid { display: grid; gap: .9rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.periodGrid label, .fileField { display: grid; gap: .45rem; }
+.periodGrid span, .fileField > span { font-weight: 700; }
+.fileField { padding: .9rem 0; border-top: 1px solid var(--border-color, rgba(128,128,128,.25)); }
+.fileField small { color: var(--text-muted, #69707a); line-height: 1.35; overflow-wrap: anywhere; }
+.fileField input, .periodGrid input { width: 100%; }
+.actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.previewTable { overflow-x: auto; }
+.issueList { display: grid; gap: .55rem; }
+.issue { display: grid; gap: .2rem; border-left: 3px solid currentColor; padding: .55rem .75rem; background: rgba(128,128,128,.08); }
+.issue[data-severity="error"] { color: #9f2d2d; }
+.issue[data-severity="warning"] { color: #8b5c00; }
+.issue[data-severity="info"] { color: inherit; }
+.batchId { display: block; margin-top: .35rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; }
+@media (max-width: 760px) { .periodGrid, .fileGrid { grid-template-columns: 1fr; } }

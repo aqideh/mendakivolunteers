@@ -30,8 +30,8 @@ function event(
 }
 
 describe("admin event archive classification", () => {
-  it("uses an exact fourteen-day cutoff", () => {
-    expect(adminPastEventCutoffIso(now)).toBe("2026-08-07T06:00:00.000Z");
+  it("uses an exact seven-day cutoff", () => {
+    expect(adminPastEventCutoffIso(now)).toBe("2026-08-14T06:00:00.000Z");
   });
 
   it("uses the final scheduled shift end for multi-shift events", () => {
@@ -47,24 +47,24 @@ describe("admin event archive classification", () => {
       {
         id: "two",
         label: "Day 2",
-        starts_at: "2026-08-10T01:00:00.000Z",
-        ends_at: "2026-08-10T04:00:00.000Z",
+        starts_at: "2026-08-16T01:00:00.000Z",
+        ends_at: "2026-08-16T04:00:00.000Z",
         status: "scheduled",
         sort_order: 1,
       },
     ]);
 
-    expect(getAdminEventEffectiveEnd(item)).toBe("2026-08-10T04:00:00.000Z");
+    expect(getAdminEventEffectiveEnd(item)).toBe("2026-08-16T04:00:00.000Z");
     expect(isPastAdminEvent(item, now)).toBe(false);
   });
 
-  it("archives an event only when its final scheduled shift is older than fourteen days", () => {
+  it("archives an event only when its final scheduled shift is older than seven days", () => {
     const old = event("old", [
       {
         id: "old-shift",
         label: null,
-        starts_at: "2026-08-06T01:00:00.000Z",
-        ends_at: "2026-08-06T04:00:00.000Z",
+        starts_at: "2026-08-13T01:00:00.000Z",
+        ends_at: "2026-08-13T04:00:00.000Z",
         status: "scheduled",
         sort_order: 0,
       },
@@ -73,8 +73,8 @@ describe("admin event archive classification", () => {
       {
         id: "boundary-shift",
         label: null,
-        starts_at: "2026-08-07T03:00:00.000Z",
-        ends_at: "2026-08-07T06:00:00.000Z",
+        starts_at: "2026-08-14T03:00:00.000Z",
+        ends_at: "2026-08-14T06:00:00.000Z",
         status: "scheduled",
         sort_order: 0,
       },
