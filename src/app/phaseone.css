@@ -276,6 +276,18 @@
   background: var(--surface);
 }
 
+.phaseone-attendance-card[data-underage="true"]:not([data-status="anomaly"]) {
+  border-color: #c58a18;
+  background: #fff8e6;
+  box-shadow: inset 4px 0 0 #c58a18;
+}
+
+.phaseone-underage-badge {
+  border-color: #d7a53c;
+  background: #f8e5aa;
+  color: #664000;
+}
+
 .phaseone-attendance-card[data-status="anomaly"] {
   border-color: #a22b2b;
 }
