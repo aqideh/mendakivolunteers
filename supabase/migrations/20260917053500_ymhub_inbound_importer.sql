@@ -256,6 +256,7 @@ begin
 
   insert into ymhub.assignment_snapshots (
     ymhub_assignment_id,
+    ymhub_volunteer_id,
     volunteer_id,
     ymhub_activity_id,
     ymhub_shift_id,
@@ -266,6 +267,7 @@ begin
   )
   select
     assignment_row ->> 'ymhub_assignment_id',
+    assignment_row ->> 'ymhub_volunteer_id',
     volunteer.id,
     assignment_row ->> 'ymhub_activity_id',
     nullif(assignment_row ->> 'ymhub_shift_id', ''),
@@ -274,10 +276,11 @@ begin
     v_assignment_file_id,
     v_now
   from jsonb_array_elements(p_assignments) as incoming(assignment_row)
-  join core.volunteers as volunteer
+  left join core.volunteers as volunteer
     on volunteer.ymhub_volunteer_id = assignment_row ->> 'ymhub_volunteer_id'
   on conflict (ymhub_assignment_id) do update
   set
+    ymhub_volunteer_id = excluded.ymhub_volunteer_id,
     volunteer_id = excluded.volunteer_id,
     ymhub_activity_id = excluded.ymhub_activity_id,
     ymhub_shift_id = excluded.ymhub_shift_id,
@@ -286,7 +289,6 @@ begin
     last_import_file_id = excluded.last_import_file_id,
     last_imported_at = excluded.last_imported_at;
 
-  -- Link source-backed timeslots only where the structural match is unambiguous.
   update public.phaseone_event_timeslots as timeslot
   set ymhub_shift_id = source_shift.ymhub_shift_id
   from public.phaseone_events as event
@@ -297,7 +299,6 @@ begin
     and timeslot.starts_at = source_shift.starts_at
     and timeslot.ends_at is not distinct from source_shift.ends_at;
 
-  -- Link existing operational roster rows where a source assignment can be matched safely.
   update public.phaseone_roster as roster
   set
     volunteer_id = source_assignment.volunteer_id,
