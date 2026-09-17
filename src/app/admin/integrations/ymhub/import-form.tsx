@@ -9,6 +9,7 @@ import {
   ymHubImportMaxFileBytes,
   ymHubImportMaxTotalBytes,
   type YmHubDatasetKey,
+  type YmHubImportFiles,
   type YmHubParsedImport,
 } from "@/lib/ymhub/importer";
 
@@ -54,7 +55,8 @@ export function YmHubImportForm() {
           return [key, { fileName: file.name, sha256: await sha256(file), text: await file.text() }] as const;
         }),
       );
-      const parsed = parseYmHubImportFiles(Object.fromEntries(entries));
+      const importFiles = Object.fromEntries(entries) as YmHubImportFiles;
+      const parsed = parseYmHubImportFiles(importFiles);
       setPreview(parsed);
       setPreviewMessage(parsed.valid ? "Preview passed. Review the counts below, then commit the batch." : "Preview found blocking errors. Nothing has been imported.");
     } catch {
