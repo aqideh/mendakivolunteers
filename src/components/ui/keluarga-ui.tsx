@@ -10,6 +10,7 @@ import {
   Loader,
   Menu,
   Modal,
+  NativeSelect,
   NumberInput,
   Radio,
   Select,
@@ -29,6 +30,7 @@ export type KTextInputProps = ComponentProps<typeof TextInput>;
 export type KTextareaProps = ComponentProps<typeof Textarea>;
 export type KNumberInputProps = ComponentProps<typeof NumberInput>;
 export type KSelectProps = ComponentProps<typeof Select>;
+export type KNativeSelectProps = ComponentProps<typeof NativeSelect>;
 export type KCheckboxProps = ComponentProps<typeof Checkbox>;
 export type KRadioProps = ComponentProps<typeof Radio>;
 export type KSwitchProps = ComponentProps<typeof Switch>;
@@ -60,6 +62,10 @@ export function KNumberInput({ radius = "md", size = "sm", ...props }: KNumberIn
 
 export function KSelect({ radius = "md", size = "sm", ...props }: KSelectProps) {
   return <Select radius={radius} size={size} {...props} />;
+}
+
+export function KNativeSelect({ radius = "md", size = "sm", ...props }: KNativeSelectProps) {
+  return <NativeSelect radius={radius} size={size} {...props} />;
 }
 
 export function KCheckbox({ radius = "sm", size = "sm", ...props }: KCheckboxProps) {
