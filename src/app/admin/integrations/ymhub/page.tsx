@@ -137,7 +137,7 @@ export default async function YmHubBatchCentrePage() {
           <p className="eyebrow">Inbound YM Hub data</p>
           <h2 id="ymhub-import-title">Import four Salesforce reports</h2>
           <p className="muted">
-            Export the four agreed CSV reports for the same reporting period. Preview checks exact headers, formats, duplicates inside each file and cross-file references before the commit button is enabled.
+            Export the four agreed CSV reports for the same reporting period. Preview checks required columns, accepted header aliases, formats, duplicate source IDs and cross-file references before the commit button is enabled. Additional approved source columns can be carried without breaking validation.
           </p>
           {ready ? <YmHubImportForm /> : <p>The importer will appear after the database migration is applied.</p>}
         </section>
