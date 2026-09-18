@@ -60,7 +60,7 @@ export default function Home() {
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>Volunteer with MENDAKI</p>
             <h1 id="landing-title">
-              Choose how you want to <span>make a difference.</span>
+              Make a Difference In <span>Your Community</span>
             </h1>
             <p className={styles.lede}>
               Five ways to get started. Find the role that best matches how you want
