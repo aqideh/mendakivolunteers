@@ -63,8 +63,7 @@ export default function Home() {
           </div>
 
           <div className={styles.pathPrompt}>
-            <p>Choose your starting point</p>
-            <span>Select the role that feels closest to you.</span>
+            <p>I want to volunteer as a:</p>
           </div>
 
           <div className={styles.roleGrid} aria-label="Volunteering categories">
