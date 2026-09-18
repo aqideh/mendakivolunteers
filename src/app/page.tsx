@@ -14,35 +14,35 @@ const volunteerPaths = [
   {
     number: "01",
     title: "Mentor",
-    description: "Build an ongoing relationship and guide someone's growth.",
+    description: "Guide someone over time through encouragement and shared experience.",
   },
   {
     number: "02",
     title: "Coach",
-    description: "Help someone strengthen a skill, habit, or performance.",
+    description: "Help people build skills, confidence, and performance.",
   },
   {
     number: "03",
     title: "Facilitator",
-    description: "Lead activities, discussions, and group learning.",
+    description: "Create engaging learning, discussion, and group experiences.",
   },
   {
     number: "04",
     title: "Specialist",
-    description: "Contribute professional, technical, or subject expertise.",
+    description: "Contribute professional or technical expertise where it matters.",
   },
   {
     number: "05",
     title: "Contributor",
-    description: "Lend a hand at events, activities, and community efforts.",
+    description: "Support events and community activities through hands-on help.",
   },
 ];
 
 const outcomes = [
-  { emoji: "🎓", label: "Confident Learners" },
-  { emoji: "🏠", label: "Stronger Families" },
-  { emoji: "💼", label: "Future Ready Workforce" },
-  { emoji: "🌱", label: "Thriving Community" },
+  "Confident Learners",
+  "Stronger Families",
+  "Future Ready Workforce",
+  "Thriving Community",
 ];
 
 export default function Home() {
@@ -52,18 +52,19 @@ export default function Home() {
       <main className={`phaseone-frame ${styles.frame}`}>
         <section className={styles.hero} aria-labelledby="landing-title">
           <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>Start your volunteering journey</p>
+            <p className={styles.eyebrow}>Volunteer with MENDAKI</p>
             <h1 id="landing-title">
               Choose how you want to <span>make a difference.</span>
             </h1>
             <p className={styles.lede}>
-              Start with the role that feels closest to how you want to contribute.
+              Five ways to get started. Find the role that best matches how you want
+              to contribute.
             </p>
           </div>
 
           <div className={styles.pathPrompt}>
-            <p>Which sounds most like you?</p>
-            <span>Choose one to begin.</span>
+            <p>Choose your starting point</p>
+            <span>Select the role that feels closest to you.</span>
           </div>
 
           <div className={styles.roleGrid} aria-label="Volunteering categories">
@@ -89,11 +90,9 @@ export default function Home() {
           </div>
 
           <div className={styles.outcomes} aria-label="MENDAKI community outcomes">
-            {outcomes.map(({ emoji, label }) => (
-              <div className={styles.outcomePill} key={label}>
-                <span className={styles.outcomeEmoji} aria-hidden="true">
-                  {emoji}
-                </span>
+            {outcomes.map((label) => (
+              <div className={styles.outcomeItem} key={label}>
+                <span className={styles.outcomeMarker} aria-hidden="true" />
                 <span>{label}</span>
               </div>
             ))}
