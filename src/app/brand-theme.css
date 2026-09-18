@@ -269,3 +269,29 @@ h6 {
     border-color: rgba(38, 181, 198, 0.32);
   }
 }
+
+
+/* Official Yayasan MENDAKI logo: preserve the supplied artwork exactly. */
+.brand-lockup {
+  min-height: 0;
+}
+
+.brand-logo,
+.portal-header .brand-logo {
+  width: 8rem;
+  height: auto;
+  object-fit: contain;
+  transition: none;
+}
+
+.brand-lockup:hover .brand-logo {
+  filter: none;
+  transform: none;
+}
+
+@media (max-width: 760px) {
+  .portal-header .brand-logo {
+    width: 6.2rem;
+    height: auto;
+  }
+}
