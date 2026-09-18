@@ -271,14 +271,10 @@ h6 {
 }
 
 
-/* Official Yayasan MENDAKI logo: preserve the supplied artwork exactly. */
-.brand-lockup {
-  min-height: 0;
-}
-
+/* Use the supplied Yayasan MENDAKI artwork unchanged; only its display size changes. */
 .brand-logo,
 .portal-header .brand-logo {
-  width: 8rem;
+  width: 5.5rem;
   height: auto;
   object-fit: contain;
   transition: none;
@@ -291,7 +287,7 @@ h6 {
 
 @media (max-width: 760px) {
   .portal-header .brand-logo {
-    width: 6.2rem;
+    width: 4.5rem;
     height: auto;
   }
 }
