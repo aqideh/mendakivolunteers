@@ -16,10 +16,10 @@
   padding: clamp(1.5rem, 5vw, 4.5rem);
   color: #ffffff;
   background:
-    radial-gradient(circle at 87% 15%, rgba(255, 210, 75, 0.3), transparent 18rem),
-    radial-gradient(circle at 12% 98%, rgba(48, 190, 151, 0.24), transparent 22rem),
-    linear-gradient(138deg, #0a315c, #12324a 62%, #0b5148);
-  box-shadow: 0 25px 65px rgba(20, 43, 56, 0.2);
+    radial-gradient(circle at 87% 15%, rgba(255, 215, 0, 0.3), transparent 18rem),
+    radial-gradient(circle at 12% 98%, rgba(38, 181, 198, 0.28), transparent 22rem),
+    linear-gradient(138deg, #373A36, #373A36 60%, #26B5C6);
+  box-shadow: 0 25px 65px rgba(55, 58, 54, 0.2);
 }
 
 .hero::after {
@@ -42,7 +42,7 @@
 
 .heroEyebrow {
   margin: 0 0 1rem;
-  color: #9fe6d3;
+  color: #FFD700;
   font-size: 0.78rem;
   font-weight: 850;
   letter-spacing: 0.12em;
@@ -70,8 +70,8 @@
 }
 
 .heroActions :global(.button-primary) {
-  color: #0a315c;
-  background: #ffffff;
+  color: #373A36;
+  background: #FFD700;
 }
 
 .heroActions :global(.button-secondary) {
@@ -90,7 +90,7 @@
   padding: clamp(1.25rem, 3vw, 1.75rem);
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(16px);
-  box-shadow: 0 18px 40px rgba(5, 30, 56, 0.18);
+  box-shadow: 0 18px 40px rgba(55, 58, 54, 0.18);
 }
 
 .positionMark,
@@ -98,8 +98,8 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #0a315c;
-  background: #ffd34b;
+  color: #373A36;
+  background: #FFD700;
   font-weight: 900;
 }
 
@@ -107,7 +107,7 @@
   width: 4.5rem;
   height: 4.5rem;
   font-size: 2rem;
-  box-shadow: 0 0 0 0.55rem rgba(255, 211, 75, 0.14);
+  box-shadow: 0 0 0 0.55rem rgba(255, 215, 0, 0.14);
 }
 
 .positionLabel {
@@ -235,7 +235,7 @@
   border-radius: 50%;
 }
 
-.legend i[data-state="current"] { border-color: #ffd34b; background: #ffd34b; }
+.legend i[data-state="current"] { border-color: #FFD700; background: #FFD700; }
 .legend i[data-state="completed"] { border-color: #26754a; background: #e8f5ed; }
 .legend i[data-state="next"] { border-color: var(--accent); background: var(--accent-soft); }
 .legend i[data-state="future"] { background: #eef2f3; }
@@ -252,10 +252,10 @@
   align-items: center;
   width: min(100%, 31rem);
   margin: 0 auto;
-  border: 2px solid #e8b927;
+  border: 2px solid #d6b500;
   border-radius: 1rem;
   padding: 1.15rem;
-  background: #fffaf0;
+  background: #fff9d9;
   box-shadow: 0 15px 32px rgba(151, 108, 0, 0.12);
 }
 
@@ -272,7 +272,7 @@
 }
 
 .explorerNode p {
-  color: #8a6500;
+  color: #6d5b00;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -294,8 +294,8 @@
   right: 1rem;
   border-radius: 999px;
   padding: 0.27rem 0.65rem;
-  color: #513a00;
-  background: #ffd34b;
+  color: #373A36;
+  background: #FFD700;
   font-size: 0.7rem;
   font-weight: 850;
   letter-spacing: 0.05em;
@@ -438,7 +438,7 @@
 
 .roleCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 25px rgba(20, 43, 56, 0.1);
+  box-shadow: 0 12px 25px rgba(55, 58, 54, 0.1);
 }
 
 .roleCard[aria-pressed="true"] {
@@ -485,7 +485,7 @@
   border-radius: 1rem;
   padding: 1.25rem;
   background: var(--surface);
-  box-shadow: 0 12px 28px rgba(20, 43, 56, 0.08);
+  box-shadow: 0 12px 28px rgba(55, 58, 54, 0.08);
 }
 
 .detailAccent {
