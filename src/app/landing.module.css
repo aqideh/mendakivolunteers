@@ -1,6 +1,6 @@
 .frame {
   width: min(74rem, calc(100% - 1.5rem));
-  padding-top: clamp(3rem, 7vw, 6rem);
+  padding-top: clamp(1.75rem, 4vw, 3.25rem);
 }
 
 .hero {
@@ -23,7 +23,7 @@
   top: -7rem;
   left: 50%;
   width: min(56rem, 90vw);
-  height: 24rem;
+  height: 19rem;
   border-radius: 999px;
   background:
     radial-gradient(
@@ -53,193 +53,115 @@
 .heroCopy,
 .pathPrompt,
 .roleGrid {
-  position: relative;
-  z-index: 1;
-}
-
-.heroCopy {
-  width: min(100%, 58rem);
-  margin: 0 auto;
-  animation: copyEnter 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
-  border: 1px solid rgba(22, 139, 152, 0.2);
-  border-radius: 999px;
-  padding: 0.42rem 0.72rem;
-  color: var(--accent-strong);
-  background: rgba(255, 255, 255, 0.66);
-  font-size: 0.76rem;
-  font-weight: 850;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  backdrop-filter: blur(8px);
-}
-
-.eyebrow::before {
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 999px;
-  background: var(--primary);
-  content: "";
-}
-
-.heroCopy h1 {
-  max-width: 14ch;
-  margin: 0 auto 1.35rem;
-  color: var(--ink);
-  font-size: clamp(3.15rem, 7vw, 5.8rem);
-  line-height: 0.96;
-  letter-spacing: -0.055em;
-}
-
-.heroCopy h1 span {
-  color: transparent;
-  background: linear-gradient(100deg, var(--accent-strong), var(--accent), #147d64);
-  background-clip: text;
-  -webkit-background-clip: text;
-}
-
-.lede {
-  max-width: 41rem;
-  margin: 0 auto;
-  color: var(--muted);
-  font-size: clamp(1.05rem, 2vw, 1.22rem);
-  line-height: 1.65;
-}
-
-.pathPrompt {
-  display: grid;
-  gap: 0.25rem;
-  justify-items: center;
-  margin: clamp(3.5rem, 7vw, 5.5rem) auto 1.25rem;
-}
-
-.pathPrompt p,
-.pathPrompt span {
-  margin: 0;
-}
-
-.pathPrompt p {
-  color: var(--ink);
-  font-size: clamp(1.12rem, 2vw, 1.3rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.pathPrompt span {
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
-.roleGrid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
   width: 100%;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
   text-align: left;
 }
 
-.roleOption {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "number arrow"
-    "copy copy";
-  gap: 0.8rem 1rem;
-  align-content: start;
-  min-height: 10.5rem;
-  border: 0;
-  border-left: 1px solid var(--border);
-  border-radius: 0;
-  padding: 1.35rem 1.15rem 1.45rem;
-  color: var(--ink);
-  text-align: left;
-  background: transparent;
-  cursor: pointer;
+.roleChoice {
+  min-width: 0;
   animation: optionEnter 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  transition:
-    background-color 180ms ease,
-    color 180ms ease;
 }
 
-.roleOption:first-child {
-  border-left: 0;
-}
-
-.roleOption:nth-child(2) {
+.roleChoice:nth-child(2) {
   animation-delay: 45ms;
 }
 
-.roleOption:nth-child(3) {
+.roleChoice:nth-child(3) {
   animation-delay: 90ms;
 }
 
-.roleOption:nth-child(4) {
+.roleChoice:nth-child(4) {
   animation-delay: 135ms;
 }
 
-.roleOption:nth-child(5) {
+.roleChoice:nth-child(5) {
   animation-delay: 180ms;
 }
 
+.roleOption {
+  display: flex;
+  width: 100%;
+  min-height: 3.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  border: 0;
+  border-bottom: 3px solid #0e6973;
+  border-radius: 0.65rem;
+  padding: 0.65rem 1rem 0.55rem;
+  color: #ffffff;
+  text-align: left;
+  background: var(--accent-strong);
+  box-shadow: 0 7px 18px rgba(22, 139, 152, 0.2);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
 .roleOption:hover {
-  background: rgba(255, 255, 255, 0.68);
+  background: #117d88;
+  box-shadow: 0 12px 24px rgba(22, 139, 152, 0.26);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.roleOption:active {
+  box-shadow: 0 4px 12px rgba(22, 139, 152, 0.18);
+  transform: translateY(0) scale(0.99);
 }
 
 .roleOption:focus-visible {
-  position: relative;
-  z-index: 2;
   outline: 3px solid var(--focus);
-  outline-offset: -3px;
+  outline-offset: 3px;
+}
+
+.roleLabel {
+  display: inline-flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.55rem;
 }
 
 .roleNumber {
-  grid-area: number;
-  color: var(--accent-strong);
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.09em;
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
 }
 
-.roleCopy {
-  display: grid;
-  grid-area: copy;
-  gap: 0.48rem;
-}
-
-.roleCopy strong {
-  font-size: clamp(1.18rem, 1.8vw, 1.38rem);
-  letter-spacing: -0.025em;
+.roleLabel strong {
+  overflow: hidden;
+  font-size: clamp(1rem, 1.45vw, 1.1rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
   line-height: 1.15;
-}
-
-.roleCopy > span {
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .roleArrow {
-  grid-area: arrow;
-  color: var(--muted);
-  font-size: 1.05rem;
-  font-weight: 800;
+  flex: 0 0 auto;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
   line-height: 1;
-  transition:
-    color 180ms ease,
-    transform 180ms ease;
+  transition: transform 120ms ease;
 }
 
 .roleOption:hover .roleArrow {
-  color: var(--accent-strong);
-  transform: translateX(3px);
+  transform: translate(2px, -2px);
+}
+
+.roleDescription {
+  margin: 0.7rem 0 0;
+  padding: 0 0.15rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 
 .impact {
@@ -301,33 +223,15 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .roleOption {
-    border-top: 1px solid var(--border);
-  }
-
-  .roleOption:nth-child(-n + 2) {
-    border-top: 0;
-  }
-
-  .roleOption:nth-child(odd) {
-    border-left: 0;
-  }
-
-  .roleOption:nth-child(even) {
-    border-left: 1px solid var(--border);
-  }
-
-  .roleOption:last-child {
+  .roleChoice:last-child {
     grid-column: 1 / -1;
-    min-height: 8.5rem;
-    border-left: 0;
   }
 }
 
 @media (max-width: 620px) {
   .frame {
     width: min(100% - 1.5rem, 74rem);
-    padding-top: 2.75rem;
+    padding-top: 1.75rem;
   }
 
   .heroCopy h1 {
@@ -335,25 +239,25 @@
   }
 
   .pathPrompt {
-    margin-top: 3rem;
+    margin-top: 2rem;
   }
 
   .roleGrid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
-  .roleOption,
-  .roleOption:nth-child(even),
-  .roleOption:last-child {
+  .roleChoice:last-child {
     grid-column: auto;
-    min-height: 0;
-    border-top: 1px solid var(--border);
-    border-left: 0;
-    padding: 1.15rem 0.35rem 1.25rem;
   }
 
-  .roleOption:first-child {
-    border-top: 0;
+  .roleOption {
+    min-height: 3.65rem;
+    padding-inline: 0.95rem;
+  }
+
+  .roleDescription {
+    margin-top: 0.55rem;
   }
 
   .outcomes {
@@ -401,10 +305,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .heroCopy,
-  .roleOption {
+  .roleChoice {
     animation: none;
   }
 
+  .roleOption:hover,
+  .roleOption:active,
   .roleOption:hover .roleArrow {
     transform: none;
   }

@@ -69,16 +69,18 @@ export default function Home() {
 
           <div className={styles.roleGrid} aria-label="Volunteering categories">
             {volunteerPaths.map(({ number, title, description }) => (
-              <button className={styles.roleOption} key={title} type="button">
-                <span className={styles.roleNumber}>{number}</span>
-                <span className={styles.roleCopy}>
-                  <strong>{title}</strong>
-                  <span>{description}</span>
-                </span>
-                <span className={styles.roleArrow} aria-hidden="true">
-                  →
-                </span>
-              </button>
+              <div className={styles.roleChoice} key={title}>
+                <button className={styles.roleOption} type="button">
+                  <span className={styles.roleLabel}>
+                    <span className={styles.roleNumber}>{number}</span>
+                    <strong>{title}</strong>
+                  </span>
+                  <span className={styles.roleArrow} aria-hidden="true">
+                    ↗
+                  </span>
+                </button>
+                <p className={styles.roleDescription}>{description}</p>
+              </div>
             ))}
           </div>
         </section>
