@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 
@@ -15,26 +16,31 @@ const volunteerPaths = [
     number: "01",
     title: "Mentor",
     description: "Guide someone over time through encouragement and shared experience.",
+    href: "/volunteer/mentor",
   },
   {
     number: "02",
     title: "Coach",
     description: "Help people build skills, confidence, and performance.",
+    href: "/volunteer/coach",
   },
   {
     number: "03",
     title: "Facilitator",
     description: "Create engaging learning, discussion, and group experiences.",
+    href: "/volunteer/facilitator",
   },
   {
     number: "04",
     title: "Specialist",
     description: "Contribute professional or technical expertise where it matters.",
+    href: "/volunteer/specialist",
   },
   {
     number: "05",
     title: "Contributor",
     description: "Support events and community activities through hands-on help.",
+    href: "/opportunities",
   },
 ];
 
@@ -67,9 +73,9 @@ export default function Home() {
           </div>
 
           <div className={styles.roleGrid} aria-label="Volunteering categories">
-            {volunteerPaths.map(({ number, title, description }) => (
+            {volunteerPaths.map(({ number, title, description, href }) => (
               <div className={styles.roleChoice} key={title}>
-                <button className={styles.roleOption} type="button">
+                <Link className={styles.roleOption} href={href}>
                   <span className={styles.roleLabel}>
                     <span className={styles.roleNumber}>{number}</span>
                     <strong>{title}</strong>
@@ -77,7 +83,7 @@ export default function Home() {
                   <span className={styles.roleArrow} aria-hidden="true">
                     ↗
                   </span>
-                </button>
+                </Link>
                 <p className={styles.roleDescription}>{description}</p>
               </div>
             ))}
