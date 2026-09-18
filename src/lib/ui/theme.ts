@@ -1,31 +1,48 @@
 import { createTheme, type MantineColorsTuple } from "@mantine/core";
 
-const keluarga: MantineColorsTuple = [
-  "#edf4f8",
-  "#d9e7ef",
-  "#b8d1de",
-  "#92b8cb",
-  "#70a2ba",
-  "#5893ae",
-  "#4688a8",
-  "#327694",
-  "#245f78",
-  "#12324a",
+const keluargaYellow: MantineColorsTuple = [
+  "#fffbea",
+  "#fff5bf",
+  "#ffed80",
+  "#ffe540",
+  "#ffdc1f",
+  "#FFD700",
+  "#d6b500",
+  "#ad9200",
+  "#846f00",
+  "#5c4d00",
+];
+
+const keluargaBlue: MantineColorsTuple = [
+  "#eafafd",
+  "#d1f3f7",
+  "#a7e6ed",
+  "#7bd8e2",
+  "#55cad6",
+  "#38bfce",
+  "#26B5C6",
+  "#168b98",
+  "#106d78",
+  "#0b5058",
 ];
 
 export const keluargaTheme = createTheme({
-  primaryColor: "keluarga",
-  primaryShade: 9,
+  primaryColor: "keluargaYellow",
+  primaryShade: 5,
   colors: {
-    keluarga,
+    keluargaYellow,
+    keluargaBlue,
   },
+  black: "#373A36",
+  white: "#FFFFFF",
   defaultRadius: "md",
   fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    'var(--font-golos-text), "Golos Text", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   headings: {
     fontFamily:
-      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    fontWeight: "800",
+      'var(--font-golos-text), "Golos Text", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontWeight: "700",
   },
+  autoContrast: true,
   focusRing: "auto",
 });

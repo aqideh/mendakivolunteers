@@ -1,17 +1,22 @@
 :root {
-  --ink: #15232c;
-  --muted: #5c6b74;
-  --surface: #ffffff;
-  --surface-subtle: #f3f6f7;
-  --border: #d6dfe3;
-  --brand: #12324a;
-  --brand-strong: #0a2235;
-  --accent: #147d64;
-  --accent-soft: #e6f4ef;
-  --warning-soft: #fff5d8;
+  --primary: #FFD700;
+  --primary-strong: #e5c100;
+  --ink: #373A36;
+  --muted: #6b6e68;
+  --surface: #FFFFFF;
+  --surface-subtle: #f7f7f4;
+  --border: #d8d9d5;
+  --brand: #373A36;
+  --brand-strong: #262824;
+  --accent: #26B5C6;
+  --accent-strong: #168b98;
+  --accent-soft: #e8f8fa;
+  --success: #147d64;
+  --success-soft: #e6f4ef;
+  --warning-soft: #fff7cc;
   --danger: #9f2f2f;
-  --focus: #0b78a5;
-  --shadow: 0 18px 50px rgba(20, 43, 56, 0.1);
+  --focus: #26B5C6;
+  --shadow: 0 18px 50px rgba(55, 58, 54, 0.1);
 }
 
 * {
@@ -28,11 +33,12 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle at top right, rgba(20, 125, 100, 0.12), transparent 28rem),
+    radial-gradient(circle at top right, rgba(38, 181, 198, 0.12), transparent 28rem),
+    radial-gradient(circle at top left, rgba(255, 215, 0, 0.1), transparent 22rem),
     var(--surface-subtle);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+    var(--font-golos-text), "Golos Text", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -69,8 +75,8 @@ a {
   gap: 1rem;
   min-height: 4.5rem;
   padding: 1rem clamp(1.25rem, 4vw, 4rem);
-  color: #ffffff;
-  background: var(--brand);
+  color: var(--brand);
+  background: var(--primary);
 }
 
 .brand-lockup {
@@ -78,7 +84,7 @@ a {
   align-items: center;
   gap: 0.72rem;
   min-height: 2.75rem;
-  color: #ffffff;
+  color: var(--brand);
   text-decoration: none;
 }
 
@@ -102,7 +108,7 @@ a {
 }
 
 .brand-title {
-  color: #bce8e5;
+  color: rgba(55, 58, 54, 0.78);
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -112,7 +118,7 @@ a {
 
 .header-status {
   margin: 0;
-  color: #d9e7ee;
+  color: rgba(55, 58, 54, 0.76);
   font-size: 0.875rem;
 }
 
@@ -143,6 +149,18 @@ h2,
 h3,
 p {
   margin-top: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    var(--font-golos-text), "Golos Text", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 700;
 }
 
 h1 {
@@ -200,16 +218,16 @@ h3 {
 }
 
 .button-primary {
-  color: #ffffff;
-  background: var(--brand);
+  color: var(--brand);
+  background: var(--primary);
 }
 
 .button-primary:hover {
-  background: var(--brand-strong);
+  background: var(--primary-strong);
 }
 
 .button-secondary {
-  border-color: var(--border);
+  border-color: var(--accent);
   color: var(--brand);
   background: var(--surface);
 }
@@ -304,7 +322,7 @@ h3 {
 }
 
 .form-message[data-status="success"] {
-  color: #0c6651;
+  color: var(--success);
 }
 
 .dashboard-header {
@@ -353,7 +371,7 @@ h3 {
   display: inline-flex;
   border-radius: 999px;
   padding: 0.35rem 0.65rem;
-  color: #0c6651;
+  color: var(--accent-strong);
   background: var(--accent-soft);
   font-size: 0.85rem;
   font-weight: 750;
