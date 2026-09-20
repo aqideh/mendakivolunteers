@@ -22,8 +22,8 @@ const ratingOptions = [
 export function VolunteerReviewForm({ eventId, rosterId, timeslotId }: VolunteerReviewFormProps) {
   return (
     <details className="phaseone-volunteer-review">
-      <summary>
-        <span>★ Review volunteer</span>
+      <summary aria-label="Review volunteer">
+        <span>★ Review</span>
         <span className="phaseone-volunteer-review-hint">Quick rating + optional notes</span>
       </summary>
       <form action={saveVolunteerReview} className="volunteer-review-form">

@@ -9,6 +9,7 @@ import {
 } from "@/app/admin/events/[id]/attendance/actions";
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
+import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
 import {
   BulkCheckoutButton,
@@ -590,6 +591,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
               </details>
 
+              <p className="muted phaseone-roster-swipe-hint">Swipe a volunteer card right for Review or Insight.</p>
               <div className="phaseone-attendance-list">
                 {visible.map(({ volunteer, attendance, effectiveAttendance, status }) => {
                   const linkedNextShift = nextShiftLink(effectiveAttendance?.session_id);
@@ -611,6 +613,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       id={`roster-${volunteer.id}`}
                       key={volunteer.id}
                     >
+                      <RosterSwipeActions />
                       <div className="phaseone-attendance-summary">
                         <div>
                           <div className="phaseone-roster-meta">
@@ -713,8 +716,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       ) : null}
 
                       <details className="phaseone-inline-insight">
-                        <summary>
-                          <span>+ Add insight</span>
+                        <summary aria-label="Add volunteer insight">
+                          <span>+ Insight</span>
                           <span className="phaseone-inline-insight-hint">Skill, interest, connection, etc.</span>
                         </summary>
                         <form action={addVolunteerInsight} className="insight-capture-form phaseone-inline-insight-form">
