@@ -386,3 +386,148 @@
     transition: none;
   }
 }
+
+
+/* Distinct roster action colours and clearer expanded modules. */
+.phaseone-attendance-card .phaseone-volunteer-review > summary {
+  border-color: #d7b521;
+  background: #fff1a8;
+  color: #4c3b00;
+}
+
+.phaseone-attendance-card .phaseone-inline-insight > summary {
+  border-color: #67c6cf;
+  background: #dff6f8;
+  color: #0b4f57;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review > summary:hover {
+  border-color: #b99400;
+  background: #ffe875;
+}
+
+.phaseone-attendance-card .phaseone-inline-insight > summary:hover {
+  border-color: #3caab5;
+  background: #c9f0f3;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review[open],
+.phaseone-attendance-card .phaseone-inline-insight[open] {
+  padding: 0.55rem;
+  border: 1.5px solid;
+  border-radius: 0.85rem;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review[open] {
+  border-color: #d7b521;
+  background: #fff9dc;
+}
+
+.phaseone-attendance-card .phaseone-inline-insight[open] {
+  border-color: #67c6cf;
+  background: #eaf9fb;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review[open] > summary,
+.phaseone-attendance-card .phaseone-inline-insight[open] > summary {
+  min-height: 2.45rem;
+  border-width: 1px;
+  box-shadow: none;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review[open] > summary {
+  border-color: #d7b521;
+  background: #ffe875;
+}
+
+.phaseone-attendance-card .phaseone-inline-insight[open] > summary {
+  border-color: #67c6cf;
+  background: #c9f0f3;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review[open] > summary::after,
+.phaseone-attendance-card .phaseone-inline-insight[open] > summary::after {
+  content: "×";
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  margin-left: auto;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1;
+  opacity: 0.78;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review[open] .volunteer-review-form {
+  border-color: rgba(185, 148, 0, 0.36);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.phaseone-attendance-card .phaseone-inline-insight[open] .phaseone-inline-insight-form {
+  border-color: rgba(60, 170, 181, 0.38);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 760px) {
+  .phaseone-attendance-card[data-swipe-ready="true"]
+    > .phaseone-roster-swipe-actions {
+    left: -76px;
+    width: 68px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.45rem 0;
+  }
+
+  .phaseone-roster-swipe-action {
+    width: 60px;
+    min-height: 40px;
+    grid-template-columns: auto 1fr;
+    place-items: center start;
+    align-content: center;
+    gap: 0.25rem;
+    padding: 0.3rem 0.42rem;
+    border-radius: 0.62rem;
+    box-shadow: none;
+    font-size: 0.64rem;
+  }
+
+  .phaseone-roster-swipe-action-review {
+    border-color: #c9a300;
+    background: #ffd84d;
+    color: #493800;
+  }
+
+  .phaseone-roster-swipe-action-insight {
+    border-color: #43aeb8;
+    background: #73dbe6;
+    color: #073f45;
+  }
+
+  .phaseone-roster-swipe-icon {
+    font-size: 0.88rem;
+  }
+
+  .phaseone-attendance-card .phaseone-volunteer-review[open],
+  .phaseone-attendance-card .phaseone-inline-insight[open] {
+    padding: 0.45rem;
+  }
+
+  .phaseone-attendance-card .phaseone-volunteer-review[open] > summary,
+  .phaseone-attendance-card .phaseone-inline-insight[open] > summary {
+    min-height: 2.3rem;
+    padding: 0.4rem 0.48rem;
+  }
+
+  .phaseone-attendance-card .phaseone-volunteer-review[open] > summary::after,
+  .phaseone-attendance-card .phaseone-inline-insight[open] > summary::after {
+    width: 1.15rem;
+    height: 1.15rem;
+    font-size: 0.92rem;
+  }
+}
