@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-const REVEAL_DISTANCE = 152;
-const OPEN_THRESHOLD = 64;
+const REVEAL_DISTANCE = 76;
+const OPEN_THRESHOLD = 34;
 const INTERACTIVE_SELECTOR =
   "a, button, input, select, textarea, label, summary, [role='button']";
 const SWIPE_EVENT = "keluarga:roster-swipe-open";
@@ -196,7 +196,7 @@ export function RosterSwipeActions() {
     >
       <button
         aria-label="Review volunteer"
-        className="phaseone-roster-swipe-action"
+        className="phaseone-roster-swipe-action phaseone-roster-swipe-action-review"
         onClick={() => openAction("review")}
         type="button"
       >
@@ -205,7 +205,7 @@ export function RosterSwipeActions() {
       </button>
       <button
         aria-label="Add volunteer insight"
-        className="phaseone-roster-swipe-action"
+        className="phaseone-roster-swipe-action phaseone-roster-swipe-action-insight"
         onClick={() => openAction("insight")}
         type="button"
       >
