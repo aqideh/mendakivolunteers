@@ -6,12 +6,26 @@
 
 .phaseone-attendance-card .phaseone-volunteer-review > summary,
 .phaseone-attendance-card .phaseone-inline-insight > summary {
-  min-height: 2.65rem;
+  width: fit-content;
+  min-height: 2.2rem;
+  justify-content: flex-start;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 0.55rem 0.7rem;
+  border-radius: 0.65rem;
+  padding: 0.38rem 0.55rem;
   background: #f7f9fa;
+  font-size: 0.78rem;
   transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review:not([open]) .phaseone-volunteer-review-hint,
+.phaseone-attendance-card .phaseone-inline-insight:not([open]) .phaseone-inline-insight-hint {
+  display: none;
+}
+
+.phaseone-attendance-card .phaseone-volunteer-review[open] > summary,
+.phaseone-attendance-card .phaseone-inline-insight[open] > summary {
+  width: 100%;
+  justify-content: space-between;
 }
 
 .phaseone-attendance-card .phaseone-volunteer-review > summary:hover,
@@ -181,9 +195,9 @@
 @media (max-width: 760px) {
   .phaseone-attendance-card .phaseone-volunteer-review > summary,
   .phaseone-attendance-card .phaseone-inline-insight > summary {
-    min-height: 3rem;
-    padding: 0.65rem 0.7rem;
-    font-size: 0.86rem;
+    min-height: 2.35rem;
+    padding: 0.42rem 0.55rem;
+    font-size: 0.8rem;
   }
 
   .phaseone-volunteer-review-hint,
@@ -272,5 +286,102 @@
 
   .phaseone-attendance-card .phaseone-inline-insight-actions .text-link {
     align-self: center;
+  }
+}
+
+
+.phaseone-roster-swipe-actions,
+.phaseone-roster-swipe-hint {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .phaseone-attendance-list {
+    overflow-x: clip;
+  }
+
+  .phaseone-roster-swipe-hint {
+    display: block;
+    margin: 0 0 0.45rem;
+    font-size: 0.7rem;
+    line-height: 1.35;
+  }
+
+  .phaseone-attendance-card[data-swipe-ready="true"] {
+    --phaseone-swipe-x: 0px;
+    position: relative;
+    transform: translate3d(var(--phaseone-swipe-x), 0, 0);
+    transition:
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms var(--motion-spring);
+    touch-action: pan-y;
+    will-change: transform;
+  }
+
+  .phaseone-attendance-card[data-swipe-dragging="true"] {
+    transition: none;
+    user-select: none;
+  }
+
+  .phaseone-roster-swipe-actions {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -152px;
+    display: flex;
+    width: 144px;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    padding: 0.55rem 0;
+  }
+
+  .phaseone-roster-swipe-action {
+    display: grid;
+    width: 68px;
+    min-height: 48px;
+    place-items: center;
+    align-content: center;
+    gap: 0.12rem;
+    border: 1px solid var(--border);
+    border-radius: 0.72rem;
+    background: var(--surface-raised);
+    color: var(--ink);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .phaseone-roster-swipe-action:active {
+    transform: scale(0.97);
+  }
+
+  .phaseone-roster-swipe-icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .phaseone-attendance-card[data-swipe-ready="true"]
+    > .phaseone-volunteer-review:not([open]),
+  .phaseone-attendance-card[data-swipe-ready="true"]
+    > .phaseone-inline-insight:not([open]) {
+    display: none;
+  }
+
+  .phaseone-attendance-card[data-swipe-ready="true"]
+    > .phaseone-volunteer-review[open],
+  .phaseone-attendance-card[data-swipe-ready="true"]
+    > .phaseone-inline-insight[open] {
+    margin-top: 0.55rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phaseone-attendance-card[data-swipe-ready="true"] {
+    transition: none;
   }
 }
