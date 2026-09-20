@@ -419,13 +419,13 @@
 }
 
 .phaseone-attendance-card .phaseone-volunteer-review[open] {
-  border-color: #d7b521;
-  background: #fff9dc;
+  border-color: #c9a300;
+  background: #ffd84d;
 }
 
 .phaseone-attendance-card .phaseone-inline-insight[open] {
-  border-color: #67c6cf;
-  background: #eaf9fb;
+  border-color: #43aeb8;
+  background: #73dbe6;
 }
 
 .phaseone-attendance-card .phaseone-volunteer-review[open] > summary,
@@ -436,13 +436,13 @@
 }
 
 .phaseone-attendance-card .phaseone-volunteer-review[open] > summary {
-  border-color: #d7b521;
-  background: #ffe875;
+  border-color: #b99400;
+  background: #ffd84d;
 }
 
 .phaseone-attendance-card .phaseone-inline-insight[open] > summary {
-  border-color: #67c6cf;
-  background: #c9f0f3;
+  border-color: #339aa4;
+  background: #73dbe6;
 }
 
 .phaseone-attendance-card .phaseone-volunteer-review[open] > summary::after,
