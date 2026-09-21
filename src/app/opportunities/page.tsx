@@ -20,7 +20,16 @@ export default async function OpportunitiesPage() {
       <PortalHeader status="Community volunteers" lite />
       <main className="phaseone-frame phaseone-opportunities-frame">
         <section className="phaseone-intro phaseone-opportunities-hero">
-          <h1>Volunteer with the community</h1>
+          <div className="phaseone-opportunities-hero-inner">
+            <h1>Volunteer with the community</h1>
+            <button
+              className="button button-primary phaseone-project-idea-cta"
+              type="button"
+              disabled
+            >
+              Have an idea for a project that will benefit the community?
+            </button>
+          </div>
         </section>
 
         {opportunities.length > 0 ? (
