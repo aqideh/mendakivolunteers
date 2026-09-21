@@ -37,22 +37,24 @@ export function RoleLanding({
               <span>Back to volunteering roles</span>
             </Link>
 
-            <div className={styles.heroCopy}>
-              <h1 id="role-title">{title}</h1>
-              <p className={styles.lede}>{description}</p>
-            </div>
+            <div className={styles.heroContent}>
+              <div className={styles.heroCopy}>
+                <h1 id="role-title">{title}</h1>
+                <p className={styles.lede}>{description}</p>
+              </div>
 
-            <div className={styles.heroActions}>
-              {ctas.map(({ href, label, secondary }) => (
-                <Link
-                  className={secondary ? styles.secondaryAction : styles.primaryAction}
-                  href={href}
-                  key={href}
-                >
-                  <span>{label}</span>
-                  <span aria-hidden="true">↗</span>
-                </Link>
-              ))}
+              <div className={styles.heroActions}>
+                {ctas.map(({ href, label, secondary }) => (
+                  <Link
+                    className={secondary ? styles.secondaryAction : styles.primaryAction}
+                    href={href}
+                    key={href}
+                  >
+                    <span>{label}</span>
+                    <span aria-hidden="true">↗</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </section>
