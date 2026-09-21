@@ -81,7 +81,6 @@
   gap: 1.1rem;
 }
 
-.eyebrow,
 .sectionEyebrow {
   margin: 0;
   color: var(--muted);
@@ -227,13 +226,11 @@
   }
 
   .closingAction {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 1.5rem;
+    width: min(100% - 2rem, 72rem);
   }
 
   .primaryAction {
-    width: 100%;
+    width: min(100%, 22rem);
   }
 }
 
@@ -247,17 +244,12 @@
 .closingAction {
   display: flex;
   width: min(72rem, calc(100% - 2rem));
-  align-items: end;
-  justify-content: space-between;
-  gap: 2rem;
+  justify-content: center;
   margin: clamp(2.5rem, 6vw, 4.5rem) auto 0;
   border-top: 1px solid var(--border);
   padding-top: clamp(2.5rem, 5vw, 4rem);
 }
 
-.closingAction h2 {
-  margin: 0.55rem 0 0;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  letter-spacing: -0.045em;
-  line-height: 0.98;
+.closingAction .primaryAction {
+  min-width: min(100%, 18rem);
 }
