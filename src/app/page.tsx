@@ -6,7 +6,7 @@ import { PortalHeader } from "@/components/portal-header";
 import styles from "./landing.module.css";
 
 export const metadata: Metadata = {
-  title: "KELUARGA — Volunteer with MENDAKI",
+  title: "Keluarga MENDAKI — Volunteer with MENDAKI",
   description:
     "Find your place to contribute with MENDAKI through mentoring, coaching, facilitation, specialist support, and community volunteering.",
 };
@@ -39,12 +39,6 @@ const volunteerPaths = [
   },
 ];
 
-const outcomes = [
-  "Confident Learners",
-  "Stronger Families",
-  "Future Ready Workforce",
-  "Thriving Community",
-];
 
 export default function Home() {
   return (
@@ -80,22 +74,13 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={styles.impact} aria-labelledby="impact-title">
-          <div className={styles.impactHeading}>
-            <p className="eyebrow">Our shared purpose</p>
-            <h2 id="impact-title">Together, we work towards</h2>
-          </div>
-
-          <div className={styles.outcomes} aria-label="MENDAKI community outcomes">
-            {outcomes.map((label) => (
-              <div className={styles.outcomeItem} key={label}>
-                <span className={styles.outcomeMarker} aria-hidden="true" />
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-        </section>
       </main>
+      <footer className="site-footer">
+        © 2026{" "}
+        <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
+          Yayasan MENDAKI
+        </a>
+      </footer>
     </div>
   );
 }
