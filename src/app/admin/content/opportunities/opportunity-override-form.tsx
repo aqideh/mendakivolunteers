@@ -27,7 +27,7 @@ export function OpportunityCardOverrideForm({
   opportunity: OpportunityCardValues;
   saveAction: FormAction;
   resetAction: FormAction;
-  error?: string;
+  error: string | undefined;
 }>) {
   return (
     <>
