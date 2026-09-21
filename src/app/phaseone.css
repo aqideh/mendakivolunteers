@@ -396,19 +396,49 @@
 .phaseone-opportunities-hero {
   width: 100%;
   margin: 0;
-  padding: clamp(3.5rem, 8vw, 7rem) clamp(1rem, 4vw, 4rem)
-    clamp(3rem, 6vw, 5rem);
-  border-bottom: 1px solid var(--border);
+  padding: clamp(2rem, 4vw, 3.5rem) 0 0;
   background: #ffffff;
 }
 
+.phaseone-opportunities-hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 32rem);
+  align-items: end;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  width: min(100rem, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
 .phaseone-opportunities-hero h1 {
-  width: 100%;
-  max-width: none;
+  max-width: 12ch;
   margin: 0;
-  font-size: clamp(3rem, 7.5vw, 7.5rem);
-  line-height: 0.9;
-  letter-spacing: -0.06em;
+  font-size: clamp(2.5rem, 4.8vw, 5rem);
+  line-height: 0.94;
+  letter-spacing: -0.055em;
+}
+
+.phaseone-project-idea-cta {
+  width: 100%;
+  min-height: 3.8rem;
+  justify-content: space-between;
+  border-bottom: 3px solid #0e6973;
+  border-radius: 0.65rem;
+  padding: 0.85rem 1rem 0.75rem;
+  background: var(--accent-strong);
+  color: #ffffff;
+  box-shadow: 0 7px 18px rgba(22, 139, 152, 0.2);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: left;
+  opacity: 1;
+  cursor: default;
+}
+
+.phaseone-project-idea-cta:disabled {
+  background: var(--accent-strong);
+  color: #ffffff;
+  opacity: 1;
 }
 
 .phaseone-opportunities-grid {
@@ -416,7 +446,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(1rem, 1.8vw, 1.5rem);
   width: min(100rem, calc(100% - 2rem));
-  margin: clamp(2rem, 4vw, 3rem) auto 0;
+  margin: clamp(1.25rem, 2.5vw, 2rem) auto 0;
 }
 
 .phaseone-opportunities-grid .phaseone-opportunity-card {
@@ -464,13 +494,27 @@
 }
 
 @media (min-width: 1800px) {
+  .phaseone-opportunities-hero-inner,
   .phaseone-opportunities-grid {
     width: min(120rem, calc(100% - 3rem));
+  }
+
+  .phaseone-opportunities-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 900px) {
+  .phaseone-opportunities-hero-inner {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 1.25rem;
+  }
+
+  .phaseone-project-idea-cta {
+    width: min(100%, 32rem);
+  }
+
   .phaseone-opportunities-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -478,11 +522,15 @@
 
 @media (max-width: 620px) {
   .phaseone-opportunities-hero {
-    padding: 3rem 1rem 2.5rem;
+    padding-top: 2.25rem;
   }
 
   .phaseone-opportunities-hero h1 {
-    font-size: clamp(2.75rem, 14vw, 4.4rem);
+    font-size: clamp(2.5rem, 12vw, 3.75rem);
+  }
+
+  .phaseone-project-idea-cta {
+    width: 100%;
   }
 
   .phaseone-opportunities-grid {
