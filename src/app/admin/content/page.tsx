@@ -161,7 +161,7 @@ export default async function ContentAdminPage({
           <a className={styles.sectionLink} href="#opportunities">
             <span>Opportunities</span>
             <span className={styles.sectionCount}>{opportunities.length}</span>
-            <span className={styles.sectionStatus}>Read-only</span>
+            <span className={styles.sectionStatus}>Editable cards</span>
           </a>
           <a className={styles.sectionLink} href="#news-posts">
             <span>News posts</span>
@@ -286,7 +286,7 @@ export default async function ContentAdminPage({
             <div>
               <h2 id="opportunities-title">Opportunities</h2>
               <p className={styles.sectionMeta}>
-                {opportunities.length} listings · Read-only
+                {opportunities.length} imported listings · {access.canPublish ? "Card editing enabled" : "View only"}
               </p>
             </div>
             <Link className="text-link" href="/opportunities">
@@ -298,30 +298,55 @@ export default async function ContentAdminPage({
               <thead>
                 <tr>
                   <th scope="col">Title</th>
-                  <th scope="col">Status</th>
+                  <th scope="col">Visibility</th>
                   <th scope="col">Starts</th>
-                  <th scope="col">Updated</th>
+                  <th scope="col">Card override</th>
+                  <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {opportunities.map((opportunity) => (
-                  <tr key={opportunity.id}>
-                    <td>
-                      <strong>{opportunity.title}</strong>
-                      <span className="table-subtext">/{opportunity.slug}</span>
-                    </td>
-                    <td>
-                      <span className="status-pill">
-                        {opportunity.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td>{formatSingaporeDateTime(opportunity.starts_at)}</td>
-                    <td>{formatSingaporeDateTime(opportunity.updated_at)}</td>
-                  </tr>
-                ))}
+                {opportunities.map((opportunity) => {
+                  const cardOverride = opportunity.override;
+                  return (
+                    <tr key={opportunity.id}>
+                      <td>
+                        <strong>{cardOverride?.title ?? opportunity.title}</strong>
+                        <span className="table-subtext">Imported opportunity</span>
+                      </td>
+                      <td>
+                        <span className="status-pill">
+                          {cardOverride?.is_visible === false ? "Hidden" : "Visible"}
+                        </span>
+                      </td>
+                      <td>{formatSingaporeDateTime(opportunity.starts_at)}</td>
+                      <td>
+                        {cardOverride
+                          ? `Edited${cardOverride.sort_order !== null ? ` · order ${cardOverride.sort_order}` : ""}`
+                          : "Using imported values"}
+                        {cardOverride?.updated_at ? (
+                          <span className="table-subtext">
+                            Updated {formatSingaporeDateTime(cardOverride.updated_at)}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td>
+                        {access.canPublish ? (
+                          <Link
+                            className="text-link"
+                            href={`/admin/content/opportunities/${opportunity.id}/edit`}
+                          >
+                            Edit card
+                          </Link>
+                        ) : (
+                          <span className="table-subtext">Publisher access required</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {opportunities.length === 0 ? (
                   <tr>
-                    <td colSpan={4}>No opportunity records.</td>
+                    <td colSpan={5}>No active imported opportunities.</td>
                   </tr>
                 ) : null}
               </tbody>
