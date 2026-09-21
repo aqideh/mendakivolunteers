@@ -135,7 +135,7 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
       </main>
       <footer className="site-footer">
         <span>Registration is managed through the official registration portal.
-        KELUARGA uses a separate sign-in for personal Event Guides, records and
+        Keluarga MENDAKI uses a separate sign-in for personal Event Guides, records and
         points.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
