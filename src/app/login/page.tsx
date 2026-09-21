@@ -7,7 +7,7 @@ import { BrandLockup } from "@/components/brand-lockup";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 
 export const metadata: Metadata = {
-  title: "Sign in",
+  title: "Login",
 };
 
 type LoginPageProps = Readonly<{
@@ -46,13 +46,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <div className="site-shell">
       <header className="site-header">
         <BrandLockup href="/" priority />
-        <p className="header-status">KELUARGA sign in</p>
+        <p className="header-status">Keluarga MENDAKI login</p>
       </header>
 
       <main className="auth-layout">
         <section className="panel auth-panel" aria-labelledby="sign-in-title">
-          <p className="eyebrow">Your KELUARGA account</p>
-          <h1 id="sign-in-title">Sign in</h1>
+          <p className="eyebrow">Your Keluarga MENDAKI account</p>
+          <h1 id="sign-in-title">Login</h1>
           <p className="muted">
             Opportunities and news remain available without signing in. Sign in
             only when you need personal Event Guides, upcoming registrations,
