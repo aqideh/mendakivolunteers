@@ -46,7 +46,7 @@ export function LoginForm({ nextPath, initialError }: LoginFormProps) {
       if (!cancelled) {
         setMagicLinkState({
           status: "success",
-          message: "Completing secure sign-in...",
+          message: "Completing secure login...",
         });
       }
     });
@@ -92,7 +92,7 @@ export function LoginForm({ nextPath, initialError }: LoginFormProps) {
         setMagicLinkState({
           status: "error",
           message:
-            "This sign-in link is invalid, expired, or has already been used. Request a new link.",
+            "This login link is invalid, expired, or has already been used. Request a new link.",
         });
         return;
       }
@@ -152,10 +152,10 @@ export function LoginForm({ nextPath, initialError }: LoginFormProps) {
         disabled={pending || completingMagicLink}
       >
         {completingMagicLink
-          ? "Completing sign-in..."
+          ? "Completing login..."
           : pending
-            ? "Signing in..."
-            : "Sign in"}
+            ? "Logging in..."
+            : "Login"}
       </button>
 
       <p
