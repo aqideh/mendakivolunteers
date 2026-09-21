@@ -22,8 +22,6 @@ export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
   const items: NavigationItem[] = [
     { href: "/opportunities", label: "Opportunities" },
     { href: "/journey", label: "Event Guide" },
-    { href: "/points", label: "Points" },
-    { href: "/news", label: "News" },
   ];
 
   if (canManageEvents) {
