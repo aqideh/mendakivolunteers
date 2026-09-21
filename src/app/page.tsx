@@ -15,31 +15,26 @@ const volunteerPaths = [
   {
     number: "01",
     title: "Mentor",
-    description: "Guide someone over time through encouragement and shared experience.",
     href: "/volunteer/mentor",
   },
   {
     number: "02",
     title: "Coach",
-    description: "Help people build skills, confidence, and performance.",
     href: "/volunteer/coach",
   },
   {
     number: "03",
     title: "Facilitator",
-    description: "Create engaging learning, discussion, and group experiences.",
     href: "/volunteer/facilitator",
   },
   {
     number: "04",
     title: "Specialist",
-    description: "Contribute professional or technical expertise where it matters.",
     href: "/volunteer/specialist",
   },
   {
     number: "05",
     title: "Contributor",
-    description: "Support events and community activities through hands-on help.",
     href: "/opportunities",
   },
 ];
@@ -62,10 +57,6 @@ export default function Home() {
             <h1 id="landing-title">
               Make a Difference In <span>Your Community</span>
             </h1>
-            <p className={styles.lede}>
-              Five ways to get started. Find the role that best matches how you want
-              to contribute.
-            </p>
           </div>
 
           <div className={styles.pathPrompt}>
@@ -73,7 +64,7 @@ export default function Home() {
           </div>
 
           <div className={styles.roleGrid} aria-label="Volunteering categories">
-            {volunteerPaths.map(({ number, title, description, href }) => (
+            {volunteerPaths.map(({ number, title, href }) => (
               <div className={styles.roleChoice} key={title}>
                 <Link className={styles.roleOption} href={href}>
                   <span className={styles.roleLabel}>
@@ -84,7 +75,6 @@ export default function Home() {
                     ↗
                   </span>
                 </Link>
-                <p className={styles.roleDescription}>{description}</p>
               </div>
             ))}
           </div>
