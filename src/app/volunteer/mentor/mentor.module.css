@@ -20,16 +20,44 @@
 }
 
 .hero {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.92fr);
-  align-items: center;
-  gap: clamp(2rem, 6vw, 5rem);
   min-height: min(40rem, calc(100svh - 9rem));
-  padding: clamp(2rem, 6vw, 5.5rem) 0;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 1.4rem;
+  padding: clamp(3rem, 8vw, 6rem) clamp(1.25rem, 5vw, 4rem);
+  isolation: isolate;
+}
+
+.hero::before,
+.hero::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.hero::before {
+  z-index: -2;
+  background: url("/volunteer/mentor/mendaki-ampowered.png") center / cover no-repeat;
+  opacity: 0.34;
+}
+
+.hero::after {
+  z-index: -1;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(247, 247, 244, 0.86) 0%,
+      rgba(247, 247, 244, 0.68) 52%,
+      rgba(247, 247, 244, 0.72) 100%
+    );
 }
 
 .heroCopy {
   display: grid;
+  max-width: 42rem;
   justify-items: start;
   gap: 1.1rem;
 }
@@ -68,31 +96,26 @@
   justify-content: space-between;
   gap: 2rem;
   min-width: min(100%, 15rem);
-  margin-top: 0.55rem;
-  border: 1px solid var(--ink);
-  border-radius: 999px;
-  padding: 0.78rem 1rem 0.78rem 1.15rem;
-  background: var(--ink);
+  border: 0;
+  border-bottom: 3px solid #0e6973;
+  border-radius: 0.65rem;
+  padding: 0.78rem 1rem 0.68rem 1.15rem;
+  background: var(--accent-strong);
   color: #ffffff;
+  box-shadow: 0 7px 18px rgba(22, 139, 152, 0.2);
   font-size: 0.85rem;
   font-weight: 800;
   text-decoration: none;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
 .primaryAction:hover {
+  background: #117d88;
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lifted);
-}
-
-.heroImage {
-  width: 100%;
-}
-
-.heroImage img {
-  display: block;
-  width: 100%;
-  height: auto;
+  box-shadow: 0 12px 24px rgba(22, 139, 152, 0.26);
 }
 
 .mekar {
@@ -149,20 +172,29 @@
   }
 
   .hero {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    gap: 2rem;
-    padding: 2rem 0 3rem;
+    min-height: 32rem;
+    border-radius: 1rem;
+    padding: 3rem 1.2rem;
+  }
+
+  .hero::before {
+    background-position: 58% center;
+    opacity: 0.28;
+  }
+
+  .hero::after {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(247, 247, 244, 0.82) 0%,
+        rgba(247, 247, 244, 0.68) 48%,
+        rgba(247, 247, 244, 0.84) 100%
+      );
   }
 
   .hero h1 {
     max-width: 12ch;
     font-size: clamp(2.7rem, 12vw, 4.5rem);
-  }
-
-  .heroImage {
-    width: calc(100% + 2rem);
-    margin-left: -1rem;
   }
 
   .mekar {
@@ -173,10 +205,38 @@
   .mekar h2 {
     max-width: 13ch;
   }
+
+  .closingAction {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .primaryAction {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .primaryAction {
     transition: none;
   }
+}
+
+
+.closingAction {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: clamp(2.5rem, 6vw, 4.5rem);
+  border-top: 1px solid var(--border);
+  padding-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+.closingAction h2 {
+  margin: 0.55rem 0 0;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  letter-spacing: -0.045em;
+  line-height: 0.98;
 }
