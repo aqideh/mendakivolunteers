@@ -9,7 +9,7 @@ import {
 import {
   resetOpportunityOverride,
   updateOpportunityOverride,
-} from "@/app/admin/content/actions";
+} from "@/app/admin/content/opportunity-override-actions";
 import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
