@@ -80,7 +80,7 @@ export default async function OpportunitiesPage() {
                   </dl>
                   <a
                     className="button button-primary phaseone-opportunity-cta"
-                    href={opportunity.source_url}
+                    href="https://www.mendaki.org.sg/"
                     target="_blank"
                     rel="noreferrer"
                   >
