@@ -23,22 +23,24 @@ export default function MentorPage() {
               <span>Back to volunteering roles</span>
             </Link>
 
-            <div className={styles.heroCopy}>
-            <h1 id="mentor-title">
-              Helping Potential Bloom Through Meaningful Mentoring
-            </h1>
-              <p className={styles.lede}>
-                The right mentor. The right stage. For the right outcome.
-              </p>
-            </div>
+            <div className={styles.heroContent}>
+              <div className={styles.heroCopy}>
+                <h1 id="mentor-title">
+                  Helping Potential Bloom Through Meaningful Mentoring
+                </h1>
+                <p className={styles.lede}>
+                  The right mentor. The right stage. For the right outcome.
+                </p>
+              </div>
 
-            <Link
-              className={styles.primaryAction}
-              href="https://form.gov.sg/6ab08df24e9cff0f3ac1af45"
-            >
-              <span>Register your interest</span>
-              <span aria-hidden="true">↗</span>
-            </Link>
+              <Link
+                className={styles.primaryAction}
+                href="https://form.gov.sg/6ab08df24e9cff0f3ac1af45"
+              >
+                <span>Register your interest</span>
+                <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
           </div>
         </section>
 
