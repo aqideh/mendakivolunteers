@@ -98,8 +98,14 @@ export default async function OpportunitiesPage() {
         )}
       </main>
       <footer className="site-footer">
-        Opportunity registration is managed through the official registration
-        portal. Browsing KELUARGA does not require an account.
+        <span>Opportunity registration is managed through the official registration
+        portal. Browsing KELUARGA does not require an account.</span>
+        <span className="site-footer-copyright">
+          © 2026{" "}
+          <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
+            Yayasan MENDAKI
+          </a>
+        </span>
       </footer>
     </div>
   );
