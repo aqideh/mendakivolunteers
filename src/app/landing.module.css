@@ -5,7 +5,10 @@
 
 .hero {
   position: relative;
-  padding: 0 0 clamp(1rem, 3vw, 2rem);
+  display: grid;
+  min-height: calc(100svh - 6.5rem);
+  align-content: center;
+  padding: clamp(1rem, 2vw, 1.5rem) 0 clamp(2rem, 4vw, 3rem);
   color: var(--ink);
   text-align: center;
 }
@@ -90,7 +93,7 @@
 
 .heroCopy h1 {
   max-width: 14ch;
-  margin: 0 auto 0.9rem;
+  margin: 0 auto;
   color: var(--ink);
   font-size: clamp(3.15rem, 7vw, 5.8rem);
   line-height: 0.96;
@@ -116,7 +119,7 @@
   display: grid;
   gap: 0.25rem;
   justify-items: center;
-  margin: clamp(2rem, 4vw, 3rem) auto 0.85rem;
+  margin: clamp(2.75rem, 5.5vw, 4.25rem) auto clamp(1.35rem, 2.5vw, 2rem);
 }
 
 .pathPrompt p,
@@ -252,9 +255,9 @@
 .impact {
   display: grid;
   gap: clamp(2rem, 5vw, 4rem);
-  margin-top: clamp(4.5rem, 9vw, 7rem);
+  margin-top: clamp(2rem, 5vw, 4rem);
   border-top: 1px solid var(--border);
-  padding: clamp(2.5rem, 5vw, 4rem) 0 clamp(1rem, 3vw, 2rem);
+  padding: clamp(3.5rem, 7vw, 5.5rem) 0 clamp(1rem, 3vw, 2rem);
 }
 
 .impactHeading :global(.eyebrow) {
@@ -323,8 +326,15 @@
     font-size: clamp(2.75rem, 13vw, 4rem);
   }
 
+  .hero {
+    min-height: calc(100svh - 5.75rem);
+    padding-top: 1rem;
+    padding-bottom: 2.25rem;
+  }
+
   .pathPrompt {
-    margin-top: 2rem;
+    margin-top: 2.75rem;
+    margin-bottom: 1.35rem;
   }
 
   .roleGrid {
@@ -366,6 +376,27 @@
   }
 }
 
+
+@supports (animation-timeline: view()) {
+  .impact {
+    animation: impactReveal 1ms linear both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 32%;
+  }
+}
+
+@keyframes impactReveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes copyEnter {
   from {
     opacity: 0;
@@ -390,8 +421,11 @@
 
 @media (prefers-reduced-motion: reduce) {
   .heroCopy,
-  .roleChoice {
+  .roleChoice,
+  .impact {
     animation: none;
+    opacity: 1;
+    transform: none;
   }
 
   .roleOption:hover,
