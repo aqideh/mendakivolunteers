@@ -52,8 +52,25 @@ export default function MentorPage() {
         </section>
 
         <section className={styles.mekar} aria-labelledby="mekar-title">
-          <p className={styles.sectionEyebrow}>Mentoring framework</p>
-          <h2 id="mekar-title">MEKAR: MENDAKI Mentoring Framework</h2>
+          <div className={styles.mekarHeader}>
+            <p className={styles.sectionEyebrow}>Mentoring framework</p>
+            <h2 id="mekar-title">MEKAR: MENDAKI Mentoring Framework</h2>
+            <p className={styles.mekarIntro}>
+              A mentoring journey designed to support growth at every stage — from
+              self-discovery and aspiration-building to leadership and contribution.
+            </p>
+          </div>
+
+          <div className={styles.mekarImageWrap}>
+            <Image
+              alt="MEKAR: MENDAKI Mentoring Framework"
+              className={styles.mekarImage}
+              height={554}
+              src="/volunteer/mentor/mekar-framework.png"
+              unoptimized
+              width={821}
+            />
+          </div>
         </section>
       </main>
     </div>
