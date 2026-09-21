@@ -72,7 +72,15 @@ export default async function NewsPage() {
           </section>
         )}
       </main>
-      <footer className="site-footer">KELUARGA — MENDAKI Volunteer App</footer>
+      <footer className="site-footer">
+        <span>Keluarga MENDAKI — Volunteer App</span>
+        <span className="site-footer-copyright">
+          © 2026{" "}
+          <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
+            Yayasan MENDAKI
+          </a>
+        </span>
+      </footer>
     </div>
   );
 }
