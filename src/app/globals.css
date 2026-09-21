@@ -468,11 +468,22 @@ h3 {
 }
 
 .site-footer {
+  display: grid;
+  gap: 0.35rem;
   margin-top: auto;
   padding: 1.5rem clamp(1.25rem, 4vw, 4rem);
   color: var(--muted);
   font-size: 0.85rem;
   text-align: center;
+}
+
+.site-footer a {
+  font-weight: 700;
+  text-underline-offset: 0.16em;
+}
+
+.site-footer-copyright {
+  display: block;
 }
 
 @media (max-width: 760px) {
