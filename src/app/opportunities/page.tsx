@@ -18,19 +18,14 @@ export default async function OpportunitiesPage() {
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
-      <main className="phaseone-frame">
-        <section className="phaseone-intro">
-          <p className="eyebrow">MENDAKI volunteer opportunities</p>
-          <h1>Volunteer with the community.</h1>
-          <p className="lede">
-            Browse without signing in. When you choose an opportunity, registration
-            and confirmation are completed through the official registration portal.
-          </p>
+      <main className="phaseone-frame phaseone-opportunities-frame">
+        <section className="phaseone-intro phaseone-opportunities-hero">
+          <h1>Volunteer with the community</h1>
         </section>
 
         {opportunities.length > 0 ? (
           <section
-            className="phaseone-opportunity-list"
+            className="phaseone-opportunity-list phaseone-opportunities-grid"
             aria-label="Upcoming volunteer opportunities"
           >
             {opportunities.map((opportunity) => (

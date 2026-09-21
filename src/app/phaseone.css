@@ -383,3 +383,109 @@
     justify-self: start;
   }
 }
+
+
+/* Opportunities index: full-width header + responsive card grid */
+.phaseone-opportunities-frame {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 clamp(3rem, 6vw, 5rem);
+}
+
+.phaseone-opportunities-hero {
+  width: 100%;
+  margin: 0;
+  padding: clamp(3.5rem, 8vw, 7rem) clamp(1rem, 4vw, 4rem)
+    clamp(3rem, 6vw, 5rem);
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.phaseone-opportunities-hero h1 {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  font-size: clamp(3rem, 7.5vw, 7.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+}
+
+.phaseone-opportunities-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 1.8vw, 1.5rem);
+  width: min(100rem, calc(100% - 2rem));
+  margin: clamp(2rem, 4vw, 3rem) auto 0;
+}
+
+.phaseone-opportunities-grid .phaseone-opportunity-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.phaseone-opportunities-grid .phaseone-opportunity-image,
+.phaseone-opportunities-grid .phaseone-opportunity-image img {
+  width: 100%;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 16 / 9;
+}
+
+.phaseone-opportunities-grid .phaseone-opportunity-image img {
+  object-fit: cover;
+}
+
+.phaseone-opportunities-grid .phaseone-opportunity-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1.25rem;
+}
+
+.phaseone-opportunities-grid .phaseone-opportunity-details {
+  margin-top: auto;
+}
+
+.phaseone-opportunities-grid .phaseone-opportunity-cta {
+  margin-top: auto;
+}
+
+.phaseone-opportunities-frame .phaseone-empty-state {
+  width: min(48rem, calc(100% - 2rem));
+  margin: clamp(2rem, 4vw, 3rem) auto 0;
+}
+
+@media (min-width: 1400px) {
+  .phaseone-opportunities-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1800px) {
+  .phaseone-opportunities-grid {
+    width: min(120rem, calc(100% - 3rem));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .phaseone-opportunities-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .phaseone-opportunities-hero {
+    padding: 3rem 1rem 2.5rem;
+  }
+
+  .phaseone-opportunities-hero h1 {
+    font-size: clamp(2.75rem, 14vw, 4.4rem);
+  }
+
+  .phaseone-opportunities-grid {
+    grid-template-columns: 1fr;
+  }
+}
