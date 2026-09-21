@@ -97,7 +97,15 @@ export function PathwaysView({
           </div>
         </section>
       </main>
-      <footer className="site-footer">{pathwayMap.footerNote}</footer>
+      <footer className="site-footer">
+        <span>{pathwayMap.footerNote}</span>
+        <span className="site-footer-copyright">
+          © 2026{" "}
+          <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
+            Yayasan MENDAKI
+          </a>
+        </span>
+      </footer>
     </>
   );
 }
