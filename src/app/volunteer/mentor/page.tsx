@@ -31,6 +31,14 @@ export default function MentorPage() {
                 The right mentor. The right stage. For the right outcome.
               </p>
             </div>
+
+            <Link
+              className={styles.primaryAction}
+              href="https://form.gov.sg/6ab08df24e9cff0f3ac1af45"
+            >
+              <span>Register your interest</span>
+              <span aria-hidden="true">↗</span>
+            </Link>
           </div>
         </section>
 
@@ -55,12 +63,6 @@ export default function MentorPage() {
           </div>
         </section>
 
-        <section className={styles.closingAction} aria-label="Register your interest">
-          <Link className={styles.primaryAction} href="https://form.gov.sg/6ab08df24e9cff0f3ac1af45">
-            <span>Register your interest</span>
-            <span aria-hidden="true">↗</span>
-          </Link>
-        </section>
       </main>
     </div>
   );
