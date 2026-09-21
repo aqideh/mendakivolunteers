@@ -24,7 +24,6 @@ export default function MentorPage() {
             </Link>
 
             <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>Mentor</p>
             <h1 id="mentor-title">
               Helping Potential Bloom Through Meaningful Mentoring
             </h1>
@@ -37,7 +36,6 @@ export default function MentorPage() {
 
         <section className={styles.mekar} aria-labelledby="mekar-title">
           <div className={styles.mekarHeader}>
-            <p className={styles.sectionEyebrow}>Mentoring framework</p>
             <h2 id="mekar-title">MEKAR: MENDAKI Mentoring Framework</h2>
             <p className={styles.mekarIntro}>
               A mentoring journey designed to support growth at every stage — from
@@ -58,10 +56,6 @@ export default function MentorPage() {
         </section>
 
         <section className={styles.closingAction} aria-label="Register your interest">
-          <div>
-            <p className={styles.sectionEyebrow}>Ready to mentor?</p>
-            <h2>Take the next step.</h2>
-          </div>
           <Link className={styles.primaryAction} href="https://form.gov.sg/6ab08df24e9cff0f3ac1af45">
             <span>Register your interest</span>
             <span aria-hidden="true">↗</span>
