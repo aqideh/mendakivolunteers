@@ -13,25 +13,20 @@ export type PhaseOneOpportunity = Readonly<{
   venue: string | null;
   source_url: string;
   imported_at: string;
+  sort_order: number | null;
+  has_manual_override: boolean;
 }>;
 
 type PhaseOneDatabase = {
   public: {
-    Tables: {
-      phaseone_external_opportunities: {
-        Row: PhaseOneOpportunity & {
-          source_key: string;
-          source_updated_at: string | null;
-          is_active: boolean;
-          raw_payload: Record<string, unknown>;
-        };
-        Insert: never;
-        Update: never;
-        Relationships: [];
+    Tables: Record<never, never>;
+    Views: Record<never, never>;
+    Functions: {
+      list_phaseone_opportunities: {
+        Args: Record<never, never>;
+        Returns: PhaseOneOpportunity[];
       };
     };
-    Views: Record<never, never>;
-    Functions: Record<never, never>;
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
   };
@@ -41,14 +36,7 @@ export async function getUpcomingPhaseOneOpportunities(): Promise<
   PhaseOneOpportunity[]
 > {
   const supabase = (await createClient()) as unknown as SupabaseClient<PhaseOneDatabase>;
-  const { data, error } = await supabase
-    .from("phaseone_external_opportunities")
-    .select(
-      "id, title, summary, image_url, starts_at, ends_at, schedule_text, venue, source_url, imported_at",
-    )
-    .eq("is_active", true)
-    .order("starts_at", { ascending: false, nullsFirst: false })
-    .limit(100);
+  const { data, error } = await supabase.rpc("list_phaseone_opportunities");
 
   if (error) {
     console.error("Unable to load phase-one opportunities", { code: error.code });
