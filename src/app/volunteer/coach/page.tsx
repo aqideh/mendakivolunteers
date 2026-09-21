@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 export default function CoachPage() {
   return (
     <RoleLanding
+      actionsAtBottom
       eyebrow="Coach"
       title="Coach with the MENDAKI Achievement Programme."
       description="Coach roles are for volunteers who want to help participants strengthen skills, confidence, habits, and performance through structured engagement."
@@ -32,7 +33,7 @@ export default function CoachPage() {
       ]}
       ctas={[
         {
-          href: "/volunteer/interest?role=coach",
+          href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
           label: "Register your interest",
         },
       ]}
