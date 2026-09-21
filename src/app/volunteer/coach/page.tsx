@@ -10,8 +10,6 @@ export const metadata: Metadata = {
 export default function CoachPage() {
   return (
     <RoleLanding
-      actionsAtBottom
-      eyebrow="Coach"
       title="Coach with the MENDAKI Achievement Programme."
       description="Coach roles are for volunteers who want to help participants strengthen skills, confidence, habits, and performance through structured engagement."
       items={[
