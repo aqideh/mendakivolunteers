@@ -11,8 +11,6 @@ export const metadata: Metadata = {
 export default function FacilitatorPage() {
   return (
     <RoleLanding
-      actionsAtBottom
-      eyebrow="Facilitator"
       title="Create engaging experiences for participants."
       description="Facilitator roles are for volunteers who enjoy working directly with groups, guiding activities, and helping participants feel engaged and supported."
       items={[

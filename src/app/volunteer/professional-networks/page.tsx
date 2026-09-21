@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 export default function ProfessionalNetworksPage() {
   return (
     <RoleLanding
-      eyebrow="Professional Networks"
       title="Connect expertise, networks, and community impact."
       description="Professional Networks provides a pathway for volunteers who want to contribute through their professional experience, industry connections, and knowledge."
       items={[

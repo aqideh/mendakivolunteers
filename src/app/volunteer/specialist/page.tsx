@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 export default function SpecialistPage() {
   return (
     <RoleLanding
-      eyebrow="Specialist"
       title="Put your expertise to work for the community."
       description="Specialist volunteering is for people who want to contribute professional, technical, industry, or subject-matter expertise in ways that complement MENDAKI's programmes and community work."
       items={[

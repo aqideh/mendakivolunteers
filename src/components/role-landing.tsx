@@ -16,35 +16,33 @@ type RoleCta = Readonly<{
 }>;
 
 export function RoleLanding({
-  eyebrow,
   title,
   description,
   items,
   ctas,
-  actionsAtBottom = false,
 }: Readonly<{
-  eyebrow: string;
   title: string;
   description: string;
   items: readonly RoleItem[];
   ctas: readonly RoleCta[];
-  actionsAtBottom?: boolean;
 }>) {
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
       <main className={styles.frame}>
-        <Link className={styles.backLink} href="/">
-          ← Back to volunteering roles
-        </Link>
+        <section className={styles.hero} aria-labelledby="role-title">
+          <div className={styles.heroInner}>
+            <Link className={styles.backLink} href="/">
+              <span aria-hidden="true">←</span>
+              <span>Back to volunteering roles</span>
+            </Link>
 
-        <section className={styles.hero}>
-          <p className={styles.eyebrow}>{eyebrow}</p>
-          <h1>{title}</h1>
-          <p className={styles.lede}>{description}</p>
+            <div className={styles.heroCopy}>
+              <h1 id="role-title">{title}</h1>
+              <p className={styles.lede}>{description}</p>
+            </div>
 
-          {!actionsAtBottom ? (
-            <div className={styles.actions}>
+            <div className={styles.heroActions}>
               {ctas.map(({ href, label, secondary }) => (
                 <Link
                   className={secondary ? styles.secondaryAction : styles.primaryAction}
@@ -56,7 +54,7 @@ export function RoleLanding({
                 </Link>
               ))}
             </div>
-          ) : null}
+          </div>
         </section>
 
         <section className={styles.roles} aria-label={title + " opportunities"}>
@@ -72,27 +70,6 @@ export function RoleLanding({
             </article>
           ))}
         </section>
-
-        {actionsAtBottom ? (
-          <section className={styles.closingAction} aria-label="Register your interest">
-            <div>
-              <p className={styles.closingEyebrow}>Ready to volunteer?</p>
-              <h2>Take the next step.</h2>
-            </div>
-            <div className={styles.actions}>
-              {ctas.map(({ href, label, secondary }) => (
-                <Link
-                  className={secondary ? styles.secondaryAction : styles.primaryAction}
-                  href={href}
-                  key={href}
-                >
-                  <span>{label}</span>
-                  <span aria-hidden="true">↗</span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ) : null}
       </main>
     </div>
   );
