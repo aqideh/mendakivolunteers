@@ -264,8 +264,14 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
         />
       </main>
       <footer className="site-footer">
-        Registration is managed in YM Hub. KELUARGA shows the latest available
-        registration and event-roster information.
+        <span>Registration is managed in YM Hub. KELUARGA shows the latest available
+        registration and event-roster information.</span>
+        <span className="site-footer-copyright">
+          © 2026{" "}
+          <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
+            Yayasan MENDAKI
+          </a>
+        </span>
       </footer>
     </div>
   );
