@@ -31,11 +31,11 @@ const golosText = Golos_Text({
 
 export const metadata: Metadata = {
   title: {
-    default: "KELUARGA — MENDAKI Volunteer App",
-    template: "%s | KELUARGA",
+    default: "Keluarga MENDAKI — Volunteer App",
+    template: "%s | Keluarga MENDAKI",
   },
   description:
-    "KELUARGA is MENDAKI's mobile-first volunteer opportunities and event operations app.",
+    "Keluarga MENDAKI is MENDAKI's mobile-first volunteer opportunities and event operations app.",
 };
 
 export const viewport: Viewport = {
