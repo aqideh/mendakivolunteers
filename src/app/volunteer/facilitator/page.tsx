@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 export default function FacilitatorPage() {
   return (
     <RoleLanding
+      actionsAtBottom
       eyebrow="Facilitator"
       title="Create engaging experiences for participants."
       description="Facilitator roles are for volunteers who enjoy working directly with groups, guiding activities, and helping participants feel engaged and supported."
@@ -33,7 +34,7 @@ export default function FacilitatorPage() {
       ]}
       ctas={[
         {
-          href: "/volunteer/interest?role=facilitator",
+          href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
           label: "Register your interest",
         },
       ]}
