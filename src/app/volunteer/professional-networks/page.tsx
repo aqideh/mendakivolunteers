@@ -32,8 +32,8 @@ export default function ProfessionalNetworksPage() {
       ]}
       ctas={[
         {
-          href: "/volunteer/interest?role=professional-networks",
-          label: "Register your interest",
+          href: "https://mendaki-pn-connect.base44.app/Home",
+          label: "MENDAKI PN Connect",
         },
       ]}
     />
