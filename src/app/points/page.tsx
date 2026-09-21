@@ -273,7 +273,7 @@ export default async function PointsPage() {
 
       <footer className="site-footer">
         <span>YM Hub remains the source of truth for verified attendance and hours.
-        KELUARGA applies the approved point rules and retains the point ledger.</span>
+        Keluarga MENDAKI applies the approved point rules and retains the point ledger.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
