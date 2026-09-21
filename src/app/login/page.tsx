@@ -20,9 +20,9 @@ function getLoginErrorMessage(errorCode: string | undefined): string | undefined
     case "magic_link_invalid":
       return "This login link is invalid, expired, or has already been used. Request a new link.";
     case "account_inactive":
-      return "This KELUARGA account is not active. Contact the volunteer team.";
+      return "This Keluarga MENDAKI account is not active. Contact the volunteer team.";
     case "account_authorization_unavailable":
-      return "KELUARGA could not verify your account permissions. Try again shortly.";
+      return "Keluarga MENDAKI could not verify your account permissions. Try again shortly.";
     default:
       return undefined;
   }
@@ -72,9 +72,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           ) : null}
 
           <section aria-labelledby="volunteer-sign-in-title">
-            <h2 id="volunteer-sign-in-title">Volunteer email sign-in</h2>
+            <h2 id="volunteer-sign-in-title">Volunteer email login</h2>
             <p className="muted">
-              The one-time email link signs this browser into your KELUARGA
+              The one-time email link logs this browser into your Keluarga MENDAKI
               account. You remain logged in until the session ends, you clear the
               browser data, or you sign out; a new email is not required for every
               visit.
@@ -83,7 +83,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </section>
 
           <details className="phaseone-disclosure">
-            <summary>Staff sign-in or use a password</summary>
+            <summary>Staff login or use a password</summary>
             <div className="phaseone-disclosure-body">
               <p className="muted">
                 Staff and existing password users can log in below.
