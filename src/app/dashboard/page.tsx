@@ -530,7 +530,7 @@ export default async function DashboardPage({
       </main>
 
       <footer className="site-footer">
-        <span>KELUARGA and YM Hub use separate sign-ins. Official registration and
+        <span>Keluarga MENDAKI and YM Hub use separate sign-ins. Official registration and
         verified attendance remain in YM Hub.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
