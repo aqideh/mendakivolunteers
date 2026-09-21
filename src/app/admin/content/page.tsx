@@ -40,6 +40,8 @@ function readParameter(
 const successMessages: Record<string, string> = {
   news_created: "News post created.",
   news_updated: "News post updated.",
+  opportunity_override_updated: "Opportunity card updated.",
+  opportunity_override_reset: "Opportunity card reset to imported values.",
 };
 
 export default async function ContentAdminPage({
@@ -53,22 +55,27 @@ export default async function ContentAdminPage({
   const errorMessage = readParameter(parameters, "error");
   const successMessage = successCode ? successMessages[successCode] : undefined;
   const canManageJourneys = hasEventManagerRole(access.roles);
-  const phaseOneAdmin = canManageJourneys ? getPhaseOneAdminClient() : null;
+  const phaseOneAdmin = getPhaseOneAdminClient();
 
-  const [opportunitiesResult, newsResult, journeysResult, timeslotsResult] = await Promise.all([
-    supabase
-      .schema("content")
-      .from("opportunities")
-      .select("id, slug, title, status, starts_at, updated_at, featured")
-      .order("updated_at", { ascending: false })
-      .limit(100),
+  const [opportunitiesResult, overridesResult, newsResult, journeysResult, timeslotsResult] =
+    await Promise.all([
+      phaseOneAdmin
+        .from("phaseone_external_opportunities")
+        .select("id, title, starts_at, imported_at, is_active")
+        .eq("is_active", true)
+        .order("starts_at", { ascending: false, nullsFirst: false })
+        .limit(100),
+      phaseOneAdmin
+        .from("phaseone_opportunity_overrides")
+        .select("external_opportunity_id, title, starts_at, is_visible, sort_order, updated_at")
+        .limit(100),
     supabase
       .schema("content")
       .from("news_posts")
       .select("id, slug, title, status, publish_at, published_at, updated_at, featured")
       .order("updated_at", { ascending: false })
       .limit(100),
-    phaseOneAdmin
+    canManageJourneys
       ? phaseOneAdmin
           .from("phaseone_events")
           .select(
@@ -77,7 +84,7 @@ export default async function ContentAdminPage({
           .order("updated_at", { ascending: false })
           .limit(2000)
       : Promise.resolve({ data: [], error: null }),
-    phaseOneAdmin
+    canManageJourneys
       ? phaseOneAdmin
           .from("phaseone_event_timeslots")
           .select("id, event_id, label, starts_at, ends_at, status, sort_order")
@@ -89,6 +96,7 @@ export default async function ContentAdminPage({
 
   const hasLoadError = Boolean(
     opportunitiesResult.error ||
+      overridesResult.error ||
       newsResult.error ||
       journeysResult.error ||
       timeslotsResult.error,
@@ -96,6 +104,7 @@ export default async function ContentAdminPage({
   if (hasLoadError) {
     console.error("Unable to load CMS content", {
       opportunitiesCode: opportunitiesResult.error?.code,
+      overridesCode: overridesResult.error?.code,
       newsCode: newsResult.error?.code,
       journeysCode: journeysResult.error?.code,
       timeslotsCode: timeslotsResult.error?.code,
@@ -105,6 +114,7 @@ export default async function ContentAdminPage({
 
   if (
     !opportunitiesResult.data ||
+    !overridesResult.data ||
     !newsResult.data ||
     !journeysResult.data ||
     !timeslotsResult.data
@@ -112,7 +122,36 @@ export default async function ContentAdminPage({
     throw new Error("CMS content query returned no result set");
   }
 
-  const opportunities = opportunitiesResult.data;
+  const overrideByOpportunityId = new Map(
+    overridesResult.data.map((override) => [override.external_opportunity_id, override]),
+  );
+  const opportunities = opportunitiesResult.data
+    .map((opportunity) => {
+      const override = overrideByOpportunityId.get(opportunity.id) ?? null;
+      return {
+        ...opportunity,
+        override,
+        effectiveTitle: override?.title ?? opportunity.title,
+        effectiveStartsAt: override?.starts_at ?? opportunity.starts_at,
+      };
+    })
+    .sort((left, right) => {
+      const leftOrder = left.override?.sort_order ?? null;
+      const rightOrder = right.override?.sort_order ?? null;
+      if (leftOrder !== null || rightOrder !== null) {
+        if (leftOrder === null) return 1;
+        if (rightOrder === null) return -1;
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+      }
+
+      const leftTime = left.effectiveStartsAt
+        ? new Date(left.effectiveStartsAt).getTime()
+        : 0;
+      const rightTime = right.effectiveStartsAt
+        ? new Date(right.effectiveStartsAt).getTime()
+        : 0;
+      return rightTime - leftTime;
+    });
   const newsPosts = newsResult.data;
   const timeslotsByEvent = new Map<string, VolunteerTimeslot[]>();
   for (const timeslot of timeslotsResult.data) {
@@ -135,8 +174,8 @@ export default async function ContentAdminPage({
           <div className={styles.headerCopy}>
             <h1>Manage volunteer content</h1>
             <p className={`muted ${styles.description}`}>
-              Manage event guides and news here. Opportunity listings remain visible,
-              but creation and editing are temporarily paused.
+              Manage event guides, opportunity cards, and news. Opportunity card
+              edits do not alter the imported source record.
             </p>
           </div>
           <div className={`actions ${styles.actions}`}>
@@ -310,7 +349,7 @@ export default async function ContentAdminPage({
                   return (
                     <tr key={opportunity.id}>
                       <td>
-                        <strong>{cardOverride?.title ?? opportunity.title}</strong>
+                        <strong>{opportunity.effectiveTitle}</strong>
                         <span className="table-subtext">Imported opportunity</span>
                       </td>
                       <td>
@@ -318,7 +357,7 @@ export default async function ContentAdminPage({
                           {cardOverride?.is_visible === false ? "Hidden" : "Visible"}
                         </span>
                       </td>
-                      <td>{formatSingaporeDateTime(opportunity.starts_at)}</td>
+                      <td>{formatSingaporeDateTime(opportunity.effectiveStartsAt)}</td>
                       <td>
                         {cardOverride
                           ? `Edited${cardOverride.sort_order !== null ? ` · order ${cardOverride.sort_order}` : ""}`
