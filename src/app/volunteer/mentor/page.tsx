@@ -30,24 +30,6 @@ export default function MentorPage() {
             <p className={styles.lede}>
               The right mentor. The right stage. For the right outcome.
             </p>
-            <Link
-              className={styles.primaryAction}
-              href="/volunteer/interest?role=mentor"
-            >
-              <span>Register your interest</span>
-              <span aria-hidden="true">↗</span>
-            </Link>
-          </div>
-
-          <div className={styles.heroImage}>
-            <Image
-              alt="Two people working together at a desk"
-              height={326}
-              priority
-              src="/volunteer/mentor/mendaki-ampowered.png"
-              unoptimized
-              width={497}
-            />
           </div>
         </section>
 
@@ -71,6 +53,17 @@ export default function MentorPage() {
               width={821}
             />
           </div>
+        </section>
+
+        <section className={styles.closingAction} aria-label="Register your interest">
+          <div>
+            <p className={styles.sectionEyebrow}>Ready to mentor?</p>
+            <h2>Take the next step.</h2>
+          </div>
+          <Link className={styles.primaryAction} href="https://form.gov.sg/6ab08df24e9cff0f3ac1af45">
+            <span>Register your interest</span>
+            <span aria-hidden="true">↗</span>
+          </Link>
         </section>
       </main>
     </div>
