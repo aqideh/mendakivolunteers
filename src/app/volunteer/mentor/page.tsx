@@ -1,41 +1,78 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 
-import { RoleLanding } from "@/components/role-landing";
+import { PortalHeader } from "@/components/portal-header";
+
+import styles from "./mentor.module.css";
 
 export const metadata: Metadata = {
   title: "Volunteer as a Mentor",
-  description: "Explore mentoring roles with MENDAKI.",
+  description: "Helping potential bloom through meaningful mentoring with MENDAKI.",
 };
 
 export default function MentorPage() {
   return (
-    <RoleLanding
-      eyebrow="Mentor"
-      title="Be a steady guide in someone's journey."
-      description="Mentoring is for volunteers who want to build meaningful, ongoing relationships and support others through encouragement, guidance, and shared experience."
-      items={[
-        {
-          title: "Build connection",
-          description:
-            "Create a consistent and supportive relationship with participants over time.",
-        },
-        {
-          title: "Guide growth",
-          description:
-            "Encourage reflection, confidence, and progress through regular engagement.",
-        },
-        {
-          title: "Show up consistently",
-          description:
-            "Mentoring works best when volunteers are ready to commit to the journey, not just a single activity.",
-        },
-      ]}
-      ctas={[
-        {
-          href: "/volunteer/interest?role=mentor",
-          label: "Register your interest",
-        },
-      ]}
-    />
+    <div className="site-shell phaseone-shell">
+      <PortalHeader status="Community volunteers" lite />
+      <main className={styles.frame}>
+        <Link className={styles.backLink} href="/">
+          <span aria-hidden="true">←</span>
+          <span>Back to volunteering roles</span>
+        </Link>
+
+        <section className={styles.hero} aria-labelledby="mentor-title">
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>Mentor</p>
+            <h1 id="mentor-title">
+              Helping Potential Bloom Through Meaningful Mentoring
+            </h1>
+            <p className={styles.lede}>
+              The right mentor. The right stage. For the right outcome.
+            </p>
+            <Link
+              className={styles.primaryAction}
+              href="/volunteer/interest?role=mentor"
+            >
+              <span>Register your interest</span>
+              <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
+
+          <div className={styles.heroImage}>
+            <Image
+              alt="Two people working together at a desk"
+              height={326}
+              priority
+              src="/volunteer/mentor/mendaki-ampowered.png"
+              unoptimized
+              width={497}
+            />
+          </div>
+        </section>
+
+        <section className={styles.mekar} aria-labelledby="mekar-title">
+          <div className={styles.mekarHeader}>
+            <p className={styles.sectionEyebrow}>Mentoring framework</p>
+            <h2 id="mekar-title">MEKAR: MENDAKI Mentoring Framework</h2>
+            <p className={styles.mekarIntro}>
+              A mentoring journey designed to support growth at every stage — from
+              self-discovery and aspiration-building to leadership and contribution.
+            </p>
+          </div>
+
+          <div className={styles.mekarImageWrap}>
+            <Image
+              alt="MEKAR: MENDAKI Mentoring Framework"
+              className={styles.mekarImage}
+              height={554}
+              src="/volunteer/mentor/mekar-framework.png"
+              unoptimized
+              width={821}
+            />
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }
