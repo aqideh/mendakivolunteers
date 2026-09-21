@@ -33,7 +33,7 @@ export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
   items.push(
     isSignedIn
       ? { href: "/dashboard", label: "Dashboard" }
-      : { href: "/login", label: "Sign in" },
+      : { href: "/login", label: "Login" },
   );
 
   return (

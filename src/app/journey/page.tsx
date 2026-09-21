@@ -215,7 +215,7 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
           <h1>Your Event Guides.</h1>
           <p className="lede">
             Find your reporting time, briefing, directions and event-day steps.
-            KELUARGA and YM Hub use separate sign-ins, and registration updates may
+            Keluarga MENDAKI and YM Hub use separate sign-ins, and registration updates may
             appear after the next data update.
           </p>
         </section>
@@ -264,8 +264,14 @@ export default async function JourneyPage({ searchParams }: JourneyPageProps) {
         />
       </main>
       <footer className="site-footer">
-        Registration is managed in YM Hub. KELUARGA shows the latest available
-        registration and event-roster information.
+        <span>Registration is managed in YM Hub. Keluarga MENDAKI shows the latest available
+        registration and event-roster information.</span>
+        <span className="site-footer-copyright">
+          © 2026{" "}
+          <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
+            Yayasan MENDAKI
+          </a>
+        </span>
       </footer>
     </div>
   );

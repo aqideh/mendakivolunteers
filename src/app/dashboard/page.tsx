@@ -530,8 +530,14 @@ export default async function DashboardPage({
       </main>
 
       <footer className="site-footer">
-        KELUARGA and YM Hub use separate sign-ins. Official registration and
-        verified attendance remain in YM Hub.
+        <span>Keluarga MENDAKI and YM Hub use separate sign-ins. Official registration and
+        verified attendance remain in YM Hub.</span>
+        <span className="site-footer-copyright">
+          © 2026{" "}
+          <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
+            Yayasan MENDAKI
+          </a>
+        </span>
       </footer>
     </div>
   );

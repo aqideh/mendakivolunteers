@@ -49,7 +49,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
         type="submit"
         disabled={pending}
       >
-        {pending ? "Sending sign-in link…" : "Email me a sign-in link"}
+        {pending ? "Sending login link…" : "Email me a login link"}
       </button>
 
       <p

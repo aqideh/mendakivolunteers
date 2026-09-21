@@ -252,60 +252,6 @@
   line-height: 1.45;
 }
 
-.impact {
-  display: grid;
-  gap: clamp(2rem, 5vw, 4rem);
-  margin-top: clamp(2rem, 5vw, 4rem);
-  border-top: 1px solid var(--border);
-  padding: clamp(3.5rem, 7vw, 5.5rem) 0 clamp(1rem, 3vw, 2rem);
-}
-
-.impactHeading :global(.eyebrow) {
-  margin-bottom: 0.65rem;
-}
-
-.impactHeading h2 {
-  max-width: 16ch;
-  margin: 0;
-  font-size: clamp(1.8rem, 3.2vw, 2.55rem);
-}
-
-.outcomes {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: stretch;
-}
-
-.outcomeItem {
-  display: grid;
-  gap: 0.7rem;
-  align-content: start;
-  min-height: 5.5rem;
-  border-left: 1px solid var(--border);
-  padding: 0.25rem clamp(1rem, 2vw, 1.5rem);
-  color: var(--ink);
-  font-weight: 760;
-  line-height: 1.35;
-}
-
-.outcomeItem:first-child {
-  border-left: 0;
-}
-
-.outcomeMarker {
-  width: 1.8rem;
-  height: 0.28rem;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--primary));
-}
-
-@media (min-width: 780px) {
-  .impact {
-    grid-template-columns: minmax(14rem, 0.32fr) minmax(0, 0.68fr);
-    align-items: start;
-  }
-}
-
 @media (max-width: 900px) {
   .roleGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -354,47 +300,6 @@
   .roleDescription {
     margin-top: 0.55rem;
   }
-
-  .outcomes {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .outcomeItem,
-  .outcomeItem:first-child {
-    min-height: 4.75rem;
-    border-top: 1px solid var(--border);
-    border-left: 0;
-    padding: 1rem 0;
-  }
-
-  .outcomeItem:nth-child(-n + 2) {
-    border-top: 0;
-  }
-
-  .outcomeItem:nth-child(even) {
-    padding-left: 1rem;
-  }
-}
-
-
-@supports (animation-timeline: view()) {
-  .impact {
-    animation: impactReveal 1ms linear both;
-    animation-timeline: view();
-    animation-range: entry 5% cover 32%;
-  }
-}
-
-@keyframes impactReveal {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes copyEnter {
@@ -421,8 +326,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .heroCopy,
-  .roleChoice,
-  .impact {
+  .roleChoice {
     animation: none;
     opacity: 1;
     transform: none;
