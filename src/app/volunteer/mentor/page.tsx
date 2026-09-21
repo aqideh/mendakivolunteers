@@ -16,20 +16,22 @@ export default function MentorPage() {
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
       <main className={styles.frame}>
-        <Link className={styles.backLink} href="/">
-          <span aria-hidden="true">←</span>
-          <span>Back to volunteering roles</span>
-        </Link>
-
         <section className={styles.hero} aria-labelledby="mentor-title">
-          <div className={styles.heroCopy}>
+          <div className={styles.heroInner}>
+            <Link className={styles.backLink} href="/">
+              <span aria-hidden="true">←</span>
+              <span>Back to volunteering roles</span>
+            </Link>
+
+            <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>Mentor</p>
             <h1 id="mentor-title">
               Helping Potential Bloom Through Meaningful Mentoring
             </h1>
-            <p className={styles.lede}>
-              The right mentor. The right stage. For the right outcome.
-            </p>
+              <p className={styles.lede}>
+                The right mentor. The right stage. For the right outcome.
+              </p>
+            </div>
           </div>
         </section>
 
