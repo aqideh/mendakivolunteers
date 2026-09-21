@@ -8,48 +8,43 @@
   display: grid;
   min-height: calc(100svh - 6.5rem);
   align-content: center;
-  padding: clamp(1rem, 2vw, 1.5rem) 0 clamp(2rem, 4vw, 3rem);
+  overflow: hidden;
+  border-radius: 1.4rem;
+  padding: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2rem) clamp(2.5rem, 5vw, 4rem);
   color: var(--ink);
   text-align: center;
+  isolation: isolate;
 }
 
 .hero::before,
 .hero::after {
   position: absolute;
-  z-index: 0;
+  inset: 0;
   content: "";
   pointer-events: none;
-  filter: blur(2px);
 }
 
 .hero::before {
-  top: -7rem;
-  left: 50%;
-  width: min(56rem, 90vw);
-  height: 19rem;
-  border-radius: 999px;
+  z-index: -2;
   background:
-    radial-gradient(
-      ellipse at center,
-      rgba(38, 181, 198, 0.13),
-      rgba(38, 181, 198, 0.045) 44%,
-      transparent 72%
-    );
-  transform: translateX(-50%);
+    url("/home/keluarga-volunteers-hero.jpeg") center 46% / cover no-repeat;
+  opacity: 0.16;
 }
 
 .hero::after {
-  top: 0;
-  right: 8%;
-  width: 13rem;
-  height: 13rem;
-  border-radius: 999px;
+  z-index: -1;
   background:
-    radial-gradient(
-      circle at center,
-      rgba(255, 215, 0, 0.13),
-      rgba(255, 215, 0, 0.025) 54%,
-      transparent 72%
+    linear-gradient(
+      180deg,
+      rgba(247, 247, 244, 0.9) 0%,
+      rgba(247, 247, 244, 0.76) 42%,
+      rgba(247, 247, 244, 0.9) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(247, 247, 244, 0.78),
+      rgba(255, 255, 255, 0.55),
+      rgba(247, 247, 244, 0.78)
     );
 }
 
@@ -274,8 +269,23 @@
 
   .hero {
     min-height: calc(100svh - 5.75rem);
-    padding-top: 1rem;
-    padding-bottom: 2.25rem;
+    border-radius: 1rem;
+    padding: 1.5rem 0.8rem 2.5rem;
+  }
+
+  .hero::before {
+    background-position: 52% center;
+    opacity: 0.13;
+  }
+
+  .hero::after {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(247, 247, 244, 0.93) 0%,
+        rgba(247, 247, 244, 0.82) 48%,
+        rgba(247, 247, 244, 0.94) 100%
+      );
   }
 
   .pathPrompt {
