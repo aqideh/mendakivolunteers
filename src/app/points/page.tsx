@@ -195,8 +195,9 @@ export default async function PointsPage() {
               <div className="notice" role="status">
                 <h2>Official attendance has not been imported yet</h2>
                 <p>
-                  Your balance will remain unchanged until the first successful YM
-                  Hub attendance update and point reconciliation are completed.
+                  Attendance-based points will not change until the first successful
+                  YM Hub attendance update and point reconciliation are completed.
+                  Staff-recognition awards remain separate from this sync.
                 </p>
               </div>
             ) : null}
@@ -205,8 +206,9 @@ export default async function PointsPage() {
               <div className="notice notice-error" role="alert">
                 <h2>The latest YM Hub update did not complete</h2>
                 <p>
-                  The balance shown is based on the latest successful authoritative
-                  data. No points are inferred from the staff roster as a fallback.
+                  Attendance-based entries shown are based on the latest successful
+                  authoritative data. Staff-recognition awards remain independent,
+                  and no points are inferred from the staff roster as a fallback.
                 </p>
               </div>
             ) : null}
