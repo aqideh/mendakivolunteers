@@ -271,6 +271,8 @@ Existing external-registration URL fields and configuration are transitional and
 
 Applied migration files are historical records and must not be rewritten merely to change comments. New migrations should change live schema assumptions.
 
+For this release, the repository migration versions are aligned with the versions recorded by the production Supabase migration history before merge. The final cleanup migration removes the temporary legacy opportunity RPC only after the new KELUARGA opportunity code is deployed.
+
 ## 7. Implementation sequence
 
 1. Change the KELUARGA volunteer identity model so a volunteer can exist without a YM Hub ID.
