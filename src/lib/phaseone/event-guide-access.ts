@@ -156,11 +156,11 @@ export async function getEventGuideViewer(): Promise<EventGuideViewerResult> {
   }
 
   const admin = getPhaseOneAdminClient();
-  const rosterPromise = email
+  const rosterPromise = volunteerResult.data
     ? admin
         .from("phaseone_roster")
         .select("event_id")
-        .eq("email_normalized", email)
+        .eq("volunteer_id", volunteerResult.data.id)
         .limit(2000)
     : Promise.resolve({ data: [], error: null });
   const syncPromise = volunteerResult.data
