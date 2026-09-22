@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Snapshot date:** 16 September 2026  
+**Snapshot date:** 22 September 2026  
 **Reference branch:** `main`  
 **Reference commit at start of review:** `aacb313211268bd76c7de6d2b3c35939c9317b90`
 
@@ -16,13 +16,15 @@ Implemented:
 - Public opportunity browsing and opportunity detail pages.
 - Public news listing and news detail pages.
 - Public volunteer pathways page.
-- External registration link-outs rather than app-owned registration state.
-- Configurable registration destination.
+- External registration link-outs are still the currently deployed implementation.
+- Configurable registration destination remains for transition compatibility.
 
-Current boundary:
+Target operating model (approved 22 September 2026):
 
-- Registration remains authoritative outside KELUARGA.
-- KELUARGA must not present itself as the final source of registration status until YM Hub data has been imported and reconciled.
+- KELUARGA will own volunteer recruitment, registration, waitlist/cancellation and shift selection.
+- Confirmed KELUARGA registrations will populate event operations directly.
+- YM Hub remains the authoritative backend organisational record after a separately designed handoff/reconciliation process.
+- The target registration model is not yet implemented and must not be described as live until the new schema/routes/tests are deployed.
 
 ### Event Guides
 
@@ -50,7 +52,7 @@ Implemented:
 - Passwordless volunteer email sign-in.
 - Staff password setup and password-change flows.
 - Password recovery that correctly enters a reset flow rather than silently redirecting to the dashboard.
-- Separate app account identity, internal volunteer identity and YM Hub identity.
+- Separate app account identity, stable KELUARGA volunteer identity and optional YM Hub reconciliation identity.
 - Account-status handling including pending-link, active, suspended and closed states.
 - Volunteer dashboard protected by authentication.
 
@@ -65,7 +67,7 @@ Implemented UI/read path:
 - Volunteer account dashboard.
 - Profile-linking state.
 - YM Hub sync-state display.
-- Imported registration snapshots.
+- Imported YM Hub registration snapshots remain as a legacy/backend reconciliation view.
 - Imported attendance snapshots.
 - Verified volunteer-hours display derived from authoritative snapshots.
 - Stale/failed/unavailable sync handling in the read model.
@@ -122,7 +124,7 @@ Implemented:
 - News creation/editing.
 - Publication-state controls.
 - Revision/history foundation in the CMS schema.
-- Validation of registration URLs and physical-opportunity location rules.
+- Validation of transitional external registration URLs and physical-opportunity location rules.
 
 ### Staff accounts and access
 
@@ -319,14 +321,14 @@ Implemented:
 
 Direction:
 
-- This source is transitional and should be replaced or de-emphasised as the official registration/opportunity flow moves to YM Hub-approved sources.
+- This source is transitional and should be retired or narrowed as KELUARGA becomes the volunteer-facing recruitment and registration channel.
 
 ### YM Hub / Salesforce
 
 Implemented foundation:
 
 - `ymhub` projection schema.
-- Registration snapshots.
+- Registration snapshots retained for backend reconciliation/legacy compatibility.
 - Attendance snapshots.
 - Volunteer sync state.
 - Volunteer dashboard read path.
@@ -335,8 +337,9 @@ Implemented foundation:
 
 Current integration direction:
 
-- Controlled batch-file processing is the immediate integration approach.
-- A future server-only API adapter should populate the same canonical projection model when DTI approves it.
+- Volunteer Management will define the KELUARGA -> YM Hub backend handoff separately.
+- Controlled batch processing remains the practical immediate mechanism where needed.
+- A future server-only API adapter may replace or supplement batch handoff when DTI approves it.
 - Direct production Salesforce synchronization is not currently enabled.
 
 ### MakLom
@@ -374,10 +377,11 @@ Release model:
 
 ## 7. Current product boundary summary
 
-KELUARGA currently does three different jobs and the distinction should remain explicit:
+KELUARGA's target model has four distinct responsibilities:
 
-1. **Volunteer companion** — discovery, news, Event Guides, pathways and personal account surfaces.
-2. **Staff event-operations system** — rosters, shifts, walk-ins, attendance, reviews, insights, feedback and reporting.
-3. **Read-only projection of official volunteer records** — registrations, official attendance and verified hours imported from YM Hub.
+1. **Recruitment and engagement** — pathways, recruitment intake, discovery and personal account surfaces.
+2. **Registration** — app-owned registrations, waitlists/cancellations and shift selections.
+3. **Event operations** — rosters, shifts, walk-ins, attendance, reviews, insights, feedback and reporting.
+4. **Backend reconciliation** — read-only YM Hub projections for organisational record matching, verified attendance and verified hours.
 
-The third category must remain read-only and authoritative downstream. KELUARGA should not silently substitute operational attendance for verified YM Hub records.
+The first-class recruitment/registration domain is approved but not yet implemented. Operational attendance must still not be silently substituted for verified YM Hub hours.
