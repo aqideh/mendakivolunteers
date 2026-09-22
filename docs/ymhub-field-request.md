@@ -30,10 +30,11 @@ For each object and field, provide:
 
 ## Later-phase objects
 
-## Phase 3 registration fields
+## Backend registration/reconciliation fields
 
-Provide the registration or participation object API name and these field API
-names:
+KELUARGA now owns the volunteer-facing registration workflow. These YM Hub fields are requested for backend handoff/reconciliation rather than to drive registration in the app.
+
+Provide the registration or participation object API name and these field API names:
 
 - Unique registration record identifier.
 - Volunteer relationship and the related volunteer ID path.
@@ -43,7 +44,7 @@ names:
 - Source update timestamp, preferably `SystemModstamp` where appropriate.
 - Deletion and cancellation semantics.
 
-## Phase 3 attendance fields
+## Backend attendance/verification fields
 
 Provide the attendance object API name and these field API names:
 
@@ -72,4 +73,4 @@ The same exercise will later be required for:
 - Verified hours.
 - Optional referral-code capture.
 
-Do not replace canonical application names with Salesforce API names. Actual mappings should be supplied through the `SalesforceYmHubGateway` configuration so that the rest of the application remains unchanged.
+Do not replace canonical KELUARGA domain names with Salesforce API names. KELUARGA volunteer, recruitment, registration and roster records must remain usable without Salesforce IDs; external IDs are reconciliation metadata attached when available.
