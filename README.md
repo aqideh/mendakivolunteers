@@ -130,7 +130,6 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 SUPABASE_SERVICE_ROLE_KEY
 PIN_COOKIE_SECRET
 APP_ENV=production
-AUTH_ALLOW_SIGN_UP=true
 ```
 
 Before promotion, run:
@@ -139,7 +138,7 @@ Before promotion, run:
 npm run check:production
 ```
 
-Never commit environment files, service-role keys, cron secrets, or PIN-cookie secrets.
+Never commit environment files, service-role keys, or PIN-cookie secrets.
 
 <!-- Deployment retry: 2026-09-21 -->
 

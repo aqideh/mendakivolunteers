@@ -3,12 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   createClientMock,
   getPublicConfigMock,
-  isAuthSignUpAllowedMock,
   signInWithOtpMock,
 } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   getPublicConfigMock: vi.fn(),
-  isAuthSignUpAllowedMock: vi.fn(),
   signInWithOtpMock: vi.fn(),
 }));
 
@@ -18,7 +16,6 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/env", () => ({
   getPublicConfig: getPublicConfigMock,
-  isAuthSignUpAllowed: isAuthSignUpAllowedMock,
 }));
 
 import * as volunteerSignInActions from "@/app/login/volunteer-sign-in-actions";
@@ -39,7 +36,6 @@ describe("volunteer email sign-in", () => {
     getPublicConfigMock.mockReturnValue({
       appUrl: "https://mendakivolunteers.vercel.app",
     });
-    isAuthSignUpAllowedMock.mockReturnValue(true);
     signInWithOtpMock.mockResolvedValue({ error: null });
   });
 
@@ -52,7 +48,7 @@ describe("volunteer email sign-in", () => {
     ).toBe("AsyncFunction");
   });
 
-  it("normalizes email and creates KELUARGA accounts when signup is enabled", async () => {
+  it("normalizes email and permits native KELUARGA account creation", async () => {
     const result = await volunteerSignInActions.requestVolunteerSignInLink(
       { status: "idle", message: "" },
       formData(" New.Volunteer@Example.Test ", "/opportunities/community-day"),
@@ -69,22 +65,6 @@ describe("volunteer email sign-in", () => {
     });
   });
 
-  it("still signs in existing accounts without provisioning when signup is disabled", async () => {
-    isAuthSignUpAllowedMock.mockReturnValue(false);
-
-    await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
-      formData("existing@example.test"),
-    );
-
-    expect(signInWithOtpMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        email: "existing@example.test",
-        options: expect.objectContaining({ shouldCreateUser: false }),
-      }),
-    );
-  });
-
   it("rejects unsafe return destinations", async () => {
     await volunteerSignInActions.requestVolunteerSignInLink(
       { status: "idle", message: "" },
@@ -94,6 +74,7 @@ describe("volunteer email sign-in", () => {
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "volunteer@example.test",
       options: expect.objectContaining({
+        shouldCreateUser: true,
         emailRedirectTo:
           "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fdashboard",
       }),
@@ -138,9 +119,9 @@ describe("volunteer email sign-in", () => {
     );
   });
 
-  it("reports missing environment configuration without attempting delivery", async () => {
-    isAuthSignUpAllowedMock.mockImplementation(() => {
-      throw new Error("AUTH_ALLOW_SIGN_UP missing");
+  it("reports missing public configuration without attempting delivery", async () => {
+    getPublicConfigMock.mockImplementation(() => {
+      throw new Error("NEXT_PUBLIC_APP_URL missing");
     });
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 

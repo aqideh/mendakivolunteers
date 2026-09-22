@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 
-import { getPublicConfig, isAuthSignUpAllowed } from "@/lib/env";
+import { getPublicConfig } from "@/lib/env";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,7 +40,7 @@ export async function requestVolunteerSignInLink(
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        shouldCreateUser: isAuthSignUpAllowed(),
+        shouldCreateUser: true,
         emailRedirectTo: callbackUrl.toString(),
       },
     });

@@ -4,7 +4,6 @@ const required = [
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
   "PIN_COOKIE_SECRET",
-  "AUTH_ALLOW_SIGN_UP",
 ];
 
 const secureUrlSettings = [
@@ -21,10 +20,6 @@ const errors = [];
 
 if (process.env.APP_ENV !== "production") {
   errors.push("APP_ENV must be production.");
-}
-
-if (process.env.AUTH_ALLOW_SIGN_UP !== "false") {
-  errors.push("AUTH_ALLOW_SIGN_UP must be false for production.");
 }
 
 for (const name of required) {
