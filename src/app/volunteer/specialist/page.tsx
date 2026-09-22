@@ -31,13 +31,8 @@ export default function SpecialistPage() {
       ]}
       ctas={[
         {
-          href: "/volunteer/professional-networks",
+          href: "https://mendaki-pn-connect.base44.app/Home",
           label: "Explore Professional Networks",
-        },
-        {
-          href: "/volunteer/specialist-interest",
-          label: "Share your specialist skills",
-          secondary: true,
         },
       ]}
     />
