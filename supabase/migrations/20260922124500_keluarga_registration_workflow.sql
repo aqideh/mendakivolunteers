@@ -747,6 +747,7 @@ begin
         and timeslot_id = timeslot_record.id
         and (
           registration_id = p_registration_id
+          or volunteer_id = volunteer_record.id
           or roster_match_key = 'id:' || lower(volunteer_record.volunteer_code)
         );
     end loop;
