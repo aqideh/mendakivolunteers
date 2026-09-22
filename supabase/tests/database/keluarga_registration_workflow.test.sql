@@ -142,6 +142,8 @@ select is(
   'event manager can confirm registration'
 );
 
+reset role;
+
 select is(
   (
     select entry_method
