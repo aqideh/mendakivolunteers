@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 type PortalNavProps = Readonly<{
   canManageEvents: boolean;
@@ -19,6 +20,7 @@ function matchesPath(pathname: string, href: string): boolean {
 
 export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
   const pathname = usePathname() ?? "";
+  const [isOpen, setIsOpen] = useState(false);
   const items: NavigationItem[] = [
     { href: "/opportunities", label: "Opportunities" },
   ];
@@ -34,19 +36,40 @@ export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
   );
 
   return (
-    <nav className="site-nav" aria-label="Primary navigation">
-      {items.map(({ href, label }) => {
-        const isCurrent = matchesPath(pathname, href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={isCurrent ? "page" : undefined}
-          >
-            {label}
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="portal-menu">
+      <button
+        className="portal-menu-toggle"
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls="primary-navigation-menu"
+        aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <span aria-hidden="true" />
+        <span aria-hidden="true" />
+        <span aria-hidden="true" />
+      </button>
+
+      <nav
+        id="primary-navigation-menu"
+        className="site-nav portal-menu-panel"
+        aria-label="Primary navigation"
+        data-open={isOpen ? "true" : "false"}
+      >
+        {items.map(({ href, label }) => {
+          const isCurrent = matchesPath(pathname, href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isCurrent ? "page" : undefined}
+              onClick={() => setIsOpen(false)}
+            >
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }

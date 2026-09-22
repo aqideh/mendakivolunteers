@@ -1,11 +1,9 @@
 import { BrandLockup } from "@/components/brand-lockup";
 import { PortalNav } from "@/components/portal-nav";
-import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { createClient } from "@/lib/supabase/server";
 
 export async function PortalHeader({
   status,
-  dashboard = false,
   lite = false,
 }: {
   status: string;
@@ -18,7 +16,7 @@ export async function PortalHeader({
   const isSignedIn = !error && Boolean(userId);
   let canManageEvents = false;
 
-  if (dashboard && isSignedIn && userId) {
+  if (isSignedIn && userId) {
     const { data: roleRows, error: rolesError } = await supabase
       .schema("core")
       .from("user_roles")
@@ -30,9 +28,7 @@ export async function PortalHeader({
         rolesCode: rolesError.code,
       });
     } else {
-      canManageEvents = hasEventManagerRole(
-        (roleRows ?? []).map(({ role }) => role),
-      );
+      canManageEvents = (roleRows ?? []).some(({ role }) => role === "admin");
     }
   }
 
