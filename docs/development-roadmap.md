@@ -145,20 +145,21 @@ Build a staff-only batch workflow with:
 
 ### Identity linking
 
-**Status: Schema change required**
+**Status: Identity foundation live; account/profile provisioning follows in the signup slice**
 
 Use the identity chain:
 
 ```text
 Supabase Auth user
         -> core.user_accounts
-        -> core.volunteers (stable KELUARGA ID)
+        -> core.volunteers.id (internal UUID)
+        -> core.volunteers.volunteer_code (immutable KELxxxxx ID)
         -> optional Salesforce/YM Hub source ID after handoff
 ```
 
 Planned:
 
-- allow creation of KELUARGA volunteers before any YM Hub record exists;
+- create KELUARGA volunteers before any YM Hub record exists; the schema now supports this with generated `KELxxxxx` IDs;
 - controlled backend linking/reconciliation;
 - exact source-ID matching where available;
 - email verification;

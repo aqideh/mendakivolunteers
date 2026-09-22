@@ -39,10 +39,11 @@ Three identifiers serve different purposes:
 | Identifier | Owner | Purpose |
 |---|---|---|
 | `auth.users.id` | Supabase Auth | Authenticated web identity |
-| `core.volunteers.id` | KELUARGA | Stable volunteer identity for recruitment, registration and app-owned data |
+| `core.volunteers.id` | KELUARGA | Internal immutable UUID used for database relationships |
+| `core.volunteers.volunteer_code` | KELUARGA | Human-readable immutable volunteer ID (`KEL00001` format) |
 | `core.volunteers.ymhub_volunteer_id` | YM Hub | Optional backend reconciliation identifier once a YM Hub record exists |
 
-An authenticated KELUARGA volunteer can exist before any YM Hub record exists. The target schema therefore makes the YM Hub identifier optional and attaches it later through an audited backend reconciliation process. Volunteers must not self-claim a YM Hub identifier.
+An authenticated KELUARGA volunteer can exist before any YM Hub record exists. Every volunteer has an internal UUID plus an immutable `KELxxxxx` volunteer code; `KEL00000` is reserved. The YM Hub identifier is optional and may be attached later through an audited backend reconciliation process. Volunteers must not self-claim a YM Hub identifier.
 
 ## Authorization
 

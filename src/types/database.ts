@@ -88,7 +88,8 @@ export type Database = {
       volunteers: {
         Row: {
           id: string;
-          ymhub_volunteer_id: string;
+          volunteer_code: string;
+          ymhub_volunteer_id: string | null;
           auth_user_id: string | null;
           ymhub_status: string | null;
           source_updated_at: string | null;
@@ -98,7 +99,8 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          ymhub_volunteer_id: string;
+          volunteer_code?: string;
+          ymhub_volunteer_id?: string | null;
           auth_user_id?: string | null;
           ymhub_status?: string | null;
           source_updated_at?: string | null;
@@ -107,6 +109,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          volunteer_code?: string;
+          ymhub_volunteer_id?: string | null;
           auth_user_id?: string | null;
           ymhub_status?: string | null;
           source_updated_at?: string | null;

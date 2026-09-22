@@ -41,10 +41,11 @@ The canonical identity chain is:
 Supabase Auth user ID
         <-> core.user_accounts.id
         <-> core.volunteers.auth_user_id
-        <-> core.volunteers.ymhub_volunteer_id
+        <-> core.volunteers.volunteer_code (KELxxxxx)
+        <-> optional core.volunteers.ymhub_volunteer_id
 ```
 
-`core.volunteers.id` is the stable KELUARGA identity. `ymhub_volunteer_id` becomes an optional backend reconciliation identifier attached when a matching YM Hub record exists. Email may assist reconciliation but must not be the sole permanent cross-system key.
+`core.volunteers.id` is the internal relational UUID. `core.volunteers.volunteer_code` is the immutable human-facing KELUARGA identifier (`KEL00001` format). `ymhub_volunteer_id` is optional and attached only for backend reconciliation. Email may assist matching but is not the permanent volunteer identifier.
 
 ## Point rules
 

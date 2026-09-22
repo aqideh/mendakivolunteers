@@ -21,7 +21,7 @@ KELUARGA is the volunteer-facing system of engagement and live operational syste
 
 | Data / capability | Authoritative owner | KELUARGA role |
 |---|---|---|
-| KELUARGA volunteer identity | KELUARGA | App-owned stable UUID; may exist before YM Hub linkage |
+| KELUARGA volunteer identity | KELUARGA | App-owned UUID plus immutable `KELxxxxx` volunteer code; may exist before YM Hub linkage |
 | YM Hub volunteer identifier / backend master record | YM Hub / Salesforce | Optional reconciliation link once available |
 | Recruitment journey and application status | KELUARGA | App-owned live workflow |
 | Registration / waitlist / cancellation | KELUARGA | App-owned live workflow; handed off/reconciled to YM Hub backend |
@@ -57,11 +57,12 @@ Canonical account chain:
 ```text
 Supabase Auth user UUID
         -> core.user_accounts.id
-        -> core.volunteers.id
+        -> core.volunteers.id (internal UUID)
+        -> core.volunteers.volunteer_code (KELxxxxx)
         -> optional core.volunteers.ymhub_volunteer_id
 ```
 
-`core.volunteers.id` is the stable KELUARGA volunteer identity and must be usable before any YM Hub record exists. `ymhub_volunteer_id` becomes a reconciliation key attached later when available.
+`core.volunteers.id` is the internal immutable relational key. `core.volunteers.volunteer_code` is the human-readable immutable KELUARGA volunteer ID in `KEL00001` format. Both exist independently of YM Hub; `ymhub_volunteer_id` becomes an optional reconciliation key attached later when available.
 
 ### `ymhub`
 
@@ -121,8 +122,9 @@ KELUARGA deliberately has more than one identity concept.
 Use:
 
 ```text
-core.volunteers.id
-        <-> ymhub_volunteer_id / Salesforce source ID
+core.volunteers.id (internal UUID)
+        <-> core.volunteers.volunteer_code (KELxxxxx)
+        <-> optional ymhub_volunteer_id / Salesforce source ID
 ```
 
 This KELUARGA identity is the primary app key for recruitment, registration and operations. The YM Hub ID is an optional cross-system reconciliation identifier rather than a prerequisite for creating a volunteer.
@@ -312,7 +314,7 @@ These must not be used interchangeably.
 
 Future changes should preserve these rules unless there is an explicit approved architecture decision:
 
-1. YM Hub remains authoritative for volunteer identity, registration, official attendance and verified hours.
+1. KELUARGA owns the operational volunteer identity, recruitment and registration workflow; YM Hub remains the authoritative backend organisational record after handoff, including verified attendance and hours.
 2. Operational KELUARGA attendance cannot directly become verified hours or points.
 3. `attendance_person_key` is an event-operations identity, not a cross-system canonical identifier.
 4. Browser code never receives service-role or Salesforce credentials.

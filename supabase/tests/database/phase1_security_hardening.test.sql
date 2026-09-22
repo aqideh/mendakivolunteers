@@ -16,7 +16,7 @@ select throws_ok(
     where ymhub_volunteer_id = 'PROTO-VOL-000001'
   $$,
   'P0001',
-  'YM Hub volunteer ID is immutable',
+  'YM Hub volunteer ID is immutable once assigned',
   'YM Hub volunteer IDs cannot be changed in place'
 );
 
