@@ -9,9 +9,11 @@ import {
   describePointRule,
   formatPointDelta,
   formatPointEntryKind,
+  formatPointSourceKind,
   formatPoints,
   type PointCalculationMethod,
   type PointEntryKind,
+  type PointSourceKind,
 } from "@/lib/gamification/read-model";
 import { createClient } from "@/lib/supabase/server";
 import { getYmHubSyncOutcome } from "@/lib/ymhub/read-model";
@@ -20,7 +22,7 @@ import type { AccountStatus, Database } from "@/types/database";
 export const metadata: Metadata = {
   title: "Points",
   description:
-    "View KELUARGA points derived from verified MENDAKI volunteer records.",
+    "View KELUARGA points from verified attendance and staff recognition.",
   robots: { index: false, follow: false },
 };
 
@@ -37,6 +39,7 @@ type PointRule = Readonly<{
 
 type PointLedgerEntry = Readonly<{
   id: string;
+  source_kind: PointSourceKind;
   source_record_id: string;
   source_title: string;
   source_occurred_at: string;
@@ -144,9 +147,9 @@ export default async function PointsPage() {
             <p className="eyebrow">KELUARGA recognition</p>
             <h1>Your points</h1>
             <p className="muted">
-              Points are calculated in KELUARGA from eligible records that have
-              been verified in YM Hub. Event-day roster check-in alone does not
-              award points.
+              Points can come from eligible attendance verified in YM Hub or an
+              explicit staff-recognition award. Event-day roster check-in alone
+              does not award points.
             </p>
           </div>
           <div className="actions">
@@ -237,8 +240,7 @@ export default async function PointsPage() {
               {entries.length === 0 ? (
                 <div className="panel empty-state">
                   <p>
-                    No point transactions are available. Only eligible, verified YM
-                    Hub records can create a point award.
+                    No point transactions are available yet.
                   </p>
                 </div>
               ) : (
@@ -247,11 +249,13 @@ export default async function PointsPage() {
                     <article className="record-card" key={entry.id}>
                       <div>
                         <p className="record-kicker">
-                          {formatPointEntryKind(entry.entry_kind)}
+                          {formatPointEntryKind(entry.entry_kind)} ·{" "}
+                          {formatPointSourceKind(entry.source_kind)}
                         </p>
                         <h3>{entry.source_title}</h3>
                         <p className="record-meta">
-                          Activity {formatSingaporeDateTime(entry.source_occurred_at)}
+                          {formatPointSourceKind(entry.source_kind)}{" "}
+                          {formatSingaporeDateTime(entry.source_occurred_at)}
                           {" · "}
                           {entry.reason}
                         </p>
@@ -272,8 +276,7 @@ export default async function PointsPage() {
       </main>
 
       <footer className="site-footer">
-        <span>YM Hub remains the source of truth for verified attendance and hours.
-        Keluarga MENDAKI applies the approved point rules and retains the point ledger.</span>
+        <span>YM Hub remains the source of truth for verified attendance and hours. Keluarga MENDAKI retains the append-only point ledger, including separately identified staff-recognition awards.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
