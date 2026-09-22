@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function PortalHeader({
   status,
-  dashboard = false,
   lite = false,
 }: {
   status: string;
