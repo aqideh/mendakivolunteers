@@ -50,6 +50,9 @@ declare
   clean_reason text := nullif(btrim(p_reason), '');
   manual_rule_id uuid;
   ledger_entry_id bigint;
+  existing_volunteer_id uuid;
+  existing_points numeric(12, 2);
+  existing_reason text;
   now_at timestamptz := now();
 begin
   if current_user_id is null then
@@ -95,14 +98,29 @@ begin
     hashtextextended('manual-points:' || p_request_id::text, 0)
   );
 
-  select ledger.id
-  into ledger_entry_id
+  select
+    ledger.id,
+    ledger.volunteer_id,
+    ledger.points_delta,
+    ledger.reason
+  into
+    ledger_entry_id,
+    existing_volunteer_id,
+    existing_points,
+    existing_reason
   from gamification.point_ledger_entries as ledger
   where ledger.source_kind = 'manual_recognition'
     and ledger.source_record_id = p_request_id::text
   limit 1;
 
   if ledger_entry_id is not null then
+    if existing_volunteer_id is distinct from p_volunteer_id
+       or existing_points is distinct from p_points::numeric(12, 2)
+       or existing_reason is distinct from clean_reason then
+      raise exception 'Request ID has already been used for a different point award'
+        using errcode = '23505';
+    end if;
+
     return ledger_entry_id;
   end if;
 
