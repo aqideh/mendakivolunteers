@@ -259,14 +259,21 @@ begin
     return 'already_linked';
   end if;
 
-  select count(*)::integer, min(id)
-  into candidate_count, candidate_id
+  select count(*)::integer
+  into candidate_count
   from core.volunteers
   where primary_email_normalized = verified_email
     and auth_user_id is null
     and account_access_eligible;
 
   if candidate_count = 1 then
+    select id
+    into candidate_id
+    from core.volunteers
+    where primary_email_normalized = verified_email
+      and auth_user_id is null
+      and account_access_eligible
+    limit 1;
     update core.volunteers
     set auth_user_id = current_user_id
     where id = candidate_id
