@@ -23,16 +23,16 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 
 - Public landing page, opportunities and news.
 - Event Guides with venue, directions, briefing, programme information and shift details.
-- Passwordless volunteer sign-in/sign-up with automatic immutable `KELxxxxx` volunteer IDs and a protected account dashboard.
+- Passwordless volunteer sign-in/sign-up with automatic immutable `KELxxxxx` volunteer IDs, a protected account dashboard and audited self-service name/mobile editing.
 - KELUARGA-owned programme/event records are the canonical source for opportunity discovery, shift selection, registrations, Event Guides and Event Operations.
 - Volunteers can register directly in KELUARGA and see pending/confirmed/waitlisted/rejected status plus in-app registration updates.
 - Read-only YM Hub attendance and verified-hours presentation when authoritative snapshots are available.
-- Points UI and append-only gamification foundation based only on verified YM Hub attendance.
+- Points UI and append-only gamification ledger with separate verified-attendance and audited staff-recognition sources.
 - Public volunteer Pathways skill tree.
 
 ### Staff-facing
 
-- Role-gated content, pathway, staff-access and event administration.
+- Role-gated content, pathway, staff-access, points-management and event administration.
 - Staff registration review with Confirm, Waitlist and Reject actions; confirmed registrations populate Event Operations directly.
 - Multi-day events and multiple shifts/timeslots with optional per-shift registration capacity.
 - CSV/pasted roster import, roster templates and optional Volunteer ID.
@@ -61,6 +61,7 @@ KELUARGA owns the live recruitment, registration and event-operations workflow. 
 Likewise:
 
 - roster check-in alone cannot award points;
+- manual staff-recognition points remain distinct from verified-attendance points and do not create YM Hub attendance records;
 - `attendance_person_key` is an event-level continuity key, not a canonical organisation-wide volunteer ID;
 - Volunteer Insights and Reviews do not automatically overwrite a central volunteer profile;
 - automatic MakLom handoff is currently deferred.
