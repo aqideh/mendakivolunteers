@@ -212,8 +212,9 @@ export default async function DashboardPage({
             <p className="eyebrow">Your KELUARGA account</p>
             <h1>Welcome, {displayName}</h1>
             <p className="muted">
-              Use KELUARGA for Event Guides and volunteer updates. YM Hub remains
-              the official system for registration, attendance and verified hours.
+              Use KELUARGA for recruitment, registrations, Event Guides and volunteer
+              updates. YM Hub remains the authoritative backend record for verified
+              attendance and hours after handoff.
             </p>
           </div>
           <div className="actions">
@@ -251,8 +252,8 @@ export default async function DashboardPage({
           <p className="eyebrow">Profile</p>
           <h2 id="profile-title">Your KELUARGA profile</h2>
           <p className="muted">
-            This login is separate from YM Hub. Use the same email address in both
-            systems where possible so your records can be matched reliably.
+            This is your KELUARGA volunteer account. A matching YM Hub backend record
+            may be linked later for organisational reconciliation and verified hours.
           </p>
           <dl className="data-list">
             <div className="data-row">
@@ -272,8 +273,8 @@ export default async function DashboardPage({
               </dd>
             </div>
             <div className="data-row">
-              <dt>Official volunteer profile</dt>
-              <dd>{volunteer ? "Linked to YM Hub" : "Pending next data update"}</dd>
+              <dt>Backend volunteer record</dt>
+              <dd>{volunteer?.ymhub_volunteer_id ? "Linked to YM Hub" : "Not yet linked"}</dd>
             </div>
             {volunteer?.last_synced_at ? (
               <div className="data-row">
@@ -286,12 +287,11 @@ export default async function DashboardPage({
 
         {!volunteer ? (
           <section className="section notice" aria-labelledby="link-title">
-            <h2 id="link-title">Official profile matching is in progress</h2>
+            <h2 id="link-title">Backend profile not linked yet</h2>
             <p>
-              You can still open Event Guides matched through the verified email
-              on an event roster. Your official registration history and verified
-              hours will appear after your YM Hub profile is linked through the
-              next approved data update.
+              Your KELUARGA account can still be used for app-owned recruitment,
+              registration and event operations. A YM Hub backend link is added
+              separately when the organisational record is reconciled.
             </p>
             <Link className="text-link" href="/journey">
               View your Event Guides

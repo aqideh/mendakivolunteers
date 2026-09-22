@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Phase 2 adds app-owned volunteer content while preserving YM Hub as the system of record for volunteer identity, registration, official attendance, and verified hours.
+Phase 2 adds app-owned volunteer content. The original implementation used external registration links; the September 2026 operating-model decision supersedes that registration boundary. KELUARGA is now the target volunteer-facing registration system, while YM Hub remains the authoritative backend organisational record.
 
 The portal owns:
 
@@ -11,14 +11,7 @@ The portal owns:
 - Content workflow state.
 - Revision snapshots and publication audit events.
 
-The portal does not own:
-
-- Opportunity registration.
-- Registration confirmation.
-- Official attendance or hours.
-- Volunteer master records.
-
-Every opportunity registration action is an HTTPS link-out to YM Hub.
+The original Phase 2 slice did not own registration; every registration action was an HTTPS link-out. That implementation is now transitional. The target KELUARGA registration domain is documented in `recruitment-registration-event-operations.md` and will be introduced through new schema migrations rather than by rewriting this historical phase.
 
 ## Application routes
 
@@ -70,7 +63,7 @@ The `content` schema contains:
 - `content.news_posts`
 - `content.revisions`
 
-Opportunity records contain an optional `ymhub_activity_id` for future reconciliation and a required HTTPS `registration_url`. Neither field makes the application authoritative for registrations.
+Opportunity records currently contain an optional `ymhub_activity_id` and required HTTPS `registration_url`. These fields remain for compatibility during the transition. A future migration will decouple opportunity publication from an external registration URL and link opportunities to first-class KELUARGA registration records.
 
 Content bodies are stored as plain text in this phase. This deliberately avoids introducing an unsanitized HTML or rich-text execution surface. A later rich-text editor must define an allowlist, server-side sanitization, media policy, and migration approach before it is enabled.
 
@@ -109,7 +102,7 @@ Deleting CMS records is intentionally excluded from this phase. Archiving preser
 - Active-account checks for CMS users.
 - Separate editor and publisher roles.
 - Database-enforced protection for already-live content.
-- HTTPS-only registration URLs.
+- HTTPS-only external registration URLs while the transitional link-out remains in use.
 - UUID validation before edit queries or writes.
 - Server-side validation for length, date ordering, status requirements, and URLs.
 - No Salesforce or Supabase service credentials in browser code.

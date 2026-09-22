@@ -1,6 +1,6 @@
 # Current system architecture
 
-**Last reviewed:** 16 September 2026
+**Last reviewed:** 22 September 2026
 
 This document describes the system as it exists now and the boundaries that future work must preserve.
 
@@ -8,25 +8,26 @@ This document describes the system as it exists now and the boundaries that futu
 
 KELUARGA is a Next.js application hosted on Vercel with Supabase providing authentication and PostgreSQL storage.
 
-It currently combines three layers:
+It combines four layers:
 
-1. **Public volunteer companion** — opportunities, news, Event Guides and pathways.
-2. **Staff event operations** — events, shifts, rosters, walk-ins, attendance, reviews, insights, feedback and reporting.
-3. **Read-only official volunteer-data projection** — records imported from YM Hub/Salesforce for volunteer identity, registration, official attendance and verified hours.
+1. **Volunteer recruitment and discovery** — pathways, recruitment intake, opportunities and news.
+2. **KELUARGA registration** — event/opportunity registration, waitlist, cancellation and shift selection.
+3. **Staff event operations** — events, shifts, rosters, walk-ins, attendance, reviews, insights, feedback and reporting.
+4. **Backend record reconciliation** — YM Hub/Salesforce projections for organisational record matching, verified attendance and verified hours.
 
-KELUARGA is not intended to replace YM Hub as MENDAKI's authoritative volunteer system.
+KELUARGA is the volunteer-facing system of engagement and live operational system for recruitment, registration and event operations. YM Hub remains MENDAKI's authoritative backend organisational source of record.
 
 ## 2. System ownership
 
 | Data / capability | Authoritative owner | KELUARGA role |
 |---|---|---|
-| Volunteer master identity | YM Hub / Salesforce | Read-only projection and account linking |
-| Volunteer status | YM Hub / Salesforce | Read-only projection |
-| Registration / waitlist / cancellation | YM Hub / approved registration system | Read-only projection after sync |
-| Official attendance | YM Hub | Read-only after reconciliation/import |
-| Verified volunteer hours | YM Hub | Read-only |
+| KELUARGA volunteer identity | KELUARGA | App-owned stable UUID; may exist before YM Hub linkage |
+| YM Hub volunteer identifier / backend master record | YM Hub / Salesforce | Optional reconciliation link once available |
+| Recruitment journey and application status | KELUARGA | App-owned live workflow |
+| Registration / waitlist / cancellation | KELUARGA | App-owned live workflow; handed off/reconciled to YM Hub backend |
+| Official verified attendance / hours | YM Hub | Returned/read after backend verification |
 | KELUARGA login/session | Supabase Auth / KELUARGA | App-owned |
-| Opportunity presentation | KELUARGA CMS | App-owned, with external registration link |
+| Opportunity presentation | KELUARGA CMS | App-owned; target state uses in-app registration |
 | News | KELUARGA CMS | App-owned |
 | Event Guides and operational instructions | KELUARGA | App-owned |
 | Event roster and shifts | KELUARGA operations | Operational working data |
@@ -56,19 +57,19 @@ Canonical account chain:
 ```text
 Supabase Auth user UUID
         -> core.user_accounts.id
-        -> core.volunteers.auth_user_id
-        -> core.volunteers.ymhub_volunteer_id
+        -> core.volunteers.id
+        -> optional core.volunteers.ymhub_volunteer_id
 ```
 
-`core.volunteers.id` is the internal KELUARGA volunteer identity. `ymhub_volunteer_id` links that record to the authoritative upstream volunteer record.
+`core.volunteers.id` is the stable KELUARGA volunteer identity and must be usable before any YM Hub record exists. `ymhub_volunteer_id` becomes a reconciliation key attached later when available.
 
 ### `ymhub`
 
 Purpose:
 
-- read-only authoritative projections received from YM Hub/Salesforce;
-- registration snapshots;
-- attendance snapshots;
+- read-only backend projections received from YM Hub/Salesforce;
+- legacy/backend registration snapshots used for reconciliation where required;
+- verified attendance snapshots;
 - volunteer sync/freshness state.
 
 This layer is intentionally independent of the ingestion mechanism. Controlled CSV/batch imports can populate it now; a later server-only Salesforce adapter can populate the same model without redesigning volunteer-facing pages.
@@ -124,7 +125,7 @@ core.volunteers.id
         <-> ymhub_volunteer_id / Salesforce source ID
 ```
 
-This identity is appropriate for official volunteer history and future cross-system reconciliation.
+This KELUARGA identity is the primary app key for recruitment, registration and operations. The YM Hub ID is an optional cross-system reconciliation identifier rather than a prerequisite for creating a volunteer.
 
 ### Event operational identity
 
@@ -151,8 +152,8 @@ This distinction matters for reporting: roster rows/deployments are not the same
 
 - Supabase Auth session.
 - Passwordless email sign-in supported.
-- Access to personal dashboard/points depends on authenticated account linking.
-- KELUARGA authentication remains separate from YM Hub authentication during the current integration phase.
+- Access to personal recruitment, registration and event information depends on the KELUARGA account/volunteer link.
+- Volunteers should not need a YM Hub sign-in for ordinary recruitment or registration.
 
 ### Staff
 
@@ -168,17 +169,18 @@ Database RLS and grants provide a second enforcement layer for sensitive tables.
 
 ## 6. Major data flows
 
-### Opportunity discovery and registration
+### Recruitment, opportunity discovery and registration
 
 ```text
-KELUARGA CMS / imported opportunity
+KELUARGA recruitment / account
         -> public opportunity page
-        -> official external registration destination
-        -> YM Hub / approved registration source
-        -> later authoritative registration snapshot into KELUARGA
+        -> KELUARGA registration / waitlist / shift selection
+        -> confirmed registration
+        -> KELUARGA event roster
+        -> event operations
 ```
 
-KELUARGA should not create an authoritative registration merely because a volunteer clicked Register.
+KELUARGA registration state is immediate operational truth for the volunteer-facing workflow. A separate backend handoff then reconciles the relevant records into YM Hub.
 
 ### Event preparation
 
@@ -197,8 +199,9 @@ roster / walk-in
         -> staff or approved QR attendance action
         -> KELUARGA operational attendance
         -> monitor / exception handling / reconciliation
-        -> attendance export / downstream processing
-        -> YM Hub official attendance
+        -> event report / downstream processing
+        -> MakLom manual report upload where applicable
+        -> YM Hub backend attendance handoff / verification
         -> later verified snapshot returned to KELUARGA
 ```
 
@@ -238,18 +241,11 @@ official YM Hub attendance snapshot
 
 ## 7. Integration direction
 
-### Immediate: controlled batch files
+### Immediate: KELUARGA-owned workflow plus controlled backend handoff
 
-The current approved direction is batch exchange with YM Hub/Salesforce rather than a browser or direct production Salesforce connection.
+Volunteer-facing recruitment and registration no longer depend on inbound YM Hub registration data. KELUARGA must create and retain its own stable volunteer, recruitment, registration, shift-assignment and roster records.
 
-The target inbound source sets documented in the repo are:
-
-- Person Account;
-- Volunteer Initiative;
-- Job Position Shift;
-- Job Position Assignment.
-
-The intended batch process must include schema validation, identifiers, checksums, batch history, exception handling and data-freshness status.
+Volunteer Management will define the detailed KELUARGA -> YM Hub handoff separately. Any batch or API process must include stable identifiers, validation, checksums/idempotency, history, exception handling and visible reconciliation state.
 
 ### Future: server-only Salesforce/YM Hub adapter
 
@@ -263,11 +259,11 @@ If approved after security review, a future adapter should:
 - retain audit/reconciliation capability;
 - never expose Salesforce credentials to the browser.
 
-The ingestion mechanism can change without changing source-of-truth ownership.
+The backend handoff mechanism may change without changing KELUARGA's ownership of the volunteer-facing recruitment/registration workflow or YM Hub's role as the authoritative organisational backend record.
 
 ### MakLom
 
-Automatic KELUARGA -> MakLom synchronization is intentionally off.
+Automatic KELUARGA -> MakLom synchronization remains intentionally off. The current procedure is to generate the event-operations report in KELUARGA and upload it to MakLom manually.
 
 If later implemented, use a reviewed inbox model:
 

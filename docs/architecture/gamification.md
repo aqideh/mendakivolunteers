@@ -2,9 +2,7 @@
 
 ## Purpose
 
-KELUARGA owns the volunteer points programme, but it does not decide whether an
-activity was officially attended. YM Hub remains authoritative for volunteer
-identity, registration, verified attendance and verified hours.
+KELUARGA owns the volunteer points programme, recruitment and registration workflow. YM Hub remains the authoritative backend record for verified attendance and verified hours after the approved handoff/reconciliation process.
 
 The points pipeline is therefore:
 
@@ -33,9 +31,7 @@ information requires a KELUARGA session:
 A passwordless email link creates an ordinary KELUARGA browser session. It is a
 sign-in method, not a requirement to request a new email on every page visit.
 
-The official registration destination remains configuration-driven. It can move
-from Volunteer.gov.sg to YM Hub without changing the KELUARGA identity or points
-model.
+External registration destinations are transitional. The target model registers volunteers directly in KELUARGA and hands the resulting records to event operations and, separately, to YM Hub on the backend.
 
 ## Account and identity model
 
@@ -48,11 +44,7 @@ Supabase Auth user ID
         <-> core.volunteers.ymhub_volunteer_id
 ```
 
-`ymhub_volunteer_id` is the stable authoritative identifier. A verified email is
-used only to link an account when exactly one approved YM Hub volunteer record
-matches. Shared or ambiguous email matches are sent to an exception case rather
-than linked automatically. The transitional event-roster email match remains in
-place so staff Event Guide operations continue during batch-integration rollout.
+`core.volunteers.id` is the stable KELUARGA identity. `ymhub_volunteer_id` becomes an optional backend reconciliation identifier attached when a matching YM Hub record exists. Email may assist reconciliation but must not be the sole permanent cross-system key.
 
 ## Point rules
 
@@ -105,6 +97,4 @@ The gamification schema has no foreign key, trigger or query against:
 - `public.phaseone_attendance`;
 - staff event-operation check-in or check-out actions.
 
-The roster feature continues to operate independently. Its eventual export to YM
-Hub may lead to an authoritative verified record later, but only that verified YM
-Hub snapshot can enter point calculation.
+The roster is populated from KELUARGA registrations (plus explicit walk-ins) in the target model. Its later handoff to YM Hub may lead to a verified attendance record; only the verified record should enter any points rule that requires verified attendance.

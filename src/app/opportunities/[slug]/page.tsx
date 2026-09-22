@@ -111,16 +111,15 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
           </div>
 
           <aside className="panel source-boundary">
-            <h2>Continue to the official registration portal</h2>
+            <h2>Registration transition</h2>
             <p>
-              Opportunity registration is separate from your KELUARGA account. You
-              may be asked to sign in to the registration portal before completing
-              your registration.
+              KELUARGA is becoming MENDAKI&apos;s volunteer-facing registration channel.
+              This opportunity still uses a linked registration destination while
+              the in-app registration workflow is being implemented.
             </p>
             <p className="muted">
-              Use the same email address in both systems where possible. Your
-              personal Event Guide will appear after the next approved data or
-              roster update.
+              Once the transition is complete, registrations will be recorded in
+              KELUARGA and passed directly into event operations.
             </p>
             <a
               className="button button-primary"
@@ -134,9 +133,7 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
         </article>
       </main>
       <footer className="site-footer">
-        <span>Registration is managed through the official registration portal.
-        Keluarga MENDAKI uses a separate sign-in for personal Event Guides, records and
-        points.</span>
+        <span>Keluarga MENDAKI is the target volunteer-facing recruitment and registration channel. Linked registration destinations are transitional.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">

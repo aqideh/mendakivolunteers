@@ -2,9 +2,7 @@
 
 ## Purpose
 
-Volunteer Pathways gives volunteers a shared view of possible development roles
-while keeping official volunteer identity, registration, attendance, and verified
-hours in YM Hub.
+Volunteer Pathways gives volunteers a shared view of possible development roles. KELUARGA now owns the volunteer-facing recruitment and registration journey; YM Hub remains the authoritative backend organisational record and source for verified attendance/hours after handoff.
 
 The portal owns:
 
@@ -74,7 +72,7 @@ deleted.
 A later delivery may add a staff-managed `pathways.volunteer_positions` history
 using:
 
-- `core.volunteers.id` as the volunteer key.
+- `core.volunteers.id` as the stable KELUARGA volunteer key, whether or not a YM Hub ID has been attached yet.
 - The pathway map and exact version used for the assignment.
 - A stable stage key rather than a display title.
 - Effective and end timestamps, assigning staff member, reason, and notes.

@@ -1,8 +1,8 @@
 # KELUARGA
 
-KELUARGA is MENDAKI's volunteer companion and event-operations web application. It supplements YM Hub; **YM Hub remains authoritative for volunteer identity, registration, official attendance, and verified volunteer hours.**
+KELUARGA is MENDAKI's volunteer recruitment, registration and event-operations web application. Volunteers use KELUARGA to enter the recruitment journey, discover opportunities, register and participate in events. **YM Hub remains MENDAKI's authoritative backend organisational record; the backend handoff/reconciliation process is managed separately from the volunteer-facing journey.**
 
-KELUARGA currently provides public volunteer content, staff event-day operations, volunteer-development tools, and read-only personal views of authoritative records imported from YM Hub.
+KELUARGA provides public volunteer content, app-owned recruitment and registration workflows, staff event-day operations, volunteer-development tools, and read-only views of verified backend records where appropriate.
 
 ## Production ownership
 
@@ -24,7 +24,8 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 - Public landing page, opportunities and news.
 - Event Guides with venue, directions, briefing, programme information and shift details.
 - Passwordless volunteer sign-in and protected account dashboard.
-- Read-only YM Hub registration, official attendance and verified-hours presentation when authoritative snapshots are available.
+- KELUARGA-owned recruitment and registration are the target operating model; implementation of the first-class registration domain is the next delivery slice.
+- Read-only YM Hub attendance and verified-hours presentation when authoritative snapshots are available.
 - Points UI and append-only gamification foundation based only on verified YM Hub attendance.
 - Public volunteer Pathways skill tree.
 
@@ -48,12 +49,12 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 - Supabase migrations, Row Level Security policies and pgTAP database tests.
 - GitHub Actions validation for lint, type checking, tests, builds, dependency audit and database checks.
 - Scheduled Volunteer.gov.sg opportunity import through Vercel Cron as a transitional source.
-- Read-only YM Hub projection foundations and volunteer sync-state model.
-- Controlled batch processing is the immediate YM Hub/Salesforce integration direction; direct production Salesforce synchronization is not enabled.
+- Read-only YM Hub projection foundations and volunteer sync-state model remain for backend reconciliation and verified records.
+- The KELUARGA -> YM Hub backend handoff is being designed separately by Volunteer Management; direct production Salesforce synchronization is not enabled.
 
 ## System boundaries
 
-KELUARGA's event-day attendance is an **operational record**, not automatically an official volunteering record. Staff may use it for event operations, reconciliation and downstream export, but official attendance and verified hours remain YM Hub-owned.
+KELUARGA owns the live recruitment, registration and event-operations workflow. Event-day attendance remains an **operational record** until the agreed backend handoff/reconciliation is completed; verified volunteer hours remain YM Hub-owned.
 
 Likewise:
 
@@ -72,6 +73,7 @@ Key project records:
 - [Development roadmap](docs/development-roadmap.md) — upcoming work, dependencies and sequencing.
 - [Known issues and technical debt](docs/known-issues.md) — confirmed bugs, limitations, deferred work and regression watch-points.
 - [Current system architecture](docs/architecture/current-system.md) — data ownership, identity, integrations and architecture invariants.
+- [Recruitment, registration and event-operations operating model](docs/architecture/recruitment-registration-event-operations.md) — the September 2026 target workflow and handoff boundaries.
 - [Launch and batch-integration decision record](docs/operations/launch-readiness-and-batch-integration-direction.md).
 - [Production handover](docs/operations/production-handover.md).
 - [Threat model](docs/security/threat-model.md).
