@@ -21,7 +21,6 @@ export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
   const pathname = usePathname() ?? "";
   const items: NavigationItem[] = [
     { href: "/opportunities", label: "Opportunities" },
-    { href: "/journey", label: "Event Guide" },
   ];
 
   if (canManageEvents) {
@@ -30,7 +29,7 @@ export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
 
   items.push(
     isSignedIn
-      ? { href: "/dashboard", label: "Dashboard" }
+      ? { href: "/dashboard", label: "My Profile" }
       : { href: "/login", label: "Login" },
   );
 
