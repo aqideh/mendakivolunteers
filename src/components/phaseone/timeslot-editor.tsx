@@ -56,6 +56,7 @@ export function TimeslotEditor({ initialTimeslots }: { initialTimeslots: Timeslo
         startsAt: source.startsAt,
         endsAt: source.endsAt,
         status: source.status,
+        registrationCapacity: source.registrationCapacity,
       },
     ]);
   }
