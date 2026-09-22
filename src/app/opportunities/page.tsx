@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { ContributorHero } from "@/app/opportunities/contributor-hero";
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDate } from "@/lib/content/dates";
 import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
@@ -19,21 +20,11 @@ export default async function OpportunitiesPage() {
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
       <main className="phaseone-frame phaseone-opportunities-frame">
-        <section className="phaseone-intro phaseone-opportunities-hero">
-          <div className="phaseone-opportunities-hero-inner">
-            <h1>Volunteer with the community</h1>
-            <button
-              className="button button-primary phaseone-project-idea-cta"
-              type="button"
-              disabled
-            >
-              Have an idea for a project that will benefit the community?
-            </button>
-          </div>
-        </section>
+        <ContributorHero />
 
         {opportunities.length > 0 ? (
           <section
+            id="opportunity-cards"
             className="phaseone-opportunity-list phaseone-opportunities-grid"
             aria-label="Upcoming volunteer opportunities"
           >
@@ -92,7 +83,7 @@ export default async function OpportunitiesPage() {
             ))}
           </section>
         ) : (
-          <section className="panel empty-state phaseone-empty-state">
+          <section id="opportunity-cards" className="panel empty-state phaseone-empty-state">
             <h2>No upcoming opportunities right now.</h2>
             <p className="muted">
               New MENDAKI opportunities will appear here after they are published
