@@ -47,18 +47,17 @@ Implemented:
 - landing page;
 - opportunity discovery;
 - news;
-- KELUARGA-managed opportunity/news CMS;
-- external registration link-outs (transitional);
+- KELUARGA-managed programme/event records for public opportunity discovery;
+- direct KELUARGA registration with shift selection and status display;
 - Event Guides with venue, directions, briefing and programme information;
-- published volunteer pathways.
+- published volunteer pathways;
+- retired Volunteer.gov.sg runtime importer and imported-card override flow.
 
 ### Next work
 
-**In progress:** KELUARGA programme/event records now form the canonical opportunity + Event Guide + Event Operations model. The Volunteer.gov.sg importer and card-override runtime are retired. Next: first-class registration state, capacity/waitlist enforcement, shift selection and registration-to-roster handoff.
+**Planned:** add audited volunteer/staff cancellation and withdrawal handling on top of the first-class registration lifecycle.
 
 **Decision required:** confirm which Event Guide content can be public and which content requires authentication, assignment, access code or signed-link access.
-
-**Planned:** retire or narrow the transitional Volunteer.gov.sg opportunity sync once the authoritative/approved opportunity feed is settled.
 
 ## 3. Staff event operations
 
@@ -86,7 +85,7 @@ Implemented:
 
 ### Next work
 
-**Planned - priority:** make confirmed KELUARGA registrations populate event rosters idempotently, preserving registration IDs and explicit walk-in exceptions.
+**Live:** confirmed KELUARGA registrations populate Event Operations rosters idempotently with canonical volunteer and registration IDs; walk-ins remain an explicit exception.
 
 **Planned:** complete formal backend-handoff tracking for operational attendance sent to YM Hub, including:
 
@@ -103,18 +102,18 @@ Implemented:
 
 ## 4. KELUARGA registration and YM Hub backend handoff
 
-**Status: Registration target model approved; implementation pending. YM Hub reconciliation foundation live.**
+**Status: KELUARGA registration foundation live. YM Hub reconciliation foundation live.**
 
 Already implemented:
 
-- `core` account/volunteer identity model;
-- `ymhub` projection schema;
-- registration snapshots;
-- attendance snapshots;
-- sync/freshness state;
-- dashboard read path;
-- verified-hours presentation;
-- gamification reconciliation contract.
+- native KELUARGA account provisioning with immutable `KELxxxxx` volunteer IDs;
+- canonical programme/event records and direct opportunity registration;
+- multi-shift selections and optional per-shift capacity;
+- pending / confirmed / waitlisted / rejected registration lifecycle;
+- staff registration review and in-app registration notifications;
+- idempotent confirmed-registration-to-roster handoff;
+- `ymhub` projection schema, attendance snapshots and sync/freshness state;
+- verified-hours presentation and gamification reconciliation contract.
 
 ### Immediate integration direction
 
@@ -145,7 +144,7 @@ Build a staff-only batch workflow with:
 
 ### Identity linking
 
-**Status: Identity foundation live; account/profile provisioning follows in the signup slice**
+**Status: Native identity and account/profile provisioning live**
 
 Use the identity chain:
 
@@ -157,14 +156,13 @@ Supabase Auth user
         -> optional Salesforce/YM Hub source ID after handoff
 ```
 
-Planned:
+Implemented / ongoing:
 
-- create KELUARGA volunteers before any YM Hub record exists; the schema now supports this with generated `KELxxxxx` IDs;
-- controlled backend linking/reconciliation;
-- exact source-ID matching where available;
-- email verification;
-- exception queue for ambiguous matches;
-- support workflow for missing/incorrect links.
+- verified email signup can create a native KELUARGA volunteer before any YM Hub record exists;
+- every native volunteer receives an immutable `KELxxxxx` ID;
+- an exact eligible legacy email match can be linked without creating a duplicate volunteer;
+- ambiguous legacy matches enter a review state instead of auto-linking;
+- controlled backend source-ID linking/reconciliation and support tooling remain ongoing.
 
 Do not allow volunteers to claim a profile by typing an unverified source ID or email address.
 
@@ -194,19 +192,21 @@ KELUARGA and YM Hub remain separate login/session systems. Reassess SSO only as 
 
 ## 5. Personal volunteer dashboard
 
-**Status: UI live; must be refactored to show KELUARGA registration state first and YM Hub verification separately**
+**Status: UI live with KELUARGA registration state and YM Hub verification separated**
 
 Implemented:
 
-- linked/unlinked account states;
-- imported YM Hub registrations (legacy/backend reconciliation view);
+- KELUARGA volunteer ID display;
+- KELUARGA registration status and recent in-app registration updates;
+- linked/unlinked YM Hub reconciliation state;
+- imported YM Hub registrations as a legacy/backend reconciliation view;
 - imported official attendance;
 - verified hours;
 - sync/failure state handling.
 
 ### Next work
 
-**Planned - priority:** replace volunteer-facing registration status with the new KELUARGA registration domain while retaining YM Hub data for backend reconciliation and verified attendance/hours.
+**Planned:** add broader profile editing and registration cancellation/withdrawal self-service with audited state transitions.
 
 **Planned:** operate the required YM Hub backend projections reliably through the agreed handoff process.
 
@@ -344,7 +344,7 @@ Do not use KELUARGA `attendance_person_key` as the canonical MakLom identity.
 
 1. Maintain CI/security/database regression coverage.
 2. Complete realistic event-day UAT for attendance, continuous shifts, walk-ins, QR and reconciliation.
-3. Keep Event Guide access policy and registration destination copy explicit.
+3. Keep Event Guide access policy and registration-state messaging explicit.
 4. Maintain operational runbooks, support ownership and rollback procedures.
 
 ### P1 — make the YM Hub batch integration operational

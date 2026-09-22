@@ -23,8 +23,9 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 
 - Public landing page, opportunities and news.
 - Event Guides with venue, directions, briefing, programme information and shift details.
-- Passwordless volunteer sign-in and protected account dashboard.
-- KELUARGA-owned programme/event records are the canonical source for opportunity discovery, registrations, Event Guides and Event Operations.
+- Passwordless volunteer sign-in/sign-up with automatic immutable `KELxxxxx` volunteer IDs and a protected account dashboard.
+- KELUARGA-owned programme/event records are the canonical source for opportunity discovery, shift selection, registrations, Event Guides and Event Operations.
+- Volunteers can register directly in KELUARGA and see pending/confirmed/waitlisted/rejected status plus in-app registration updates.
 - Read-only YM Hub attendance and verified-hours presentation when authoritative snapshots are available.
 - Points UI and append-only gamification foundation based only on verified YM Hub attendance.
 - Public volunteer Pathways skill tree.
@@ -32,7 +33,8 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 ### Staff-facing
 
 - Role-gated content, pathway, staff-access and event administration.
-- Multi-day events and multiple shifts/timeslots.
+- Staff registration review with Confirm, Waitlist and Reject actions; confirmed registrations populate Event Operations directly.
+- Multi-day events and multiple shifts/timeslots with optional per-shift registration capacity.
 - CSV/pasted roster import, roster templates and optional Volunteer ID.
 - Walk-in/last-minute volunteers, dietary requirements and contact corrections.
 - Check-in/check-out, absent/withdrawn states, audited corrections and bulk checkout.

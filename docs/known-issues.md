@@ -9,7 +9,7 @@ This register deliberately separates confirmed defects from product limitations,
 
 At the time of this review:
 
-- the recruitment/registration implementation is tracked in GitHub Issue #145;
+- the first-class KELUARGA registration workflow is implemented; broader recruitment intake and volunteer self-service cancellation/withdrawal remain follow-on work;
 - a default-branch code search found **no explicit `TODO` or `FIXME` markers**;
 - this does **not** mean the application is bug-free;
 - newly confirmed reproducible defects should be opened as GitHub Issues and linked here when material or recurring.
@@ -18,7 +18,7 @@ At the time of this review:
 
 | Area | Status | Limitation / risk | Current handling | Next step |
 |---|---|---|---|---|
-| KELUARGA registration domain | Planned / priority | The approved operating model requires KELUARGA-owned recruitment, registration, waitlist/cancellation and shift selection, but the deployed schema still uses transitional external registration links. | Decision and target architecture are documented; Issue #145 tracks implementation. | Add forward migrations, registration lifecycle, capacity/waitlist logic and registration-to-roster handoff. |
+| KELUARGA registration domain | Live foundation | Volunteers can sign up, receive a KEL ID, select shifts and submit registrations; staff can confirm, waitlist or reject, and confirmed registrations populate rosters transactionally. | Capacity is enforced at confirmation and registration status changes generate in-app notifications. | Add volunteer/staff cancellation and withdrawal flows with audited roster-state handling before relying on them operationally. |
 | YM Hub backend reconciliation | Integration dependency | Verified attendance/hours and organisational backend reconciliation depend on a reliable KELUARGA -> YM Hub handoff. | Existing read models fail explicitly rather than fabricating verified records. | Define the Volunteer Management handoff process and build controlled reconciliation state. |
 | YM Hub batch centre | Planned / may be narrowed | The repository has a projection/read-model foundation. Under the new model, inbound registration is no longer required for volunteer-facing operations, but controlled batch tooling may still be needed for backend reconciliation and verified records. | Integration work remains outside the volunteer-facing registration flow. | Scope batch tooling around the final Volunteer Management handoff procedure. |
 | Attendance export to YM Hub | Planned hardening | KELUARGA operational attendance must still be mapped/reconciled into authoritative YM Hub attendance. | Event attendance can be exported; KELUARGA does not claim this is verified YM Hub attendance. | Add formal export-batch tracking, assignment matching and accepted/rejected reconciliation. |
@@ -27,7 +27,7 @@ At the time of this review:
 | MakLom handoff | Intentionally deferred | Volunteer Insights are not automatically transferred to MakLom. | Accepted insights remain in KELUARGA and can be exported. | If reactivated, use a reviewed inbox/matching workflow rather than direct profile mutation. |
 | Cross-event impact analytics | Planned feature | Event-level reports are rich, but there is not yet a complete longitudinal impact dashboard across events and volunteers. | Staff can export event attendance, insights, reviews and feedback. | Define agreed impact metrics, then build aggregate reporting without double counting multi-shift volunteers. |
 | Gamification rollout | Policy/integration dependency | Points infrastructure exists, but meaningful production awards require approved rules plus verified YM Hub attendance. | Roster check-in cannot award points. | Approve rule values/effective dates and activate only after authoritative data flow is stable. |
-| Volunteer.gov.sg import | Transitional | Scheduled opportunity import exists but is not the intended long-term recruitment/registration channel. | Current import remains isolated from KELUARGA registration and verified attendance/points logic. | Retire or narrow it as KELUARGA-owned opportunity/registration management takes over. |
+| Volunteer.gov.sg import | Retired runtime integration | Historical imported rows remain for provenance, but opportunity discovery and programme operations no longer read from them. | Cron/import/parser and imported-card editing are removed from runtime. | Remove historical database objects only through a later deliberate cleanup migration if retention is no longer useful. |
 | Event Guide sensitive links | Access-policy decision | Guides may contain briefing or WhatsApp links and other operational information. | Database-backed access controls exist, but the intended broad-launch policy must remain explicit. | Confirm which guide sections may be public versus assignment/code/signed-link gated. |
 | `phaseone` naming | Technical debt, not a bug | Historic `phaseone` identifiers remain throughout routes, modules, tables and migrations. | Kept stable to avoid breaking deployed contracts. | Rename only through a planned API/database migration; do not perform cosmetic mass renames. |
 
