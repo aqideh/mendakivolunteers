@@ -27,7 +27,7 @@ export default async function PasswordPage() {
           </p>
           <PasswordForm />
           <p className="form-help">
-            <Link href="/dashboard">Return to the dashboard</Link>
+            <Link href="/dashboard">Return to My Profile</Link>
           </p>
         </section>
       </main>
