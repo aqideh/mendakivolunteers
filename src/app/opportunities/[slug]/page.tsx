@@ -173,9 +173,13 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
   }
 
   const editable = !registration || registration.status === "pending";
-  const descriptionParagraphs = (event.opportunity_description ?? "")
+  const descriptionParagraphs: string[] = (
+    typeof event.opportunity_description === "string"
+      ? event.opportunity_description
+      : ""
+  )
     .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
+    .map((paragraph: string) => paragraph.trim())
     .filter(Boolean);
 
   return (
@@ -272,8 +276,6 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
                   Sign in or sign up to register
                 </Link>
               </>
-            ) : registrationClosed ? (
-              <p className="empty-state">Registration is closed for this programme.</p>
             ) : editable ? (
               <form action={submitOpportunityRegistration} className="phaseone-admin-form">
                 <input name="eventId" type="hidden" value={event.id} />

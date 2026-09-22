@@ -103,7 +103,7 @@ export default async function RegistrationsAdminPage({
   const timeslotsResult = timeslotIds.length
     ? await admin
         .from("phaseone_event_timeslots")
-        .select("id, label, starts_at, ends_at, registration_capacity")
+        .select("id, label, starts_at, ends_at, status, sort_order, registration_capacity")
         .in("id", timeslotIds)
     : { data: [], error: null };
 
