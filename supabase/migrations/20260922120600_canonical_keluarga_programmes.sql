@@ -77,7 +77,9 @@ grant select (
   sort_order
 ) on public.phaseone_event_timeslots to anon, authenticated;
 
-drop function if exists public.list_phaseone_opportunities();
+-- The retired imported-opportunity RPC is intentionally retained during this
+-- deployment so the schema can be promoted before the application without a
+-- compatibility gap. Runtime code no longer calls it.
 
 comment on column public.phaseone_events.opportunity_summary is
   'Public summary for the KELUARGA opportunity listing. The event record is the canonical programme/event record.';
