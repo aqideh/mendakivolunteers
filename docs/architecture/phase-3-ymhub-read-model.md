@@ -2,9 +2,7 @@
 
 ## Purpose
 
-Phase 3 introduces the application-side read path for authoritative YM Hub
-registration and attendance data. It does not enable Salesforce connectivity by
-itself and does not make the portal authoritative for either record type.
+Phase 3 originally introduced an application-side read path for YM Hub registration and attendance data. Following the 22 September 2026 operating-model change, **YM Hub registration snapshots are a backend reconciliation/legacy projection rather than the volunteer-facing registration source.** Verified attendance and hours remain authoritative backend inputs.
 
 ## Data flow
 
@@ -16,7 +14,7 @@ Future verified sync worker
 service_role writes
   |
   +-- ymhub.volunteer_sync_status
-  +-- ymhub.registration_snapshots
+  +-- ymhub.registration_snapshots  # backend reconciliation / legacy projection
   +-- ymhub.attendance_snapshots
   |
   | authenticated SELECT with forced RLS
@@ -72,15 +70,14 @@ row authorization are separate controls.
 
 `supabase/seed.sql` contains explicit development/test fixtures. They are loaded
 only by a local database reset and are never selected as a runtime alternative to
-Salesforce. Production remains blocked by the release readiness check until the
-real adapter is implemented and verified against a non-production YM Hub tenant.
+Salesforce. Direct Salesforce integration remains a separate approval/integration project. KELUARGA recruitment, registration and event operations must be able to function without a live Salesforce adapter.
 
-## Remaining integration work
+## Remaining backend reconciliation work
 
 1. Obtain the object, field, relationship, status, deletion, and volume contract
    listed in `docs/ymhub-field-request.md`.
-2. Implement a server-only read adapter with explicit API version and mappings.
+2. Define the Volunteer Management KELUARGA -> YM Hub handoff contract; implement a server-only adapter only if/when approved.
 3. Implement idempotent reconciliation and operational sync-run logging.
 4. Test mapping, pagination, rate limiting, expired credentials, partial failure,
    deletion, merge, and stale-data behaviour against a non-production tenant.
-5. Complete security review before removing the production release block.
+5. Complete security review before enabling any direct production API integration.
