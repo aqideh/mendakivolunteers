@@ -100,11 +100,6 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
   const parameters = await searchParams;
   const success = parameter(parameters, "success");
   const error = parameter(parameters, "error");
-  const registrationClosed = Boolean(
-    event.registration_deadline &&
-      new Date(event.registration_deadline).getTime() < Date.now(),
-  );
-
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub ?? null;
