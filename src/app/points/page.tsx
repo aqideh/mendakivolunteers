@@ -151,7 +151,7 @@ export default async function PointsPage() {
           </div>
           <div className="actions">
             <Link className="button button-secondary" href="/dashboard">
-              Back to dashboard
+              Back to My Profile
             </Link>
             <Link className="button button-secondary" href="/opportunities">
               Browse opportunities
