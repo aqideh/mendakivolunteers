@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -168,6 +170,11 @@ export default async function PointsAdminPage({ searchParams }: PageProps) {
                     name="volunteerId"
                     type="hidden"
                     value={volunteer.id}
+                  />
+                  <input
+                    name="requestId"
+                    type="hidden"
+                    value={randomUUID()}
                   />
                   <div className="form-field">
                     <label htmlFor={`points-${volunteer.id}`}>Points</label>
