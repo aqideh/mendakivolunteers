@@ -39,10 +39,10 @@ Three identifiers serve different purposes:
 | Identifier | Owner | Purpose |
 |---|---|---|
 | `auth.users.id` | Supabase Auth | Authenticated web identity |
-| `core.volunteers.id` | App | Internal foreign key for app-owned data |
-| `core.volunteers.ymhub_volunteer_id` | YM Hub | Authoritative external volunteer identifier |
+| `core.volunteers.id` | KELUARGA | Stable volunteer identity for recruitment, registration and app-owned data |
+| `core.volunteers.ymhub_volunteer_id` | YM Hub | Optional backend reconciliation identifier once a YM Hub record exists |
 
-An authenticated user is not automatically allowed to claim a YM Hub volunteer ID. The nullable `auth_user_id` link is established through a controlled server-side or staff-assisted process. Ambiguous matches can be recorded in `core.account_link_cases`.
+An authenticated KELUARGA volunteer can exist before any YM Hub record exists. The target schema therefore makes the YM Hub identifier optional and attaches it later through an audited backend reconciliation process. Volunteers must not self-claim a YM Hub identifier.
 
 ## Authorization
 
@@ -59,7 +59,7 @@ Support officers and auditors receive narrowly defined read access. No browser r
 
 ## YM Hub adapter boundary
 
-The future Salesforce adapter will expose canonical fields:
+A future Salesforce/YM Hub handoff adapter may expose canonical reconciliation fields:
 
 ```ts
 externalVolunteerId
@@ -67,11 +67,7 @@ status
 sourceUpdatedAt
 ```
 
-No development gateway is present in the application runtime. Local Supabase seed
-records are explicit database fixtures and are never substituted for an
-unavailable integration. Production deployment remains blocked until the real
-Salesforce adapter, API mappings, permission contract, and health checks are
-implemented and reviewed.
+No development gateway is present in the application runtime. Local Supabase seed records are explicit database fixtures and are never substituted for an unavailable integration. KELUARGA recruitment, registration and event operations must not be blocked by the absence of a direct Salesforce adapter; the backend handoff can initially be controlled batch processing.
 
 ## Audit model
 
@@ -88,7 +84,8 @@ Audit metadata is deliberately limited rather than storing complete row snapshot
 
 ## Delivery constraints retained for later phases
 
-- The web app is not the source of truth for registration.
-- App attendance records are capture and staff handoff records only.
-- Official attendance, verified hours, and attendance-based rewards depend on downstream YM Hub records.
+- KELUARGA is the live source for volunteer-facing recruitment, registration, waitlist/cancellation and event operations.
+- A volunteer may be created in KELUARGA before a YM Hub record exists.
+- Event attendance remains operational evidence until the approved backend handoff/verification is completed.
+- Verified hours and any rewards policy that explicitly depends on verified hours remain dependent on YM Hub verification.
 - Opportunity listings and news remain app-owned content.
