@@ -22,7 +22,8 @@ function getLoginErrorMessage(errorCode: string | undefined): string | undefined
     case "account_inactive":
       return "This Keluarga MENDAKI account is not active. Contact the volunteer team.";
     case "account_authorization_unavailable":
-      return "Keluarga MENDAKI could not verify your account permissions. Try again shortly.";
+    case "account_setup_unavailable":
+      return "Keluarga MENDAKI could not finish setting up your account. Request a new sign-in link and try again.";
     default:
       return undefined;
   }
@@ -54,9 +55,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p className="eyebrow">Your Keluarga MENDAKI account</p>
           <h1 id="sign-in-title">Login</h1>
           <p className="muted">
-            Opportunities and news remain available without logging in. Your
-            KELUARGA account will be used for recruitment, registrations, Event
-            Guides, activity records and points as these features are rolled out.
+            Opportunities and news remain available without logging in. Enter your
+            email to sign in or create a KELUARGA volunteer account. Your account is
+            used for registrations, Event Guides, activity records and points.
           </p>
 
           {initialError ? (

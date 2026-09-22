@@ -45,7 +45,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
       .maybeSingle(),
     admin
       .from("phaseone_event_timeslots")
-      .select("id, label, starts_at, ends_at, status, sort_order")
+      .select("id, label, starts_at, ends_at, status, sort_order, registration_capacity")
       .eq("event_id", id)
       .order("starts_at", { ascending: true })
       .order("sort_order", { ascending: true }),

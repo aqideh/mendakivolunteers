@@ -24,7 +24,7 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 - Public landing page, opportunities and news.
 - Event Guides with venue, directions, briefing, programme information and shift details.
 - Passwordless volunteer sign-in and protected account dashboard.
-- KELUARGA-owned programme/event records are the canonical source for opportunity discovery, Event Guides and Event Operations; first-class registration is the next delivery slice.
+- KELUARGA-owned programme/event records are the canonical source for opportunity discovery, registrations, Event Guides and Event Operations.
 - Read-only YM Hub attendance and verified-hours presentation when authoritative snapshots are available.
 - Points UI and append-only gamification foundation based only on verified YM Hub attendance.
 - Public volunteer Pathways skill tree.
@@ -128,7 +128,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 SUPABASE_SERVICE_ROLE_KEY
 PIN_COOKIE_SECRET
 APP_ENV=production
-AUTH_ALLOW_SIGN_UP=false
+AUTH_ALLOW_SIGN_UP=true
 ```
 
 Before promotion, run:

@@ -61,6 +61,7 @@ export const eventTimeslotSchema = z
     startsAt: requiredSingaporeDateTime,
     endsAt: optionalSingaporeDateTime,
     status: z.enum(["scheduled", "cancelled"]),
+    registrationCapacity: z.number().int().min(1).max(10000).nullable(),
   })
   .superRefine((timeslot, context) => {
     if (timeslot.endsAt && timeslot.endsAt <= timeslot.startsAt) {

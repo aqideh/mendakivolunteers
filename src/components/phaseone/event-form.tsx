@@ -16,6 +16,7 @@ export type EventTimeslotValue = Readonly<{
   ends_at: string | null;
   status: "scheduled" | "cancelled";
   sort_order: number;
+  registration_capacity: number | null;
 }>;
 
 export type EventFormValue = Readonly<{
@@ -62,6 +63,7 @@ export function EventForm({
     startsAt: toSingaporeDateTimeLocal(timeslot.starts_at),
     endsAt: toSingaporeDateTimeLocal(timeslot.ends_at),
     status: timeslot.status,
+    registrationCapacity: timeslot.registration_capacity,
   }));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle", message: "" });
   const [recoveryEventId, setRecoveryEventId] = useState<string | null>(null);

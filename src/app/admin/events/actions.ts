@@ -43,6 +43,7 @@ function timeslotPayload(timeslots: EventFormInput["timeslots"]) {
     ends_at: timeslot.endsAt,
     status: timeslot.status,
     sort_order: index,
+    registration_capacity: timeslot.registrationCapacity,
   }));
 }
 
@@ -64,7 +65,7 @@ export async function duplicateEvent(formData: FormData) {
       .maybeSingle(),
     admin
       .from("phaseone_event_timeslots")
-      .select("label, starts_at, ends_at, status, sort_order")
+      .select("label, starts_at, ends_at, status, sort_order, registration_capacity")
       .eq("event_id", sourceId)
       .order("starts_at", { ascending: true })
       .order("sort_order", { ascending: true }),
@@ -161,6 +162,7 @@ export async function duplicateEvent(formData: FormData) {
     ends_at: timeslot.ends_at,
     status: timeslot.status,
     sort_order: index,
+    registration_capacity: timeslot.registration_capacity,
   }));
   const { error: scheduleError } = await admin.rpc(
     "phaseone_replace_event_timeslots",

@@ -8,12 +8,13 @@ type TimeslotEditorValue = Readonly<{
   startsAt: string;
   endsAt: string;
   status: "scheduled" | "cancelled";
+  registrationCapacity: number | null;
 }>;
 
 type EditableTimeslot = TimeslotEditorValue & { clientId: string };
 
 function blankTimeslot(clientId: string): EditableTimeslot {
-  return { clientId, label: "", startsAt: "", endsAt: "", status: "scheduled" };
+  return { clientId, label: "", startsAt: "", endsAt: "", status: "scheduled", registrationCapacity: null };
 }
 
 export function TimeslotEditor({ initialTimeslots }: { initialTimeslots: TimeslotEditorValue[] }) {
@@ -34,6 +35,7 @@ export function TimeslotEditor({ initialTimeslots }: { initialTimeslots: Timeslo
       startsAt: timeslot.startsAt,
       endsAt: timeslot.endsAt,
       status: timeslot.status,
+      registrationCapacity: timeslot.registrationCapacity,
     })),
   );
 
@@ -111,6 +113,25 @@ export function TimeslotEditor({ initialTimeslots }: { initialTimeslots: Timeslo
             <details className="phaseone-inline-disclosure" open={timeslot.status === "cancelled"}>
               <summary>More shift options</summary>
               <div className="phaseone-disclosure-body">
+                <div className="form-field">
+                  <label htmlFor={`timeslot-capacity-${timeslot.clientId}`}>Registration capacity</label>
+                  <input
+                    id={`timeslot-capacity-${timeslot.clientId}`}
+                    min={1}
+                    max={10000}
+                    onChange={(event) =>
+                      updateTimeslot(timeslot.clientId, {
+                        registrationCapacity: event.target.value
+                          ? Number(event.target.value)
+                          : null,
+                      })
+                    }
+                    placeholder="Unlimited"
+                    type="number"
+                    value={timeslot.registrationCapacity ?? ""}
+                  />
+                  <p className="muted">Leave blank for no configured limit.</p>
+                </div>
                 <div className="form-field">
                   <label htmlFor={`timeslot-status-${timeslot.clientId}`}>Status</label>
                   <select

@@ -123,17 +123,23 @@ export function MagicLinkConfirmation() {
       const accountClient = supabase as unknown as SupabaseClient;
       const { data: linkResult, error: linkError } = await accountClient
         .schema("core")
-        .rpc("link_current_account_by_verified_email");
+        .rpc("ensure_current_keluarga_volunteer");
 
       if (linkError) {
-        console.error("Verified KELUARGA account could not be linked", {
+        console.error("Verified KELUARGA account could not be provisioned", {
           code: linkError.code,
           message: linkError.message,
         });
+        window.location.replace("/login?error=account_setup_unavailable");
+        return;
       }
 
       if (linkResult === "account_inactive") {
         window.location.replace("/login?error=account_inactive");
+        return;
+      }
+      if (linkResult === "email_unverified" || linkResult === "needs_review") {
+        window.location.replace("/login?error=account_setup_unavailable");
         return;
       }
 
