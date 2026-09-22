@@ -1,7 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -11,6 +9,7 @@ import { requireGamificationManager } from "@/lib/auth/gamification-access";
 
 const awardSchema = z.object({
   volunteerId: z.string().uuid(),
+  requestId: z.string().uuid(),
   points: z
     .string()
     .trim()
@@ -21,6 +20,7 @@ const awardSchema = z.object({
 export async function awardManualPoints(formData: FormData) {
   const parsed = awardSchema.safeParse({
     volunteerId: formData.get("volunteerId"),
+    requestId: formData.get("requestId"),
     points: formData.get("points"),
     reason: formData.get("reason"),
   });
@@ -36,20 +36,18 @@ export async function awardManualPoints(formData: FormData) {
 
   const { supabase } = await requireGamificationManager("/admin/points");
   const client = supabase as unknown as SupabaseClient;
-  const requestId = randomUUID();
-
   const { error } = await client.schema("core").rpc("award_manual_points", {
     p_volunteer_id: parsed.data.volunteerId,
     p_points: points,
     p_reason: parsed.data.reason,
-    p_request_id: requestId,
+    p_request_id: parsed.data.requestId,
   });
 
   if (error) {
     console.error("Unable to award manual recognition points", {
       code: error.code,
       volunteerId: parsed.data.volunteerId,
-      requestId,
+      requestId: parsed.data.requestId,
     });
     redirect("/admin/points?error=award_failed");
   }
