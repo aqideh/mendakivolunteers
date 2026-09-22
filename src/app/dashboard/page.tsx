@@ -17,7 +17,7 @@ import {
 import type { AccountStatus, Database } from "@/types/database";
 
 export const metadata: Metadata = {
-  title: "Dashboard",
+  title: "My Profile",
 };
 
 export const dynamic = "force-dynamic";
