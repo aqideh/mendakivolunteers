@@ -2,7 +2,7 @@
 
 This directory is the project record for the KELUARGA — MENDAKI Volunteer App.
 
-**Last consolidated:** 16 September 2026
+**Last consolidated:** 22 September 2026
 
 Start here when assessing what exists, what is planned, and what still needs attention.
 
@@ -12,6 +12,7 @@ Start here when assessing what exists, what is planned, and what still needs att
 - [Development roadmap](development-roadmap.md) — upcoming work, dependencies, decisions and sequencing.
 - [Known issues and technical debt](known-issues.md) — confirmed defects, operational limitations, deferred work and regression watch-points.
 - [Current system architecture](architecture/current-system.md) — system boundaries, data ownership, identity model and integrations.
+- [Recruitment, registration and event-operations operating model](architecture/recruitment-registration-event-operations.md) — current target workflow from recruitment through roster, MakLom reporting and YM Hub backend handoff.
 
 ## Detailed architecture
 
@@ -35,7 +36,7 @@ Start here when assessing what exists, what is planned, and what still needs att
 ## Documentation rules
 
 1. The deployed code and applied database migrations are the source of truth for whether a feature exists.
-2. YM Hub remains authoritative for volunteer identity, registration, official attendance and verified volunteer hours. KELUARGA event-day attendance is an operational record until reconciled and verified downstream.
+2. KELUARGA owns the volunteer-facing recruitment and registration workflow plus live event operations. YM Hub remains the authoritative backend organisational record; verified attendance/hours and the backend handoff are reconciled separately.
 3. A feature is not described as live merely because a schema, prototype or roadmap item exists.
 4. Intentional deferrals are recorded separately from bugs.
 5. New user-visible features should update the feature inventory and roadmap in the same pull request.

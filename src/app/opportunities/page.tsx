@@ -8,7 +8,7 @@ import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 export const metadata: Metadata = {
   title: "Volunteer opportunities",
   description:
-    "Browse upcoming MENDAKI volunteer opportunities and continue to the official registration portal.",
+    "Browse upcoming MENDAKI volunteer opportunities. KELUARGA is becoming the volunteer-facing registration channel.",
 };
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,7 @@ export default async function OpportunitiesPage() {
                       <dt>Venue</dt>
                       <dd>
                         {opportunity.venue ??
-                          "See the registration portal for details"}
+                          "See the opportunity details for more information"}
                       </dd>
                     </div>
                     {opportunity.schedule_text ? (
@@ -86,15 +86,13 @@ export default async function OpportunitiesPage() {
           <section id="opportunity-cards" className="panel empty-state phaseone-empty-state">
             <h2>No upcoming opportunities right now.</h2>
             <p className="muted">
-              New MENDAKI opportunities will appear here after they are published
-              through the official registration process.
+              New MENDAKI opportunities will appear here after they are published.
             </p>
           </section>
         )}
       </main>
       <footer className="site-footer">
-        <span>Opportunity registration is managed through the official registration
-        portal. Browsing Keluarga MENDAKI does not require an account.</span>
+        <span>Keluarga MENDAKI is becoming the volunteer-facing recruitment and registration channel. External sign-up links remain transitional while in-app registration is being implemented.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
