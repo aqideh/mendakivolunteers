@@ -64,17 +64,16 @@ select ok(
   'published programme rows have an explicit public RLS policy'
 );
 
-select is(
-  (
-    select count(*)::int
+select ok(
+  exists (
+    select 1
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
       and p.proname = 'list_phaseone_opportunities'
       and p.pronargs = 0
   ),
-  0,
-  'legacy imported-opportunity RPC is retired'
+  'legacy imported-opportunity RPC remains temporarily for zero-downtime rollout compatibility'
 );
 
 select * from finish();
