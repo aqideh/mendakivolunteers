@@ -164,11 +164,11 @@ export default async function PointsPage() {
 
         {!volunteer ? (
           <section className="panel empty-state" aria-labelledby="points-link-title">
-            <h2 id="points-link-title">Official profile matching is in progress</h2>
+            <h2 id="points-link-title">Your volunteer profile is not ready yet</h2>
             <p>
-              Your KELUARGA account must be matched to your official YM Hub
-              volunteer profile before personal points can be shown. You can still
-              browse opportunities and news while this is being completed.
+              Your KELUARGA account needs a linked KELUARGA volunteer profile before
+              personal points can be shown. You can still browse opportunities and
+              news while account setup is being resolved.
             </p>
             <div className="actions">
               <Link className="button button-primary" href="/opportunities">
