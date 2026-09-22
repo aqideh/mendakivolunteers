@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Phase 2 adds app-owned volunteer content while preserving YM Hub as the system of record for volunteer identity, registration, official attendance, and verified hours.
+Phase 2 adds app-owned volunteer content. The original implementation used external registration links; the September 2026 operating-model decision supersedes that registration boundary. KELUARGA is now the target volunteer-facing registration system, while YM Hub remains the authoritative backend organisational record.
 
 The portal owns:
 
@@ -109,7 +109,7 @@ Deleting CMS records is intentionally excluded from this phase. Archiving preser
 - Active-account checks for CMS users.
 - Separate editor and publisher roles.
 - Database-enforced protection for already-live content.
-- HTTPS-only registration URLs.
+- HTTPS-only external registration URLs while the transitional link-out remains in use.
 - UUID validation before edit queries or writes.
 - Server-side validation for length, date ordering, status requirements, and URLs.
 - No Salesforce or Supabase service credentials in browser code.
