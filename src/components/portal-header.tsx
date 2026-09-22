@@ -15,6 +15,7 @@ export async function PortalHeader({
   const userId = data?.claims?.sub;
   const isSignedIn = !error && Boolean(userId);
   let canManageEvents = false;
+  let canManagePoints = false;
 
   if (isSignedIn && userId) {
     const { data: roleRows, error: rolesError } = await supabase
@@ -29,6 +30,9 @@ export async function PortalHeader({
       });
     } else {
       canManageEvents = (roleRows ?? []).some(({ role }) => role === "admin");
+      canManagePoints = (roleRows ?? []).some(
+        ({ role }) => role === "admin" || role === "gamification_manager",
+      );
     }
   }
 
@@ -37,6 +41,7 @@ export async function PortalHeader({
       <BrandLockup href="/" priority />
       <PortalNav
         canManageEvents={canManageEvents}
+        canManagePoints={canManagePoints}
         isSignedIn={isSignedIn}
       />
       {!lite ? <p className="header-status">{status}</p> : null}

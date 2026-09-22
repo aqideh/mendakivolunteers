@@ -1,4 +1,5 @@
 export type PointEntryKind = "award" | "adjustment" | "reversal";
+export type PointSourceKind = "ymhub_verified_attendance" | "manual_recognition";
 export type PointCalculationMethod = "flat" | "per_verified_hour";
 
 export function formatPoints(value: number): string {
@@ -31,6 +32,15 @@ export function formatPointEntryKind(kind: PointEntryKind): string {
       return "Points adjusted";
     case "reversal":
       return "Points reversed";
+  }
+}
+
+export function formatPointSourceKind(kind: PointSourceKind): string {
+  switch (kind) {
+    case "ymhub_verified_attendance":
+      return "Verified attendance";
+    case "manual_recognition":
+      return "Staff recognition";
   }
 }
 

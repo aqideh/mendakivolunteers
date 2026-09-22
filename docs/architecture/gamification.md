@@ -4,15 +4,19 @@
 
 KELUARGA owns the volunteer points programme, recruitment and registration workflow. YM Hub remains the authoritative backend record for verified attendance and verified hours after the approved handoff/reconciliation process.
 
-The points pipeline is therefore:
+KELUARGA has two explicit point-source paths:
 
 ```text
-YM Hub volunteer / Person Account ID
-        -> core.volunteers.id
-        -> verified ymhub.attendance_snapshots
-        -> approved KELUARGA point rule
+verified ymhub.attendance_snapshots
+        -> approved KELUARGA attendance rule
         -> append-only point ledger
-        -> volunteer point balance
+
+staff recognition action
+        -> role + reason validation
+        -> append-only manual recognition entry
+
+both paths
+        -> volunteer point balance and history
 ```
 
 Staff roster check-in and check-out records are operational evidence only. They
@@ -73,10 +77,7 @@ This provides:
 - a balance derived from the complete ledger;
 - no dependency on mutable roster attendance.
 
-Only the server-side integration identity can run reconciliation or write point
-records. Volunteers receive their own balance and recent history through a
-protected account-scoped function. The private gamification schema is not exposed
-to ordinary browser queries.
+Only the server-side integration identity can run YM Hub reconciliation. Manual recognition awards use a separate security-definer function that requires an active `gamification_manager` or `admin` role, a positive amount, a reason and an idempotency request ID. Volunteers receive their own balance and recent history through a protected account-scoped function. The private gamification schema is not exposed to ordinary browser queries.
 
 ## Batch integration contract
 
@@ -99,3 +100,19 @@ The gamification schema has no foreign key, trigger or query against:
 - staff event-operation check-in or check-out actions.
 
 The roster is populated from KELUARGA registrations (plus explicit walk-ins) in the target model. Its later handoff to YM Hub may lead to a verified attendance record; only the verified record should enter any points rule that requires verified attendance.
+
+
+## Manual recognition
+
+Manual recognition is intentionally not represented as attendance. The source kind is `manual_recognition`, while verified attendance uses `ymhub_verified_attendance`.
+
+A manual recognition award:
+
+- is created only through `core.award_manual_points`;
+- requires `gamification_manager` or `admin`;
+- requires an explicit reason;
+- uses a request UUID to make retries idempotent;
+- writes an append-only ledger entry and a separate audit event;
+- never creates or edits `ymhub.attendance_snapshots`.
+
+This keeps staff recognition available as an operational KELUARGA feature without weakening the rule that verified hours and verified attendance remain YM Hub-owned.

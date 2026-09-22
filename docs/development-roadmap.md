@@ -1,6 +1,6 @@
 # Development roadmap
 
-**Last reviewed:** 22 September 2026
+**Last reviewed:** 23 September 2026
 
 This roadmap reflects both the current deployed implementation and the approved 22 September 2026 operating-model change. **KELUARGA will own volunteer recruitment, registration and live event operations; YM Hub remains the authoritative backend organisational record after handoff/reconciliation.** Verified volunteer hours remain YM Hub-owned.
 
@@ -202,11 +202,12 @@ Implemented:
 - imported YM Hub registrations as a legacy/backend reconciliation view;
 - imported official attendance;
 - verified hours;
-- sync/failure state handling.
+- sync/failure state handling;
+- audited self-service editing for app-owned display name and mobile number.
 
 ### Next work
 
-**Planned:** add broader profile editing and registration cancellation/withdrawal self-service with audited state transitions.
+**Planned:** add registration cancellation/withdrawal self-service with audited state transitions. Keep login email, KELUARGA ID and backend identifiers outside ordinary profile editing.
 
 **Planned:** operate the required YM Hub backend projections reliably through the agreed handoff process.
 
@@ -225,11 +226,13 @@ Implemented:
 - append-only point ledger;
 - adjustments/reversals;
 - account-scoped points UI;
-- reconciliation from verified YM Hub attendance.
+- reconciliation from verified YM Hub attendance;
+- role-gated staff points management for explicit manual recognition awards;
+- separate point provenance for verified attendance versus staff recognition.
 
 ### Next work
 
-**Policy dependency:** approve point values, eligible activity rules, effective dates, corrections/appeals and any anti-abuse controls before activating production rules.
+**Policy dependency:** approve verified-attendance point values, eligible activity rules, effective dates, corrections/appeals and anti-abuse controls before activating production attendance rules. Manual recognition is operationally available but should follow an agreed staff-use policy.
 
 **Integration dependency:** only reconcile points after a successful authoritative YM Hub attendance import.
 

@@ -56,6 +56,7 @@ Implemented:
 - Immutable human-readable `KELxxxxx` volunteer IDs are generated for native volunteer profiles.
 - Account-status handling including pending-link, active, suspended and closed states.
 - Volunteer dashboard protected by authentication.
+- Volunteers can edit their app-owned display name and mobile number through an audited self-service profile form; login email, KELUARGA ID and backend identifiers remain protected.
 
 Important boundary:
 
@@ -89,14 +90,17 @@ Implemented foundation and volunteer UI:
 - Append-only point ledger.
 - Award, adjustment and reversal entries.
 - Reconciliation from verified YM Hub attendance snapshots.
-- Personal points balance and history read model.
-- Tests covering the gamification foundation and reconciliation model.
+- Personal points balance and history read model with explicit source provenance.
+- Role-gated staff points management at `/admin/points` for audited manual recognition awards.
+- Manual recognition awards are idempotent, append-only and distinct from YM Hub attendance-derived points.
+- Tests covering the gamification foundation, reconciliation model and manual recognition workflow.
 
 Policy/integration dependency:
 
 - Operational roster attendance does not award points.
-- Points are only generated from verified authoritative YM Hub records.
-- A production point rule must be explicitly approved and activated.
+- Attendance-derived points are only generated from verified authoritative YM Hub records.
+- Manual staff-recognition points require an authorised gamification manager/admin and an explicit reason.
+- A production attendance point rule must be explicitly approved and activated.
 
 ### Volunteer pathways
 

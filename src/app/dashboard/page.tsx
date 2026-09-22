@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/dashboard/actions";
 import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-summary";
 import { PortalHeader } from "@/components/portal-header";
+import { ProfileEditor } from "@/components/profile-editor";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
+import { hasGamificationManagerRole } from "@/lib/auth/gamification-access";
 import { hasPathwayManagerRole } from "@/lib/auth/pathway-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { createClient } from "@/lib/supabase/server";
@@ -35,6 +37,14 @@ const dashboardErrors: Record<string, string> = {
     "Your account does not have permission to manage volunteer pathways.",
   pathway_authorization_unavailable:
     "Pathway-management permissions could not be checked. No pathway data was changed.",
+  gamification_access_denied:
+    "Your account does not have permission to manage volunteer points.",
+  gamification_authorization_unavailable:
+    "Points-management permissions could not be checked. No point data was changed.",
+  profile_validation:
+    "Enter a valid full name and mobile number.",
+  profile_update_failed:
+    "Your profile could not be updated. No profile data was changed.",
 };
 
 type YmHubSyncStatus =
@@ -93,7 +103,7 @@ export default async function DashboardPage({
       .schema("core")
       .from("volunteers")
       .select(
-        "id, volunteer_code, ymhub_volunteer_id, ymhub_status, source_updated_at, last_synced_at",
+        "id, volunteer_code, ymhub_volunteer_id, display_name, mobile, ymhub_status, source_updated_at, last_synced_at",
       )
       .eq("auth_user_id", userId)
       .maybeSingle(),
@@ -195,13 +205,17 @@ export default async function DashboardPage({
   }
 
   const canManageContent = hasContentManagerRole(roles);
+  const canManageGamification = hasGamificationManagerRole(roles);
   const canManagePathways = hasPathwayManagerRole(roles);
   const syncStatus = ymHubReadModel?.syncStatus ?? null;
   const syncOutcome = getYmHubSyncOutcome(syncStatus);
   const parameters = await searchParams;
   const errorCode = readParameter(parameters, "error");
+  const successCode = readParameter(parameters, "success");
+  const profileMode = readParameter(parameters, "profile");
   const errorMessage = errorCode ? dashboardErrors[errorCode] : undefined;
-  const displayName = account.display_name?.trim() || "Volunteer";
+  const displayName =
+    volunteer?.display_name?.trim() || account.display_name?.trim() || "Volunteer";
 
   return (
     <div className="site-shell">
@@ -248,6 +262,11 @@ export default async function DashboardPage({
             {errorMessage}
           </div>
         ) : null}
+        {successCode === "profile_updated" ? (
+          <div className="notice notice-success" role="status">
+            Your KELUARGA profile has been updated.
+          </div>
+        ) : null}
 
         <section className="panel" aria-labelledby="profile-title">
           <p className="eyebrow">Profile</p>
@@ -272,6 +291,10 @@ export default async function DashboardPage({
               </div>
             ) : null}
             <div className="data-row">
+              <dt>Mobile</dt>
+              <dd>{volunteer?.mobile ?? "Not provided"}</dd>
+            </div>
+            <div className="data-row">
               <dt>KELUARGA account</dt>
               <dd>
                 <span className="status-pill">
@@ -290,6 +313,17 @@ export default async function DashboardPage({
               </div>
             ) : null}
           </dl>
+          {volunteer ? (
+            <details className="phaseone-disclosure" open={profileMode === "edit"}>
+              <summary>Edit profile</summary>
+              <div className="phaseone-disclosure-body">
+                <ProfileEditor
+                  displayName={displayName}
+                  mobile={volunteer.mobile}
+                />
+              </div>
+            </details>
+          ) : null}
         </section>
 
         {volunteer ? (
@@ -499,8 +533,8 @@ export default async function DashboardPage({
             <article className="card">
               <h3>Points</h3>
               <p className="muted">
-                View your KELUARGA points and recognition history based on eligible
-                verified volunteer records.
+                View your KELUARGA points and recognition history from verified
+                attendance and staff-recognition awards.
               </p>
               <Link className="text-link" href="/points">
                 View Points
@@ -509,7 +543,7 @@ export default async function DashboardPage({
           </div>
         </section>
 
-        {canManageContent || canManagePathways ? (
+        {canManageContent || canManageGamification || canManagePathways ? (
           <section className="section" aria-labelledby="staff-tools-title">
             <p className="eyebrow">Staff tools</p>
             <h2 id="staff-tools-title">Management access</h2>
@@ -522,6 +556,17 @@ export default async function DashboardPage({
                   </p>
                   <Link className="text-link" href="/admin/content">
                     Open content management
+                  </Link>
+                </article>
+              ) : null}
+              {canManageGamification ? (
+                <article className="card">
+                  <h3>Points management</h3>
+                  <p className="muted">
+                    Award audited staff-recognition points to KELUARGA volunteers.
+                  </p>
+                  <Link className="text-link" href="/admin/points">
+                    Manage volunteer points
                   </Link>
                 </article>
               ) : null}

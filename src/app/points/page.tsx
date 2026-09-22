@@ -9,9 +9,11 @@ import {
   describePointRule,
   formatPointDelta,
   formatPointEntryKind,
+  formatPointSourceKind,
   formatPoints,
   type PointCalculationMethod,
   type PointEntryKind,
+  type PointSourceKind,
 } from "@/lib/gamification/read-model";
 import { createClient } from "@/lib/supabase/server";
 import { getYmHubSyncOutcome } from "@/lib/ymhub/read-model";
@@ -20,7 +22,7 @@ import type { AccountStatus, Database } from "@/types/database";
 export const metadata: Metadata = {
   title: "Points",
   description:
-    "View KELUARGA points derived from verified MENDAKI volunteer records.",
+    "View KELUARGA points from verified attendance and staff recognition.",
   robots: { index: false, follow: false },
 };
 
@@ -37,6 +39,7 @@ type PointRule = Readonly<{
 
 type PointLedgerEntry = Readonly<{
   id: string;
+  source_kind: PointSourceKind;
   source_record_id: string;
   source_title: string;
   source_occurred_at: string;
@@ -144,9 +147,9 @@ export default async function PointsPage() {
             <p className="eyebrow">KELUARGA recognition</p>
             <h1>Your points</h1>
             <p className="muted">
-              Points are calculated in KELUARGA from eligible records that have
-              been verified in YM Hub. Event-day roster check-in alone does not
-              award points.
+              Points can come from eligible attendance verified in YM Hub or an
+              explicit staff-recognition award. Event-day roster check-in alone
+              does not award points.
             </p>
           </div>
           <div className="actions">
@@ -161,11 +164,11 @@ export default async function PointsPage() {
 
         {!volunteer ? (
           <section className="panel empty-state" aria-labelledby="points-link-title">
-            <h2 id="points-link-title">Official profile matching is in progress</h2>
+            <h2 id="points-link-title">Your volunteer profile is not ready yet</h2>
             <p>
-              Your KELUARGA account must be matched to your official YM Hub
-              volunteer profile before personal points can be shown. You can still
-              browse opportunities and news while this is being completed.
+              Your KELUARGA account needs a linked KELUARGA volunteer profile before
+              personal points can be shown. You can still browse opportunities and
+              news while account setup is being resolved.
             </p>
             <div className="actions">
               <Link className="button button-primary" href="/opportunities">
@@ -192,8 +195,9 @@ export default async function PointsPage() {
               <div className="notice" role="status">
                 <h2>Official attendance has not been imported yet</h2>
                 <p>
-                  Your balance will remain unchanged until the first successful YM
-                  Hub attendance update and point reconciliation are completed.
+                  Attendance-based points will not change until the first successful
+                  YM Hub attendance update and point reconciliation are completed.
+                  Staff-recognition awards remain separate from this sync.
                 </p>
               </div>
             ) : null}
@@ -202,8 +206,9 @@ export default async function PointsPage() {
               <div className="notice notice-error" role="alert">
                 <h2>The latest YM Hub update did not complete</h2>
                 <p>
-                  The balance shown is based on the latest successful authoritative
-                  data. No points are inferred from the staff roster as a fallback.
+                  Attendance-based entries shown are based on the latest successful
+                  authoritative data. Staff-recognition awards remain independent,
+                  and no points are inferred from the staff roster as a fallback.
                 </p>
               </div>
             ) : null}
@@ -237,8 +242,7 @@ export default async function PointsPage() {
               {entries.length === 0 ? (
                 <div className="panel empty-state">
                   <p>
-                    No point transactions are available. Only eligible, verified YM
-                    Hub records can create a point award.
+                    No point transactions are available yet.
                   </p>
                 </div>
               ) : (
@@ -247,11 +251,13 @@ export default async function PointsPage() {
                     <article className="record-card" key={entry.id}>
                       <div>
                         <p className="record-kicker">
-                          {formatPointEntryKind(entry.entry_kind)}
+                          {formatPointEntryKind(entry.entry_kind)} ·{" "}
+                          {formatPointSourceKind(entry.source_kind)}
                         </p>
                         <h3>{entry.source_title}</h3>
                         <p className="record-meta">
-                          Activity {formatSingaporeDateTime(entry.source_occurred_at)}
+                          {formatPointSourceKind(entry.source_kind)}{" "}
+                          {formatSingaporeDateTime(entry.source_occurred_at)}
                           {" · "}
                           {entry.reason}
                         </p>
@@ -272,8 +278,7 @@ export default async function PointsPage() {
       </main>
 
       <footer className="site-footer">
-        <span>YM Hub remains the source of truth for verified attendance and hours.
-        Keluarga MENDAKI applies the approved point rules and retains the point ledger.</span>
+        <span>YM Hub remains the source of truth for verified attendance and hours. Keluarga MENDAKI retains the append-only point ledger, including separately identified staff-recognition awards.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">

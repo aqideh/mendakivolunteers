@@ -6,6 +6,7 @@ import { useState } from "react";
 
 type PortalNavProps = Readonly<{
   canManageEvents: boolean;
+  canManagePoints: boolean;
   isSignedIn: boolean;
 }>;
 
@@ -18,7 +19,11 @@ function matchesPath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
+export function PortalNav({
+  canManageEvents,
+  canManagePoints,
+  isSignedIn,
+}: PortalNavProps) {
   const pathname = usePathname() ?? "";
   const [isOpen, setIsOpen] = useState(false);
   const items: NavigationItem[] = [
@@ -27,6 +32,10 @@ export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
 
   if (canManageEvents) {
     items.push({ href: "/admin/events", label: "Event Operations" });
+  }
+
+  if (canManagePoints) {
+    items.push({ href: "/admin/points", label: "Points Management" });
   }
 
   items.push(
