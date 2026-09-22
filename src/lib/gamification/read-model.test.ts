@@ -4,6 +4,7 @@ import {
   describePointRule,
   formatPointDelta,
   formatPointEntryKind,
+  formatPointSourceKind,
   formatPoints,
 } from "@/lib/gamification/read-model";
 
@@ -23,6 +24,13 @@ describe("gamification read-model presentation", () => {
     expect(formatPointEntryKind("award")).toBe("Points awarded");
     expect(formatPointEntryKind("adjustment")).toBe("Points adjusted");
     expect(formatPointEntryKind("reversal")).toBe("Points reversed");
+  });
+
+  it("labels point provenance", () => {
+    expect(formatPointSourceKind("ymhub_verified_attendance")).toBe(
+      "Verified attendance",
+    );
+    expect(formatPointSourceKind("manual_recognition")).toBe("Staff recognition");
   });
 
   it("describes supported rule calculations", () => {
