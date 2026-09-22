@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type PortalNavProps = Readonly<{
   canManageEvents: boolean;
@@ -34,10 +34,6 @@ export function PortalNav({ canManageEvents, isSignedIn }: PortalNavProps) {
       ? { href: "/dashboard", label: "My Profile" }
       : { href: "/login", label: "Login" },
   );
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
 
   return (
     <div className="portal-menu">
