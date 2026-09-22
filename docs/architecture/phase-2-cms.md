@@ -11,14 +11,7 @@ The portal owns:
 - Content workflow state.
 - Revision snapshots and publication audit events.
 
-The portal does not own:
-
-- Opportunity registration.
-- Registration confirmation.
-- Official attendance or hours.
-- Volunteer master records.
-
-Every opportunity registration action is an HTTPS link-out to YM Hub.
+The original Phase 2 slice did not own registration; every registration action was an HTTPS link-out. That implementation is now transitional. The target KELUARGA registration domain is documented in `recruitment-registration-event-operations.md` and will be introduced through new schema migrations rather than by rewriting this historical phase.
 
 ## Application routes
 
@@ -70,7 +63,7 @@ The `content` schema contains:
 - `content.news_posts`
 - `content.revisions`
 
-Opportunity records contain an optional `ymhub_activity_id` for future reconciliation and a required HTTPS `registration_url`. Neither field makes the application authoritative for registrations.
+Opportunity records currently contain an optional `ymhub_activity_id` and required HTTPS `registration_url`. These fields remain for compatibility during the transition. A future migration will decouple opportunity publication from an external registration URL and link opportunities to first-class KELUARGA registration records.
 
 Content bodies are stored as plain text in this phase. This deliberately avoids introducing an unsanitized HTML or rich-text execution surface. A later rich-text editor must define an allowlist, server-side sanitization, media policy, and migration approach before it is enabled.
 
