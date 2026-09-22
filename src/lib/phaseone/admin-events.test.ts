@@ -24,6 +24,7 @@ function event(
     has_sign_out_pin: true,
     briefing_available_at: null,
     is_published: true,
+    is_opportunity_published: false,
     updated_at: "2026-08-01T00:00:00.000Z",
     timeslots,
   };
