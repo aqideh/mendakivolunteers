@@ -83,7 +83,7 @@ export default async function OpportunitiesPage() {
             ))}
           </section>
         ) : (
-          <section className="panel empty-state phaseone-empty-state">
+          <section id="opportunity-cards" className="panel empty-state phaseone-empty-state">
             <h2>No upcoming opportunities right now.</h2>
             <p className="muted">
               New MENDAKI opportunities will appear here after they are published
