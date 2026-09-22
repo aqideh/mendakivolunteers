@@ -1,6 +1,6 @@
 begin;
 
-select plan(20);
+select plan(22);
 
 select has_table('public', 'keluarga_registrations', 'KELUARGA registration table exists');
 select has_table('public', 'keluarga_registration_shifts', 'registration shift selections exist');
