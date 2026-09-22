@@ -1,6 +1,6 @@
 begin;
 
-select plan(20);
+select plan(21);
 
 select has_function(
   'core',
@@ -206,6 +206,20 @@ select is(
       and source_record_id = '92000000-0000-4000-8000-000000000099'
   ),
   'repeating the same request ID is idempotent'
+);
+
+select throws_ok(
+  $
+    select core.award_manual_points(
+      '92000000-0000-4000-8000-000000000011',
+      26,
+      'Outstanding support during a community programme.',
+      '92000000-0000-4000-8000-000000000099'
+    )
+  $,
+  '23505',
+  'Request ID has already been used for a different point award',
+  'reusing a request ID for a different award is rejected'
 );
 
 reset role;
