@@ -74,9 +74,9 @@ export default async function OpportunitiesPage() {
                   </dl>
                   <a
                     className="button button-primary phaseone-opportunity-cta"
-                    href={`/journey/${opportunity.slug}`}
+                    href={`/opportunities/${opportunity.slug}`}
                   >
-                    View programme
+                    Register
                   </a>
                 </div>
               </article>
