@@ -533,8 +533,8 @@ export default async function DashboardPage({
             <article className="card">
               <h3>Points</h3>
               <p className="muted">
-                View your KELUARGA points and recognition history based on eligible
-                verified volunteer records.
+                View your KELUARGA points and recognition history from verified
+                attendance and staff-recognition awards.
               </p>
               <Link className="text-link" href="/points">
                 View Points
