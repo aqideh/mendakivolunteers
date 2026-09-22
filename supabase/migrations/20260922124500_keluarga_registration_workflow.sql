@@ -19,6 +19,10 @@ alter table public.phaseone_event_timeslots
 comment on column public.phaseone_event_timeslots.registration_capacity is
   'Maximum confirmed KELUARGA registrations for this shift. NULL means no configured limit.';
 
+grant select (registration_capacity)
+  on public.phaseone_event_timeslots
+  to anon, authenticated;
+
 create table public.keluarga_registrations (
   id uuid primary key default gen_random_uuid(),
   volunteer_id uuid not null references core.volunteers(id) on delete restrict,
@@ -247,6 +251,11 @@ begin
     set status = 'active'
     where id = current_user_id;
 
+    update public.phaseone_roster
+    set volunteer_id = existing_volunteer_id
+    where volunteer_id is null
+      and email_normalized = verified_email;
+
     return 'already_linked';
   end if;
 
@@ -276,6 +285,11 @@ begin
           display_name
         )
       where id = current_user_id;
+
+      update public.phaseone_roster
+      set volunteer_id = candidate_id
+      where volunteer_id is null
+        and email_normalized = verified_email;
 
       return 'linked_existing';
     end if;
@@ -309,6 +323,11 @@ begin
   update core.user_accounts
   set status = 'active'
   where id = current_user_id;
+
+  update public.phaseone_roster
+  set volunteer_id = existing_volunteer_id
+  where volunteer_id is null
+    and email_normalized = verified_email;
 
   return 'created';
 end;
