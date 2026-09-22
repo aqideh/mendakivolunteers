@@ -54,9 +54,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p className="eyebrow">Your Keluarga MENDAKI account</p>
           <h1 id="sign-in-title">Login</h1>
           <p className="muted">
-            Opportunities and news remain available without logging in. Log in
-            only when you need personal Event Guides, upcoming registrations,
-            official activity records or points.
+            Opportunities and news remain available without logging in. Your
+            KELUARGA account will be used for recruitment, registrations, Event
+            Guides, activity records and points as these features are rolled out.
           </p>
 
           {initialError ? (
