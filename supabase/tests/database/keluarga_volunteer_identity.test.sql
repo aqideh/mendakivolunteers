@@ -16,10 +16,14 @@ select col_not_null(
   'KELUARGA volunteer ID is required'
 );
 
-select col_is_null(
-  'core',
-  'volunteers',
-  'ymhub_volunteer_id',
+select ok(
+  not (
+    select attnotnull
+    from pg_attribute
+    where attrelid = 'core.volunteers'::regclass
+      and attname = 'ymhub_volunteer_id'
+      and not attisdropped
+  ),
   'YM Hub volunteer ID is optional'
 );
 
@@ -33,7 +37,7 @@ select matches(
     where primary_email_normalized = 'native@example.test'
   ),
   '^KEL[0-9]{5}$',
-  'new volunteers receive a KEL00000-format identifier'
+  'new volunteers receive a KEL plus five digits identifier'
 );
 
 select isnt(
