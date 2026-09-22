@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 import styles from "./contributor-hero.module.css";
 
@@ -63,7 +63,7 @@ export function ContributorHero() {
     <section
       className={styles.hero}
       aria-labelledby="contributor-hero-title"
-      style={{ "--hero-image": `url("${active.background}")` } as React.CSSProperties}
+      style={{ "--hero-image": `url("${active.background}")` } as CSSProperties}
     >
       <div className={styles.heroInner}>
         <Link className={styles.backLink} href="/">
