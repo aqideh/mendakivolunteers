@@ -462,36 +462,37 @@ export default async function DashboardPage({
         ) : null}
 
         <section className="section" aria-labelledby="available-title">
-          <p className="eyebrow">Volunteer services</p>
-          <h2 id="available-title">What you can do in KELUARGA</h2>
+          <p className="eyebrow">Your volunteer journey</p>
+          <h2 id="available-title">Explore from My Profile</h2>
           <div className="card-grid">
             <article className="card">
-              <h3>Event Guide</h3>
+              <h3>Event Guides</h3>
               <p className="muted">
-                View the briefing, reporting time, directions and event-day steps
+                View reporting times, briefings, directions and event-day steps
                 for activities matched to your registration or roster.
               </p>
               <Link className="text-link" href="/journey">
-                Open Event Guide
+                View Event Guides
               </Link>
             </article>
             <article className="card">
-              <h3>Volunteer opportunities</h3>
+              <h3>Pathways</h3>
               <p className="muted">
-                Browse opportunities in KELUARGA, then continue to the official
-                registration portal using its separate sign-in.
+                Explore how you can grow your contribution, skills and involvement
+                across KELUARGA volunteer pathways.
               </p>
-              <Link className="text-link" href="/opportunities">
-                Browse opportunities
+              <Link className="text-link" href="/pathways">
+                Explore Pathways
               </Link>
             </article>
             <article className="card">
-              <h3>Volunteer news</h3>
+              <h3>Points</h3>
               <p className="muted">
-                Read MENDAKI volunteer announcements and programme updates.
+                View your KELUARGA points and recognition history based on eligible
+                verified volunteer records.
               </p>
-              <Link className="text-link" href="/news">
-                Read news
+              <Link className="text-link" href="/points">
+                View Points
               </Link>
             </article>
           </div>
