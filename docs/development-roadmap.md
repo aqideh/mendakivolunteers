@@ -54,7 +54,7 @@ Implemented:
 
 ### Next work
 
-**Planned - priority:** replace external registration link-outs with first-class KELUARGA recruitment and registration. Build the volunteer identity migration, recruitment intake, registration state, capacity/waitlist enforcement, shift selection and registration-to-roster handoff described in `architecture/recruitment-registration-event-operations.md`.
+**In progress:** KELUARGA programme/event records now form the canonical opportunity + Event Guide + Event Operations model. The Volunteer.gov.sg importer and card-override runtime are retired. Next: first-class registration state, capacity/waitlist enforcement, shift selection and registration-to-roster handoff.
 
 **Decision required:** confirm which Event Guide content can be public and which content requires authentication, assignment, access code or signed-link access.
 

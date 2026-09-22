@@ -24,7 +24,7 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 - Public landing page, opportunities and news.
 - Event Guides with venue, directions, briefing, programme information and shift details.
 - Passwordless volunteer sign-in and protected account dashboard.
-- KELUARGA-owned recruitment and registration are the target operating model; implementation of the first-class registration domain is the next delivery slice.
+- KELUARGA-owned programme/event records are the canonical source for opportunity discovery, Event Guides and Event Operations; first-class registration is the next delivery slice.
 - Read-only YM Hub attendance and verified-hours presentation when authoritative snapshots are available.
 - Points UI and append-only gamification foundation based only on verified YM Hub attendance.
 - Public volunteer Pathways skill tree.
@@ -48,7 +48,7 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 
 - Supabase migrations, Row Level Security policies and pgTAP database tests.
 - GitHub Actions validation for lint, type checking, tests, builds, dependency audit and database checks.
-- Scheduled Volunteer.gov.sg opportunity import through Vercel Cron as a transitional source.
+- KELUARGA-owned programme/event records drive public opportunity discovery, Event Guides and Event Operations.
 - Read-only YM Hub projection foundations and volunteer sync-state model remain for backend reconciliation and verified records.
 - The KELUARGA -> YM Hub backend handoff is being designed separately by Volunteer Management; direct production Salesforce synchronization is not enabled.
 
@@ -126,8 +126,6 @@ NEXT_PUBLIC_APP_URL
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 SUPABASE_SERVICE_ROLE_KEY
-VOLUNTEER_GOV_SG_MENDAKI_URL
-CRON_SECRET
 PIN_COOKIE_SECRET
 APP_ENV=production
 AUTH_ALLOW_SIGN_UP=false

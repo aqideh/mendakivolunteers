@@ -16,8 +16,9 @@ Implemented:
 - Public opportunity browsing and opportunity detail pages.
 - Public news listing and news detail pages.
 - Public volunteer pathways page.
-- External registration link-outs are still the currently deployed implementation.
-- Configurable registration destination remains for transition compatibility.
+- KELUARGA-owned programme/event records now drive the opportunity listing, Event Guides and Event Operations on the implementation branch.
+- The Volunteer.gov.sg scheduled importer and manual imported-card override workflow are retired from runtime code.
+- Direct in-app registration is the next implementation slice and is not yet live.
 
 Target operating model (approved 22 September 2026):
 
@@ -313,15 +314,10 @@ Current limitation:
 
 ### Volunteer.gov.sg
 
-Implemented:
+Retired runtime integration:
 
-- Scheduled opportunity import foundation.
-- Vercel Cron route.
-- Parsing/validation tests.
-
-Direction:
-
-- This source is transitional and should be retired or narrowed as KELUARGA becomes the volunteer-facing recruitment and registration channel.
+- The scheduled importer, Vercel Cron route, parser and imported-card override editor are removed from the active application.
+- Existing imported rows remain temporarily as historical provenance only and are not used for opportunity discovery or event operations.
 
 ### YM Hub / Salesforce
 

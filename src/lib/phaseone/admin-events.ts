@@ -16,6 +16,7 @@ export type AdminEventSummary = Readonly<{
   has_sign_out_pin: boolean;
   briefing_available_at: string | null;
   is_published: boolean;
+  is_opportunity_published: boolean;
   updated_at: string;
   timeslots: VolunteerTimeslot[];
 }>;

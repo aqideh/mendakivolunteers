@@ -28,6 +28,7 @@ function eventPath(id?: string): string {
 function revalidateEventRoutes(slug?: string) {
   revalidatePath("/admin/events");
   revalidatePath("/admin/content");
+  revalidatePath("/opportunities");
   revalidatePath("/journey");
   if (slug) {
     revalidatePath(`/journey/${slug}`);
@@ -57,7 +58,7 @@ export async function duplicateEvent(formData: FormData) {
     admin
       .from("phaseone_events")
       .select(
-        "id, external_opportunity_id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url",
+        "id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order",
       )
       .eq("id", sourceId)
       .maybeSingle(),
@@ -104,8 +105,15 @@ export async function duplicateEvent(formData: FormData) {
     const { data, error } = await admin
       .from("phaseone_events")
       .insert({
-        external_opportunity_id: source.external_opportunity_id,
         title: `${source.title} (Copy)`,
+        opportunity_summary: source.opportunity_summary,
+        opportunity_description: source.opportunity_description,
+        opportunity_image_url: source.opportunity_image_url,
+        opportunity_category: source.opportunity_category,
+        opportunity_eligibility: source.opportunity_eligibility,
+        registration_deadline: source.registration_deadline,
+        opportunity_sort_order: source.opportunity_sort_order,
+        is_opportunity_published: false,
         slug,
         reporting_at: firstTimeslot.starts_at,
         venue: source.venue,
@@ -142,7 +150,7 @@ export async function duplicateEvent(formData: FormData) {
       sourceId,
     });
     redirect(
-      `/admin/events?error=${encode("Event guide could not be duplicated. Check its linked opportunity and try again.")}`,
+      `/admin/events?error=${encode("Programme could not be duplicated. Check its details and try again.")}`,
     );
   }
 
@@ -277,8 +285,15 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
 
   const pinUpdate = buildPackagePinUpdate(pinInput);
   const values = {
-    external_opportunity_id: parsed.data.externalOpportunityId,
     title: parsed.data.title,
+    opportunity_summary: parsed.data.opportunitySummary,
+    opportunity_description: parsed.data.opportunityDescription,
+    opportunity_image_url: parsed.data.opportunityImageUrl,
+    opportunity_category: parsed.data.opportunityCategory,
+    opportunity_eligibility: parsed.data.opportunityEligibility,
+    registration_deadline: parsed.data.registrationDeadline,
+    opportunity_sort_order: parsed.data.opportunitySortOrder,
+    is_opportunity_published: parsed.data.isOpportunityPublished,
     slug: parsed.data.slug,
     reporting_at: firstTimeslot.startsAt,
     venue: parsed.data.venue,
@@ -355,8 +370,15 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
   const { data: created, error: createError } = await admin
     .from("phaseone_events")
     .insert({
-      external_opportunity_id: parsed.data.externalOpportunityId,
       title: parsed.data.title,
+      opportunity_summary: parsed.data.opportunitySummary,
+      opportunity_description: parsed.data.opportunityDescription,
+      opportunity_image_url: parsed.data.opportunityImageUrl,
+      opportunity_category: parsed.data.opportunityCategory,
+      opportunity_eligibility: parsed.data.opportunityEligibility,
+      registration_deadline: parsed.data.registrationDeadline,
+      opportunity_sort_order: parsed.data.opportunitySortOrder,
+      is_opportunity_published: parsed.data.isOpportunityPublished,
       slug: parsed.data.slug,
       reporting_at: firstTimeslot.startsAt,
       venue: parsed.data.venue,

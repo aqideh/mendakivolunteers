@@ -4,9 +4,8 @@ import { EventForm } from "@/components/phaseone/event-form";
 import { PortalHeader } from "@/components/portal-header";
 import { SectionIndex } from "@/components/section-index";
 import { requireEventManager } from "@/lib/auth/event-access";
-import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
-export const metadata: Metadata = { title: "New event guide" };
+export const metadata: Metadata = { title: "New programme" };
 export const dynamic = "force-dynamic";
 
 type PageProps = {
@@ -20,35 +19,27 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 
 export default async function NewEventPage({ searchParams }: PageProps) {
   await requireEventManager("/admin/events/new");
-  const admin = getPhaseOneAdminClient();
-  const { data: opportunities, error } = await admin
-    .from("phaseone_external_opportunities")
-    .select("id, title, starts_at")
-    .eq("is_active", true)
-    .order("starts_at", { ascending: true })
-    .limit(200);
-
-  if (error || !opportunities) {
-    throw new Error("Opportunity options could not be loaded");
-  }
-
   const parameters = await searchParams;
   const errorMessage = parameter(parameters, "error");
 
   return (
     <div className="site-shell">
-      <PortalHeader status="New event guide" dashboard />
+      <PortalHeader status="New programme" dashboard />
       <main className="page-frame narrow-frame">
         <section className="page-intro">
-          <p className="eyebrow">Event operations</p>
-          <h1>Create event guide</h1>
-          <p className="lede">Configure the schedule, volunteer information and attendance settings.</p>
+          <p className="eyebrow">Volunteer programme</p>
+          <h1>Create programme or event</h1>
+          <p className="lede">
+            Create the programme once. Its public opportunity listing, schedule,
+            Event Guide and Event Operations all use this record.
+          </p>
         </section>
 
         <SectionIndex
-          label="Event guide form sections"
+          label="Programme form sections"
           items={[
             { href: "#event-schedule", label: "Schedule" },
+            { href: "#event-opportunity", label: "Opportunity" },
             { href: "#event-location", label: "Location" },
             { href: "#event-preparation", label: "Preparation" },
             { href: "#event-links", label: "Volunteer links" },
@@ -58,7 +49,7 @@ export default async function NewEventPage({ searchParams }: PageProps) {
         />
 
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
-        <EventForm opportunities={opportunities} />
+        <EventForm />
       </main>
     </div>
   );

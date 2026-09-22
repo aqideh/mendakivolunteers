@@ -41,6 +41,14 @@ const optionalSingaporeDateTime = z.preprocess((value) => {
     : value;
 }, z.string().datetime().nullable());
 
+const optionalInteger = z.preprocess(
+  (value) => {
+    if (typeof value !== "string" || !value.trim()) return null;
+    return Number(value);
+  },
+  z.number().int().min(0).max(9999).nullable(),
+);
+
 const optionalPin = z.preprocess(
   (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
   z.string().regex(/^\d{4,8}$/, "PINs must contain 4 to 8 digits.").nullable(),
@@ -67,11 +75,15 @@ export const eventTimeslotSchema = z
 export const eventFormSchema = z
   .object({
     id: z.string().uuid().optional(),
-    externalOpportunityId: z.preprocess(
-      (value) => (typeof value === "string" && value.trim() ? value.trim() : null),
-      z.string().uuid().nullable(),
-    ),
     title: z.string().trim().min(3).max(160),
+    opportunitySummary: optionalText(500),
+    opportunityDescription: optionalText(6000),
+    opportunityImageUrl: optionalUrl,
+    opportunityCategory: optionalText(120),
+    opportunityEligibility: optionalText(2000),
+    registrationDeadline: optionalSingaporeDateTime,
+    opportunitySortOrder: optionalInteger,
+    isOpportunityPublished: z.boolean(),
     slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     timeslots: z.array(eventTimeslotSchema).min(1, "Add at least one timeslot.").max(100),
     venue: optionalText(240),
@@ -90,7 +102,7 @@ export const eventFormSchema = z
     clearSignOutPin: z.boolean(),
     isPublished: z.boolean(),
   })
-  .superRefine(({ timeslots }, context) => {
+  .superRefine(({ timeslots, isOpportunityPublished, opportunitySummary }, context) => {
     const seen = new Set<string>();
     timeslots.forEach((timeslot, index) => {
       const key = `${timeslot.startsAt}|${timeslot.endsAt ?? ""}`;
@@ -103,6 +115,25 @@ export const eventFormSchema = z
       }
       seen.add(key);
     });
+
+    if (isOpportunityPublished && !opportunitySummary) {
+      context.addIssue({
+        code: "custom",
+        path: ["opportunitySummary"],
+        message: "Add a short opportunity summary before publishing it.",
+      });
+    }
+
+    if (
+      isOpportunityPublished &&
+      !timeslots.some((timeslot) => timeslot.status === "scheduled")
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["timeslots"],
+        message: "A published opportunity needs at least one scheduled shift.",
+      });
+    }
   });
 
 export type EventFormInput = z.infer<typeof eventFormSchema>;
@@ -117,8 +148,15 @@ export function parseEventForm(formData: FormData) {
 
   return eventFormSchema.safeParse({
     id: formData.get("id") || undefined,
-    externalOpportunityId: formData.get("externalOpportunityId"),
     title: formData.get("title"),
+    opportunitySummary: formData.get("opportunitySummary"),
+    opportunityDescription: formData.get("opportunityDescription"),
+    opportunityImageUrl: formData.get("opportunityImageUrl"),
+    opportunityCategory: formData.get("opportunityCategory"),
+    opportunityEligibility: formData.get("opportunityEligibility"),
+    registrationDeadline: formData.get("registrationDeadline"),
+    opportunitySortOrder: formData.get("opportunitySortOrder"),
+    isOpportunityPublished: formData.get("isOpportunityPublished") === "on",
     slug: formData.get("slug"),
     timeslots,
     venue: formData.get("venue"),

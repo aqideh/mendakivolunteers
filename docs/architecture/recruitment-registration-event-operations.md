@@ -124,6 +124,21 @@ When a corresponding YM Hub record exists, KELUARGA should retain the external Y
 
 ## 4. Required data-model changes
 
+### 4.0 Canonical programme/event record
+
+KELUARGA uses `public.phaseone_events` as the canonical programme/event record for the community-volunteer workflow. The historical `phaseone` name is retained to avoid a disruptive production rename.
+
+A staff-created record owns:
+
+- public opportunity title/summary/description/category/image/eligibility;
+- public opportunity publication state and registration deadline;
+- event schedule/timeslots and venue;
+- Event Guide publication and operational instructions;
+- Event Operations roster and attendance relationships.
+
+The Volunteer.gov.sg importer and imported-card override model are retired from runtime use. Historical imported rows may remain temporarily for provenance but are not a source or fallback for public opportunities.
+
+
 The current foundation assumed that every `core.volunteers` row was a projection of an existing YM Hub volunteer and therefore required `ymhub_volunteer_id`. That assumption no longer holds.
 
 ### 4.1 Volunteer identity
@@ -259,7 +274,7 @@ Applied migration files are historical records and must not be rewritten merely 
 ## 7. Implementation sequence
 
 1. Change the KELUARGA volunteer identity model so a volunteer can exist without a YM Hub ID.
-2. Add the recruitment application model and staff review workflow.
+2. Use the KELUARGA programme/event record as the canonical opportunity + Event Guide + Event Operations source. **Implemented in Slice 2.**
 3. Add first-class opportunity/event registration, cancellation and waitlist records.
 4. Add shift selection and capacity enforcement.
 5. Add the idempotent registration-to-roster handoff.
