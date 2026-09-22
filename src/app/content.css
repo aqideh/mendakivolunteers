@@ -44,20 +44,21 @@
 
 .portal-menu-toggle {
   display: inline-grid;
-  width: 2.65rem;
-  height: 2.65rem;
+  width: 2.75rem;
+  height: 2.75rem;
   place-content: center;
   gap: 0.28rem;
-  border: 1px solid rgba(55, 58, 54, 0.16);
-  border-radius: 0.65rem;
+  border: 0;
+  border-radius: 0;
   padding: 0;
   color: var(--brand);
-  background: rgba(255, 255, 255, 0.36);
+  background: transparent;
   cursor: pointer;
 }
 
 .portal-menu-toggle:hover {
-  background: rgba(255, 255, 255, 0.58);
+  background: transparent;
+  opacity: 0.72;
 }
 
 .portal-menu-toggle span {
