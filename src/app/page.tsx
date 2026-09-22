@@ -8,28 +8,28 @@ import styles from "./landing.module.css";
 export const metadata: Metadata = {
   title: "Keluarga MENDAKI — Volunteer with MENDAKI",
   description:
-    "Find your place to contribute with MENDAKI through mentoring, coaching, facilitation, specialist support, and community volunteering.",
+    "Find your place to contribute with MENDAKI through coaching, facilitation, mentoring, professional support, and community volunteering.",
 };
 
 const volunteerPaths = [
   {
     number: "01",
-    title: "Mentor",
-    href: "/volunteer/mentor",
-  },
-  {
-    number: "02",
     title: "Coach",
     href: "/volunteer/coach",
   },
   {
-    number: "03",
+    number: "02",
     title: "Facilitator",
     href: "/volunteer/facilitator",
   },
   {
+    number: "03",
+    title: "Mentor",
+    href: "/volunteer/mentor",
+  },
+  {
     number: "04",
-    title: "Specialist",
+    title: "Professional",
     href: "/volunteer/specialist",
   },
   {
@@ -47,9 +47,8 @@ export default function Home() {
       <main className={`phaseone-frame ${styles.frame}`}>
         <section className={styles.hero} aria-labelledby="landing-title">
           <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>Volunteer with MENDAKI</p>
             <h1 id="landing-title">
-              Make a Difference In <span>Your Community</span>
+              Welcome to <span>Keluarga MENDAKI</span>
             </h1>
           </div>
 
