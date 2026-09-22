@@ -113,7 +113,7 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
           <aside className="panel source-boundary">
             <h2>Registration transition</h2>
             <p>
-              KELUARGA is becoming MENDAKI's volunteer-facing registration channel.
+              KELUARGA is becoming MENDAKI&apos;s volunteer-facing registration channel.
               This opportunity still uses a linked registration destination while
               the in-app registration workflow is being implemented.
             </p>
