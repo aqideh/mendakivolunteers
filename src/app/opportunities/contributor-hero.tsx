@@ -52,6 +52,10 @@ export function ContributorHero() {
   const active = states[activeIndex];
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
     const timer = window.setInterval(() => {
       setActiveIndex((index) => (index + 1) % states.length);
     }, 6500);
