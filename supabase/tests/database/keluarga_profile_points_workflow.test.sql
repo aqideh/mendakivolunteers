@@ -209,14 +209,14 @@ select is(
 );
 
 select throws_ok(
-  $
+  $award$
     select core.award_manual_points(
       '92000000-0000-4000-8000-000000000011',
       26,
       'Outstanding support during a community programme.',
       '92000000-0000-4000-8000-000000000099'
     )
-  $,
+  $award$,
   '23505',
   'Request ID has already been used for a different point award',
   'reusing a request ID for a different award is rejected'
