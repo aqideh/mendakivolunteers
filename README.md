@@ -139,6 +139,8 @@ npm run check:production
 
 Never commit environment files, service-role keys, cron secrets, or PIN-cookie secrets.
 
+<!-- Deployment retry: 2026-09-21 -->
+
 ## Project structure
 
 ```text
