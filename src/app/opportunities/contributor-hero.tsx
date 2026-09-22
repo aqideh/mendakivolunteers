@@ -49,7 +49,7 @@ const ctas = [
 
 export function ContributorHero() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const active = states[activeIndex];
+  const active = states[activeIndex] ?? states[0];
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
