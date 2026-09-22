@@ -199,11 +199,11 @@ select is(
     'Outstanding support during a community programme.',
     '92000000-0000-4000-8000-000000000099'
   ),
-  (
-    select id
-    from gamification.point_ledger_entries
-    where source_kind = 'manual_recognition'
-      and source_record_id = '92000000-0000-4000-8000-000000000099'
+  core.award_manual_points(
+    '92000000-0000-4000-8000-000000000011',
+    25,
+    'Outstanding support during a community programme.',
+    '92000000-0000-4000-8000-000000000099'
   ),
   'repeating the same request ID is idempotent'
 );
