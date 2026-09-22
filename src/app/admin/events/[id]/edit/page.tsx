@@ -117,6 +117,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </div>
           <div className="actions">
             <Link className="button button-secondary" href="/admin/events">All events</Link>
+            <Link className="button button-secondary" href={`/admin/registrations?event=${id}`}>Registrations</Link>
             <Link className="button button-secondary" href={`/admin/events/${id}/insights`}>Volunteer insights</Link>
             <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Attendance</Link>
             {event.is_published ? <Link className="button" href={`/journey/${event.slug}`}>View guide</Link> : null}
@@ -127,6 +128,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           <a href="#guide">Guide · {event.is_published ? "Published" : "Draft"}</a>
           <a href="#programme">Programme · {rundownImages.length}</a>
           <a href="#roster">Roster · {rosterCountResult.count ?? 0}</a>
+          <Link href={`/admin/registrations?event=${id}`}>Registrations</Link>
           <Link href={`/admin/events/${id}/insights`}>Insights</Link>
           <Link href={`/admin/events/${id}/attendance`}>Attendance</Link>
           <Link href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
