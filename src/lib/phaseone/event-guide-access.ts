@@ -156,11 +156,11 @@ export async function getEventGuideViewer(): Promise<EventGuideViewerResult> {
   }
 
   const admin = getPhaseOneAdminClient();
-  const rosterPromise = email
+  const rosterPromise = volunteerResult.data
     ? admin
         .from("phaseone_roster")
         .select("event_id")
-        .eq("email_normalized", email)
+        .eq("volunteer_id", volunteerResult.data.id)
         .limit(2000)
     : Promise.resolve({ data: [], error: null });
   const syncPromise = volunteerResult.data
@@ -247,7 +247,7 @@ export async function getPermittedEventGuideIds(
   const admin = getPhaseOneAdminClient();
   const { data: events, error: eventsError } = await admin
     .from("phaseone_events")
-    .select("id, external_opportunity_id, ymhub_activity_id")
+    .select("id, ymhub_activity_id")
     .eq("is_published", true)
     .limit(2000);
 
@@ -258,37 +258,10 @@ export async function getPermittedEventGuideIds(
     throw new Error("Event Guide registration matching is unavailable");
   }
 
-  const externalOpportunityIds = events
-    .map(({ external_opportunity_id }) => external_opportunity_id)
-    .filter((value): value is string => Boolean(value));
-  const externalSourceKeys = new Map<string, string>();
-
-  if (externalOpportunityIds.length > 0) {
-    const { data: opportunities, error: opportunitiesError } = await admin
-      .from("phaseone_external_opportunities")
-      .select("id, source_key")
-      .in("id", externalOpportunityIds)
-      .limit(2000);
-
-    if (opportunitiesError || !opportunities) {
-      console.error("Unable to match external opportunities to Event Guides", {
-        code: opportunitiesError?.code,
-      });
-      throw new Error("Event Guide registration matching is unavailable");
-    }
-
-    opportunities.forEach(({ id, source_key }) => {
-      externalSourceKeys.set(String(id), String(source_key));
-    });
-  }
-
   for (const event of events) {
-    const activityIds = [
-      event.ymhub_activity_id?.trim(),
-      event.external_opportunity_id
-        ? externalSourceKeys.get(event.external_opportunity_id)
-        : null,
-    ].filter((value): value is string => Boolean(value));
+    const activityIds = [event.ymhub_activity_id?.trim()].filter(
+      (value): value is string => Boolean(value),
+    );
 
     if (activityIds.some((activityId) => viewer.registeredActivityIds.has(activityId))) {
       permitted.add(event.id);

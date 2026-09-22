@@ -16,12 +16,20 @@ export type EventTimeslotValue = Readonly<{
   ends_at: string | null;
   status: "scheduled" | "cancelled";
   sort_order: number;
+  registration_capacity: number | null;
 }>;
 
 export type EventFormValue = Readonly<{
   id: string;
-  external_opportunity_id: string | null;
   title: string;
+  opportunity_summary: string | null;
+  opportunity_description: string | null;
+  opportunity_image_url: string | null;
+  opportunity_category: string | null;
+  opportunity_eligibility: string | null;
+  registration_deadline: string | null;
+  opportunity_sort_order: number | null;
+  is_opportunity_published: boolean;
   slug: string;
   venue: string | null;
   navigation_destination: string | null;
@@ -39,12 +47,6 @@ export type EventFormValue = Readonly<{
   timeslots: EventTimeslotValue[];
 }>;
 
-type OpportunityOption = Readonly<{
-  id: string;
-  title: string;
-  starts_at: string | null;
-}>;
-
 type SaveState = Readonly<{
   status: "idle" | "error";
   message: string;
@@ -52,10 +54,8 @@ type SaveState = Readonly<{
 
 export function EventForm({
   event,
-  opportunities,
 }: {
   event?: EventFormValue;
-  opportunities: readonly OpportunityOption[];
 }) {
   const initialTimeslots = (event?.timeslots ?? []).map((timeslot) => ({
     id: timeslot.id,
@@ -63,6 +63,7 @@ export function EventForm({
     startsAt: toSingaporeDateTimeLocal(timeslot.starts_at),
     endsAt: toSingaporeDateTimeLocal(timeslot.ends_at),
     status: timeslot.status,
+    registrationCapacity: timeslot.registration_capacity,
   }));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle", message: "" });
   const [recoveryEventId, setRecoveryEventId] = useState<string | null>(null);
@@ -104,6 +105,94 @@ export function EventForm({
         <label htmlFor="title">Event title</label>
         <input defaultValue={event?.title} id="title" maxLength={160} name="title" required />
       </div>
+
+      <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-opportunity">
+        <legend>Opportunity listing</legend>
+        <label className="checkbox-row">
+          <input
+            defaultChecked={event?.is_opportunity_published}
+            name="isOpportunityPublished"
+            type="checkbox"
+          />
+          Publish this programme on the Opportunities page
+        </label>
+        <div className="form-field">
+          <label htmlFor="opportunitySummary">Short summary</label>
+          <textarea
+            defaultValue={event?.opportunity_summary ?? ""}
+            id="opportunitySummary"
+            maxLength={500}
+            name="opportunitySummary"
+            placeholder="What volunteers will contribute and why it matters"
+            rows={3}
+          />
+        </div>
+        <div className="form-field">
+          <label htmlFor="opportunityDescription">Full description</label>
+          <textarea
+            defaultValue={event?.opportunity_description ?? ""}
+            id="opportunityDescription"
+            maxLength={6000}
+            name="opportunityDescription"
+            placeholder="Role details, activities and what volunteers can expect"
+            rows={6}
+          />
+        </div>
+        <div className="phaseone-admin-grid">
+          <div className="form-field">
+            <label htmlFor="opportunityCategory">Category</label>
+            <input
+              defaultValue={event?.opportunity_category ?? ""}
+              id="opportunityCategory"
+              maxLength={120}
+              name="opportunityCategory"
+              placeholder="Community event, mentoring, learning support…"
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="opportunityImageUrl">Card image URL</label>
+            <input
+              defaultValue={event?.opportunity_image_url ?? ""}
+              id="opportunityImageUrl"
+              name="opportunityImageUrl"
+              type="url"
+            />
+          </div>
+        </div>
+        <div className="form-field">
+          <label htmlFor="opportunityEligibility">Eligibility / requirements</label>
+          <textarea
+            defaultValue={event?.opportunity_eligibility ?? ""}
+            id="opportunityEligibility"
+            maxLength={2000}
+            name="opportunityEligibility"
+            placeholder="Age, skills, briefing or other participation requirements"
+            rows={3}
+          />
+        </div>
+        <div className="phaseone-admin-grid">
+          <div className="form-field">
+            <label htmlFor="registrationDeadline">Registration deadline</label>
+            <input
+              defaultValue={toSingaporeDateTimeLocal(event?.registration_deadline ?? null)}
+              id="registrationDeadline"
+              name="registrationDeadline"
+              type="datetime-local"
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="opportunitySortOrder">Display order</label>
+            <input
+              defaultValue={event?.opportunity_sort_order ?? ""}
+              id="opportunitySortOrder"
+              min={0}
+              max={9999}
+              name="opportunitySortOrder"
+              type="number"
+            />
+          </div>
+        </div>
+      </fieldset>
 
       <TimeslotEditor initialTimeslots={initialTimeslots} />
 
@@ -249,15 +338,6 @@ export function EventForm({
         <summary>Advanced event settings</summary>
         <div className="phaseone-disclosure-body">
           <div className="form-field">
-            <label htmlFor="externalOpportunityId">Linked Volunteer.gov.sg opportunity</label>
-            <select defaultValue={event?.external_opportunity_id ?? ""} id="externalOpportunityId" name="externalOpportunityId">
-              <option value="">No linked opportunity</option>
-              {opportunities.map((opportunity) => (
-                <option key={opportunity.id} value={opportunity.id}>{opportunity.title}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-field">
             <label htmlFor="slug">Public journey URL</label>
             <input
               autoCapitalize="none"
@@ -275,7 +355,7 @@ export function EventForm({
       <div className="phaseone-publish-row">
         <label className="checkbox-row">
           <input defaultChecked={event?.is_published} name="isPublished" type="checkbox" />
-          Publish event guide to volunteers
+          Publish Event Guide to assigned volunteers
         </label>
         <p className="muted">Publishing needs a scheduled shift, venue and directions address. Other features are optional.</p>
       </div>
@@ -288,7 +368,7 @@ export function EventForm({
         <button className="button button-primary" disabled={isSaving} type="submit">
           {isSaving
             ? event || recoveryEventId ? "Saving…" : "Creating…"
-            : event || recoveryEventId ? "Save event guide" : "Create event guide"}
+            : event || recoveryEventId ? "Save programme" : "Create programme"}
         </button>
       </div>
     </form>

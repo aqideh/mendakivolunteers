@@ -91,6 +91,9 @@ export type Database = {
           volunteer_code: string;
           ymhub_volunteer_id: string | null;
           auth_user_id: string | null;
+          display_name: string | null;
+          primary_email_normalized: string | null;
+          mobile: string | null;
           ymhub_status: string | null;
           source_updated_at: string | null;
           last_synced_at: string | null;
@@ -102,6 +105,9 @@ export type Database = {
           volunteer_code?: string;
           ymhub_volunteer_id?: string | null;
           auth_user_id?: string | null;
+          display_name?: string | null;
+          primary_email_normalized?: string | null;
+          mobile?: string | null;
           ymhub_status?: string | null;
           source_updated_at?: string | null;
           last_synced_at?: string | null;
@@ -112,6 +118,9 @@ export type Database = {
           volunteer_code?: string;
           ymhub_volunteer_id?: string | null;
           auth_user_id?: string | null;
+          display_name?: string | null;
+          primary_email_normalized?: string | null;
+          mobile?: string | null;
           ymhub_status?: string | null;
           source_updated_at?: string | null;
           last_synced_at?: string | null;

@@ -17,21 +17,35 @@ select has_column(
 );
 
 select ok(
-  not has_any_column_privilege(
+  has_column_privilege(
     'anon',
     'public.phaseone_events',
+    'title',
+    'SELECT'
+  )
+  and not has_column_privilege(
+    'anon',
+    'public.phaseone_events',
+    'briefing_url',
     'SELECT'
   ),
-  'anonymous clients cannot read Event Guide records directly'
+  'anonymous clients can read opportunity-safe fields but not Event Guide operational fields'
 );
 
 select ok(
-  not has_any_column_privilege(
+  has_column_privilege(
     'authenticated',
     'public.phaseone_events',
+    'title',
+    'SELECT'
+  )
+  and not has_column_privilege(
+    'authenticated',
+    'public.phaseone_events',
+    'briefing_url',
     'SELECT'
   ),
-  'authenticated browser clients cannot bypass server-side Event Guide authorization'
+  'authenticated clients cannot bypass Event Guide authorization through public programme access'
 );
 
 select ok(

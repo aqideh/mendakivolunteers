@@ -12,17 +12,10 @@ import {
   type AdminEventSummary,
 } from "@/lib/phaseone/admin-events";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
-import {
-  getPackageListingStatus,
-  sortTimeslots,
-  type VolunteerTimeslot,
-} from "@/lib/phaseone/packages";
+import { sortTimeslots, type VolunteerTimeslot } from "@/lib/phaseone/packages";
 import styles from "./page.module.css";
 
-export const metadata: Metadata = {
-  title: "Content management",
-};
-
+export const metadata: Metadata = { title: "Content management" };
 export const dynamic = "force-dynamic";
 
 type ContentAdminPageProps = {
@@ -40,131 +33,69 @@ function readParameter(
 const successMessages: Record<string, string> = {
   news_created: "News post created.",
   news_updated: "News post updated.",
-  opportunity_override_updated: "Opportunity card updated.",
-  opportunity_override_reset: "Opportunity card reset to imported values.",
 };
 
-export default async function ContentAdminPage({
-  searchParams,
-}: ContentAdminPageProps) {
-  const { supabase, access } = await requireContentManager({
-    next: "/admin/content",
-  });
+export default async function ContentAdminPage({ searchParams }: ContentAdminPageProps) {
+  const { supabase, access } = await requireContentManager({ next: "/admin/content" });
   const parameters = await searchParams;
   const successCode = readParameter(parameters, "success");
   const errorMessage = readParameter(parameters, "error");
   const successMessage = successCode ? successMessages[successCode] : undefined;
-  const canManageJourneys = hasEventManagerRole(access.roles);
-  const phaseOneAdmin = getPhaseOneAdminClient();
+  const canManageProgrammes = hasEventManagerRole(access.roles);
+  const admin = getPhaseOneAdminClient();
 
-  const [opportunitiesResult, overridesResult, newsResult, journeysResult, timeslotsResult] =
-    await Promise.all([
-      phaseOneAdmin
-        .from("phaseone_external_opportunities")
-        .select("id, title, starts_at, imported_at, is_active")
-        .eq("is_active", true)
-        .order("starts_at", { ascending: false, nullsFirst: false })
-        .limit(100),
-      phaseOneAdmin
-        .from("phaseone_opportunity_overrides")
-        .select("external_opportunity_id, title, starts_at, is_visible, sort_order, updated_at")
-        .limit(100),
+  const [programmesResult, timeslotsResult, newsResult] = await Promise.all([
+    admin
+      .from("phaseone_events")
+      .select(
+        "id, title, slug, reporting_at, venue, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, is_opportunity_published, opportunity_summary, updated_at",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(2000),
+    admin
+      .from("phaseone_event_timeslots")
+      .select("id, event_id, label, starts_at, ends_at, status, sort_order")
+      .order("starts_at", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .limit(20000),
     supabase
       .schema("content")
       .from("news_posts")
       .select("id, slug, title, status, publish_at, published_at, updated_at, featured")
       .order("updated_at", { ascending: false })
       .limit(100),
-    canManageJourneys
-      ? phaseOneAdmin
-          .from("phaseone_events")
-          .select(
-            "id, title, slug, reporting_at, venue, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, updated_at",
-          )
-          .order("updated_at", { ascending: false })
-          .limit(2000)
-      : Promise.resolve({ data: [], error: null }),
-    canManageJourneys
-      ? phaseOneAdmin
-          .from("phaseone_event_timeslots")
-          .select("id, event_id, label, starts_at, ends_at, status, sort_order")
-          .order("starts_at", { ascending: true })
-          .order("sort_order", { ascending: true })
-          .limit(20000)
-      : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const hasLoadError = Boolean(
-    opportunitiesResult.error ||
-      overridesResult.error ||
-      newsResult.error ||
-      journeysResult.error ||
-      timeslotsResult.error,
-  );
-  if (hasLoadError) {
+  if (
+    programmesResult.error ||
+    timeslotsResult.error ||
+    newsResult.error ||
+    !programmesResult.data ||
+    !timeslotsResult.data ||
+    !newsResult.data
+  ) {
     console.error("Unable to load CMS content", {
-      opportunitiesCode: opportunitiesResult.error?.code,
-      overridesCode: overridesResult.error?.code,
-      newsCode: newsResult.error?.code,
-      journeysCode: journeysResult.error?.code,
+      programmesCode: programmesResult.error?.code,
       timeslotsCode: timeslotsResult.error?.code,
+      newsCode: newsResult.error?.code,
     });
     throw new Error("CMS content could not be loaded");
   }
 
-  if (
-    !opportunitiesResult.data ||
-    !overridesResult.data ||
-    !newsResult.data ||
-    !journeysResult.data ||
-    !timeslotsResult.data
-  ) {
-    throw new Error("CMS content query returned no result set");
-  }
-
-  const overrideByOpportunityId = new Map(
-    overridesResult.data.map((override) => [override.external_opportunity_id, override]),
-  );
-  const opportunities = opportunitiesResult.data
-    .map((opportunity) => {
-      const override = overrideByOpportunityId.get(opportunity.id) ?? null;
-      return {
-        ...opportunity,
-        override,
-        effectiveTitle: override?.title ?? opportunity.title,
-        effectiveStartsAt: override?.starts_at ?? opportunity.starts_at,
-      };
-    })
-    .sort((left, right) => {
-      const leftOrder = left.override?.sort_order ?? null;
-      const rightOrder = right.override?.sort_order ?? null;
-      if (leftOrder !== null || rightOrder !== null) {
-        if (leftOrder === null) return 1;
-        if (rightOrder === null) return -1;
-        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
-      }
-
-      const leftTime = left.effectiveStartsAt
-        ? new Date(left.effectiveStartsAt).getTime()
-        : 0;
-      const rightTime = right.effectiveStartsAt
-        ? new Date(right.effectiveStartsAt).getTime()
-        : 0;
-      return rightTime - leftTime;
-    });
-  const newsPosts = newsResult.data;
   const timeslotsByEvent = new Map<string, VolunteerTimeslot[]>();
   for (const timeslot of timeslotsResult.data) {
     const current = timeslotsByEvent.get(timeslot.event_id) ?? [];
     current.push(timeslot as VolunteerTimeslot);
     timeslotsByEvent.set(timeslot.event_id, current);
   }
-  const allJourneys = journeysResult.data.map((journey) => ({
-    ...journey,
-    timeslots: sortTimeslots(timeslotsByEvent.get(journey.id) ?? []),
+
+  const allProgrammes = programmesResult.data.map((programme) => ({
+    ...programme,
+    timeslots: sortTimeslots(timeslotsByEvent.get(programme.id) ?? []),
   })) as AdminEventSummary[];
-  const { current: currentJourneys, past: pastJourneys } = splitAdminEvents(allJourneys);
-  const journeys = sortCurrentAdminEvents(currentJourneys);
+  const { current, past } = splitAdminEvents(allProgrammes);
+  const programmes = sortCurrentAdminEvents(current);
+  const newsPosts = newsResult.data;
 
   return (
     <div className="site-shell">
@@ -174,14 +105,14 @@ export default async function ContentAdminPage({
           <div className={styles.headerCopy}>
             <h1>Manage volunteer content</h1>
             <p className={`muted ${styles.description}`}>
-              Manage event guides, opportunity cards, and news. Opportunity card
-              edits do not alter the imported source record.
+              Programme records now drive the public opportunity listing, Event Guides
+              and Event Operations. News remains a separate content stream.
             </p>
           </div>
           <div className={`actions ${styles.actions}`}>
-            {canManageJourneys ? (
+            {canManageProgrammes ? (
               <Link className="button button-primary" href="/admin/events/new">
-                New event guide
+                New programme
               </Link>
             ) : null}
             <Link className="button button-secondary" href="/admin/content/news/new">
@@ -191,16 +122,9 @@ export default async function ContentAdminPage({
         </div>
 
         <nav className={styles.sectionIndex} aria-label="Content sections">
-          {canManageJourneys ? (
-            <a className={styles.sectionLink} href="#event-guides">
-              <span>Event guides</span>
-              <span className={styles.sectionCount}>{journeys.length}</span>
-            </a>
-          ) : null}
-          <a className={styles.sectionLink} href="#opportunities">
-            <span>Opportunities</span>
-            <span className={styles.sectionCount}>{opportunities.length}</span>
-            <span className={styles.sectionStatus}>Editable cards</span>
+          <a className={styles.sectionLink} href="#programmes">
+            <span>Programmes</span>
+            <span className={styles.sectionCount}>{programmes.length}</span>
           </a>
           <a className={styles.sectionLink} href="#news-posts">
             <span>News posts</span>
@@ -208,196 +132,74 @@ export default async function ContentAdminPage({
           </a>
         </nav>
 
-        {successMessage ? (
-          <div className="notice notice-success" role="status">
-            {successMessage}
-          </div>
-        ) : null}
-        {errorMessage ? (
-          <div className="notice notice-error" role="alert">
-            {errorMessage}
-          </div>
-        ) : null}
+        {successMessage ? <div className="notice notice-success" role="status">{successMessage}</div> : null}
+        {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
-        {canManageJourneys ? (
-          <section
-            id="event-guides"
-            className={`section ${styles.section}`}
-            aria-labelledby="journeys-title"
-          >
-            <div className={`section-header ${styles.sectionHeader}`}>
-              <div>
-                <h2 id="journeys-title">Event guides</h2>
-                <p className={styles.sectionMeta}>
-                  {journeys.length} current · {pastJourneys.length} past
-                </p>
-              </div>
-              <div className="actions">
-                <Link className="text-link" href="/admin/events/past">
-                  Past events
-                </Link>
-                <Link className="text-link" href="/journey">
-                  View public journeys
-                </Link>
-              </div>
-            </div>
-            <div className="table-wrap">
-              <table className="content-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Event guide</th>
-                    <th scope="col">Reporting</th>
-                    <th scope="col">Access</th>
-                    <th scope="col">Visibility</th>
-                    <th scope="col">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {journeys.map((journey) => {
-                    const firstTimeslot = getAdminEventFirstScheduledTimeslot(journey);
-                    return (
-                      <tr key={journey.id}>
-                        <td>
-                          <strong>{journey.title}</strong>
-                          <span className="table-subtext">
-                            /journey/{journey.slug}
-                          </span>
-                        </td>
-                        <td>
-                          {firstTimeslot
-                            ? formatSingaporeDateTime(firstTimeslot.starts_at)
-                            : journey.reporting_at
-                              ? formatSingaporeDateTime(journey.reporting_at)
-                              : "Not set"}
-                        </td>
-                        <td>
-                          {journey.has_sign_in_pin && journey.has_sign_out_pin
-                            ? "Both PINs configured"
-                            : "Configuration incomplete"}
-                        </td>
-                        <td>
-                          <span className="status-pill">
-                            {getPackageListingStatus(
-                              journey.timeslots.length > 0 ? journey.timeslots : journey.reporting_at,
-                              journey.is_published,
-                            )}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="actions">
-                            <Link
-                              className="text-link"
-                              href={`/admin/events/${journey.id}/edit`}
-                            >
-                              Edit
-                            </Link>
-                            {journey.is_published ? (
-                              <Link
-                                className="text-link"
-                                href={`/journey/${journey.slug}`}
-                                target="_blank"
-                              >
-                                View
-                              </Link>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {journeys.length === 0 ? (
-                    <tr>
-                      <td colSpan={5}>No current or recent event guides.</td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ) : null}
-
-        <section
-          id="opportunities"
-          className={`section ${styles.section}`}
-          aria-labelledby="opportunities-title"
-        >
+        <section id="programmes" className={`section ${styles.section}`} aria-labelledby="programmes-title">
           <div className={`section-header ${styles.sectionHeader}`}>
             <div>
-              <h2 id="opportunities-title">Opportunities</h2>
+              <h2 id="programmes-title">Programmes & opportunities</h2>
               <p className={styles.sectionMeta}>
-                {opportunities.length} imported listings · {access.canPublish ? "Card editing enabled" : "View only"}
+                {programmes.length} current · {past.length} past · one record per programme/event
               </p>
             </div>
-            <Link className="text-link" href="/opportunities">
-              View public listings
-            </Link>
+            <div className="actions">
+              <Link className="text-link" href="/opportunities">View opportunities</Link>
+              {canManageProgrammes ? <Link className="text-link" href="/admin/events">Event Operations</Link> : null}
+            </div>
           </div>
           <div className="table-wrap">
             <table className="content-table">
               <thead>
                 <tr>
-                  <th scope="col">Title</th>
-                  <th scope="col">Visibility</th>
-                  <th scope="col">Starts</th>
-                  <th scope="col">Card override</th>
+                  <th scope="col">Programme</th>
+                  <th scope="col">Schedule</th>
+                  <th scope="col">Opportunity</th>
+                  <th scope="col">Event Guide</th>
                   <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {opportunities.map((opportunity) => {
-                  const cardOverride = opportunity.override;
+                {programmes.map((programme) => {
+                  const first = getAdminEventFirstScheduledTimeslot(programme);
                   return (
-                    <tr key={opportunity.id}>
+                    <tr key={programme.id}>
                       <td>
-                        <strong>{opportunity.effectiveTitle}</strong>
-                        <span className="table-subtext">Imported opportunity</span>
+                        <strong>{programme.title}</strong>
+                        <span className="table-subtext">/journey/{programme.slug}</span>
+                      </td>
+                      <td>{first ? formatSingaporeDateTime(first.starts_at) : "Not set"}</td>
+                      <td>
+                        <span className="status-pill">
+                          {programme.is_opportunity_published ? "Published" : "Draft"}
+                        </span>
                       </td>
                       <td>
                         <span className="status-pill">
-                          {cardOverride?.is_visible === false ? "Hidden" : "Visible"}
+                          {programme.is_published ? "Published" : "Draft"}
                         </span>
                       </td>
-                      <td>{formatSingaporeDateTime(opportunity.effectiveStartsAt)}</td>
                       <td>
-                        {cardOverride
-                          ? `Edited${cardOverride.sort_order !== null ? ` · order ${cardOverride.sort_order}` : ""}`
-                          : "Using imported values"}
-                        {cardOverride?.updated_at ? (
-                          <span className="table-subtext">
-                            Updated {formatSingaporeDateTime(cardOverride.updated_at)}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td>
-                        {access.canPublish ? (
-                          <Link
-                            className="text-link"
-                            href={`/admin/content/opportunities/${opportunity.id}/edit`}
-                          >
-                            Edit card
+                        {canManageProgrammes ? (
+                          <Link className="text-link" href={`/admin/events/${programme.id}/edit`}>
+                            Edit programme
                           </Link>
                         ) : (
-                          <span className="table-subtext">Publisher access required</span>
+                          <span className="table-subtext">Event manager access required</span>
                         )}
                       </td>
                     </tr>
                   );
                 })}
-                {opportunities.length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>No active imported opportunities.</td>
-                  </tr>
+                {programmes.length === 0 ? (
+                  <tr><td colSpan={5}>No current programmes.</td></tr>
                 ) : null}
               </tbody>
             </table>
           </div>
         </section>
 
-        <section
-          id="news-posts"
-          className={`section ${styles.section}`}
-          aria-labelledby="news-title"
-        >
+        <section id="news-posts" className={`section ${styles.section}`} aria-labelledby="news-title">
           <div className={`section-header ${styles.sectionHeader}`}>
             <div>
               <h2 id="news-title">News posts</h2>
@@ -405,52 +207,26 @@ export default async function ContentAdminPage({
                 {newsPosts.length} posts · {access.canPublish ? "Publisher access" : "Editor access"}
               </p>
             </div>
-            <Link className="text-link" href="/news">
-              View public news
-            </Link>
+            <Link className="text-link" href="/news">View public news</Link>
           </div>
           <div className="table-wrap">
             <table className="content-table">
               <thead>
-                <tr>
-                  <th scope="col">Title</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Published</th>
-                  <th scope="col">Updated</th>
-                  <th scope="col">Action</th>
-                </tr>
+                <tr><th>Title</th><th>Status</th><th>Published</th><th>Updated</th><th>Action</th></tr>
               </thead>
               <tbody>
                 {newsPosts.map((post) => (
                   <tr key={post.id}>
-                    <td>
-                      <strong>{post.title}</strong>
-                      <span className="table-subtext">/{post.slug}</span>
-                    </td>
-                    <td>
-                      <span className="status-pill">
-                        {post.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td>
-                      {formatSingaporeDateTime(post.published_at ?? post.publish_at)}
-                    </td>
+                    <td><strong>{post.title}</strong><span className="table-subtext">/{post.slug}</span></td>
+                    <td><span className="status-pill">{post.status.replace("_", " ")}</span></td>
+                    <td>{formatSingaporeDateTime(post.published_at ?? post.publish_at)}</td>
                     <td>{formatSingaporeDateTime(post.updated_at)}</td>
                     <td>
-                      <Link
-                        className="text-link"
-                        href={`/admin/content/news/${post.id}/edit`}
-                      >
-                        Edit
-                      </Link>
+                      <Link className="text-link" href={`/admin/content/news/${post.id}/edit`}>Edit</Link>
                     </td>
                   </tr>
                 ))}
-                {newsPosts.length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>No news records.</td>
-                  </tr>
-                ) : null}
+                {newsPosts.length === 0 ? <tr><td colSpan={5}>No news records.</td></tr> : null}
               </tbody>
             </table>
           </div>

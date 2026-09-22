@@ -16,15 +16,14 @@ Implemented:
 - Public opportunity browsing and opportunity detail pages.
 - Public news listing and news detail pages.
 - Public volunteer pathways page.
-- External registration link-outs are still the currently deployed implementation.
-- Configurable registration destination remains for transition compatibility.
-
-Target operating model (approved 22 September 2026):
-
-- KELUARGA will own volunteer recruitment, registration, waitlist/cancellation and shift selection.
-- Confirmed KELUARGA registrations will populate event operations directly.
+- KELUARGA-owned programme/event records drive the opportunity listing, Event Guides and Event Operations.
+- Volunteers can register directly in KELUARGA and select one or more available shifts.
+- Registrations use explicit pending, confirmed, waitlisted, rejected and cancelled lifecycle states.
+- Confirmed registrations populate Event Operations directly with stable registration and volunteer references.
+- Per-shift capacity can be configured and is enforced transactionally at confirmation.
+- Registration submission/status changes create in-app volunteer notifications.
+- The Volunteer.gov.sg scheduled importer and manual imported-card override workflow are retired from runtime code.
 - YM Hub remains the authoritative backend organisational record after a separately designed handoff/reconciliation process.
-- The target registration model is not yet implemented and must not be described as live until the new schema/routes/tests are deployed.
 
 ### Event Guides
 
@@ -53,6 +52,8 @@ Implemented:
 - Staff password setup and password-change flows.
 - Password recovery that correctly enters a reset flow rather than silently redirecting to the dashboard.
 - Separate app account identity, stable KELUARGA volunteer identity and optional YM Hub reconciliation identity.
+- Verified email signup can provision a native KELUARGA volunteer profile without a YM Hub record.
+- Immutable human-readable `KELxxxxx` volunteer IDs are generated for native volunteer profiles.
 - Account-status handling including pending-link, active, suspended and closed states.
 - Volunteer dashboard protected by authentication.
 
@@ -65,6 +66,8 @@ Important boundary:
 Implemented UI/read path:
 
 - Volunteer account dashboard.
+- KELUARGA volunteer ID display.
+- KELUARGA registration status and recent registration notifications.
 - Profile-linking state.
 - YM Hub sync-state display.
 - Imported YM Hub registration snapshots remain as a legacy/backend reconciliation view.
@@ -120,11 +123,10 @@ Not yet implemented:
 Implemented:
 
 - Role-gated admin content area.
-- Opportunity creation/editing.
+- Canonical programme/event creation and editing, including public opportunity presentation fields.
 - News creation/editing.
-- Publication-state controls.
-- Revision/history foundation in the CMS schema.
-- Validation of transitional external registration URLs and physical-opportunity location rules.
+- Separate public opportunity and Event Guide publication controls.
+- Revision/history foundation for retained CMS content.
 
 ### Staff accounts and access
 
@@ -143,7 +145,8 @@ Implemented:
 - Staff Event Operations area at `/admin/events`.
 - Event creation/editing.
 - Multi-day/multi-shift support through event timeslots.
-- Shift editing.
+- Shift editing and optional per-shift registration capacity.
+- Staff registration review at `/admin/registrations` with Confirm, Waitlist and Reject actions.
 - Programme rundown management.
 - Programme rundown image support.
 - Current/upcoming event list.
@@ -163,7 +166,9 @@ Implemented:
 - Walk-in/last-minute volunteer creation.
 - Dietary requirements.
 - T-shirt size and contact details.
-- Entry-method tracking so walk-ins can be distinguished from imported roster rows.
+- Entry-method tracking so walk-ins, imports and KELUARGA-confirmed registrations remain distinguishable.
+- Confirmed KELUARGA registrations create/reconcile roster assignments without staff re-keying.
+- Roster rows generated from registration retain the stable KELUARGA registration ID.
 - Walk-in name/email/mobile corrections.
 - Cross-shift correction propagation for the same walk-in event identity.
 
@@ -313,15 +318,10 @@ Current limitation:
 
 ### Volunteer.gov.sg
 
-Implemented:
+Retired runtime integration:
 
-- Scheduled opportunity import foundation.
-- Vercel Cron route.
-- Parsing/validation tests.
-
-Direction:
-
-- This source is transitional and should be retired or narrowed as KELUARGA becomes the volunteer-facing recruitment and registration channel.
+- The scheduled importer, Vercel Cron route, parser and imported-card override editor are removed from the active application.
+- Existing imported rows remain temporarily as historical provenance only and are not used for opportunity discovery or event operations.
 
 ### YM Hub / Salesforce
 
@@ -384,4 +384,4 @@ KELUARGA's target model has four distinct responsibilities:
 3. **Event operations** — rosters, shifts, walk-ins, attendance, reviews, insights, feedback and reporting.
 4. **Backend reconciliation** — read-only YM Hub projections for organisational record matching, verified attendance and verified hours.
 
-The first-class recruitment/registration domain is approved but not yet implemented. Operational attendance must still not be silently substituted for verified YM Hub hours.
+The first-class KELUARGA registration domain and registration-to-roster handoff are implemented. Volunteer cancellation/withdrawal self-service and the broader recruitment intake workflow remain follow-on work. Operational attendance must still not be silently substituted for verified YM Hub hours.

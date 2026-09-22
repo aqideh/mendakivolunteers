@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { signOut } from "@/app/dashboard/actions";
+import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-summary";
 import { PortalHeader } from "@/components/portal-header";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
 import { hasPathwayManagerRole } from "@/lib/auth/pathway-access";
@@ -92,7 +93,7 @@ export default async function DashboardPage({
       .schema("core")
       .from("volunteers")
       .select(
-        "id, ymhub_volunteer_id, ymhub_status, source_updated_at, last_synced_at",
+        "id, volunteer_code, ymhub_volunteer_id, ymhub_status, source_updated_at, last_synced_at",
       )
       .eq("auth_user_id", userId)
       .maybeSingle(),
@@ -264,6 +265,12 @@ export default async function DashboardPage({
               <dt>Email</dt>
               <dd>{authUser.email ?? "Not available"}</dd>
             </div>
+            {volunteer?.volunteer_code ? (
+              <div className="data-row">
+                <dt>Volunteer ID</dt>
+                <dd><strong>{volunteer.volunteer_code}</strong></dd>
+              </div>
+            ) : null}
             <div className="data-row">
               <dt>KELUARGA account</dt>
               <dd>
@@ -284,6 +291,10 @@ export default async function DashboardPage({
             ) : null}
           </dl>
         </section>
+
+        {volunteer ? (
+          <KeluargaRegistrationSummary volunteerId={volunteer.id} />
+        ) : null}
 
         {!volunteer ? (
           <section className="section notice" aria-labelledby="link-title">
@@ -531,8 +542,7 @@ export default async function DashboardPage({
       </main>
 
       <footer className="site-footer">
-        <span>Keluarga MENDAKI and YM Hub use separate sign-ins. Official registration and
-        verified attendance remain in YM Hub.</span>
+        <span>Keluarga MENDAKI manages volunteer registrations and event operations. YM Hub remains the backend record for verified attendance and hours after handoff.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">

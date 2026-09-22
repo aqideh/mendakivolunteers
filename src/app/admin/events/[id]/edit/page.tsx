@@ -12,7 +12,7 @@ import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { programmeRundownBucket } from "@/lib/phaseone/programme-rundown";
 
-export const metadata: Metadata = { title: "Edit event guide" };
+export const metadata: Metadata = { title: "Edit programme" };
 export const dynamic = "force-dynamic";
 
 type PageProps = {
@@ -37,24 +37,18 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   await requireEventManager(`/admin/events/${id}/edit`);
   const admin = getPhaseOneAdminClient();
 
-  const [eventResult, timeslotsResult, opportunitiesResult, rosterCountResult, importsResult, rundownImagesResult] = await Promise.all([
+  const [eventResult, timeslotsResult, rosterCountResult, importsResult, rundownImagesResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, external_opportunity_id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published")
+      .select("id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order, is_opportunity_published")
       .eq("id", id)
       .maybeSingle(),
     admin
       .from("phaseone_event_timeslots")
-      .select("id, label, starts_at, ends_at, status, sort_order")
+      .select("id, label, starts_at, ends_at, status, sort_order, registration_capacity")
       .eq("event_id", id)
       .order("starts_at", { ascending: true })
       .order("sort_order", { ascending: true }),
-    admin
-      .from("phaseone_external_opportunities")
-      .select("id, title, starts_at")
-      .eq("is_active", true)
-      .order("starts_at", { ascending: true })
-      .limit(200),
     admin
       .from("phaseone_roster")
       .select("id", { count: "exact", head: true })
@@ -81,8 +75,6 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   if (
     timeslotsResult.error ||
     !timeslotsResult.data ||
-    opportunitiesResult.error ||
-    !opportunitiesResult.data ||
     rosterCountResult.error ||
     importsResult.error ||
     !importsResult.data
@@ -115,16 +107,17 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
 
   return (
     <div className="site-shell">
-      <PortalHeader status="Edit event guide" dashboard />
+      <PortalHeader status="Edit programme" dashboard />
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Event operations</p>
             <h1>{event.title}</h1>
-            <p className="muted">Update the guide, manage volunteers and run attendance from one place.</p>
+            <p className="muted">Manage the opportunity listing, Event Guide, roster and attendance from one programme record.</p>
           </div>
           <div className="actions">
             <Link className="button button-secondary" href="/admin/events">All events</Link>
+            <Link className="button button-secondary" href={`/admin/registrations?event=${id}`}>Registrations</Link>
             <Link className="button button-secondary" href={`/admin/events/${id}/insights`}>Volunteer insights</Link>
             <Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Attendance</Link>
             {event.is_published ? <Link className="button" href={`/journey/${event.slug}`}>View guide</Link> : null}
@@ -135,6 +128,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           <a href="#guide">Guide · {event.is_published ? "Published" : "Draft"}</a>
           <a href="#programme">Programme · {rundownImages.length}</a>
           <a href="#roster">Roster · {rosterCountResult.count ?? 0}</a>
+          <Link href={`/admin/registrations?event=${id}`}>Registrations</Link>
           <Link href={`/admin/events/${id}/insights`}>Insights</Link>
           <Link href={`/admin/events/${id}/attendance`}>Attendance</Link>
           <Link href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
@@ -152,7 +146,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             </div>
             <span className="status-pill">{event.is_published ? "Published" : "Draft"}</span>
           </div>
-          <EventForm event={event} opportunities={opportunitiesResult.data} />
+          <EventForm event={event} />
         </section>
 
         <section className="section panel phaseone-admin-section" id="programme" aria-labelledby="rundown-title">

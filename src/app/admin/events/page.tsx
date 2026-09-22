@@ -82,7 +82,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
   const [eventsResult, timeslotsResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, title, slug, venue, reporting_at, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, updated_at")
+      .select("id, title, slug, venue, reporting_at, has_sign_in_pin, has_sign_out_pin, briefing_available_at, is_published, is_opportunity_published, updated_at")
       .order("updated_at", { ascending: false })
       .limit(2000),
     admin
@@ -124,12 +124,15 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
         <div className="dashboard-header phaseone-events-admin-header">
           <div>
             <p className="eyebrow">Staff event operations</p>
-            <h1>Event guides</h1>
+            <h1>Programmes &amp; events</h1>
             <p className="muted phaseone-events-admin-description">
               Schedules, rosters, check-in and event-guide settings.
             </p>
           </div>
           <div className="actions phaseone-events-admin-top-actions">
+            <Link className="button button-secondary" href="/admin/registrations">
+              Registrations
+            </Link>
             <Link className="button button-secondary" href="/admin/integrations/ymhub">
               YM Hub Batch Centre
             </Link>
@@ -137,14 +140,14 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
               Past ({past.length})
             </Link>
             <Link className="button button-primary" href="/admin/events/new">
-              + New event
+              + New programme
             </Link>
           </div>
         </div>
 
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
-        <section className="phaseone-events-mobile-list" aria-label="Current event guides">
+        <section className="phaseone-events-mobile-list" aria-label="Current programmes and events">
           {events.map((event) => {
             const listingStatus = getPackageListingStatus(event.timeslots, event.is_published);
             const pinReady = event.has_sign_in_pin && event.has_sign_out_pin;
@@ -161,6 +164,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
 
                 <div className="phaseone-events-mobile-meta">
                   {event.timeslots.length > 1 ? <span>{event.timeslots.length} shifts</span> : null}
+                  <span>{event.is_opportunity_published ? "Opportunity live" : "Opportunity draft"}</span>
                   <span data-ready={pinReady}>{pinReady ? "PINs ready" : "PIN setup needed"}</span>
                 </div>
 
@@ -169,7 +173,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
             );
           })}
           {events.length === 0 ? (
-            <div className="panel empty-state">No current or recent event guides.</div>
+            <div className="panel empty-state">No current or recent programmes.</div>
           ) : null}
         </section>
 

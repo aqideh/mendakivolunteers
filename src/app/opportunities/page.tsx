@@ -8,7 +8,7 @@ import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 export const metadata: Metadata = {
   title: "Volunteer opportunities",
   description:
-    "Browse upcoming MENDAKI volunteer opportunities. KELUARGA is becoming the volunteer-facing registration channel.",
+    "Browse upcoming MENDAKI volunteer opportunities. KELUARGA manages volunteer opportunities and the registration journey.",
 };
 
 export const dynamic = "force-dynamic";
@@ -48,6 +48,9 @@ export default async function OpportunitiesPage() {
                       {opportunity.summary}
                     </p>
                   ) : null}
+                  {opportunity.category ? (
+                    <p className="eyebrow">{opportunity.category}</p>
+                  ) : null}
                   <dl className="phaseone-opportunity-details">
                     <div>
                       <dt>Venue</dt>
@@ -56,10 +59,10 @@ export default async function OpportunitiesPage() {
                           "See the opportunity details for more information"}
                       </dd>
                     </div>
-                    {opportunity.schedule_text ? (
+                    {opportunity.timeslots.length > 1 ? (
                       <div>
                         <dt>Schedule</dt>
-                        <dd>{opportunity.schedule_text}</dd>
+                        <dd>{opportunity.timeslots.length} available shifts</dd>
                       </div>
                     ) : null}
                     {opportunity.ends_at ? (
@@ -71,12 +74,9 @@ export default async function OpportunitiesPage() {
                   </dl>
                   <a
                     className="button button-primary phaseone-opportunity-cta"
-                    href="https://www.mendaki.org.sg/"
-                    target="_blank"
-                    rel="noreferrer"
+                    href={`/opportunities/${opportunity.slug}`}
                   >
-                    View and sign up
-                    <span aria-hidden="true"> ↗</span>
+                    Register
                   </a>
                 </div>
               </article>
@@ -92,7 +92,7 @@ export default async function OpportunitiesPage() {
         )}
       </main>
       <footer className="site-footer">
-        <span>Keluarga MENDAKI is becoming the volunteer-facing recruitment and registration channel. External sign-up links remain transitional while in-app registration is being implemented.</span>
+        <span>Keluarga MENDAKI manages volunteer opportunity discovery, registration and event participation.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">

@@ -27,7 +27,7 @@ KELUARGA is the volunteer-facing system of engagement and live operational syste
 | Registration / waitlist / cancellation | KELUARGA | App-owned live workflow; handed off/reconciled to YM Hub backend |
 | Official verified attendance / hours | YM Hub | Returned/read after backend verification |
 | KELUARGA login/session | Supabase Auth / KELUARGA | App-owned |
-| Opportunity presentation | KELUARGA CMS | App-owned; target state uses in-app registration |
+| Opportunity presentation | KELUARGA programme/event record | App-owned; the same record feeds public discovery, Event Guides and Event Operations |
 | News | KELUARGA CMS | App-owned |
 | Event Guides and operational instructions | KELUARGA | App-owned |
 | Event roster and shifts | KELUARGA operations | Operational working data |
@@ -100,6 +100,8 @@ verified ymhub.attendance_snapshots
 ### `public.phaseone_*`
 
 Purpose:
+
+- canonical KELUARGA programme/event records, including public opportunity presentation fields;
 
 - current deployed event-operation tables and functions;
 - events/timeslots;
