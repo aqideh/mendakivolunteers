@@ -6,6 +6,7 @@ import {
   mantineHtmlProps,
 } from "@mantine/core";
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Golos_Text } from "next/font/google";
 
 import { keluargaTheme } from "@/lib/ui/theme";
@@ -57,6 +58,7 @@ export default function RootLayout({
         <MantineProvider forceColorScheme="light" theme={keluargaTheme}>
           {children}
         </MantineProvider>
+        <Analytics />
       </body>
     </html>
   );
