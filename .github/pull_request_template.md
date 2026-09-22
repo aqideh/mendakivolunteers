@@ -4,8 +4,9 @@ Describe the user or operational outcome.
 
 ## Source-of-truth boundary
 
-- [ ] The change does not make the app authoritative for YM Hub registration, attendance verification, or verified hours.
-- [ ] Any YM Hub fields are accessed through the gateway and canonical app types.
+- [ ] The change preserves KELUARGA ownership of recruitment, registration and event operations without requiring a YM Hub record first.
+- [ ] Verified attendance/hours and YM Hub reconciliation remain clearly separated from KELUARGA operational state.
+- [ ] Any YM Hub fields are accessed through the gateway/canonical app types and do not overwrite newer KELUARGA operational records.
 
 ## Security and privacy
 
