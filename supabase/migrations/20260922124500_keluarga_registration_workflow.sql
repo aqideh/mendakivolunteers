@@ -96,7 +96,8 @@ alter table public.phaseone_roster
   add column registration_id uuid
     references public.keluarga_registrations(id) on delete set null;
 
-drop constraint if exists phaseone_roster_entry_method_check on public.phaseone_roster;
+alter table public.phaseone_roster
+  drop constraint if exists phaseone_roster_entry_method_check;
 alter table public.phaseone_roster
   add constraint phaseone_roster_entry_method_check
   check (entry_method in ('roster_import', 'walk_in', 'keluarga_registration'));
@@ -423,7 +424,7 @@ declare
   verified_email text;
   event_record public.phaseone_events%rowtype;
   existing_registration public.keluarga_registrations%rowtype;
-  registration_id uuid;
+  v_registration_id uuid;
   selected_count integer;
 begin
   if current_user_id is null then
@@ -523,16 +524,16 @@ begin
         using errcode = 'P0001';
     end if;
 
-    registration_id := existing_registration.id;
+    v_registration_id := existing_registration.id;
 
     update public.keluarga_registrations
     set
       submitted_at = now(),
       updated_at = now()
-    where id = registration_id;
+    where id = v_registration_id;
 
-    delete from public.keluarga_registration_shifts
-    where registration_id = registration_id;
+    delete from public.keluarga_registration_shifts as selected_shift
+    where selected_shift.registration_id = v_registration_id;
   else
     insert into public.keluarga_registrations(
       volunteer_id,
@@ -542,14 +543,14 @@ begin
       volunteer_record.id,
       p_event_id
     )
-    returning id into registration_id;
+    returning id into v_registration_id;
   end if;
 
   insert into public.keluarga_registration_shifts(registration_id, timeslot_id)
-  select registration_id, item
+  select v_registration_id, item
   from unnest(p_timeslot_ids) as item;
 
-  return registration_id;
+  return v_registration_id;
 end;
 $$;
 
