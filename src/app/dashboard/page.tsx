@@ -273,8 +273,8 @@ export default async function DashboardPage({
               </dd>
             </div>
             <div className="data-row">
-              <dt>Official volunteer profile</dt>
-              <dd>{volunteer ? "Linked to YM Hub" : "Pending next data update"}</dd>
+              <dt>Backend volunteer record</dt>
+              <dd>{volunteer?.ymhub_volunteer_id ? "Linked to YM Hub" : "Not yet linked"}</dd>
             </div>
             {volunteer?.last_synced_at ? (
               <div className="data-row">
