@@ -12,7 +12,6 @@ type BadgeSnapshot = {
     stable_key: string;
     name: string;
     description: string;
-    reason: string;
     awarded_at: string;
   }>;
 };
