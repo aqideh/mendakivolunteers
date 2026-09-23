@@ -1,6 +1,6 @@
 begin;
 
-select plan(32);
+select plan(34);
 
 select has_table('gamification', 'badge_definitions', 'badge definitions table exists');
 select has_table('gamification', 'volunteer_badges', 'volunteer badge awards table exists');
@@ -30,6 +30,16 @@ select ok(
     'SELECT'
   ),
   'authenticated browser users cannot directly read the private badge catalogue'
+);
+
+select ok(
+  not has_schema_privilege('authenticated', 'gamification', 'USAGE'),
+  'authenticated browser users still have no usage on the private gamification schema'
+);
+
+select ok(
+  has_schema_privilege('service_role', 'gamification', 'USAGE'),
+  'service role retains gamification schema usage for server administration'
 );
 
 select ok(
