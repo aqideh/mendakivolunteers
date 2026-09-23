@@ -23,28 +23,46 @@ export default async function PathwaysPage() {
     supabase.auth.getClaims(),
   ]);
   const { data: claimsData, error: claimsError } = claimsResult;
-  const isSignedIn = !claimsError && Boolean(claimsData?.claims?.sub);
+  const userId = !claimsError ? claimsData?.claims?.sub : undefined;
+  const isSignedIn = Boolean(userId);
   let currentStageKeys: string[] = [];
 
-  if (isSignedIn && pathwayMap) {
+  if (userId && pathwayMap) {
     const client = supabase as unknown as SupabaseClient;
-    const { data: positions, error: positionsError } = await client
-      .schema("pathways")
-      .from("volunteer_positions")
-      .select("stage_stable_key")
-      .eq("map_id", pathwayMap.mapId)
-      .is("ended_at", null);
+    const { data: volunteer, error: volunteerError } = await client
+      .schema("core")
+      .from("volunteers")
+      .select("id")
+      .eq("auth_user_id", userId)
+      .maybeSingle();
 
-    if (positionsError) {
-      console.error("Unable to load personal pathway positions", {
-        code: positionsError.code,
+    if (volunteerError) {
+      console.error("Unable to load pathway volunteer identity", {
+        code: volunteerError.code,
       });
-      throw new Error("Personal pathway positions could not be loaded");
+      throw new Error("Pathway volunteer identity could not be loaded");
     }
 
-    currentStageKeys = (positions ?? []).map(
-      ({ stage_stable_key }) => stage_stable_key as string,
-    );
+    if (volunteer) {
+      const { data: positions, error: positionsError } = await client
+        .schema("pathways")
+        .from("volunteer_positions")
+        .select("stage_stable_key")
+        .eq("volunteer_id", volunteer.id)
+        .eq("map_id", pathwayMap.mapId)
+        .is("ended_at", null);
+
+      if (positionsError) {
+        console.error("Unable to load personal pathway positions", {
+          code: positionsError.code,
+        });
+        throw new Error("Personal pathway positions could not be loaded");
+      }
+
+      currentStageKeys = (positions ?? []).map(
+        ({ stage_stable_key }) => stage_stable_key as string,
+      );
+    }
   }
 
   return (
