@@ -480,18 +480,22 @@ select set_config(
 set local role authenticated;
 
 select ok(
-  pathways.assign_volunteer_position(
-    '93000000-0000-4000-8000-000000000011',
-    (
-      select stage.id
-      from pathways.stages as stage
-      join pathways.map_versions as version on version.id = stage.version_id
-      join pathways.maps as pathway_map on pathway_map.active_version_id = version.id
-      where stage.stable_key = 'mentor.specialise'
-      limit 1
-    ),
-    'Reviewed mentoring experience now supports the Specialise stage.',
-    null
+  set_config(
+    'test.slice6_active_position_id',
+    pathways.assign_volunteer_position(
+      '93000000-0000-4000-8000-000000000011',
+      (
+        select stage.id
+        from pathways.stages as stage
+        join pathways.map_versions as version on version.id = stage.version_id
+        join pathways.maps as pathway_map on pathway_map.active_version_id = version.id
+        where stage.stable_key = 'mentor.specialise'
+        limit 1
+      ),
+      'Reviewed mentoring experience now supports the Specialise stage.',
+      null
+    )::text,
+    true
   ) is not null,
   'a later position on the same track can replace the active position'
 );
@@ -536,13 +540,7 @@ set local role authenticated;
 select lives_ok(
   $$
     select pathways.clear_volunteer_position(
-      (
-        select id
-        from pathways.volunteer_positions
-        where volunteer_id = '93000000-0000-4000-8000-000000000011'
-          and track_stable_key = 'mentor'
-          and ended_at is null
-      ),
+      current_setting('test.slice6_active_position_id')::uuid,
       'Volunteer pathway position reset after review.'
     )
   $$,
