@@ -1,6 +1,6 @@
 begin;
 
-select plan(28);
+select plan(32);
 
 select has_table('gamification', 'badge_definitions', 'badge definitions table exists');
 select has_table('gamification', 'volunteer_badges', 'volunteer badge awards table exists');
@@ -144,50 +144,51 @@ select set_config(
 );
 set local role authenticated;
 
-select ok(
+create temporary table slice6_test_ids (
+  kind text primary key,
+  id uuid not null
+);
+grant select, insert, update, delete on slice6_test_ids to authenticated;
+
+insert into slice6_test_ids (kind, id)
+values (
+  'badge_definition',
   core.create_badge_definition(
     'community-builder',
     'Community Builder',
     'Recognises reviewed contributions that strengthen the volunteer community.'
-  ) is not null,
-  'gamification manager can create a badge definition'
+  )
 );
 
 select ok(
+  (select id from slice6_test_ids where kind = 'badge_definition') is not null,
+  'gamification manager can create a badge definition'
+);
+
+insert into slice6_test_ids (kind, id)
+values (
+  'badge_award',
   core.award_badge(
     '93000000-0000-4000-8000-000000000011',
-    (
-      select id
-      from gamification.badge_definitions
-      where stable_key = 'community-builder'
-    ),
+    (select id from slice6_test_ids where kind = 'badge_definition'),
     'Consistently supported fellow volunteers during programme delivery.',
     '93000000-0000-4000-8000-000000000099'
-  ) is not null,
+  )
+);
+
+select ok(
+  (select id from slice6_test_ids where kind = 'badge_award') is not null,
   'gamification manager can award a badge'
 );
 
 select is(
   core.award_badge(
     '93000000-0000-4000-8000-000000000011',
-    (
-      select id
-      from gamification.badge_definitions
-      where stable_key = 'community-builder'
-    ),
+    (select id from slice6_test_ids where kind = 'badge_definition'),
     'Consistently supported fellow volunteers during programme delivery.',
     '93000000-0000-4000-8000-000000000099'
   ),
-  core.award_badge(
-    '93000000-0000-4000-8000-000000000011',
-    (
-      select id
-      from gamification.badge_definitions
-      where stable_key = 'community-builder'
-    ),
-    'Consistently supported fellow volunteers during programme delivery.',
-    '93000000-0000-4000-8000-000000000099'
-  ),
+  (select id from slice6_test_ids where kind = 'badge_award'),
   'repeating the same badge request is idempotent'
 );
 
@@ -267,12 +268,7 @@ set local role authenticated;
 select lives_ok(
   $$
     select core.revoke_badge(
-      (
-        select id
-        from gamification.volunteer_badges
-        where volunteer_id = '93000000-0000-4000-8000-000000000011'
-          and revoked_at is null
-      ),
+      (select id from slice6_test_ids where kind = 'badge_award'),
       'Correction after staff review.'
     )
   $$,
