@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireGamificationManager } from "@/lib/auth/gamification-access";
@@ -43,8 +42,7 @@ export async function createBadgeDefinition(formData: FormData) {
   if (!parsed.success) redirectError("invalid_badge");
 
   const { supabase } = await requireGamificationManager("/admin/badges");
-  const client = supabase as unknown as SupabaseClient;
-  const { error } = await client.schema("core").rpc("create_badge_definition", {
+  const { error } = await supabase.schema("core").rpc("create_badge_definition", {
     p_stable_key: parsed.data.stableKey,
     p_name: parsed.data.name,
     p_description: parsed.data.description,
@@ -69,8 +67,7 @@ export async function awardBadge(formData: FormData) {
   if (!parsed.success) redirectError("invalid_award");
 
   const { supabase } = await requireGamificationManager("/admin/badges");
-  const client = supabase as unknown as SupabaseClient;
-  const { error } = await client.schema("core").rpc("award_badge", {
+  const { error } = await supabase.schema("core").rpc("award_badge", {
     p_volunteer_id: parsed.data.volunteerId,
     p_badge_id: parsed.data.badgeId,
     p_reason: parsed.data.reason,
@@ -99,8 +96,7 @@ export async function revokeBadge(formData: FormData) {
   if (!parsed.success) redirectError("invalid_revocation");
 
   const { supabase } = await requireGamificationManager("/admin/badges");
-  const client = supabase as unknown as SupabaseClient;
-  const { error } = await client.schema("core").rpc("revoke_badge", {
+  const { error } = await supabase.schema("core").rpc("revoke_badge", {
     p_award_id: parsed.data.awardId,
     p_reason: parsed.data.reason,
   });
