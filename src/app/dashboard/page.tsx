@@ -327,7 +327,7 @@ export default async function DashboardPage({
           ) : null}
         </section>
 
-        {volunteer ? <VolunteerJourneySummary volunteerId={volunteer.id} /> : null}
+        {volunteer ? <VolunteerJourneySummary /> : null}
 
         {volunteer ? (
           <KeluargaRegistrationSummary volunteerId={volunteer.id} />
