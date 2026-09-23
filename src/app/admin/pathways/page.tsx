@@ -104,6 +104,9 @@ export default async function AdminPathwaysPage({
             </p>
           </div>
           <div className="actions">
+            <Link className="button button-secondary" href="/admin/pathways/positions">
+              Volunteer positions
+            </Link>
             <Link className="button button-secondary" href="/pathways" target="_blank">
               View published map
             </Link>
