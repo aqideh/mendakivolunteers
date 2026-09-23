@@ -13,7 +13,7 @@ using (
     from core.volunteers as volunteers
     where volunteers.id = volunteer_id
       and volunteers.auth_user_id = (select auth.uid())
-      and core.is_current_account_active()
+      and (select core.is_current_account_active())
   )
 );
 
@@ -22,19 +22,16 @@ on pathways.volunteer_positions is
   'Personal pathway-position reads are limited to the signed-in volunteer. Staff administration uses role-gated server actions and service-role reads.';
 
 create index if not exists badge_definitions_created_by_idx
-  on gamification.badge_definitions (created_by)
-  where created_by is not null;
+  on gamification.badge_definitions (created_by);
 
 create index if not exists volunteer_badges_badge_id_idx
   on gamification.volunteer_badges (badge_id);
 
 create index if not exists volunteer_badges_awarded_by_idx
-  on gamification.volunteer_badges (awarded_by)
-  where awarded_by is not null;
+  on gamification.volunteer_badges (awarded_by);
 
 create index if not exists volunteer_badges_revoked_by_idx
-  on gamification.volunteer_badges (revoked_by)
-  where revoked_by is not null;
+  on gamification.volunteer_badges (revoked_by);
 
 create index if not exists volunteer_positions_map_id_idx
   on pathways.volunteer_positions (map_id);
@@ -43,12 +40,10 @@ create index if not exists volunteer_positions_assigned_version_id_idx
   on pathways.volunteer_positions (assigned_version_id);
 
 create index if not exists volunteer_positions_assigned_by_idx
-  on pathways.volunteer_positions (assigned_by)
-  where assigned_by is not null;
+  on pathways.volunteer_positions (assigned_by);
 
 create index if not exists volunteer_positions_ended_by_idx
-  on pathways.volunteer_positions (ended_by)
-  where ended_by is not null;
+  on pathways.volunteer_positions (ended_by);
 
 create or replace function pathways.assign_volunteer_position(
   p_volunteer_id uuid,
