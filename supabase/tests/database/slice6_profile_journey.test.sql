@@ -1,6 +1,6 @@
 begin;
 
-select plan(36);
+select plan(37);
 
 select has_table('gamification', 'badge_definitions', 'badge definitions table exists');
 select has_table('gamification', 'volunteer_badges', 'volunteer badge awards table exists');
@@ -446,6 +446,17 @@ select set_config(
   true
 );
 set local role authenticated;
+
+select is(
+  (
+    select count(*)::integer
+    from pathways.volunteer_positions
+    where volunteer_id = '93000000-0000-4000-8000-000000000011'
+      and ended_at is null
+  ),
+  1,
+  'expand release keeps the volunteer own-position read compatible with the deployed app'
+);
 
 select is(
   jsonb_array_length(
