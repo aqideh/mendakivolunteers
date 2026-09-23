@@ -29,7 +29,7 @@ language plpgsql
 stable
 security definer
 set search_path = pg_catalog, core, pathways
-as $
+as $$
 declare
   current_user_id uuid := auth.uid();
   current_volunteer_id uuid;
@@ -73,7 +73,7 @@ begin
     ), '[]'::jsonb)
   );
 end;
-$;
+$$;
 
 revoke all on function core.get_current_pathway_positions_snapshot()
   from public, anon, authenticated;
@@ -86,7 +86,7 @@ language plpgsql
 stable
 security definer
 set search_path = pg_catalog, core, gamification
-as $
+as $$
 declare
   current_user_id uuid := auth.uid();
   current_volunteer_id uuid;
@@ -132,6 +132,11 @@ begin
   );
 end;
 $;
+
+revoke all on function core.get_current_badges_snapshot()
+  from public, anon, authenticated;
+grant execute on function core.get_current_badges_snapshot()
+  to authenticated, service_role;
 
 create index if not exists badge_definitions_created_by_idx
   on gamification.badge_definitions (created_by);
