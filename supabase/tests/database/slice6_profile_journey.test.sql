@@ -1,6 +1,6 @@
 begin;
 
-select plan(34);
+select plan(35);
 
 select has_table('gamification', 'badge_definitions', 'badge definitions table exists');
 select has_table('gamification', 'volunteer_badges', 'volunteer badge awards table exists');
@@ -40,6 +40,17 @@ select ok(
 select ok(
   has_schema_privilege('service_role', 'gamification', 'USAGE'),
   'service role retains gamification schema usage for server administration'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_roles as roles
+    cross join lateral unnest(roles.rolconfig) as setting
+    where roles.rolname = 'authenticator'
+      and setting like 'pgrst.db_schemas=%gamification%'
+  ),
+  'PostgREST authenticator exposes gamification for server/service-role administration'
 );
 
 select ok(
