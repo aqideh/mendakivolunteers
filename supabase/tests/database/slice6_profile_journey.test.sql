@@ -343,12 +343,12 @@ select ok(
 );
 
 select ok(
-  not has_table_privilege(
+  has_table_privilege(
     'authenticated',
     'pathways.volunteer_positions',
     'SELECT'
   ),
-  'authenticated browser users cannot directly read pathway-position rows'
+  'authenticated pathway-position SELECT remains available during expand deployment'
 );
 
 select set_config(
