@@ -21,7 +21,10 @@ comment on policy volunteer_positions_select_self
 on pathways.volunteer_positions is
   'Personal pathway-position reads are limited to the signed-in volunteer. Staff administration uses role-gated server actions and service-role reads.';
 
-revoke select on pathways.volunteer_positions from authenticated;
+-- Direct authenticated SELECT is retained for this expand migration so the
+-- currently deployed app remains compatible while personal reads move to the
+-- scoped RPC. A follow-up contract migration revokes the table grant after the
+-- new application deployment is live.
 
 create or replace function core.get_current_pathway_positions_snapshot()
 returns jsonb
