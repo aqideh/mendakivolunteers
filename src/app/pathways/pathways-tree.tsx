@@ -17,7 +17,7 @@ type StageState = "completed" | "current" | "next" | "future";
 
 type PathwaysTreeProps = Readonly<{
   pathwayMap: PathwayMapVersion;
-  currentStageKey?: string | null;
+  currentStageKeys?: readonly string[];
   showPersonalPosition?: boolean;
 }>;
 
@@ -68,7 +68,7 @@ function getStateLabel(state: StageState): string {
 
 export function PathwaysTree({
   pathwayMap,
-  currentStageKey = null,
+  currentStageKeys = [],
   showPersonalPosition = false,
 }: PathwaysTreeProps) {
   const phases = useMemo(
@@ -83,8 +83,13 @@ export function PathwaysTree({
     () => pathwayMap.stages.filter(({ isActive }) => isActive),
     [pathwayMap.stages],
   );
-  const currentStage = stages.find(({ stableKey }) => stableKey === currentStageKey);
-  const initialStage = currentStage ?? stages.find(
+  const currentStages = stages.filter(({ stableKey }) =>
+    currentStageKeys.includes(stableKey),
+  );
+  const currentStageByTrack = new Map(
+    currentStages.map((stage) => [stage.trackKey, stage]),
+  );
+  const initialStage = currentStages[0] ?? stages.find(
     (stage) =>
       stage.trackKey === tracks[0]?.stableKey &&
       stage.phaseKey === phases[0]?.stableKey,
@@ -176,7 +181,7 @@ export function PathwaysTree({
             className={styles.explorerNode}
             aria-label={`Starting position: ${pathwayMap.explorerTitle}`}
           >
-            {!currentStage ? (
+            {currentStages.length === 0 ? (
               <span className={styles.currentBadge}>
                 {showPersonalPosition ? "You are here" : "Start here"}
               </span>
@@ -237,7 +242,11 @@ export function PathwaysTree({
                       return null;
                     }
 
-                    const state = getStageState(stage, currentStage, phases);
+                    const state = getStageState(
+                      stage,
+                      currentStageByTrack.get(stage.trackKey),
+                      phases,
+                    );
                     const isSelected = selectedStage?.stableKey === stage.stableKey;
 
                     return (
@@ -285,7 +294,15 @@ export function PathwaysTree({
           </div>
           <div className={styles.detailStatus}>
             <span>Pathway status</span>
-            <strong>{getStateLabel(getStageState(selectedStage, currentStage, phases))}</strong>
+            <strong>
+              {getStateLabel(
+                getStageState(
+                  selectedStage,
+                  currentStageByTrack.get(selectedStage.trackKey),
+                  phases,
+                ),
+              )}
+            </strong>
           </div>
         </aside>
       ) : null}

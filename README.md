@@ -28,6 +28,8 @@ The `phaseone` name remains in some routes, modules, CSS classes, tables, and mi
 - Volunteers can register directly in KELUARGA and see pending/confirmed/waitlisted/rejected status plus in-app registration updates.
 - Read-only YM Hub attendance and verified-hours presentation when authoritative snapshots are available.
 - Points UI and append-only gamification ledger with separate verified-attendance and audited staff-recognition sources.
+- Staff-defined, audited volunteer badges with reversible active awards.
+- Staff-confirmed personal pathway positions with one active position per track and retained history.
 - Public volunteer Pathways skill tree.
 
 ### Staff-facing

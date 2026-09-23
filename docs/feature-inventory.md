@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Snapshot date:** 22 September 2026  
+**Snapshot date:** 23 September 2026  
 **Reference branch:** `main`  
 **Reference commit at start of review:** `aacb313211268bd76c7de6d2b3c35939c9317b90`
 
@@ -94,6 +94,8 @@ Implemented foundation and volunteer UI:
 - Role-gated staff points management at `/admin/points` for audited manual recognition awards.
 - Manual recognition awards are idempotent, append-only and distinct from YM Hub attendance-derived points.
 - Tests covering the gamification foundation, reconciliation model and manual recognition workflow.
+- Staff-defined badge catalogue and audited badge award/revocation workflow.
+- Volunteer profile summary of active badges.
 
 Policy/integration dependency:
 
@@ -115,9 +117,15 @@ Implemented:
 - Immutable published versions.
 - Role-gated pathway administration.
 
+Implemented personal positioning:
+
+- Staff-managed volunteer pathway positions.
+- One active position per pathway track with retained history.
+- Volunteer-facing pathway map highlights confirmed positions.
+- My Profile shows current pathway status.
+
 Not yet implemented:
 
-- Individual volunteer positioning on a specific pathway stage.
 - Automatic stage advancement.
 
 ## 2. Staff content and administration

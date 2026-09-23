@@ -217,7 +217,7 @@ Implemented:
 
 ## 6. Gamification and recognition
 
-**Status: Foundation live; policy and authoritative data dependencies remain**
+**Status: Recognition foundation live; policy and authoritative data dependencies remain**
 
 Implemented:
 
@@ -228,7 +228,9 @@ Implemented:
 - account-scoped points UI;
 - reconciliation from verified YM Hub attendance;
 - role-gated staff points management for explicit manual recognition awards;
-- separate point provenance for verified attendance versus staff recognition.
+- separate point provenance for verified attendance versus staff recognition;
+- staff-defined recognition badges with audited award/revocation history;
+- volunteer-facing active badge summary.
 
 ### Next work
 
@@ -236,13 +238,13 @@ Implemented:
 
 **Integration dependency:** only reconcile points after a successful authoritative YM Hub attendance import.
 
-**Planned:** add badges/milestones only after the same provenance and correction rules are defined.
+**Live:** manual badges can be defined, awarded and revoked by authorised gamification staff with explicit reasons and retained history. Automatic badge/milestone earning remains unimplemented until criteria and correction rules are approved.
 
 **Planned:** referral rewards only after an authoritative referral outcome can confirm the referred person reached the required eligibility/registration milestone.
 
 ## 7. Volunteer pathways
 
-**Status: Map management live; personal positioning planned**
+**Status: Map management and staff-confirmed personal positioning live**
 
 Implemented:
 
@@ -253,17 +255,15 @@ Implemented:
 - immutable published versions;
 - role-gated management.
 
+Implemented personal positioning:
+
+- staff-managed position assignment using `core.volunteers.id` and stable stage keys;
+- one active position per volunteer per pathway track;
+- retained assignment history and audit events;
+- volunteer-facing current positions on My Profile and the pathway map;
+- no automatic advancement from attendance, registration or points.
+
 ### Next work
-
-**Planned:** assign individual volunteers to a current pathway stage.
-
-Requirements:
-
-- use stable stage keys and `core.volunteers.id`;
-- staff-managed changes;
-- audit history;
-- clear volunteer-facing current position;
-- no automatic advancement merely from attendance/registration unless explicit criteria are approved.
 
 **Future:** pathway recommendations using reviewed skills/interests/experience may be considered, but should remain explainable and staff-overridable.
 
@@ -364,7 +364,7 @@ Do not use KELUARGA `attendance_person_key` as the canonical MakLom identity.
 2. Show freshness/staleness consistently.
 3. Roll out personal account linking/support at scale.
 4. Activate gamification rules only after policy approval and verified data flow.
-5. Add individual pathway positioning.
+5. Operate staff-confirmed pathway positioning and define any future advancement criteria before automation.
 
 ### P3 — improve volunteer-management intelligence
 

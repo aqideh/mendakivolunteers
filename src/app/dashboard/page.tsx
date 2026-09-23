@@ -6,6 +6,7 @@ import { signOut } from "@/app/dashboard/actions";
 import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-summary";
 import { PortalHeader } from "@/components/portal-header";
 import { ProfileEditor } from "@/components/profile-editor";
+import { VolunteerJourneySummary } from "@/components/volunteer-journey-summary";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
 import { hasGamificationManagerRole } from "@/lib/auth/gamification-access";
 import { hasPathwayManagerRole } from "@/lib/auth/pathway-access";
@@ -326,6 +327,8 @@ export default async function DashboardPage({
           ) : null}
         </section>
 
+        {volunteer ? <VolunteerJourneySummary /> : null}
+
         {volunteer ? (
           <KeluargaRegistrationSummary volunteerId={volunteer.id} />
         ) : null}
@@ -568,6 +571,10 @@ export default async function DashboardPage({
                   <Link className="text-link" href="/admin/points">
                     Manage volunteer points
                   </Link>
+                  <br />
+                  <Link className="text-link" href="/admin/badges">
+                    Manage badges
+                  </Link>
                 </article>
               ) : null}
               {canManagePathways ? (
@@ -578,6 +585,10 @@ export default async function DashboardPage({
                   </p>
                   <Link className="text-link" href="/admin/pathways">
                     Manage pathway map
+                  </Link>
+                  <br />
+                  <Link className="text-link" href="/admin/pathways/positions">
+                    Manage volunteer positions
                   </Link>
                 </article>
               ) : null}

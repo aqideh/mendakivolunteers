@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { PortalHeader } from "@/components/portal-header";
 import { getPublishedPathwayMap } from "@/lib/pathways/data";
@@ -23,12 +24,38 @@ export default async function PathwaysPage() {
   ]);
   const { data: claimsData, error: claimsError } = claimsResult;
   const isSignedIn = !claimsError && Boolean(claimsData?.claims?.sub);
+  let currentStageKeys: string[] = [];
+
+  if (isSignedIn && pathwayMap) {
+    const client = supabase as unknown as SupabaseClient;
+    const { data: positions, error: positionsError } = await client
+      .schema("pathways")
+      .from("volunteer_positions")
+      .select("stage_stable_key")
+      .eq("map_id", pathwayMap.mapId)
+      .is("ended_at", null);
+
+    if (positionsError) {
+      console.error("Unable to load personal pathway positions", {
+        code: positionsError.code,
+      });
+      throw new Error("Personal pathway positions could not be loaded");
+    }
+
+    currentStageKeys = (positions ?? []).map(
+      ({ stage_stable_key }) => stage_stable_key as string,
+    );
+  }
 
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Volunteer pathways" lite />
       {pathwayMap ? (
-        <PathwaysView pathwayMap={pathwayMap} isSignedIn={isSignedIn} />
+        <PathwaysView
+          pathwayMap={pathwayMap}
+          isSignedIn={isSignedIn}
+          currentStageKeys={currentStageKeys}
+        />
       ) : (
         <main className="page-frame">
           <section className="panel" aria-labelledby="pathways-unavailable-title">

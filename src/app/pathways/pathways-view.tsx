@@ -9,15 +9,19 @@ type PathwaysViewProps = Readonly<{
   pathwayMap: PathwayMapVersion;
   isSignedIn: boolean;
   preview?: boolean;
-  currentStageKey?: string | null;
+  currentStageKeys?: readonly string[];
 }>;
 
 export function PathwaysView({
   pathwayMap,
   isSignedIn,
   preview = false,
-  currentStageKey = null,
+  currentStageKeys = [],
 }: PathwaysViewProps) {
+  const currentStages = pathwayMap.stages.filter(({ stableKey }) =>
+    currentStageKeys.includes(stableKey),
+  );
+
   return (
     <>
       <main className={styles.frame}>
@@ -54,22 +58,31 @@ export function PathwaysView({
                     ? "Your current position"
                     : "Starting position"}
               </span>
-              <strong>{pathwayMap.explorerTitle}</strong>
-              <p>Starting point · {pathwayMap.tracks.length} pathways ahead</p>
+              <strong>
+                {currentStages.length
+                  ? currentStages.map(({ title }) => title).join(" · ")
+                  : pathwayMap.explorerTitle}
+              </strong>
+              <p>
+                {currentStages.length
+                  ? `${currentStages.length} confirmed pathway position${currentStages.length === 1 ? "" : "s"}`
+                  : `Starting point · ${pathwayMap.tracks.length} pathways ahead`}
+              </p>
             </div>
           </div>
 
           {!preview ? (
             <p className={styles.prototypeNote} role="note">
-              Individual stage assignments are planned for a future release. Until
-              then, every volunteer is shown at the shared Explorer starting point.
+              Pathway positions are confirmed by staff after review. Different tracks
+              can progress independently, and activity does not move a position
+              automatically.
             </p>
           ) : null}
         </section>
 
         <PathwaysTree
           pathwayMap={pathwayMap}
-          currentStageKey={currentStageKey}
+          currentStageKeys={currentStageKeys}
           showPersonalPosition={!preview && isSignedIn}
         />
 

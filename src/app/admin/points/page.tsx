@@ -99,6 +99,9 @@ export default async function PointsAdminPage({ searchParams }: PageProps) {
             </p>
           </div>
           <div className="actions">
+            <Link className="button button-secondary" href="/admin/badges">
+              Manage badges
+            </Link>
             <Link className="button button-secondary" href="/dashboard">
               Back to My Profile
             </Link>

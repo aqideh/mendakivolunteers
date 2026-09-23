@@ -11,9 +11,7 @@ The portal owns:
 - Track, phase, stage, and role-option descriptions.
 - Pathway publication and audit history.
 
-The first release does not own an individual volunteer's pathway position. Every
-volunteer is shown at the Explorer starting point until a separately reviewed
-assignment workflow is introduced.
+KELUARGA now also owns staff-confirmed individual pathway positions. Explorer remains the calculated default when a volunteer has no active position on a track.
 
 ## Routes
 
@@ -67,18 +65,13 @@ Each version insert and status change writes an event to the central
 only transition to `archived`; its content and child records cannot be changed or
 deleted.
 
-## Future volunteer positioning
+## Volunteer positioning
 
-A later delivery may add a staff-managed `pathways.volunteer_positions` history
-using:
+`pathways.volunteer_positions` retains staff-confirmed pathway history using:
 
-- `core.volunteers.id` as the stable KELUARGA volunteer key, whether or not a YM Hub ID has been attached yet.
-- The pathway map and exact version used for the assignment.
-- A stable stage key rather than a display title.
-- Effective and end timestamps, assigning staff member, reason, and notes.
+- `core.volunteers.id` as the stable KELUARGA volunteer key;
+- the pathway map and exact published version used for assignment;
+- stable track and stage keys plus display snapshots;
+- effective/end timestamps, assigning staff member, reason, and optional notes.
 
-The recommended rule is one active position per pathway track, allowing a
-volunteer to progress differently across tracks. Explorer remains a calculated
-default when no active position exists. Attendance or training records may be
-linked as evidence later, but must not advance a position automatically without
-an approved policy and staff confirmation.
+One active position is allowed per pathway track, so a volunteer can progress differently across tracks. Reassigning the same track closes the previous position rather than overwriting history. Explorer remains the calculated default when no active position exists. Attendance, registrations and points do not advance a pathway position automatically.

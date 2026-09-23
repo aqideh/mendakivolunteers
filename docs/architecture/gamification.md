@@ -116,3 +116,8 @@ A manual recognition award:
 - never creates or edits `ymhub.attendance_snapshots`.
 
 This keeps staff recognition available as an operational KELUARGA feature without weakening the rule that verified hours and verified attendance remain YM Hub-owned.
+
+
+## Data API boundary
+
+The gamification schema is included in PostgREST's schema list so trusted server/service-role administration can address it. This does **not** make gamification tables public: `anon` and `authenticated` browser roles retain no schema usage or direct table grants. Volunteer-facing recognition reads use account-scoped security-definer functions, while privileged administration remains server-side and role-gated.
