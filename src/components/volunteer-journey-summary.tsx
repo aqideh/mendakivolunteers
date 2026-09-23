@@ -84,7 +84,7 @@ export async function VolunteerJourneySummary() {
           <h3>Badges</h3>
           {badgeRows.length ? (
             <ul className="phaseone-compact-list">
-              {badgeRows.slice(0, 4).map((badge) => (
+              {badgeRows.map((badge) => (
                 <li key={badge.award_id}>
                   <strong>{badge.name}</strong>
                   <span className="muted">{badge.description}</span>
@@ -98,7 +98,7 @@ export async function VolunteerJourneySummary() {
             </p>
           )}
           <Link className="text-link" href="/points">
-            View recognition history
+            View points history
           </Link>
         </article>
 
