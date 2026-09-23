@@ -1,6 +1,6 @@
 # Development roadmap
 
-**Last reviewed:** 23 September 2026
+**Last reviewed:** 24 September 2026
 
 This roadmap reflects both the current deployed implementation and the approved 22 September 2026 operating-model change. **KELUARGA will own volunteer recruitment, registration and live event operations; YM Hub remains the authoritative backend organisational record after handoff/reconciliation.** Verified volunteer hours remain YM Hub-owned.
 
@@ -47,6 +47,7 @@ Implemented:
 - landing page;
 - opportunity discovery;
 - news;
+- standalone public FAQ route and navigation, with approved FAQ copy kept in a dedicated content module;
 - KELUARGA-managed programme/event records for public opportunity discovery;
 - direct KELUARGA registration with shift selection and status display;
 - Event Guides with venue, directions, briefing and programme information;
@@ -54,6 +55,8 @@ Implemented:
 - retired Volunteer.gov.sg runtime importer and imported-card override flow.
 
 ### Next work
+
+**Content dependency:** the FAQ page is live as a content-ready shell; Volunteer Management still needs to furnish the approved questions and answers before it becomes a substantive support resource.
 
 **Planned:** add audited volunteer/staff cancellation and withdrawal handling on top of the first-class registration lifecycle.
 
