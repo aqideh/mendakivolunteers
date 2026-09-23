@@ -1,7 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -117,6 +115,3 @@ export async function revokeBadge(formData: FormData) {
   redirect("/admin/badges?success=badge_revoked");
 }
 
-export function newBadgeRequestId() {
-  return randomUUID();
-}
