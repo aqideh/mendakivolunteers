@@ -9,7 +9,7 @@ import {
   formatTimeslotDate,
   formatTimeslotTimeRange,
 } from "@/lib/phaseone/packages";
-import { reviewRegistration } from "./actions";
+import { cancelRegistration, reviewRegistration } from "./actions";
 
 export const metadata: Metadata = { title: "Volunteer registrations" };
 export const dynamic = "force-dynamic";
@@ -35,7 +35,9 @@ function statusLabel(status: string) {
         ? "Waitlisted"
         : status === "rejected"
           ? "Not confirmed"
-          : "Cancelled";
+          : status === "withdrawn"
+            ? "Withdrawn"
+            : "Cancelled";
 }
 
 export default async function RegistrationsAdminPage({
@@ -280,6 +282,42 @@ export default async function RegistrationsAdminPage({
                       </button>
                     </div>
                   </form>
+                ) : null}
+
+                {["pending", "waitlisted", "confirmed"].includes(
+                  registration.status,
+                ) ? (
+                  <details className="phaseone-inline-disclosure">
+                    <summary>Cancel registration</summary>
+                    <form action={cancelRegistration} className="phaseone-admin-form">
+                      <input
+                        name="registrationId"
+                        type="hidden"
+                        value={registration.id}
+                      />
+                      <input
+                        name="eventId"
+                        type="hidden"
+                        value={registration.event_id}
+                      />
+                      <div className="form-field">
+                        <label htmlFor={`cancel-reason-${registration.id}`}>
+                          Cancellation reason
+                        </label>
+                        <textarea
+                          id={`cancel-reason-${registration.id}`}
+                          maxLength={1000}
+                          minLength={3}
+                          name="reason"
+                          required
+                          rows={2}
+                        />
+                      </div>
+                      <button className="button button-secondary" type="submit">
+                        Cancel registration
+                      </button>
+                    </form>
+                  </details>
                 ) : null}
 
                 {event ? (
