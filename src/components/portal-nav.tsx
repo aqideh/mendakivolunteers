@@ -7,6 +7,7 @@ import { useState } from "react";
 type PortalNavProps = Readonly<{
   canManageEvents: boolean;
   canManagePoints: boolean;
+  canManageVolunteers: boolean;
   isSignedIn: boolean;
 }>;
 
@@ -22,6 +23,7 @@ function matchesPath(pathname: string, href: string): boolean {
 export function PortalNav({
   canManageEvents,
   canManagePoints,
+  canManageVolunteers,
   isSignedIn,
 }: PortalNavProps) {
   const pathname = usePathname() ?? "";
@@ -30,6 +32,10 @@ export function PortalNav({
     { href: "/opportunities", label: "Opportunities" },
     { href: "/faq", label: "FAQ" },
   ];
+
+  if (canManageVolunteers) {
+    items.push({ href: "/admin/recruitment", label: "Volunteer Recruitment" });
+  }
 
   if (canManageEvents) {
     items.push({ href: "/admin/events", label: "Event Operations" });
