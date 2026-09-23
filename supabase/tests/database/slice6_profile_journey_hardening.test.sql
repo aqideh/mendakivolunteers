@@ -1,6 +1,6 @@
 begin;
 
-select plan(11);
+select plan(12);
 
 insert into auth.users (id, email, email_confirmed_at)
 values
@@ -111,6 +111,15 @@ select ok(
     'SELECT'
   ),
   'authenticated browser users cannot directly read pathway-position rows'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'core.get_current_pathway_positions_snapshot()',
+    'EXECUTE'
+  ),
+  'anonymous users cannot execute the personal pathway snapshot'
 );
 
 select is(
