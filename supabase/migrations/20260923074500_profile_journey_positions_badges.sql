@@ -656,4 +656,11 @@ grant execute on function pathways.assign_volunteer_position(uuid, uuid, text, t
 grant execute on function pathways.clear_volunteer_position(uuid, text)
   to authenticated, service_role;
 
+-- PostgREST must expose the private gamification schema for server/service-role
+-- administration. Anonymous and authenticated browser roles still have no schema
+-- usage or table grants, so this does not make private gamification records public.
+alter role authenticator set pgrst.db_schemas =
+  'public, graphql_public, content, core, ymhub, pathways, gamification';
+notify pgrst, 'reload config';
+
 commit;
