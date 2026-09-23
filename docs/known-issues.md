@@ -109,7 +109,7 @@ Keep these here because they are useful regression history even though they are 
 | Attendance transitions | Invalid state transitions are enforced server-side rather than relying only on UI controls. |
 | Continuous shifts | Attendance now supports continuity across adjacent shifts and early/final checkout cases. |
 | Walk-in typo correction | Correcting a walk-in's name/email/mobile now propagates across that event's matching shift rows while retaining the same attendance/review/insight identity. |
-| Slice 6 pathway privacy | Personal pathway reads now scope explicitly to the signed-in volunteer and browser RLS is self-only, preventing pathway managers from over-reading other volunteers' positions on personal surfaces (Issue #160). |
+| Slice 6 pathway privacy | Personal pathway reads use an account-scoped RPC, browser roles have no direct pathway-position table access, and self-only RLS remains as defense in depth (Issue #160). |
 
 ## 6. How to record new bugs
 
