@@ -1,6 +1,6 @@
 begin;
 
-select plan(35);
+select plan(36);
 
 select has_table('gamification', 'badge_definitions', 'badge definitions table exists');
 select has_table('gamification', 'volunteer_badges', 'volunteer badge awards table exists');
@@ -258,6 +258,16 @@ select is(
   'volunteer badge snapshot exposes the active badge'
 );
 
+select ok(
+  not (
+    core.get_current_badges_snapshot()
+      -> 'badges'
+      -> 0
+      ? 'reason'
+  ),
+  'volunteer badge snapshot does not expose the internal award reason'
+);
+
 select throws_ok(
   $$
     select core.award_badge(
@@ -333,12 +343,12 @@ select ok(
 );
 
 select ok(
-  has_table_privilege(
+  not has_table_privilege(
     'authenticated',
     'pathways.volunteer_positions',
     'SELECT'
   ),
-  'authenticated users can read pathway positions permitted by RLS'
+  'authenticated browser users cannot directly read pathway-position rows'
 );
 
 select set_config(
@@ -438,14 +448,11 @@ select set_config(
 set local role authenticated;
 
 select is(
-  (
-    select count(*)::integer
-    from pathways.volunteer_positions
-    where volunteer_id = '93000000-0000-4000-8000-000000000011'
-      and ended_at is null
+  jsonb_array_length(
+    core.get_current_pathway_positions_snapshot() -> 'positions'
   ),
   1,
-  'volunteer can read their own active pathway position'
+  'volunteer scoped pathway snapshot exposes their active position'
 );
 
 reset role;
