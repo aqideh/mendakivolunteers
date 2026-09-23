@@ -68,8 +68,7 @@ export async function clearVolunteerPosition(formData: FormData) {
   if (!parsed.success) redirectError("invalid_clear");
 
   const { supabase } = await requirePathwayManager("/admin/pathways/positions");
-  const client = supabase as unknown as SupabaseClient;
-  const { error } = await client
+  const { error } = await supabase
     .schema("pathways")
     .rpc("clear_volunteer_position", {
       p_position_id: parsed.data.positionId,
