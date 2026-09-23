@@ -131,7 +131,7 @@ begin
     ), '[]'::jsonb)
   );
 end;
-$;
+$$;
 
 revoke all on function core.get_current_badges_snapshot()
   from public, anon, authenticated;
