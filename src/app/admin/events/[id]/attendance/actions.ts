@@ -149,19 +149,78 @@ export async function addWalkInVolunteer(formData: FormData) {
 
   const { userId } = await requireEventManager(returnPath);
   const admin = getPhaseOneAdminClient();
-  const { data, error } = await admin.rpc("phaseone_add_walk_in_volunteer", {
-    p_event_id: parsed.data.eventId,
-    p_timeslot_id: parsed.data.timeslotId,
-    p_volunteer_key: parsed.data.volunteerKey || null,
-    p_volunteer_name: parsed.data.volunteerName,
-    p_email: parsed.data.email || null,
-    p_mobile: parsed.data.mobile || null,
-    p_age: parsed.data.age,
-    p_tshirt_size: parsed.data.tshirtSize || null,
-    p_dietary_requirements: parsed.data.dietaryRequirements || null,
-    p_check_in: parsed.data.submitIntent === "add_and_check_in",
-    p_changed_by: userId,
-  });
+  const eventResult = await admin
+    .from("phaseone_events")
+    .select("operations_scope")
+    .eq("id", parsed.data.eventId)
+    .maybeSingle();
+
+  if (eventResult.error || !eventResult.data) {
+    redirect(
+      appendParameter(
+        returnPath,
+        "error",
+        "The event data boundary could not be checked.",
+      ),
+    );
+  }
+
+  const operationsScope = String(eventResult.data.operations_scope);
+  const isManual =
+    operationsScope === "manual_isolated" ||
+    operationsScope === "manual_integrated";
+  const integratesVolunteers = operationsScope === "manual_integrated";
+  const suppliedKelId = /^KEL[0-9]{5}$/i.test(
+    parsed.data.volunteerKey?.trim() ?? "",
+  );
+
+  if (
+    integratesVolunteers &&
+    !suppliedKelId &&
+    !parsed.data.email &&
+    !parsed.data.mobile
+  ) {
+    redirect(
+      appendParameter(
+        returnPath,
+        "error",
+        "This integrated manual event needs a KELUARGA Volunteer ID, email or mobile number before a walk-in can be added.",
+      ),
+    );
+  }
+
+  const rpcName = isManual
+    ? "phaseone_add_manual_walk_in_volunteer"
+    : "phaseone_add_walk_in_volunteer";
+  const rpcArgs = isManual
+    ? {
+        p_event_id: parsed.data.eventId,
+        p_timeslot_id: parsed.data.timeslotId,
+        p_volunteer_key: parsed.data.volunteerKey || null,
+        p_volunteer_name: parsed.data.volunteerName,
+        p_email: parsed.data.email || null,
+        p_mobile: parsed.data.mobile || null,
+        p_age: parsed.data.age,
+        p_tshirt_size: parsed.data.tshirtSize || null,
+        p_dietary_requirements: parsed.data.dietaryRequirements || null,
+        p_check_in: parsed.data.submitIntent === "add_and_check_in",
+        p_changed_by: userId,
+        p_integrate_volunteers: integratesVolunteers,
+      }
+    : {
+        p_event_id: parsed.data.eventId,
+        p_timeslot_id: parsed.data.timeslotId,
+        p_volunteer_key: parsed.data.volunteerKey || null,
+        p_volunteer_name: parsed.data.volunteerName,
+        p_email: parsed.data.email || null,
+        p_mobile: parsed.data.mobile || null,
+        p_age: parsed.data.age,
+        p_tshirt_size: parsed.data.tshirtSize || null,
+        p_dietary_requirements: parsed.data.dietaryRequirements || null,
+        p_check_in: parsed.data.submitIntent === "add_and_check_in",
+        p_changed_by: userId,
+      };
+  const { data, error } = await admin.rpc(rpcName, rpcArgs);
 
   if (error) {
     console.error("Unable to add last-minute volunteer", {
