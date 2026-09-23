@@ -1,6 +1,6 @@
 begin;
 
-select plan(10);
+select plan(11);
 
 insert into auth.users (id, email, email_confirmed_at)
 values
@@ -104,15 +104,21 @@ select is(
   'repeating the same active stage assignment is idempotent'
 );
 
+select ok(
+  not has_table_privilege(
+    'authenticated',
+    'pathways.volunteer_positions',
+    'SELECT'
+  ),
+  'authenticated browser users cannot directly read pathway-position rows'
+);
+
 select is(
-  (
-    select count(*)::integer
-    from pathways.volunteer_positions
-    where volunteer_id = '94000000-0000-4000-8000-000000000011'
-      and ended_at is null
+  jsonb_array_length(
+    core.get_current_pathway_positions_snapshot() -> 'positions'
   ),
   0,
-  'pathway manager browser session cannot directly read another volunteer position'
+  'pathway manager personal snapshot does not include another volunteer position'
 );
 
 reset role;
