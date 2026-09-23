@@ -1,6 +1,4 @@
 import Link from "next/link";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 import { formatPoints } from "@/lib/gamification/read-model";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,7 +10,6 @@ type BadgeSnapshot = {
     stable_key: string;
     name: string;
     description: string;
-    reason: string;
     awarded_at: string;
   }>;
 };
@@ -24,26 +21,26 @@ type PointsSnapshot = {
 
 type PositionRow = {
   id: string;
+  map_id: string;
+  track_stable_key: string;
+  stage_stable_key: string;
   track_name_snapshot: string;
   stage_title_snapshot: string;
-  reason: string;
   effective_from: string;
 };
 
+type PathwaySnapshot = {
+  linked: boolean;
+  positions: PositionRow[];
+};
+
 export async function VolunteerJourneySummary() {
-  const supabase = (await createClient()) as unknown as SupabaseClient;
+  const supabase = await createClient();
 
   const [pointsResult, badgesResult, positionsResult] = await Promise.all([
     supabase.schema("core").rpc("get_current_points_snapshot"),
     supabase.schema("core").rpc("get_current_badges_snapshot"),
-    supabase
-      .schema("pathways")
-      .from("volunteer_positions")
-      .select(
-        "id, track_name_snapshot, stage_title_snapshot, reason, effective_from",
-      )
-      .is("ended_at", null)
-      .order("effective_from", { ascending: false }),
+    supabase.schema("core").rpc("get_current_pathway_positions_snapshot"),
   ]);
 
   if (pointsResult.error || badgesResult.error || positionsResult.error) {
@@ -57,7 +54,8 @@ export async function VolunteerJourneySummary() {
 
   const points = pointsResult.data as PointsSnapshot | null;
   const badges = badgesResult.data as BadgeSnapshot | null;
-  const positions = (positionsResult.data ?? []) as PositionRow[];
+  const pathwaySnapshot = positionsResult.data as PathwaySnapshot | null;
+  const positions = pathwaySnapshot?.positions ?? [];
   const badgeRows = badges?.badges ?? [];
 
   return (
@@ -86,7 +84,7 @@ export async function VolunteerJourneySummary() {
           <h3>Badges</h3>
           {badgeRows.length ? (
             <ul className="phaseone-compact-list">
-              {badgeRows.slice(0, 4).map((badge) => (
+              {badgeRows.map((badge) => (
                 <li key={badge.award_id}>
                   <strong>{badge.name}</strong>
                   <span className="muted">{badge.description}</span>
@@ -100,7 +98,7 @@ export async function VolunteerJourneySummary() {
             </p>
           )}
           <Link className="text-link" href="/points">
-            View recognition history
+            View points history
           </Link>
         </article>
 

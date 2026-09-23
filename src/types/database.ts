@@ -200,6 +200,42 @@ export type Database = {
         Args: Record<never, never>;
         Returns: boolean;
       };
+      get_current_points_snapshot: {
+        Args: Record<never, never>;
+        Returns: Json;
+      };
+      get_current_badges_snapshot: {
+        Args: Record<never, never>;
+        Returns: Json;
+      };
+      get_current_pathway_positions_snapshot: {
+        Args: Record<never, never>;
+        Returns: Json;
+      };
+      create_badge_definition: {
+        Args: {
+          p_stable_key: string;
+          p_name: string;
+          p_description: string;
+        };
+        Returns: string;
+      };
+      award_badge: {
+        Args: {
+          p_volunteer_id: string;
+          p_badge_id: string;
+          p_reason: string;
+          p_request_id: string;
+        };
+        Returns: string;
+      };
+      revoke_badge: {
+        Args: {
+          p_award_id: string;
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       app_role: AppRole;
@@ -550,6 +586,22 @@ export type Database = {
       };
       publish_draft: {
         Args: { draft_version_id: string };
+        Returns: undefined;
+      };
+      assign_volunteer_position: {
+        Args: {
+          p_volunteer_id: string;
+          p_stage_id: string;
+          p_reason: string;
+          p_notes?: string | null;
+        };
+        Returns: string;
+      };
+      clear_volunteer_position: {
+        Args: {
+          p_position_id: string;
+          p_reason: string;
+        };
         Returns: undefined;
       };
     };

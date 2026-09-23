@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requirePathwayManager } from "@/lib/auth/pathway-access";
@@ -38,8 +37,7 @@ export async function assignVolunteerPosition(formData: FormData) {
   if (!parsed.success) redirectError("invalid_assignment");
 
   const { supabase } = await requirePathwayManager("/admin/pathways/positions");
-  const client = supabase as unknown as SupabaseClient;
-  const { error } = await client
+  const { error } = await supabase
     .schema("pathways")
     .rpc("assign_volunteer_position", {
       p_volunteer_id: parsed.data.volunteerId,
@@ -70,8 +68,7 @@ export async function clearVolunteerPosition(formData: FormData) {
   if (!parsed.success) redirectError("invalid_clear");
 
   const { supabase } = await requirePathwayManager("/admin/pathways/positions");
-  const client = supabase as unknown as SupabaseClient;
-  const { error } = await client
+  const { error } = await supabase
     .schema("pathways")
     .rpc("clear_volunteer_position", {
       p_position_id: parsed.data.positionId,

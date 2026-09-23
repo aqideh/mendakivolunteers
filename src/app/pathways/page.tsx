@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 import { PortalHeader } from "@/components/portal-header";
 import { getPublishedPathwayMap } from "@/lib/pathways/data";
 import { createClient } from "@/lib/supabase/server";
@@ -27,13 +25,9 @@ export default async function PathwaysPage() {
   let currentStageKeys: string[] = [];
 
   if (isSignedIn && pathwayMap) {
-    const client = supabase as unknown as SupabaseClient;
-    const { data: positions, error: positionsError } = await client
-      .schema("pathways")
-      .from("volunteer_positions")
-      .select("stage_stable_key")
-      .eq("map_id", pathwayMap.mapId)
-      .is("ended_at", null);
+    const { data: pathwaySnapshot, error: positionsError } = await supabase
+      .schema("core")
+      .rpc("get_current_pathway_positions_snapshot");
 
     if (positionsError) {
       console.error("Unable to load personal pathway positions", {
@@ -42,9 +36,14 @@ export default async function PathwaysPage() {
       throw new Error("Personal pathway positions could not be loaded");
     }
 
-    currentStageKeys = (positions ?? []).map(
-      ({ stage_stable_key }) => stage_stable_key as string,
-    );
+    const positions =
+      (pathwaySnapshot as {
+        positions?: Array<{ map_id: string; stage_stable_key: string }>;
+      } | null)?.positions ?? [];
+
+    currentStageKeys = positions
+      .filter(({ map_id }) => map_id === pathwayMap.mapId)
+      .map(({ stage_stable_key }) => stage_stable_key);
   }
 
   return (
