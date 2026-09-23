@@ -1,6 +1,4 @@
 import Link from "next/link";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 import { formatPoints } from "@/lib/gamification/read-model";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,7 +35,7 @@ type PathwaySnapshot = {
 };
 
 export async function VolunteerJourneySummary() {
-  const supabase = (await createClient()) as unknown as SupabaseClient;
+  const supabase = await createClient();
 
   const [pointsResult, badgesResult, positionsResult] = await Promise.all([
     supabase.schema("core").rpc("get_current_points_snapshot"),
