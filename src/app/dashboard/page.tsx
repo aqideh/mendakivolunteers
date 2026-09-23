@@ -46,6 +46,12 @@ const dashboardErrors: Record<string, string> = {
     "Enter a valid full name and mobile number.",
   profile_update_failed:
     "Your profile could not be updated. No profile data was changed.",
+  registration_withdraw_invalid:
+    "The registration could not be identified.",
+  registration_withdraw_started:
+    "Attendance has already started for this registration. Contact Volunteer Management if a correction is needed.",
+  registration_withdraw_failed:
+    "The registration could not be withdrawn. No registration data was changed.",
 };
 
 type YmHubSyncStatus =
@@ -266,6 +272,11 @@ export default async function DashboardPage({
         {successCode === "profile_updated" ? (
           <div className="notice notice-success" role="status">
             Your KELUARGA profile has been updated.
+          </div>
+        ) : null}
+        {successCode === "registration_withdrawn" ? (
+          <div className="notice notice-success" role="status">
+            Your programme registration has been withdrawn.
           </div>
         ) : null}
 
