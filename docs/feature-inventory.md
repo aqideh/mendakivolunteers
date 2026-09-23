@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Snapshot date:** 22 September 2026  
+**Snapshot date:** 23 September 2026  
 **Reference branch:** `main`  
 **Reference commit at start of review:** `aacb313211268bd76c7de6d2b3c35939c9317b90`
 
