@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Snapshot date:** 23 September 2026  
+**Snapshot date:** 24 September 2026  
 **Reference branch:** `main`  
 **Reference commit at start of review:** `aacb313211268bd76c7de6d2b3c35939c9317b90`
 
@@ -15,6 +15,7 @@ Implemented:
 - Branded KELUARGA landing page.
 - Public opportunity browsing and opportunity detail pages.
 - Public news listing and news detail pages.
+- Public FAQ route linked from the global menu, with accessible native disclosure controls ready for approved content.
 - Public volunteer pathways page.
 - KELUARGA-owned programme/event records drive the opportunity listing, Event Guides and Event Operations.
 - Volunteers can register directly in KELUARGA and select one or more available shifts.
@@ -24,6 +25,10 @@ Implemented:
 - Registration submission/status changes create in-app volunteer notifications.
 - The Volunteer.gov.sg scheduled importer and manual imported-card override workflow are retired from runtime code.
 - YM Hub remains the authoritative backend organisational record after a separately designed handoff/reconciliation process.
+
+FAQ content note:
+
+- The FAQ feature shell is implemented, but Volunteer Management has not yet furnished the production questions and answers.
 
 ### Event Guides
 

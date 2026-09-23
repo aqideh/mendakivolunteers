@@ -28,6 +28,7 @@ export function PortalNav({
   const [isOpen, setIsOpen] = useState(false);
   const items: NavigationItem[] = [
     { href: "/opportunities", label: "Opportunities" },
+    { href: "/faq", label: "FAQ" },
   ];
 
   if (canManageEvents) {
