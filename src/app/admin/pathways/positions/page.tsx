@@ -123,7 +123,7 @@ export default async function PathwayPositionsPage({ searchParams }: PageProps) 
             <p className="eyebrow">Volunteer development</p>
             <h1>Volunteer pathway positions</h1>
             <p className="muted">
-              Confirm a volunteer's reviewed position on one or more pathway
+              Confirm a volunteer’s reviewed position on one or more pathway
               tracks. Assignments are staff-managed and audited; attendance or
               registration never advances a volunteer automatically.
             </p>
