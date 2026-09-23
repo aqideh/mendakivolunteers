@@ -1,6 +1,6 @@
 # Known issues, limitations and technical debt
 
-**Last reviewed:** 22 September 2026  
+**Last reviewed:** 23 September 2026  
 **Reference branch:** `main`
 
 This register deliberately separates confirmed defects from product limitations, integration dependencies and intentionally deferred work.
