@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 import { PortalHeader } from "@/components/portal-header";
 import { getPublishedPathwayMap } from "@/lib/pathways/data";
 import { createClient } from "@/lib/supabase/server";
@@ -27,8 +25,7 @@ export default async function PathwaysPage() {
   let currentStageKeys: string[] = [];
 
   if (isSignedIn && pathwayMap) {
-    const client = supabase as unknown as SupabaseClient;
-    const { data: pathwaySnapshot, error: positionsError } = await client
+    const { data: pathwaySnapshot, error: positionsError } = await supabase
       .schema("core")
       .rpc("get_current_pathway_positions_snapshot");
 
