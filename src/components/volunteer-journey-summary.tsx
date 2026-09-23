@@ -30,7 +30,13 @@ type PositionRow = {
   effective_from: string;
 };
 
-export async function VolunteerJourneySummary() {
+type VolunteerJourneySummaryProps = Readonly<{
+  volunteerId: string;
+}>;
+
+export async function VolunteerJourneySummary({
+  volunteerId,
+}: VolunteerJourneySummaryProps) {
   const supabase = (await createClient()) as unknown as SupabaseClient;
 
   const [pointsResult, badgesResult, positionsResult] = await Promise.all([
@@ -42,6 +48,7 @@ export async function VolunteerJourneySummary() {
       .select(
         "id, track_name_snapshot, stage_title_snapshot, reason, effective_from",
       )
+      .eq("volunteer_id", volunteerId)
       .is("ended_at", null)
       .order("effective_from", { ascending: false }),
   ]);
