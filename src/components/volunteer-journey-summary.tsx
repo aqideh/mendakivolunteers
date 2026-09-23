@@ -24,33 +24,26 @@ type PointsSnapshot = {
 
 type PositionRow = {
   id: string;
+  map_id: string;
+  track_stable_key: string;
+  stage_stable_key: string;
   track_name_snapshot: string;
   stage_title_snapshot: string;
-  reason: string;
   effective_from: string;
 };
 
-type VolunteerJourneySummaryProps = Readonly<{
-  volunteerId: string;
-}>;
+type PathwaySnapshot = {
+  linked: boolean;
+  positions: PositionRow[];
+};
 
-export async function VolunteerJourneySummary({
-  volunteerId,
-}: VolunteerJourneySummaryProps) {
+export async function VolunteerJourneySummary() {
   const supabase = (await createClient()) as unknown as SupabaseClient;
 
   const [pointsResult, badgesResult, positionsResult] = await Promise.all([
     supabase.schema("core").rpc("get_current_points_snapshot"),
     supabase.schema("core").rpc("get_current_badges_snapshot"),
-    supabase
-      .schema("pathways")
-      .from("volunteer_positions")
-      .select(
-        "id, track_name_snapshot, stage_title_snapshot, reason, effective_from",
-      )
-      .eq("volunteer_id", volunteerId)
-      .is("ended_at", null)
-      .order("effective_from", { ascending: false }),
+    supabase.schema("core").rpc("get_current_pathway_positions_snapshot"),
   ]);
 
   if (pointsResult.error || badgesResult.error || positionsResult.error) {
@@ -64,7 +57,8 @@ export async function VolunteerJourneySummary({
 
   const points = pointsResult.data as PointsSnapshot | null;
   const badges = badgesResult.data as BadgeSnapshot | null;
-  const positions = (positionsResult.data ?? []) as PositionRow[];
+  const pathwaySnapshot = positionsResult.data as PathwaySnapshot | null;
+  const positions = pathwaySnapshot?.positions ?? [];
   const badgeRows = badges?.badges ?? [];
 
   return (
