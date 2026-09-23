@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { withdrawRegistration } from "@/app/dashboard/registration-actions";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
@@ -15,6 +16,8 @@ function statusLabel(status: string): string {
       return "Not confirmed";
     case "cancelled":
       return "Cancelled";
+    case "withdrawn":
+      return "Withdrawn";
     default:
       return status;
   }
@@ -106,6 +109,34 @@ export async function KeluargaRegistrationSummary({
                   <h3>{event?.title ?? "Volunteer programme"}</h3>
                   {registration.review_note ? (
                     <p className="record-meta">{registration.review_note}</p>
+                  ) : null}
+                  {["pending", "waitlisted", "confirmed"].includes(
+                    registration.status,
+                  ) ? (
+                    <details className="phaseone-inline-disclosure">
+                      <summary>Withdraw registration</summary>
+                      <form action={withdrawRegistration} className="phaseone-admin-form">
+                        <input
+                          name="registrationId"
+                          type="hidden"
+                          value={registration.id}
+                        />
+                        <div className="form-field">
+                          <label htmlFor={`withdraw-reason-${registration.id}`}>
+                            Reason (optional)
+                          </label>
+                          <textarea
+                            id={`withdraw-reason-${registration.id}`}
+                            maxLength={1000}
+                            name="reason"
+                            rows={2}
+                          />
+                        </div>
+                        <button className="button button-secondary" type="submit">
+                          Confirm withdrawal
+                        </button>
+                      </form>
+                    </details>
                   ) : null}
                   {event ? (
                     <div className="actions">
