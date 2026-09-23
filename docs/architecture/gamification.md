@@ -117,6 +117,12 @@ A manual recognition award:
 
 This keeps staff recognition available as an operational KELUARGA feature without weakening the rule that verified hours and verified attendance remain YM Hub-owned.
 
+## Recognition badges
+
+Staff-defined badges are separate from attendance-derived points. Badge definitions and award history remain in the private `gamification` schema. Badge awards require an active `gamification_manager` or `admin` role, an explicit staff reason and a request UUID; revocation retains the historical award rather than deleting it.
+
+Volunteer browsers do not receive direct access to badge tables. `core.get_current_badges_snapshot()` resolves the signed-in volunteer and returns only the active badge identity, name, description and award timestamp. Internal award/revocation reasons and staff actor identifiers are not returned in the volunteer snapshot.
+
 
 ## Data API boundary
 
