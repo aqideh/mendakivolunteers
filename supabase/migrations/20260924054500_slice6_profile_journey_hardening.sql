@@ -21,6 +21,118 @@ comment on policy volunteer_positions_select_self
 on pathways.volunteer_positions is
   'Personal pathway-position reads are limited to the signed-in volunteer. Staff administration uses role-gated server actions and service-role reads.';
 
+revoke select on pathways.volunteer_positions from authenticated;
+
+create or replace function core.get_current_pathway_positions_snapshot()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = pg_catalog, core, pathways
+as $
+declare
+  current_user_id uuid := auth.uid();
+  current_volunteer_id uuid;
+begin
+  if current_user_id is null then
+    raise exception 'Authentication is required' using errcode = '42501';
+  end if;
+
+  if not core.is_current_account_active() then
+    return jsonb_build_object('linked', false, 'positions', '[]'::jsonb);
+  end if;
+
+  select volunteers.id
+  into current_volunteer_id
+  from core.volunteers as volunteers
+  where volunteers.auth_user_id = current_user_id
+  limit 1;
+
+  if current_volunteer_id is null then
+    return jsonb_build_object('linked', false, 'positions', '[]'::jsonb);
+  end if;
+
+  return jsonb_build_object(
+    'linked', true,
+    'positions', coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'id', positions.id,
+          'map_id', positions.map_id,
+          'track_stable_key', positions.track_stable_key,
+          'stage_stable_key', positions.stage_stable_key,
+          'track_name_snapshot', positions.track_name_snapshot,
+          'stage_title_snapshot', positions.stage_title_snapshot,
+          'effective_from', positions.effective_from
+        )
+        order by positions.effective_from desc, positions.track_name_snapshot
+      )
+      from pathways.volunteer_positions as positions
+      where positions.volunteer_id = current_volunteer_id
+        and positions.ended_at is null
+    ), '[]'::jsonb)
+  );
+end;
+$;
+
+revoke all on function core.get_current_pathway_positions_snapshot()
+  from public, anon, authenticated;
+grant execute on function core.get_current_pathway_positions_snapshot()
+  to authenticated, service_role;
+
+create or replace function core.get_current_badges_snapshot()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = pg_catalog, core, gamification
+as $
+declare
+  current_user_id uuid := auth.uid();
+  current_volunteer_id uuid;
+begin
+  if current_user_id is null then
+    raise exception 'Authentication is required' using errcode = '42501';
+  end if;
+
+  if not core.is_current_account_active() then
+    return jsonb_build_object('linked', false, 'badges', '[]'::jsonb);
+  end if;
+
+  select volunteers.id
+  into current_volunteer_id
+  from core.volunteers as volunteers
+  where volunteers.auth_user_id = current_user_id
+  limit 1;
+
+  if current_volunteer_id is null then
+    return jsonb_build_object('linked', false, 'badges', '[]'::jsonb);
+  end if;
+
+  return jsonb_build_object(
+    'linked', true,
+    'badges', coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'award_id', awards.id,
+          'badge_id', definitions.id,
+          'stable_key', definitions.stable_key,
+          'name', definitions.name,
+          'description', definitions.description,
+          'awarded_at', awards.awarded_at
+        )
+        order by awards.awarded_at desc, definitions.name
+      )
+      from gamification.volunteer_badges as awards
+      join gamification.badge_definitions as definitions
+        on definitions.id = awards.badge_id
+      where awards.volunteer_id = current_volunteer_id
+        and awards.revoked_at is null
+    ), '[]'::jsonb)
+  );
+end;
+$;
+
 create index if not exists badge_definitions_created_by_idx
   on gamification.badge_definitions (created_by);
 
