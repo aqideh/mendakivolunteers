@@ -1,6 +1,6 @@
 begin;
 
-select plan(13);
+select plan(12);
 
 insert into auth.users (id, email, email_confirmed_at)
 values
@@ -105,22 +105,12 @@ select is(
 );
 
 select ok(
-  has_table_privilege(
+  not has_table_privilege(
     'authenticated',
     'pathways.volunteer_positions',
     'SELECT'
   ),
-  'expand release temporarily retains authenticated pathway-position SELECT'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from pathways.volunteer_positions
-    where volunteer_id = '94000000-0000-4000-8000-000000000011'
-  ),
-  0,
-  'self-only RLS prevents a pathway manager browser session reading another volunteer position'
+  'authenticated browser users cannot directly read pathway-position rows'
 );
 
 select ok(
