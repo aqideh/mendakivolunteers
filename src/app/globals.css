@@ -518,3 +518,10 @@ h3 {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* KELUARGA does not use eyebrow labels in the interface. */
+.eyebrow,
+[class*="eyebrow"] {
+  display: none !important;
+}
