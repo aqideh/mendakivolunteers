@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 import { YmHubImportForm } from "./import-form";
@@ -63,7 +63,7 @@ function readSummary(value: unknown): BatchSummary {
 }
 
 export default async function YmHubBatchCentrePage() {
-  await requireEventManager("/admin/integrations/ymhub");
+  await requireProgrammeManager("/admin/integrations/ymhub");
   const admin = getPhaseOneAdminClient();
   const summaryResult = await admin.schema("core").rpc("get_ymhub_batch_summary");
   const ready = !summaryResult.error;
