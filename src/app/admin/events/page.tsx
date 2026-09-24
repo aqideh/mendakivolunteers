@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
 import { PortalHeader } from "@/components/portal-header";
-import { hasProgrammeManagerRole, requireEventManager } from "@/lib/auth/event-access";
+import { requireEventManager } from "@/lib/auth/event-access";
 import {
   getAdminEventFirstScheduledTimeslot,
   sortCurrentAdminEvents,
@@ -38,7 +38,7 @@ function eventSchedule(event: AdminEventSummary) {
   return `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}`;
 }
 
-function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: AdminEventSummary; canManageProgramme: boolean }>) {
+function MobileEventActions({ event }: Readonly<{ event: AdminEventSummary }>) {
   return (
     <div className="phaseone-events-mobile-actions">
       <Link
@@ -49,9 +49,9 @@ function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: Adm
       </Link>
       <Link
         className="button button-secondary phaseone-events-mobile-edit"
-        href={`/admin/events/${event.id}/edit#roster`}
+        href={`/admin/events/${event.id}/edit`}
       >
-        {canManageProgramme ? "Edit / roster" : "Roster setup"}
+        Edit
       </Link>
       <details className="phaseone-events-mobile-more">
         <summary aria-label={`More actions for ${event.title}`}>•••</summary>
@@ -59,14 +59,12 @@ function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: Adm
           <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
             Download event report
           </a>
-          {canManageProgramme ? (
-            <form action={duplicateEvent}>
-              <input type="hidden" name="eventId" value={event.id} />
-              <button className="text-link button-reset" type="submit">
-                Duplicate event guide
-              </button>
-            </form>
-          ) : null}
+          <form action={duplicateEvent}>
+            <input type="hidden" name="eventId" value={event.id} />
+            <button className="text-link button-reset" type="submit">
+              Duplicate event guide
+            </button>
+          </form>
           {event.is_published ? (
             <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">
               View event guide ↗
@@ -79,8 +77,7 @@ function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: Adm
 }
 
 export default async function EventsAdminPage({ searchParams }: PageProps) {
-  const { roles } = await requireEventManager();
-  const canManageProgramme = hasProgrammeManagerRole(roles);
+  await requireEventManager();
   const admin = getPhaseOneAdminClient();
   const [eventsResult, timeslotsResult] = await Promise.all([
     admin
@@ -145,11 +142,9 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
             <Link className="button button-secondary" href="/admin/events/quick">
               Quick manual event
             </Link>
-            {canManageProgramme ? (
-              <Link className="button button-primary" href="/admin/events/new">
-                + New programme
-              </Link>
-            ) : null}
+            <Link className="button button-primary" href="/admin/events/new">
+              + New programme
+            </Link>
           </div>
         </div>
 
@@ -176,7 +171,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                   <span data-ready={pinReady}>{pinReady ? "PINs ready" : "PIN setup needed"}</span>
                 </div>
 
-                <MobileEventActions event={event} canManageProgramme={canManageProgramme} />
+                <MobileEventActions event={event} />
               </article>
             );
           })}
@@ -203,16 +198,12 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                     <td>
                       <div className="actions">
                         <Link className="text-link" href={`/admin/events/${event.id}/attendance`}>Roster / check-in</Link>
-                        <Link className="text-link" href={`/admin/events/${event.id}/edit#roster`}>
-                          {canManageProgramme ? "Edit / roster" : "Roster setup"}
-                        </Link>
+                        <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
                         <a className="text-link" href={`/admin/events/${event.id}/report/export`}>Download event report</a>
-                        {canManageProgramme ? (
-                          <form action={duplicateEvent}>
-                            <input type="hidden" name="eventId" value={event.id} />
-                            <button className="text-link button-reset" type="submit">Duplicate journey</button>
-                          </form>
-                        ) : null}
+                        <form action={duplicateEvent}>
+                          <input type="hidden" name="eventId" value={event.id} />
+                          <button className="text-link button-reset" type="submit">Duplicate journey</button>
+                        </form>
                         {event.is_published ? (
                           <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">View event guide</Link>
                         ) : null}
