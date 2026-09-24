@@ -23,7 +23,6 @@ function matchesPath(pathname: string, item: NavigationItem): boolean {
 export function PortalNav({
   canManageEvents,
   canManagePoints,
-  canManageVolunteers,
   isSignedIn,
 }: PortalNavProps) {
   const pathname = usePathname() ?? "";
@@ -33,10 +32,6 @@ export function PortalNav({
     { href: "/faq", label: "FAQ" },
   ];
 
-
-  if (canManageVolunteers) {
-    items.push({ href: "/admin/recruitment", label: "Volunteer Recruitment" });
-  }
 
   if (canManageEvents) {
     items.push({ href: "/admin/events", label: "Event Operations" });
