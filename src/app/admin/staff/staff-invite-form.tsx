@@ -20,13 +20,32 @@ export function StaffInviteForm() {
   );
 
   return (
-    <form className="cms-form" action={formAction}>
+    <form
+      className="cms-form"
+      action={formAction}
+      onSubmit={(event) => {
+        const data = new FormData(event.currentTarget);
+        const email = String(data.get("email") ?? "").trim();
+        const role = String(data.get("role") ?? "");
+        const option = staffInviteRoleOptions.find(
+          ({ value }) => value === role,
+        );
+
+        if (!option) return;
+
+        const confirmed = window.confirm(
+          `Invite ${email} and grant "${option.label}"?\n\n${option.description}\n\nThe staff member will receive a secure account setup email.`,
+        );
+        if (!confirmed) event.preventDefault();
+      }}
+    >
       <div>
         <p className="eyebrow">New staff account</p>
         <h2>Invite staff</h2>
         <p className="muted">
           KELUARGA will create the account, assign the selected staff role and
-          email a secure setup link. The staff member chooses their own password.
+          email a secure setup link. Roles are additive, so more permissions can
+          be granted later from the staff table.
         </p>
       </div>
 
@@ -44,8 +63,11 @@ export function StaffInviteForm() {
         </div>
 
         <div className="form-field">
-          <label htmlFor="staff-invite-role">Role</label>
-          <select id="staff-invite-role" name="role" defaultValue="admin" required>
+          <label htmlFor="staff-invite-role">Initial role</label>
+          <select id="staff-invite-role" name="role" defaultValue="" required>
+            <option disabled value="">
+              Select role…
+            </option>
             {staffInviteRoleOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
