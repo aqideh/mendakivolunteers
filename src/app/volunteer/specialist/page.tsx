@@ -14,7 +14,7 @@ export default function SpecialistPage() {
       title="Connect Professionals & Grow Possibilities."
       description="Connecting professionals across industries to share knowledge, grow together, and build meaningful networks. Be part of a community that empowers your career."
       inlineCta={{
-        href: "https://mendaki-pn-connect.base44.app/Home",
+        href: "https://professionalnetworksuat.mendaki.org.sg/",
         label: "Discover Professional Networks",
       }}
       items={[
@@ -36,7 +36,7 @@ export default function SpecialistPage() {
       ]}
       ctas={[
         {
-          href: "/volunteer/interest?area=specialist",
+          href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
           label: "Volunteer",
         },
       ]}
