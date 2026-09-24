@@ -1,79 +1,69 @@
-# Phase 4: Volunteer pathways
+# Volunteer Pathways architecture
+
+**Last reviewed:** 24 September 2026
 
 ## Purpose
 
-Volunteer Pathways gives volunteers a shared view of possible development roles. KELUARGA now owns the volunteer-facing recruitment and registration journey; YM Hub remains the authoritative backend organisational record and source for verified attendance/hours after handoff.
+Volunteer Pathways gives volunteers a clear view of possible development roles and lets authorized staff confirm a volunteer's current position without inferring progression from attendance, points or registrations.
 
-The portal owns:
+## Ownership
 
-- The published pathway map.
-- Draft and published pathway versions.
-- Track, phase, stage, and role-option descriptions.
-- Pathway publication and audit history.
+KELUARGA owns:
 
-KELUARGA now also owns staff-confirmed individual pathway positions. Explorer remains the calculated default when a volunteer has no active position on a track.
+- the published pathway map;
+- draft/published pathway versions;
+- tracks, phases, stages and role options;
+- pathway publication/audit history;
+- staff-confirmed individual pathway positions;
+- volunteer-facing pathway presentation.
+
+YM Hub/Salesforce is not part of the current pathway runtime.
 
 ## Routes
 
-Volunteer route:
+Volunteer:
 
 - `/pathways`
 
-Staff routes:
+Staff:
 
 - `/admin/pathways`
-- `/admin/pathways/[versionId]/preview`
-
-The home page, primary navigation, and authenticated dashboard link to Pathways.
-The dashboard exposes pathway management only to `pathway_manager` and `admin`
-roles.
+- pathway preview/position-management surfaces
 
 ## Version model
 
-The `pathways` schema contains:
+The `pathways` schema retains versioned maps and child structures.
 
-- `pathways.maps`
-- `pathways.map_versions`
-- `pathways.phases`
-- `pathways.tracks`
-- `pathways.stages`
-- `pathways.stage_roles`
-
-A map has one active published version and at most one open draft through the
-application workflow. Published versions are immutable. Publishing validates the
-complete four-track by five-phase grid, switches the active version in one
-transaction, and archives the previous published version.
-
-The first editor deliberately preserves the four tracks and five phases. Staff
-can edit labels, descriptions, ordering, approved colour tokens, stage titles,
-and one to three structured role options per stage.
+Published versions are immutable. Staff edit drafts, preview them and publish a complete reviewed version. Historical versions remain available for audit/history.
 
 ## Authorization
 
-`pathway_manager` and `admin` may create, edit, preview, and publish pathway
-drafts. Browser clients receive no direct write privileges on pathway tables;
-all writes use role-gated PostgreSQL functions.
+Under the current four-tier staff model:
 
-Anonymous and authenticated volunteers can select only the active published
-version and its child records. Staff managers can also read drafts and archived
-versions. All exposed tables use forced Row Level Security.
+- `admin` and `volteam` can manage pathway content/positions;
+- `staff` and `volunteer_leader` do not receive pathway-management access merely from Event Operations duties.
 
-## Audit and history
-
-Each version insert and status change writes an event to the central
-`audit.events` table. Historical versions are retained. A published version can
-only transition to `archived`; its content and child records cannot be changed or
-deleted.
+Privileged writes remain server-side/role-gated. Volunteer-facing reads expose only published/current safe data.
 
 ## Volunteer positioning
 
-`pathways.volunteer_positions` retains staff-confirmed pathway history using:
+`pathways.volunteer_positions` uses `core.volunteers.id` as the canonical person key.
 
-- `core.volunteers.id` as the stable KELUARGA volunteer key;
-- the pathway map and exact published version used for assignment;
-- stable track and stage keys plus display snapshots;
-- effective/end timestamps, assigning staff member, reason, and optional notes.
+Rules:
 
-One active position is allowed per pathway track, so a volunteer can progress differently across tracks. Assigning the exact same active stage is idempotent; assigning a different stage on the same track closes the previous position rather than overwriting history. Explorer remains the calculated default when no active position exists. Attendance, registrations and points do not advance a pathway position automatically.
+- one active position per volunteer per pathway track;
+- assigning the same active stage is idempotent;
+- assigning a new stage closes the previous active history row instead of overwriting it;
+- Explorer is the default when no active position exists;
+- attendance, registrations and points do not advance pathway position automatically;
+- volunteer-facing snapshots omit internal staff reasons/notes.
 
-Personal UI reads use the account-scoped `core.get_current_pathway_positions_snapshot()` security-definer function, which resolves the signed-in volunteer internally and emits only volunteer-safe position fields. Browser roles have no direct `SELECT` grant on `pathways.volunteer_positions` because the history rows also contain staff reasons, notes and actor identifiers. The self-only RLS policy remains as defense in depth, while staff listing remains server-side through the service role and role-gated administration.
+## Future automation
+
+Any recommendation or automatic progression must be:
+
+- based on explicit reviewed criteria;
+- explainable;
+- auditable;
+- staff-overridable;
+- separate from raw attendance/check-in evidence.
