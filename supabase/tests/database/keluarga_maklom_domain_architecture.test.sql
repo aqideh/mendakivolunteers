@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(20);
 
 select has_table('core', 'volunteer_aliases', 'canonical volunteer alias table exists');
 select has_column('public', 'volunteers', 'core_volunteer_id', 'MakLom profile has canonical volunteer UUID');
@@ -82,6 +82,14 @@ select ok(
   not has_table_privilege('authenticated', 'core.volunteer_aliases', 'SELECT'),
   'cross-system aliases are not browser-readable'
 );
+select ok(
+  position(
+    'volunteer_leads'
+    in pg_get_functiondef('maklom_private.log_maklom_change()'::regprocedure)
+  ) > 0,
+  'MakLom audit allow-list includes volunteer leads'
+);
+
 select ok(
   exists (
     select 1
