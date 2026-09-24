@@ -62,7 +62,6 @@ export default async function AdminPage() {
       <main className="page-frame compact-page">
         <div className="dashboard-header compact-dashboard-header">
           <div>
-            <p className="eyebrow">Administration</p>
             <h1>Admin</h1>
             <p className="muted compact-dashboard-description">
               Central access to KELUARGA staff administration and operational tools.
@@ -75,16 +74,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <section className="compact-section" aria-labelledby="admin-tools-title">
-          <div className="section-header compact-section-header">
-            <div>
-              <h2 id="admin-tools-title">Admin tools</h2>
-              <p className="compact-section-meta">
-                Access remains role-gated on each destination.
-              </p>
-            </div>
-          </div>
-
+        <section className="compact-section" aria-label="Admin tools">
           <div className="flat-link-list">
             {adminTools.map((tool) => (
               <Link className="flat-link-row" href={tool.href} key={tool.href}>
