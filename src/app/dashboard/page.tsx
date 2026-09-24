@@ -7,11 +7,14 @@ import { signOut } from "@/app/dashboard/actions";
 import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-summary";
 import { PortalHeader } from "@/components/portal-header";
 import { ProfileEditor } from "@/components/profile-editor";
+import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
 import { VolunteerJourneySummary } from "@/components/volunteer-journey-summary";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
 import { hasGamificationManagerRole } from "@/lib/auth/gamification-access";
 import { hasPathwayManagerRole } from "@/lib/auth/pathway-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
+import { profilePhotoBucket } from "@/lib/media/storage";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { AccountStatus, Database } from "@/types/database";
 
@@ -93,7 +96,7 @@ export default async function DashboardPage({
       .schema("core")
       .from("volunteers")
       .select(
-        "id, volunteer_code, display_name, mobile",
+        "id, volunteer_code, display_name, mobile, profile_photo_path",
       )
       .eq("auth_user_id", userId)
       .maybeSingle(),
@@ -176,6 +179,23 @@ export default async function DashboardPage({
   const displayName =
     volunteer?.display_name?.trim() || account.display_name?.trim() || "Volunteer";
 
+  let profilePhotoUrl: string | null = null;
+  if (volunteer?.profile_photo_path) {
+    const { data, error } = await getPhaseOneAdminClient()
+      .storage
+      .from(profilePhotoBucket)
+      .createSignedUrl(volunteer.profile_photo_path, 60 * 60);
+
+    if (error) {
+      console.error("Unable to create profile photo URL", {
+        message: error.message,
+        volunteerId: volunteer.id,
+      });
+    } else {
+      profilePhotoUrl = data.signedUrl;
+    }
+  }
+
   return (
     <div className="site-shell">
       <PortalHeader status="KELUARGA account" dashboard />
@@ -244,6 +264,12 @@ export default async function DashboardPage({
             This is your KELUARGA volunteer account, linked through the shared
             volunteer identity used by KELUARGA and MakLom.
           </p>
+          {volunteer ? (
+            <ProfilePhotoUploader
+              displayName={displayName}
+              imageUrl={profilePhotoUrl}
+            />
+          ) : null}
           <dl className="data-list">
             <div className="data-row">
               <dt>Name</dt>
