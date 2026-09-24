@@ -162,9 +162,6 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
 
             {canManageProgramme ? (
               <>
-                <Link className="button button-secondary" href="/admin/integrations/ymhub">
-                  YM Hub Batch Centre
-                </Link>
                 <Link className="button button-secondary" href="/admin/events/past">
                   Past ({past.length})
                 </Link>
