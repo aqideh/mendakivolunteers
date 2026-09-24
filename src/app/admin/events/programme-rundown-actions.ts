@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { requireProgrammeManager } from "@/lib/auth/event-access";
+import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   isProgrammeRundownMimeType,
@@ -51,7 +51,7 @@ export async function requestProgrammeRundownUpload(input: {
     throw new Error("Each programme rundown image must be 5 MB or smaller.");
   }
 
-  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
+  await requireEventManager(`/admin/events/${eventId}/edit`);
   await requireExistingEvent(eventId);
   const admin = getPhaseOneAdminClient();
   const { count, error: countError } = await admin
@@ -89,7 +89,7 @@ export async function registerProgrammeRundownImage(input: {
     throw new Error("Invalid programme rundown image path.");
   }
 
-  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
+  await requireEventManager(`/admin/events/${eventId}/edit`);
   const event = await requireExistingEvent(eventId);
   const admin = getPhaseOneAdminClient();
   const { count, error: countError } = await admin
@@ -130,7 +130,7 @@ export async function deleteProgrammeRundownImage(imageIdValue: string) {
 
   if (error || !image) throw new Error("Programme rundown image could not be found.");
   const eventId = String(image.event_id);
-  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
+  await requireEventManager(`/admin/events/${eventId}/edit`);
   const event = await requireExistingEvent(eventId);
 
   const { error: deleteError } = await admin
@@ -172,7 +172,7 @@ export async function moveProgrammeRundownImage(
   if (selectedError || !selected) throw new Error("Programme rundown image could not be found.");
 
   const eventId = String(selected.event_id);
-  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
+  await requireEventManager(`/admin/events/${eventId}/edit`);
   const event = await requireExistingEvent(eventId);
   const { data: images, error } = await admin
     .from("phaseone_event_rundown_images")
