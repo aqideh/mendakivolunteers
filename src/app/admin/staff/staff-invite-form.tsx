@@ -63,7 +63,7 @@ export function StaffInviteForm() {
         </div>
 
         <div className="form-field">
-          <label htmlFor="staff-invite-role">Initial role</label>
+          <label htmlFor="staff-invite-role">Access level</label>
           <select id="staff-invite-role" name="role" defaultValue="" required>
             <option disabled value="">
               Select role…
