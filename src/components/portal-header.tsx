@@ -34,7 +34,7 @@ export async function PortalHeader({
       });
     } else {
       canManageAdmin = (roleRows ?? []).some(({ role }) => role === "admin");
-      canManageEvents = canManageAdmin;
+      canManageEvents = (roleRows ?? []).some(\n        ({ role }) =>\n          role === "admin" ||\n          role === "attendance_manager" ||\n          role === "programme_manager",\n      );
       canManageVolunteers = (roleRows ?? []).some(
         ({ role }) => role === "admin" || role === "support_officer",
       );
