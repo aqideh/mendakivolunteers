@@ -85,8 +85,8 @@ export default async function QuickEventPage({ searchParams }: PageProps) {
             <label>
               <input defaultChecked name="dataScope" type="radio" value="isolated" />{" "}
               <strong>Keep isolated</strong> — roster and attendance stay inside this
-              event only. No KELUARGA volunteer records are created and no contribution
-              hours are credited.
+              event only. No canonical volunteer records are created and no contribution
+              hours are submitted for approval.
             </label>
             <label>
               <input name="dataScope" type="radio" value="integrated" />{" "}
@@ -97,12 +97,12 @@ export default async function QuickEventPage({ searchParams }: PageProps) {
 
           <label className="form-field">
             <span>
-              <input name="creditHours" type="checkbox" /> Credit completed attendance
-              as KELUARGA contribution hours
+              <input name="creditHours" type="checkbox" /> Submit completed attendance
+              for MakLom contribution-hour review
             </span>
             <span className="muted">
-              Available only for the integrated option. These app-owned contribution
-              hours remain separate from authoritative YM Hub verified hours.
+              Available only for the integrated option. KELUARGA supplies operational
+              duration; Volunteer Management approves or adjusts hours in MakLom.
             </span>
           </label>
 
