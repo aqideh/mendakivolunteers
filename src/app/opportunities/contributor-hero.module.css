@@ -7,23 +7,31 @@
   background: #ffffff;
 }
 
-.hero::before,
+.heroBackgrounds,
+.heroBackground,
 .hero::after {
   position: absolute;
   inset: 0;
-  content: "";
   pointer-events: none;
 }
 
-.hero::before {
+.heroBackgrounds {
   z-index: -2;
-  background: var(--hero-image) center 46% / cover no-repeat;
+}
+
+.heroBackground {
+  background: var(--state-image) center 46% / cover no-repeat;
+  opacity: 0;
+  transition: opacity 1400ms ease-in-out;
+}
+
+.heroBackgroundActive {
   opacity: 0.48;
-  transition: background-image 300ms ease;
 }
 
 .hero::after {
   z-index: -1;
+  content: "";
   background:
     linear-gradient(
       180deg,
@@ -63,17 +71,42 @@
 
 .heroContent {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 34rem);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-self: center;
   align-items: end;
   gap: clamp(2rem, 6vw, 5rem);
 }
 
 .heroCopy {
+  position: relative;
   display: grid;
-  max-width: 44rem;
+  width: min(100%, 48rem);
+  min-height: 18rem;
+}
+
+.heroCopyState {
+  grid-area: 1 / 1;
+  display: grid;
+  align-content: end;
   justify-items: start;
   gap: 1rem;
+  opacity: 0;
+  transform: translateY(0.35rem);
+  visibility: hidden;
+  transition:
+    opacity 1200ms ease-in-out,
+    transform 1200ms ease-in-out,
+    visibility 0s linear 1200ms;
+}
+
+.heroCopyStateActive {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition:
+    opacity 1200ms ease-in-out,
+    transform 1200ms ease-in-out,
+    visibility 0s;
 }
 
 .heroCopy h1 {
@@ -85,29 +118,36 @@
 }
 
 .heroCopy p {
-  max-width: 38rem;
+  max-width: 44rem;
   margin: 0;
   color: var(--muted);
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-size: clamp(0.98rem, 1.55vw, 1.14rem);
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .heroActions {
   display: grid;
+  width: min(100%, 15rem);
   gap: 0.65rem;
   align-self: end;
+  justify-self: end;
 }
 
 .primaryAction,
 .secondaryAction {
   display: inline-flex;
+  width: 100%;
   min-height: 3.6rem;
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
   border-radius: 0.65rem;
   padding: 0.7rem 1rem 0.6rem;
+  color: var(--primary);
+  background: #000000;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.16);
+  font: inherit;
   font-weight: 800;
   text-decoration: none;
   transition:
@@ -119,24 +159,31 @@
 }
 
 .primaryAction {
-  border: 1px solid var(--accent-strong);
-  border-bottom: 3px solid #0e6973;
-  color: #ffffff;
-  background: var(--accent-strong);
-  box-shadow: 0 10px 24px rgba(22, 139, 152, 0.22);
+  border: 2px solid var(--primary);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
 .secondaryAction {
-  border: 1px solid rgba(22, 139, 152, 0.22);
-  border-bottom-width: 3px;
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 5px 14px rgba(55, 58, 54, 0.06);
+  border: 2px solid rgba(0, 0, 0, 0.72);
+}
+
+.primaryAction span:last-child,
+.secondaryAction span:last-child {
+  color: #ffffff;
 }
 
 .primaryAction:hover,
 .secondaryAction:hover {
+  border-color: var(--primary);
+  background: var(--brand-strong);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
   transform: translateY(-1px);
+}
+
+.pendingAction {
+  width: 100%;
+  cursor: default;
+  text-align: left;
 }
 
 .pagination {
@@ -152,12 +199,12 @@
   border: 0;
   border-radius: 999px;
   padding: 0;
-  background: rgba(22, 139, 152, 0.22);
+  background: rgba(0, 0, 0, 0.28);
   cursor: pointer;
 }
 
 .paginationDot[aria-pressed="true"] {
-  background: var(--accent-strong);
+  background: var(--primary);
 }
 
 @media (max-width: 760px) {
@@ -170,8 +217,11 @@
     padding: 1rem 0 2rem;
   }
 
-  .hero::before {
+  .heroBackground {
     background-position: 52% center;
+  }
+
+  .heroBackgroundActive {
     opacity: 0.4;
   }
 
@@ -193,17 +243,24 @@
     gap: 1.5rem;
   }
 
+  .heroCopy {
+    min-height: 21rem;
+  }
+
   .heroCopy h1 {
     font-size: clamp(2.7rem, 12vw, 4.5rem);
   }
 
   .heroActions {
     width: 100%;
+    justify-self: stretch;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero::before,
+  .heroBackground,
+  .heroCopyState,
+  .heroCopyStateActive,
   .primaryAction,
   .secondaryAction {
     transition: none;
