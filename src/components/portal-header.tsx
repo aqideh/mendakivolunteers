@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { PortalNav } from "@/components/portal-nav";
+import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { createClient } from "@/lib/supabase/server";
+import type { AppRole } from "@/types/database";
 
 export async function PortalHeader({
   status,
@@ -33,19 +35,13 @@ export async function PortalHeader({
         rolesCode: rolesError.code,
       });
     } else {
-      canManageAdmin = (roleRows ?? []).some(({ role }) => role === "admin");
-      canManageEvents = (roleRows ?? []).some(
-        ({ role }) =>
-          role === "admin" ||
-          role === "attendance_manager" ||
-          role === "programme_manager",
-      );
-      canManageVolunteers = (roleRows ?? []).some(
-        ({ role }) => role === "admin" || role === "support_officer",
-      );
-      canManagePoints = (roleRows ?? []).some(
-        ({ role }) => role === "admin" || role === "gamification_manager",
-      );
+      const roles = (roleRows ?? []).map(({ role }) => role as AppRole);
+      canManageAdmin = roles.includes("admin");
+      canManageEvents = hasEventManagerRole(roles);
+      canManageVolunteers =
+        roles.includes("admin") || roles.includes("support_officer");
+      canManagePoints =
+        roles.includes("admin") || roles.includes("gamification_manager");
     }
   }
 
