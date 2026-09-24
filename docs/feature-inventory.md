@@ -14,8 +14,8 @@ Implemented:
 
 - Branded KELUARGA landing page.
 - Public opportunity browsing and opportunity detail pages.
-- In-app prospective-volunteer recruitment intake with role-interest, motivation, skills/experience and availability fields.
-- Volunteer Management review workflow with submitted, reviewing, accepted, not-selected and withdrawn recruitment states.
+- Prospective-volunteer intake is handled through the approved FormSG recruitment form.
+- The former in-app KELUARGA recruitment application/review workflow is retired; historical database records are retained for provenance only.
 - Public news listing and news detail pages.
 - Public FAQ route linked from the global menu, with accessible native disclosure controls ready for approved content.
 - Public volunteer pathways page.
@@ -374,9 +374,10 @@ Current integration direction:
 
 Current state:
 
-- No automatic integration.
-- Volunteer Insights can be exported for manual downstream use.
-- A future reviewed inbox/handoff model has been discussed but intentionally deferred.
+- MakLom owns the prospective-volunteer lead pipeline for FormSG recruitment responses.
+- Leads remain separate from canonical volunteer records until staff explicitly accept and convert them.
+- Conversion performs duplicate matching before creating a volunteer record.
+- Volunteer Insights remain separate structured records and are not automatically promoted into MakLom volunteer facts.
 
 ## 6. Platform, security and release engineering
 
@@ -407,9 +408,9 @@ Release model:
 
 KELUARGA's target model has four distinct responsibilities:
 
-1. **Recruitment and engagement** — pathways, recruitment intake, discovery and personal account surfaces.
+1. **Engagement and discovery** — pathways, opportunity discovery and personal account surfaces. Prospective-volunteer lead intake is handled through FormSG and reviewed in MakLom.
 2. **Registration** — app-owned registrations, waitlists/cancellations and shift selections.
 3. **Event operations** — rosters, shifts, walk-ins, attendance, reviews, insights, feedback and reporting.
 4. **Backend reconciliation** — read-only YM Hub projections for organisational record matching, verified attendance and verified hours.
 
-The first-class KELUARGA recruitment intake, registration lifecycle and registration-to-roster handoff are implemented. Manual/last-minute Event Operations can be intentionally isolated or integrated with the volunteer database. Operational attendance and app-owned contribution credits must still not be silently substituted for verified YM Hub hours.
+The KELUARGA registration lifecycle and registration-to-roster handoff are implemented. Prospective-volunteer recruitment intake has moved to FormSG, with lead tracking owned by MakLom. Manual/last-minute Event Operations can be intentionally isolated or integrated with the volunteer database. Operational attendance and app-owned contribution credits must still not be silently substituted for verified YM Hub hours.
