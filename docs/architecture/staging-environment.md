@@ -73,3 +73,7 @@ Normal development should target `staging`. Production releases are explicit.
 - Use synthetic accounts and records only.
 - Schema changes are applied to staging first and verified before production.
 - MakLom production remains independently authorised via `public.app_members`.
+
+## Initial configuration checkpoint
+
+The initial Vercel Preview environment was configured on 2026-09-24. This commit exists to trigger and verify the first staging deployment against the isolated staging Supabase project.
