@@ -15,6 +15,17 @@ See `docs/architecture/keluarga-maklom-domain-architecture.md` for the domain co
 - **Decision required** — policy or product rule must be approved before implementation.
 - **Dormant** — retained for possible future use but not part of the current runtime model.
 
+## Development to-do checklist
+
+- [ ] Build MakLom **Contribution Review** UI: pending / needs-review queue, approve, adjust minutes, reject, audit history and reviewer metadata.
+- [ ] Build MakLom **Profile Change Review** UI for KELUARGA-submitted contact/profile changes, including approve/reject/apply actions.
+- [ ] Build MakLom **Insights & Reviews Inbox** with source event context, accept/edit/dismiss workflow and longitudinal volunteer history.
+- [ ] Complete the **FormSG -> MakLom lead webhook** production configuration, secret setup, field mapping and one controlled end-to-end submission test.
+- [ ] Run a **production migration rehearsal** against the current production database, including all existing MakLom volunteer records and the independently-created production `volunteer_leads` table.
+- [ ] Promote the shared identity/contribution/inbox architecture to production only after the migration rehearsal and staging UAT pass.
+- [ ] Run end-to-end UAT for: FormSG lead -> MakLom conversion -> KELUARGA registration -> roster -> attendance -> contribution review -> approved hours on volunteer dashboard.
+- [ ] Define and implement the future **attendance-derived points rule** using only MakLom-approved contribution records; keep automatic attendance points disabled until then.
+
 ## P0 — finish and validate the shared KELUARGA + MakLom operating model
 
 ### Canonical identity
