@@ -367,9 +367,6 @@ export default async function DashboardPage({
             </details>
           ) : null}
           <div className="profile-account-utility">
-            <Link className="text-link" href="/account/password">
-              Change password
-            </Link>
             <form action={signOut}>
               <button className="text-link button-reset" type="submit">
                 Sign out
