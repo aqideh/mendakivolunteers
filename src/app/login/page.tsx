@@ -44,21 +44,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const initialError = getLoginErrorMessage(errorCode);
 
   return (
-    <div className="site-shell">
-      <header className="site-header">
+    <div className="site-shell auth-page">
+      <header className="site-header auth-header">
         <BrandLockup href="/" priority />
-        <p className="header-status">Keluarga MENDAKI login</p>
       </header>
 
-      <main className="auth-layout">
-        <section className="panel auth-panel" aria-labelledby="sign-in-title">
-          <p className="eyebrow">Your Keluarga MENDAKI account</p>
-          <h1 id="sign-in-title">Login</h1>
-          <p className="muted">
-            Opportunities and news remain available without logging in. Enter your
-            email to sign in or create a KELUARGA volunteer account. Your account is
-            used for registrations, Event Guides, activity records and points.
-          </p>
+      <main className="auth-layout auth-login-layout">
+        <section className="auth-panel auth-login-card" aria-labelledby="sign-in-title">
+          <div className="auth-login-intro">
+            <h1 id="sign-in-title">Sign in</h1>
+            <p className="auth-login-copy">
+              Enter your email and we&apos;ll send you a secure sign-in link.
+            </p>
+          </div>
 
           {initialError ? (
             <div className="notice notice-error" role="alert">
@@ -72,33 +70,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
           ) : null}
 
-          <section aria-labelledby="volunteer-sign-in-title">
-            <h2 id="volunteer-sign-in-title">Volunteer email login</h2>
-            <p className="muted">
-              The one-time email link logs this browser into your Keluarga MENDAKI
-              account. You remain logged in until the session ends, you clear the
-              browser data, or you sign out; a new email is not required for every
-              visit.
-            </p>
-            <VolunteerSignInForm nextPath={nextPath} />
-          </section>
+          <VolunteerSignInForm nextPath={nextPath} />
 
-          <details className="phaseone-disclosure">
-            <summary>Staff login or use a password</summary>
-            <div className="phaseone-disclosure-body">
-              <p className="muted">
-                Staff and existing password users can log in below.
-              </p>
+          <details className="auth-password-disclosure">
+            <summary>Staff or password login</summary>
+            <div className="auth-password-disclosure-body">
               <LoginForm nextPath={nextPath} initialError={undefined} />
             </div>
           </details>
 
-          <p className="muted">
-            Prefer to continue without logging in?{" "}
+          <p className="auth-browse-link">
             <Link className="text-link" href="/opportunities">
-              Browse volunteer opportunities
+              Continue without signing in
             </Link>
-            .
           </p>
         </section>
       </main>

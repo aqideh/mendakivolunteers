@@ -525,3 +525,115 @@ h3 {
 [class*="eyebrow"] {
   display: none !important;
 }
+
+
+/* Login page */
+.auth-page {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.14), transparent 26rem),
+    var(--surface-subtle);
+}
+
+.auth-header {
+  min-height: 4rem;
+}
+
+.auth-login-layout {
+  min-height: calc(100vh - 4rem);
+  padding: clamp(2rem, 6vw, 4.5rem) 1rem;
+}
+
+.auth-login-card {
+  width: min(28rem, 100%);
+  border: 0;
+  border-radius: 1.25rem;
+  padding: clamp(1.5rem, 5vw, 2.25rem);
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgba(55, 58, 54, 0.1);
+}
+
+.auth-login-intro {
+  margin-bottom: 1.5rem;
+}
+
+.auth-login-intro h1 {
+  max-width: none;
+  margin-bottom: 0.6rem;
+  font-size: clamp(2rem, 8vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.auth-login-copy {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.auth-primary-form .button-primary {
+  width: 100%;
+  color: var(--primary);
+  background: var(--brand);
+}
+
+.auth-primary-form .button-primary:hover {
+  background: var(--brand-strong);
+}
+
+.auth-primary-form .form-message:empty {
+  display: none;
+}
+
+.auth-password-disclosure {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.1rem;
+}
+
+.auth-password-disclosure summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.auth-password-disclosure-body {
+  margin-top: 1rem;
+}
+
+.auth-password-disclosure-body .button-primary {
+  color: var(--primary);
+  background: var(--brand);
+}
+
+.auth-password-disclosure-body .button-primary:hover {
+  background: var(--brand-strong);
+}
+
+.auth-browse-link {
+  margin: 1.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.auth-browse-link .text-link {
+  font-weight: 700;
+  text-underline-offset: 0.18em;
+}
+
+@media (max-width: 760px) {
+  .auth-header {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .auth-login-layout {
+    place-items: start center;
+    padding-top: 1.5rem;
+  }
+
+  .auth-login-card {
+    border-radius: 1rem;
+  }
+}

@@ -23,7 +23,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
   );
 
   return (
-    <form action={formAction} noValidate>
+    <form action={formAction} className="auth-primary-form" noValidate>
       <input type="hidden" name="next" value={nextPath} />
       <div className="form-field">
         <label htmlFor="volunteer-email">Email address</label>
@@ -34,13 +34,13 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
           inputMode="email"
           autoComplete="email"
           maxLength={254}
+          placeholder="you@example.com"
           required
           disabled={pending}
           aria-describedby="volunteer-email-help"
         />
         <span className="form-help" id="volunteer-email-help">
-          Use the email address linked to your official volunteer profile or event
-          registration.
+          Use the email linked to your Keluarga profile.
         </span>
       </div>
 
@@ -49,7 +49,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
         type="submit"
         disabled={pending}
       >
-        {pending ? "Sending login link…" : "Email me a login link"}
+        {pending ? "Sending link…" : "Send sign-in link"}
       </button>
 
       <p
