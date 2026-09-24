@@ -61,7 +61,7 @@ KELUARGA staff tiers are:
 - **staff** — event operations on existing programmes; no programme creation/deletion
 - **volunteer leader** — reduced event operations focused on basic check-in/out
 
-A KELUARGA role never implicitly grants MakLom access.
+KELUARGA authorization and MakLom authorization are enforced separately. The one intentional entitlement bridge is `admin`: promoting a staff member to KELUARGA Admin also provisions MakLom administrator membership transactionally; demoting them removes that MakLom membership. Lower KELUARGA roles do not gain MakLom access.
 
 ## Current capabilities
 
