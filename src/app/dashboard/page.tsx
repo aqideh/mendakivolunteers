@@ -13,12 +13,6 @@ import { hasGamificationManagerRole } from "@/lib/auth/gamification-access";
 import { hasPathwayManagerRole } from "@/lib/auth/pathway-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { createClient } from "@/lib/supabase/server";
-import {
-  formatYmHubState,
-  getVerifiedHours,
-  getVerifiedHoursForRecord,
-  getYmHubSyncOutcome,
-} from "@/lib/ymhub/read-model";
 import type { AccountStatus, Database } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -54,18 +48,6 @@ const dashboardErrors: Record<string, string> = {
   registration_withdraw_failed:
     "The registration could not be withdrawn. No registration data was changed.",
 };
-
-type YmHubSyncStatus =
-  Database["ymhub"]["Tables"]["volunteer_sync_status"]["Row"];
-type YmHubRegistration =
-  Database["ymhub"]["Tables"]["registration_snapshots"]["Row"];
-type YmHubAttendance =
-  Database["ymhub"]["Tables"]["attendance_snapshots"]["Row"];
-type YmHubReadModel = Readonly<{
-  syncStatus: YmHubSyncStatus | null;
-  registrations: YmHubRegistration[];
-  attendanceRecords: YmHubAttendance[];
-}>;
 
 function readParameter(
   parameters: Record<string, string | string[] | undefined>,
@@ -111,7 +93,7 @@ export default async function DashboardPage({
       .schema("core")
       .from("volunteers")
       .select(
-        "id, volunteer_code, ymhub_volunteer_id, display_name, mobile, ymhub_status, source_updated_at, last_synced_at",
+        "id, volunteer_code, display_name, mobile",
       )
       .eq("auth_user_id", userId)
       .maybeSingle(),
@@ -153,97 +135,39 @@ export default async function DashboardPage({
     throw new Error("Volunteer account invariants are incomplete");
   }
 
-  let ymHubReadModel: YmHubReadModel | null = null;
-  let contributionCredits: Array<{
+  let approvedContributions: Array<{
     id: string;
-    credit_hours: number | string;
-    credited_at: string;
+    approved_minutes: number;
+    occurred_at: string;
   }> = [];
 
   if (volunteer) {
     const appDataClient = supabase as unknown as SupabaseClient;
-    const [syncResult, registrationsResult, attendanceResult, contributionResult] =
-      await Promise.all([
-        supabase
-          .schema("ymhub")
-          .from("volunteer_sync_status")
-          .select(
-            "volunteer_id, registrations_synced_at, attendance_synced_at, last_attempted_at, last_successful_at, last_failed_at, created_at, updated_at",
-          )
-          .eq("volunteer_id", volunteer.id)
-          .maybeSingle(),
-        supabase
-          .schema("ymhub")
-          .from("registration_snapshots")
-          .select(
-            "id, volunteer_id, ymhub_registration_id, ymhub_activity_id, activity_title, activity_category, activity_starts_at, activity_ends_at, registered_at, state, source_status, source_updated_at, last_synced_at, created_at, updated_at",
-          )
-          .eq("volunteer_id", volunteer.id)
-          .order("activity_starts_at", { ascending: true }),
-        supabase
-          .schema("ymhub")
-          .from("attendance_snapshots")
-          .select(
-            "id, volunteer_id, ymhub_attendance_id, ymhub_activity_id, activity_title, activity_category, activity_starts_at, activity_ends_at, state, source_status, verified_hours, verified_at, source_updated_at, last_synced_at, created_at, updated_at",
-          )
-          .eq("volunteer_id", volunteer.id)
-          .order("activity_starts_at", { ascending: false }),
-        appDataClient
-          .from("keluarga_contribution_credits")
-          .select("id, credit_hours, credited_at")
-          .eq("volunteer_id", volunteer.id)
-          .eq("status", "active")
-          .order("credited_at", { ascending: false }),
-      ]);
+    const contributionResult = await appDataClient
+      .from("volunteer_contributions")
+      .select("id, approved_minutes, occurred_at")
+      .eq("volunteer_id", volunteer.id)
+      .eq("status", "approved")
+      .order("occurred_at", { ascending: false });
 
-    const hasYmHubReadError = Boolean(
-      syncResult.error ||
-        registrationsResult.error ||
-        attendanceResult.error ||
-        contributionResult.error,
-    );
-
-    if (hasYmHubReadError) {
-      console.error("Unable to load YM Hub read model", {
-        syncCode: syncResult.error?.code,
-        registrationsCode: registrationsResult.error?.code,
-        attendanceCode: attendanceResult.error?.code,
-        contributionCode: contributionResult.error?.code,
+    if (contributionResult.error || !contributionResult.data) {
+      console.error("Unable to load approved contribution hours", {
+        code: contributionResult.error?.code,
       });
-      throw new Error("YM Hub dashboard data could not be loaded");
+      throw new Error("Approved contribution hours could not be loaded");
     }
 
-    if (
-      !registrationsResult.data ||
-      !attendanceResult.data ||
-      !contributionResult.data
-    ) {
-      throw new Error("Volunteer activity queries returned no result set");
-    }
-
-    contributionCredits = contributionResult.data as Array<{
+    approvedContributions = contributionResult.data as Array<{
       id: string;
-      credit_hours: number | string;
-      credited_at: string;
+      approved_minutes: number;
+      occurred_at: string;
     }>;
-
-    ymHubReadModel = {
-      syncStatus: syncResult.data,
-      registrations: registrationsResult.data,
-      attendanceRecords: attendanceResult.data,
-    };
-  }
-
-  if (volunteer && !ymHubReadModel) {
-    throw new Error("Linked volunteer is missing its YM Hub read-model result");
   }
 
   const isAdmin = roles.includes("admin");
   const canManageContent = hasContentManagerRole(roles);
   const canManageGamification = hasGamificationManagerRole(roles);
   const canManagePathways = hasPathwayManagerRole(roles);
-  const syncStatus = ymHubReadModel?.syncStatus ?? null;
-  const syncOutcome = getYmHubSyncOutcome(syncStatus);
   const parameters = await searchParams;
   const errorCode = readParameter(parameters, "error");
   const successCode = readParameter(parameters, "success");
@@ -262,8 +186,9 @@ export default async function DashboardPage({
             <p className="eyebrow">Your KELUARGA account</p>
             <h1>Welcome, {displayName}</h1>
             <p className="muted">
-              Use KELUARGA for registrations, Event Guides and volunteer updates. YM Hub remains the authoritative backend record for verified
-              attendance and hours after handoff.
+              Use KELUARGA for registrations, Event Guides and volunteer updates.
+              MakLom supports Volunteer Management with the shared volunteer profile,
+              reviewed contribution hours and longitudinal records.
             </p>
           </div>
           <div className="actions">
@@ -316,8 +241,8 @@ export default async function DashboardPage({
           <p className="eyebrow">Profile</p>
           <h2 id="profile-title">Your KELUARGA profile</h2>
           <p className="muted">
-            This is your KELUARGA volunteer account. A matching YM Hub backend record
-            may be linked later for organisational reconciliation and verified hours.
+            This is your KELUARGA volunteer account, linked through the shared
+            volunteer identity used by KELUARGA and MakLom.
           </p>
           <dl className="data-list">
             <div className="data-row">
@@ -346,16 +271,6 @@ export default async function DashboardPage({
                 </span>
               </dd>
             </div>
-            <div className="data-row">
-              <dt>Backend volunteer record</dt>
-              <dd>{volunteer?.ymhub_volunteer_id ? "Linked to YM Hub" : "Not yet linked"}</dd>
-            </div>
-            {volunteer?.last_synced_at ? (
-              <div className="data-row">
-                <dt>Profile last updated</dt>
-                <dd>{formatSingaporeDateTime(volunteer.last_synced_at)}</dd>
-              </div>
-            ) : null}
           </dl>
           {volunteer ? (
             <details className="phaseone-disclosure" open={profileMode === "edit"}>
@@ -376,207 +291,42 @@ export default async function DashboardPage({
           <KeluargaRegistrationSummary volunteerId={volunteer.id} />
         ) : null}
 
-        {volunteer && contributionCredits.length > 0 ? (
+        {volunteer ? (
           <section className="section panel" aria-labelledby="contribution-hours-title">
-            <p className="eyebrow">KELUARGA activity</p>
-            <h2 id="contribution-hours-title">App-recorded contribution hours</h2>
+            <h2 id="contribution-hours-title">Approved contribution hours</h2>
             <div className="metric-grid">
               <article className="metric-card">
                 <span className="metric-value">
-                  {contributionCredits
-                    .reduce(
-                      (total, credit) => total + Number(credit.credit_hours),
-                      0,
-                    )
-                    .toFixed(1)}
+                  {(approvedContributions.reduce(
+                    (total, contribution) =>
+                      total + Number(contribution.approved_minutes ?? 0),
+                    0,
+                  ) / 60).toFixed(1)}
                 </span>
-                <span className="metric-label">KELUARGA contribution hours</span>
+                <span className="metric-label">Approved volunteer hours</span>
               </article>
               <article className="metric-card">
-                <span className="metric-value">{contributionCredits.length}</span>
-                <span className="metric-label">Credited attendance sessions</span>
+                <span className="metric-value">{approvedContributions.length}</span>
+                <span className="metric-label">Approved contribution records</span>
               </article>
             </div>
             <p className="muted">
-              These hours come from integrated manual Event Operations records. They
-              are kept separate from YM Hub verified hours and do not replace the
-              authoritative organisational attendance record.
+              KELUARGA records operational attendance. Volunteer Management reviews
+              contribution records in MakLom before hours appear here as approved.
             </p>
           </section>
         ) : null}
 
         {!volunteer ? (
           <section className="section notice" aria-labelledby="link-title">
-            <h2 id="link-title">Backend profile not linked yet</h2>
+            <h2 id="link-title">Volunteer profile setup incomplete</h2>
             <p>
-              Your KELUARGA account can still be used for registration and event operations. A YM Hub backend link is added
-              separately when the organisational record is reconciled.
+              Your account is active, but its canonical volunteer profile is not yet
+              available. Contact Volunteer Management so the shared identity can be resolved.
             </p>
             <Link className="text-link" href="/journey">
               View your Event Guides
             </Link>
-          </section>
-        ) : null}
-
-        {volunteer && ymHubReadModel ? (
-          <section className="section" aria-labelledby="ymhub-title">
-            <p className="eyebrow">Official volunteer record</p>
-            <h2 id="ymhub-title">Your YM Hub activity</h2>
-
-            {syncOutcome === "not_synced" ? (
-              <div className="notice" role="status">
-                <h3>Official activity data has not been imported yet</h3>
-                <p>
-                  Event Guides may still be matched through your current event
-                  roster. Registration history, verified attendance and hours will
-                  appear after the first successful YM Hub data update.
-                </p>
-              </div>
-            ) : null}
-
-            {syncOutcome === "failed" ? (
-              <div className="notice notice-error" role="alert">
-                <h3>The latest YM Hub data update did not complete</h3>
-                {syncStatus?.last_successful_at ? (
-                  <p>
-                    Records below, where present, are from the last successful
-                    update at {formatSingaporeDateTime(syncStatus.last_successful_at)}.
-                  </p>
-                ) : (
-                  <p>
-                    No authoritative update has completed, so official registration
-                    and attendance records remain unavailable.
-                  </p>
-                )}
-              </div>
-            ) : null}
-
-            {syncStatus?.last_successful_at ? (
-              <div className="metric-grid" aria-label="YM Hub summary">
-                <article className="metric-card">
-                  <span className="metric-value">
-                    {ymHubReadModel.registrations.length}
-                  </span>
-                  <span className="metric-label">Registration records</span>
-                </article>
-                <article className="metric-card">
-                  <span className="metric-value">
-                    {
-                      ymHubReadModel.attendanceRecords.filter(
-                        ({ state }) => state === "verified",
-                      ).length
-                    }
-                  </span>
-                  <span className="metric-label">Verified activities</span>
-                </article>
-                <article className="metric-card">
-                  <span className="metric-value">
-                    {getVerifiedHours(
-                      ymHubReadModel.attendanceRecords,
-                    ).toFixed(1)}
-                  </span>
-                  <span className="metric-label">Verified hours</span>
-                </article>
-                <article className="metric-card">
-                  <span className="metric-value metric-value-date">
-                    {formatSingaporeDateTime(syncStatus.last_successful_at)}
-                  </span>
-                  <span className="metric-label">Last data update</span>
-                </article>
-              </div>
-            ) : null}
-
-            {syncStatus?.registrations_synced_at ? (
-              <div className="read-model-section">
-                <div className="section-header">
-                  <div>
-                    <h3>Registrations</h3>
-                    <p className="muted">
-                      Updated {formatSingaporeDateTime(syncStatus.registrations_synced_at)}
-                    </p>
-                  </div>
-                </div>
-                {ymHubReadModel.registrations.length === 0 ? (
-                  <div className="panel empty-state">
-                    <p>You are not registered for any upcoming events.</p>
-                    <Link className="text-link" href="/opportunities">
-                      View volunteer opportunities
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="record-list">
-                    {ymHubReadModel.registrations.map((registration) => (
-                      <article className="record-card" key={registration.id}>
-                        <div>
-                          <p className="record-kicker">
-                            {registration.activity_category ?? "Category not supplied"}
-                          </p>
-                          <h3>{registration.activity_title}</h3>
-                          <p className="record-meta">
-                            {formatSingaporeDateTime(registration.activity_starts_at)}
-                          </p>
-                        </div>
-                        <span className="status-pill" data-state={registration.state}>
-                          {formatYmHubState(registration.state)}
-                        </span>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : syncStatus ? (
-              <div className="notice read-model-section" role="status">
-                Registration records have not completed an authoritative data update.
-              </div>
-            ) : null}
-
-            {syncStatus?.attendance_synced_at ? (
-              <div className="read-model-section">
-                <div className="section-header">
-                  <div>
-                    <h3>Attendance</h3>
-                    <p className="muted">
-                      Updated {formatSingaporeDateTime(syncStatus.attendance_synced_at)}
-                    </p>
-                  </div>
-                </div>
-                {ymHubReadModel.attendanceRecords.length === 0 ? (
-                  <p className="empty-state">
-                    YM Hub returned no official attendance records in the latest
-                    successful update.
-                  </p>
-                ) : (
-                  <div className="record-list">
-                    {ymHubReadModel.attendanceRecords.map((attendance) => (
-                      <article className="record-card" key={attendance.id}>
-                        <div>
-                          <p className="record-kicker">
-                            {attendance.activity_category ?? "Category not supplied"}
-                          </p>
-                          <h3>{attendance.activity_title}</h3>
-                          <p className="record-meta">
-                            {formatSingaporeDateTime(attendance.activity_starts_at)}
-                            {attendance.state === "verified" ? (
-                              <>
-                                {" "}· {getVerifiedHoursForRecord(attendance).toFixed(1)}
-                                {" "}verified hours
-                              </>
-                            ) : null}
-                          </p>
-                        </div>
-                        <span className="status-pill" data-state={attendance.state}>
-                          {formatYmHubState(attendance.state)}
-                        </span>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : syncStatus ? (
-              <div className="notice read-model-section" role="status">
-                Attendance records have not completed an authoritative data update.
-              </div>
-            ) : null}
           </section>
         ) : null}
 
@@ -607,8 +357,8 @@ export default async function DashboardPage({
             <article className="card">
               <h3>Points</h3>
               <p className="muted">
-                View your KELUARGA points and recognition history from verified
-                attendance and staff-recognition awards.
+                View your KELUARGA points and recognition history from approved
+                contribution activity and staff-recognition awards.
               </p>
               <Link className="text-link" href="/points">
                 View Points
@@ -688,7 +438,7 @@ export default async function DashboardPage({
       </main>
 
       <footer className="site-footer">
-        <span>Keluarga MENDAKI manages volunteer registrations and event operations. YM Hub remains the backend record for verified attendance and hours after handoff.</span>
+        <span>Keluarga MENDAKI manages volunteer-facing registrations and event operations. MakLom supports Volunteer Management with reviewed longitudinal records and approved contribution hours.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
