@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database";
 
-const volunteerManagerRoles = new Set<AppRole>(["support_officer", "admin"]);
+const volunteerManagerRoles = new Set<AppRole>(["volteam", "admin"]);
 
 export function hasVolunteerManagerRole(roles: readonly AppRole[]): boolean {
   return roles.some((role) => volunteerManagerRoles.has(role));
