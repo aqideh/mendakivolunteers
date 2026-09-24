@@ -16,7 +16,6 @@ export async function PortalHeader({
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   const isSignedIn = !error && Boolean(userId);
-  let canManageAdmin = false;
   let canManageEvents = false;
   let canManagePoints = false;
   let canManageVolunteers = false;
@@ -34,7 +33,6 @@ export async function PortalHeader({
       });
     } else {
       const roles = new Set((roleRows ?? []).map(({ role }) => String(role)));
-      canManageAdmin = roles.has("admin");
       canManageEvents =
         roles.has("admin") ||
         roles.has("attendance_manager") ||
@@ -78,7 +76,6 @@ export async function PortalHeader({
           </span>
         </Link>
         <PortalNav
-          canManageAdmin={canManageAdmin}
           canManageEvents={canManageEvents}
           canManagePoints={canManagePoints}
           canManageVolunteers={canManageVolunteers}
