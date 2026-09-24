@@ -26,6 +26,20 @@ See `docs/architecture/keluarga-maklom-domain-architecture.md` for the domain co
 - [ ] Run end-to-end UAT for: FormSG lead -> MakLom conversion -> KELUARGA registration -> roster -> attendance -> contribution review -> approved hours on volunteer dashboard.
 - [ ] Define and implement the future **attendance-derived points rule** using only MakLom-approved contribution records; keep automatic attendance points disabled until then.
 
+## Active development to-do
+
+Work through these in order unless a production defect takes priority.
+
+- [ ] **Reconcile KELUARGA staging for production.** Create a clean production change set rather than merging the diverged `staging` branch wholesale. Include the approved staff-role model, MakLom access separation, retired KELUARGA recruitment workflow, FormSG CTAs, landing-page changes, login cleanup, and current KELUARGA + MakLom architecture.
+- [ ] **Finish the MakLom React + Mantine changeover.** Rebuild Events, Attendance and Imports in the React application with feature parity for the current production workflows.
+- [ ] **Switch MakLom production to the React application.** Verify the completed React workflows in production, then retire the superseded static/Web Awesome application and its duplicate UI/runtime code.
+- [ ] **Complete FormSG -> MakLom production activation.** Configure the signed production webhook and FormSG secret, submit a controlled test response, verify field mapping, and verify retry/idempotency behaviour.
+- [ ] **Clean up KELUARGA repository state.** Reconcile or close stale PRs and issues that describe superseded YM Hub or opportunity-import architecture, and ensure roadmap, feature inventory, known issues and architecture docs all reflect the current operating model.
+- [ ] **Run full Event Operations production UAT.** Cover single shifts, adjacent or overlapping shifts, gaps between shifts, early checkout, missing checkout, walk-ins, duplicate/manual roster uploads, cancellations, manual volunteer creation, corrections, QR flows and mobile event-day use.
+- [ ] **Complete the reviewed KELUARGA -> MakLom handoff.** Operational attendance/contribution candidates, profile-change proposals and accepted insights should enter MakLom review workflows using canonical volunteer identity, without direct profile mutation.
+- [ ] **Finish policy-dependent recognition features.** Define and implement approved points rules, automatic badge/milestone criteria, correction/appeal rules and referral-success criteria. Use MakLom-approved contributions rather than raw attendance as the authoritative input.
+- [ ] **Build cross-event Volunteer Management intelligence.** Add longitudinal volunteer history, accepted insight/review views, repeat engagement, attendance/contribution trends, retention and impact reporting with explicit deduplication/denominator rules.
+
 ## P0 — finish and validate the shared KELUARGA + MakLom operating model
 
 ### Canonical identity
