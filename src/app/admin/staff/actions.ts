@@ -131,16 +131,35 @@ export async function revokeStaffRole(input: {
   const admin = getPhaseOneAdminClient();
 
   if (parsedRole.data === "admin") {
-    const { data: activeAdmins, error: adminCountError } = await admin
+    const adminRolesResult = await admin
       .schema("core")
       .from("user_roles")
-      .select("user_id, user_accounts!inner(status)")
-      .eq("role", "admin")
-      .eq("user_accounts.status", "active");
+      .select("user_id")
+      .eq("role", "admin");
 
-    if (adminCountError) {
+    if (adminRolesResult.error) {
+      console.error("Unable to verify administrator assignments", {
+        code: adminRolesResult.error.code,
+      });
+      return {
+        ok: false,
+        message: "Administrator coverage could not be verified, so no access was changed.",
+      };
+    }
+
+    const adminIds = (adminRolesResult.data ?? []).map(({ user_id }) => user_id);
+    const activeAccountsResult = adminIds.length
+      ? await admin
+          .schema("core")
+          .from("user_accounts")
+          .select("id")
+          .in("id", adminIds)
+          .eq("status", "active")
+      : { data: [], error: null };
+
+    if (activeAccountsResult.error) {
       console.error("Unable to verify active administrators", {
-        code: adminCountError.code,
+        code: activeAccountsResult.error.code,
       });
       return {
         ok: false,
@@ -149,13 +168,10 @@ export async function revokeStaffRole(input: {
     }
 
     const activeAdminIds = new Set(
-      (activeAdmins ?? []).map(({ user_id }) => String(user_id)),
+      (activeAccountsResult.data ?? []).map(({ id }) => String(id)),
     );
 
-    if (
-      activeAdminIds.has(parsedUserId.data) &&
-      activeAdminIds.size <= 1
-    ) {
+    if (activeAdminIds.has(parsedUserId.data) && activeAdminIds.size <= 1) {
       return {
         ok: false,
         message: "KELUARGA must retain at least one active administrator.",
