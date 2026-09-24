@@ -133,10 +133,14 @@
 }
 
 .primaryAction {
-  border-bottom: 3px solid #0e6973;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  background: #000000;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.18);
+}
+
+.primaryAction span:last-child {
   color: #ffffff;
-  background: var(--accent-strong);
-  box-shadow: 0 7px 18px rgba(22, 139, 152, 0.2);
 }
 
 .secondaryAction {
@@ -154,7 +158,8 @@
 }
 
 .primaryAction:hover {
-  background: #117d88;
+  background: var(--brand-strong);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
 }
 
 .roles {
