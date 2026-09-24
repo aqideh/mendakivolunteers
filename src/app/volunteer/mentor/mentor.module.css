@@ -83,7 +83,7 @@
 
 .heroCopy {
   display: grid;
-  max-width: 42rem;
+  max-width: 48rem;
   justify-items: start;
   gap: 1.1rem;
 }
@@ -107,12 +107,12 @@
 }
 
 .lede {
-  max-width: 31rem;
+  max-width: 44rem;
   margin: 0;
   color: var(--muted);
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-size: clamp(0.98rem, 1.55vw, 1.14rem);
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.55;
 }
 
 .primaryAction {

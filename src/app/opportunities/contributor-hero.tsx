@@ -7,49 +7,48 @@ import styles from "./contributor-hero.module.css";
 
 const states = [
   {
-    key: "specialist",
-    title: "Contribute your expertise.",
+    key: "volunteer",
+    title: "Serve with a Heart, One Keluarga.",
     description:
-      "Use your professional, technical, or specialist skills to support MENDAKI initiatives where your experience can make a focused difference.",
+      "Join upcoming community activities and events that match your interests and availability. Contribute your time through practical volunteer roles that support programme delivery.",
+    background: "/home/keluarga-volunteers-hero.jpeg",
+  },
+  {
+    key: "contribute",
+    title: "Transform Ideas into Community Impact",
+    description:
+      "Have an idea that benefits MENDAKI volunteers? Individuals, community groups, and organisations are welcome to propose projects that enhance volunteers' skills, well-being, recognition, or overall volunteering experience.",
     background: "/home/keluarga-volunteers-hero.jpeg",
   },
   {
     key: "donate",
-    title: "Support the community through giving.",
+    title: "Every Gift Creates Impact",
     description:
-      "Contribute resources that help MENDAKI sustain programmes, opportunities, and support for the community.",
+      "Your contribution supports MENDAKI's efforts to uplift individuals and families through education and community programmes. Every donation helps create opportunities, empower aspirations and build brighter futures for the Malay/Muslim community.",
     background: "/volunteer/mentor/mendaki-ampowered.png",
-  },
-  {
-    key: "volunteer",
-    title: "Volunteer where help is needed.",
-    description:
-      "Join upcoming community activities and events, and contribute your time directly through practical volunteer roles.",
-    background: "/home/keluarga-volunteers-hero.jpeg",
   },
 ] as const;
 
 const ctas = [
   {
-    key: "specialist",
-    label: "Volunteer as a Specialist",
-    href: "/volunteer/specialist",
+    key: "volunteer",
+    label: "Volunteer",
+    href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
+  },
+  {
+    key: "contribute",
+    label: "Contribute",
+    href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
   },
   {
     key: "donate",
     label: "Donate",
-    href: "https://www.mendaki.org.sg/",
-  },
-  {
-    key: "volunteer",
-    label: "Volunteer",
-    href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
+    href: "https://www.mendaki.org.sg/campaign-listing",
   },
 ] as const;
 
 export function ContributorHero() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const active = states[activeIndex] ?? states[0];
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -58,17 +57,27 @@ export function ContributorHero() {
 
     const timer = window.setInterval(() => {
       setActiveIndex((index) => (index + 1) % states.length);
-    }, 6500);
+    }, 8000);
 
     return () => window.clearInterval(timer);
   }, []);
 
   return (
-    <section
-      className={styles.hero}
-      aria-labelledby="contributor-hero-title"
-      style={{ "--hero-image": `url("${active.background}")` } as CSSProperties}
-    >
+    <section className={styles.hero} aria-labelledby="contributor-hero-title">
+      <div className={styles.heroBackgrounds} aria-hidden="true">
+        {states.map((state, index) => (
+          <div
+            className={
+              index === activeIndex
+                ? `${styles.heroBackground} ${styles.heroBackgroundActive}`
+                : styles.heroBackground
+            }
+            key={state.key}
+            style={{ "--state-image": `url("${state.background}")` } as CSSProperties}
+          />
+        ))}
+      </div>
+
       <div className={styles.heroInner}>
         <Link className={styles.backLink} href="/">
           <span aria-hidden="true">←</span>
@@ -77,13 +86,31 @@ export function ContributorHero() {
 
         <div className={styles.heroContent}>
           <div className={styles.heroCopy}>
-            <h1 id="contributor-hero-title">{active.title}</h1>
-            <p>{active.description}</p>
+            {states.map((state, index) => {
+              const isActive = index === activeIndex;
+
+              return (
+                <div
+                  aria-hidden={!isActive}
+                  className={
+                    isActive
+                      ? `${styles.heroCopyState} ${styles.heroCopyStateActive}`
+                      : styles.heroCopyState
+                  }
+                  key={state.key}
+                >
+                  <h1 id={isActive ? "contributor-hero-title" : undefined}>
+                    {state.title}
+                  </h1>
+                  <p>{state.description}</p>
+                </div>
+              );
+            })}
           </div>
 
           <div className={styles.heroActions} aria-label="Ways to contribute">
             {ctas.map((cta) => {
-              const highlighted = cta.key === active.key;
+              const highlighted = cta.key === states[activeIndex]?.key;
               const className = highlighted
                 ? styles.primaryAction
                 : styles.secondaryAction;
