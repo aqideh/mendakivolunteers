@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
-import { creditManualEventHours } from "@/app/admin/events/manual-actions";
+import { submitManualEventHoursForReview } from "@/app/admin/events/manual-actions";
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
@@ -96,8 +96,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const errorMessage = parameter(parameters, "error");
   const successCode = parameter(parameters, "success");
   const successMessage =
-    successCode === "manual_hours_credited"
-      ? `${parameter(parameters, "credited") ?? "0"} completed attendance session(s) credited for ${parameter(parameters, "hours") ?? "0"} KELUARGA contribution hours.${Number(parameter(parameters, "skipped") ?? "0") > 0 ? ` ${parameter(parameters, "skipped")} session(s) were skipped because they were not linked to exactly one KELUARGA volunteer.` : ""}`
+    successCode === "manual_hours_submitted"
+      ? `${parameter(parameters, "candidates") ?? "0"} completed attendance session(s) refreshed for MakLom review. ${parameter(parameters, "review") ?? "0"} session(s) currently need review (${parameter(parameters, "minutes") ?? "0"} operational minutes scanned).${Number(parameter(parameters, "skipped") ?? "0") > 0 ? ` ${parameter(parameters, "skipped")} session(s) were skipped because no canonical KELUARGA volunteer was linked.` : ""}`
       : successCode
         ? successMessages[successCode]
         : undefined;
@@ -210,8 +210,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
               <p>
                 {operationsScope === "manual_integrated"
                   ? creditContributionHours
-                    ? "CSV volunteers are linked or registered in the main volunteer database. Completed attendance can be credited as KELUARGA contribution hours below."
-                    : "CSV volunteers are linked or registered in the main volunteer database. Contribution-hour crediting is disabled for this event."
+                    ? "CSV volunteers are linked or registered in the shared volunteer database. Completed attendance is submitted to MakLom for review before hours become approved."
+                    : "CSV volunteers are linked or registered in the shared volunteer database. Contribution-hour submission is disabled for this event."
                   : "Roster, attendance, insights and reporting stay inside this event. No main volunteer records or contribution hours are created."}
               </p>
             </div>
@@ -226,16 +226,16 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           {operationsScope === "manual_integrated" && creditContributionHours ? (
             <div className="panel">
               <p className="eyebrow">Contribution hours</p>
-              <h3>Credit completed attendance to KELUARGA</h3>
+              <h3>Submit completed attendance to MakLom</h3>
               <p className="muted">
-                Run this after check-out or attendance corrections. It creates or
-                refreshes app-owned KELUARGA contribution-hour credits from completed
-                attendance sessions. These remain separate from YM Hub verified hours.
+                Run this after check-out or attendance corrections. It refreshes
+                operational attendance candidates for MakLom review. Hours are only
+                approved after Volunteer Management reviews the contribution record.
               </p>
-              <form action={creditManualEventHours}>
+              <form action={submitManualEventHoursForReview}>
                 <input name="eventId" type="hidden" value={event.id} />
                 <button className="button button-primary" type="submit">
-                  Credit completed hours
+                  Submit hours for review
                 </button>
               </form>
             </div>
