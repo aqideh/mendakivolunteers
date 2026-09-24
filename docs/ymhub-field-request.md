@@ -1,76 +1,56 @@
-# YM Hub field request
+# YM Hub / Salesforce field request — dormant future integration reference
 
-Request API names and metadata, not only the labels visible in Salesforce screens.
+**Status:** retained for a possible future enterprise integration  
+**Not a current KELUARGA launch dependency**
 
-## Phase 1 volunteer identity fields
+## Current architecture boundary
 
-| Requirement | Working placeholder | Information required from YM Hub |
-|---|---|---|
-| Volunteer object | `[YMH_VOLUNTEER_OBJECT_API]` | Object label and object API name |
-| Volunteer record ID | `[YMH_VOLUNTEER_RECORD_ID_API]` | Standard or custom record identifier used for API queries |
-| MENDAKI volunteer ID | `[YMH_VOLUNTEER_ID_API]` | Field label, field API name, data type, uniqueness, mutability |
-| Volunteer status | `[YMH_VOLUNTEER_STATUS_API]` | Field API name and all picklist API values |
-| Source update timestamp | `[YMH_VOLUNTEER_UPDATED_AT_API]` | Preferred replication field, normally `SystemModstamp` where available |
+KELUARGA and MakLom currently operate without a live YM Hub/Salesforce dependency.
 
-## Request template
+- KELUARGA owns volunteer-facing registration and Event Operations.
+- MakLom owns lead review, longitudinal profiles and approved contribution hours.
+- `core.volunteers.id` is the canonical person identity.
+- Any future Salesforce/YM Hub identifier is external reconciliation metadata, not the primary app identity.
 
-For each object and field, provide:
+Do not implement current volunteer-facing features around the placeholders in this document.
 
-- Object label and object API name.
-- Field label and field API name.
-- Data type and maximum length.
-- Required or nullable status.
-- Unique or external-ID configuration.
-- Relationship path for related objects.
-- Picklist labels and underlying API values.
-- Whether the value can change after creation.
-- Anonymised example records.
-- Expected record volume and update frequency.
-- Deletion, merge, and inactive-record behaviour.
+## If integration is reactivated
 
-## Later-phase objects
+Request API metadata rather than screen labels.
 
-## Backend registration/reconciliation fields
+For each required object/field obtain:
 
-KELUARGA now owns the volunteer-facing registration workflow. These YM Hub fields are requested for backend handoff/reconciliation rather than to drive registration in the app.
+- object label and API name;
+- field label and API name;
+- data type/length/nullability;
+- uniqueness/external-ID configuration;
+- relationship paths;
+- picklist API values;
+- mutability;
+- update timestamp;
+- deletion/merge/inactive behaviour;
+- expected volume/update frequency;
+- anonymised example records.
 
-Provide the registration or participation object API name and these field API names:
+Likely future domains may include:
 
-- Unique registration record identifier.
-- Volunteer relationship and the related volunteer ID path.
-- Activity relationship and the related activity ID path.
-- Registration status, including every possible API value.
-- Registration timestamp.
-- Source update timestamp, preferably `SystemModstamp` where appropriate.
-- Deletion and cancellation semantics.
+- volunteer/person identity;
+- organisational programme/activity;
+- registration/assignment;
+- attendance/verified contribution outcome;
+- optional referral outcome.
 
-## Backend attendance/verification fields
+## Integration invariants
 
-Provide the attendance object API name and these field API names:
+A future adapter must:
 
-- Unique attendance record identifier.
-- Volunteer relationship and the related volunteer ID path.
-- Activity relationship and the related activity ID path.
-- Attendance status, including every possible API value.
-- Verified hours and numeric precision.
-- Verification timestamp and the actor or process that sets it.
-- Source update timestamp, preferably `SystemModstamp` where appropriate.
-- Correction, rejection, deletion, and record-merge semantics.
+- run server-side;
+- use least-privilege credentials;
+- map to current canonical KELUARGA/MakLom domain names;
+- attach external IDs to existing records;
+- be idempotent and auditable;
+- surface freshness/failure state;
+- handle merges/deletions/corrections;
+- not make current KELUARGA operation dependent on Salesforce availability.
 
-## Shared activity fields
-
-For the related activity object, provide:
-
-- Unique activity identifier.
-- Title.
-- Category.
-- Start and end timestamps, including the source timezone contract.
-
-## Later-phase objects
-
-The same exercise will later be required for:
-
-- Verified hours.
-- Optional referral-code capture.
-
-Do not replace canonical KELUARGA domain names with Salesforce API names. KELUARGA volunteer, recruitment, registration and roster records must remain usable without Salesforce IDs; external IDs are reconciliation metadata attached when available.
+This file is an integration-discovery aid only. It does not define current product ownership.
