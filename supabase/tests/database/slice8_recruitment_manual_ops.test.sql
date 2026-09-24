@@ -312,7 +312,7 @@ select lives_ok(
           'volunteer_key', null,
           'volunteer_name', 'Manual Integrated Volunteer',
           'email', 'manual-integrated@example.test',
-          'mobile', '91234567',
+          'mobile', '93456789',
           'age', 24,
           'tshirt_size', 'M',
           'dietary_requirements', null
