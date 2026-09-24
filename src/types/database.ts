@@ -8,6 +8,11 @@ export type Json =
 
 export type AppRole =
   | "volunteer"
+  | "volteam"
+  | "staff"
+  | "volunteer_leader"
+  | "admin"
+  // Legacy values remain in the PostgreSQL enum for migration compatibility.
   | "support_officer"
   | "content_editor"
   | "pathway_manager"
@@ -15,8 +20,7 @@ export type AppRole =
   | "attendance_manager"
   | "programme_manager"
   | "gamification_manager"
-  | "auditor"
-  | "admin";
+  | "auditor";
 
 export type AccountStatus =
   | "pending_link"
