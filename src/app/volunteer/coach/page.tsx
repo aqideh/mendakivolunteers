@@ -31,7 +31,7 @@ export default function CoachPage() {
       ]}
       ctas={[
         {
-          href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
+          href: "/volunteer/interest?area=coach",
           label: "Register your interest",
         },
       ]}

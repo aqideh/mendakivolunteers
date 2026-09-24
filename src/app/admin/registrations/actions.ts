@@ -7,6 +7,12 @@ import { z } from "zod";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
+const cancellationSchema = z.object({
+  registrationId: z.string().uuid(),
+  eventId: z.string().uuid(),
+  reason: z.string().trim().min(3).max(1000),
+});
+
 const reviewSchema = z.object({
   registrationId: z.string().uuid(),
   eventId: z.string().uuid(),
@@ -75,4 +81,51 @@ export async function reviewRegistration(formData: FormData) {
       `registration_${parsed.data.decision}`,
     ),
   );
+}
+
+
+export async function cancelRegistration(formData: FormData) {
+  const parsed = cancellationSchema.safeParse({
+    registrationId: formData.get("registrationId"),
+    eventId: formData.get("eventId"),
+    reason: formData.get("reason"),
+  });
+
+  if (!parsed.success) {
+    redirect(
+      "/admin/registrations?error=Enter%20a%20cancellation%20reason.",
+    );
+  }
+
+  const { userId } = await requireEventManager(
+    `/admin/registrations?event=${encodeURIComponent(parsed.data.eventId)}`,
+  );
+  const admin = getPhaseOneAdminClient();
+  const { error } = await admin.schema("core").rpc(
+    "cancel_keluarga_registration",
+    {
+      p_registration_id: parsed.data.registrationId,
+      p_reason: parsed.data.reason,
+      p_actor_user_id: userId,
+    },
+  );
+
+  if (error) {
+    console.error("Unable to cancel KELUARGA registration", {
+      code: error.code,
+      registrationId: parsed.data.registrationId,
+    });
+    const message = error.message.includes("Attendance has already started")
+      ? "Attendance has already started. Use Event Operations reconciliation instead."
+      : "The registration could not be cancelled.";
+    redirect(back(parsed.data.eventId, "error", message));
+  }
+
+  revalidatePath("/admin/registrations");
+  revalidatePath(`/admin/events/${parsed.data.eventId}/edit`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  revalidatePath("/dashboard");
+  revalidatePath("/journey");
+
+  redirect(back(parsed.data.eventId, "success", "registration_cancelled"));
 }

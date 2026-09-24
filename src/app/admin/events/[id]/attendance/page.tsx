@@ -229,7 +229,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     effectiveAttendanceResult,
     sessionShiftResult,
   ] = await Promise.all([
-    admin.from("phaseone_events").select("id, title, slug, venue").eq("id", id).maybeSingle(),
+    admin.from("phaseone_events").select("id, title, slug, venue, operations_scope").eq("id", id).maybeSingle(),
     admin
       .from("phaseone_event_timeslots")
       .select("id, label, starts_at, ends_at, status, sort_order")
@@ -496,7 +496,13 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   <span className="phaseone-walk-in-summary-hint">Add on the day</span>
                 </summary>
                 <div className="phaseone-walk-in-body">
-                  <p className="muted">Add someone who was not on the original roster. They will be attached to this selected shift.</p>
+                  <p className="muted">
+                    {event.operations_scope === "manual_integrated"
+                      ? "Add someone who was not on the original roster. They will be attached to this shift and linked to an existing KELUARGA volunteer or registered as a new volunteer using their KELUARGA ID, email or mobile number."
+                      : event.operations_scope === "manual_isolated"
+                        ? "Add someone who was not on the original roster. They will stay inside this isolated event only."
+                        : "Add someone who was not on the original roster. They will be attached to this selected shift."}
+                  </p>
                   <form action={addWalkInVolunteer} className="phaseone-walk-in-form">
                     <input name="eventId" type="hidden" value={id} />
                     <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
@@ -533,7 +539,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       </div>
                     </div>
                     <WalkInSubmitButtons />
-                    <p className="muted phaseone-walk-in-note">This creates an operational event roster entry only; it does not create a portal account or official YM Hub registration.</p>
+                    <p className="muted phaseone-walk-in-note">
+                      {event.operations_scope === "manual_integrated"
+                        ? "This can create a KELUARGA volunteer database record, but it does not create a login account or a YM Hub record automatically."
+                        : "This creates an operational event roster entry only; it does not create a portal account or official YM Hub registration."}
+                    </p>
                   </form>
                 </div>
               </details>

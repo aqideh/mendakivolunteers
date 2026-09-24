@@ -282,9 +282,11 @@ function parseRosterText(text: string, timeslots: readonly RosterTimeslot[]): Pa
 export function RosterUpload({
   eventId,
   timeslots,
+  operationsScope = "canonical",
 }: {
   eventId: string;
   timeslots: readonly RosterTimeslot[];
+  operationsScope?: "canonical" | "manual_isolated" | "manual_integrated";
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<RosterRow[]>([]);
@@ -295,6 +297,8 @@ export function RosterUpload({
   const [importState, setImportState] = useState<RosterImportState>(initialRosterImportState);
   const [isImporting, startImportTransition] = useTransition();
   const preview = useMemo(() => rows.slice(0, 8), [rows]);
+  const isManual = operationsScope !== "canonical";
+  const integratesVolunteers = operationsScope === "manual_integrated";
   const activeTimeslots = useMemo(() => timeslots.filter((timeslot) => timeslot.status !== "cancelled"), [timeslots]);
   const timeslotById = useMemo(() => new Map(timeslots.map((timeslot) => [timeslot.id, timeslot])), [timeslots]);
 
@@ -333,9 +337,26 @@ export function RosterUpload({
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
       <div className="phaseone-roster-toolbar">
-        <p className="muted">Paste from Excel/Google Sheets or upload a CSV. Volunteer name is the only required person field.</p>
+        <p className="muted">
+          {integratesVolunteers
+            ? "Paste from Excel/Google Sheets or upload a CSV. Every row needs a KELUARGA Volunteer ID, email or mobile number so it can be safely matched or registered."
+            : "Paste from Excel/Google Sheets or upload a CSV. Volunteer name is the only required person field."}
+        </p>
         <a className="button button-secondary" href={`/admin/events/${eventId}/roster-template`}>Download template</a>
       </div>
+
+      {isManual ? (
+        <div className={integratesVolunteers ? "notice notice-success" : "notice"}>
+          <strong>
+            {integratesVolunteers ? "Included in KELUARGA" : "Isolated event"}
+          </strong>
+          <p>
+            {integratesVolunteers
+              ? "This import will link existing KELUARGA volunteers or create new KELUARGA volunteer records when no unambiguous match exists. It does not create login accounts automatically."
+              : "This roster and its attendance remain event-only. No main volunteer records or contribution-hour credits are created."}
+          </p>
+        </div>
+      ) : null}
 
       <div className="form-field">
         <label htmlFor="pastedRoster">Paste roster</label>
@@ -380,7 +401,10 @@ export function RosterUpload({
           <p><strong>Accepted columns</strong></p>
           <ul className="phaseone-compact-list">
             <li><code>volunteer_name</code> — required</li>
-            <li><code>contact_number</code>, <code>email</code>, <code>age</code>, <code>volunteer_id</code>, <code>tshirt_size</code>, <code>dietary_requirements</code> — optional</li>
+            <li>
+              <code>contact_number</code>, <code>email</code>, <code>age</code>, <code>volunteer_id</code>, <code>tshirt_size</code>, <code>dietary_requirements</code>
+              {integratesVolunteers ? " — email, contact number or a valid KELUARGA Volunteer ID is required for database integration" : " — optional"}
+            </li>
             {activeTimeslots.length > 1 ? <li><code>date</code> and <code>shift</code> — required for multi-shift events unless using the downloaded template</li> : null}
           </ul>
           {activeTimeslots.length > 1 ? (
@@ -489,7 +513,15 @@ export function RosterUpload({
       ) : null}
 
       <button className="button button-primary" disabled={!rows.length || diagnostics.length > 0 || isImporting} type="submit">
-        {isImporting ? "Importing…" : rows.length ? `Import ${rows.length} volunteer${rows.length === 1 ? "" : "s"}` : "Import roster"}
+        {isImporting
+          ? "Importing…"
+          : rows.length
+            ? integratesVolunteers
+              ? `Import & link ${rows.length} volunteer${rows.length === 1 ? "" : "s"}`
+              : operationsScope === "manual_isolated"
+                ? `Import ${rows.length} event-only volunteer${rows.length === 1 ? "" : "s"}`
+                : `Import ${rows.length} volunteer${rows.length === 1 ? "" : "s"}`
+            : "Import roster"}
       </button>
     </form>
   );

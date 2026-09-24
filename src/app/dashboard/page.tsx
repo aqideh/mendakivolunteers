@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -46,6 +47,12 @@ const dashboardErrors: Record<string, string> = {
     "Enter a valid full name and mobile number.",
   profile_update_failed:
     "Your profile could not be updated. No profile data was changed.",
+  registration_withdraw_invalid:
+    "The registration could not be identified.",
+  registration_withdraw_started:
+    "Attendance has already started for this registration. Contact Volunteer Management if a correction is needed.",
+  registration_withdraw_failed:
+    "The registration could not be withdrawn. No registration data was changed.",
 };
 
 type YmHubSyncStatus =
@@ -147,9 +154,15 @@ export default async function DashboardPage({
   }
 
   let ymHubReadModel: YmHubReadModel | null = null;
+  let contributionCredits: Array<{
+    id: string;
+    credit_hours: number | string;
+    credited_at: string;
+  }> = [];
 
   if (volunteer) {
-    const [syncResult, registrationsResult, attendanceResult] =
+    const appDataClient = supabase as unknown as SupabaseClient;
+    const [syncResult, registrationsResult, attendanceResult, contributionResult] =
       await Promise.all([
         supabase
           .schema("ymhub")
@@ -175,10 +188,19 @@ export default async function DashboardPage({
           )
           .eq("volunteer_id", volunteer.id)
           .order("activity_starts_at", { ascending: false }),
+        appDataClient
+          .from("keluarga_contribution_credits")
+          .select("id, credit_hours, credited_at")
+          .eq("volunteer_id", volunteer.id)
+          .eq("status", "active")
+          .order("credited_at", { ascending: false }),
       ]);
 
     const hasYmHubReadError = Boolean(
-      syncResult.error || registrationsResult.error || attendanceResult.error,
+      syncResult.error ||
+        registrationsResult.error ||
+        attendanceResult.error ||
+        contributionResult.error,
     );
 
     if (hasYmHubReadError) {
@@ -186,13 +208,24 @@ export default async function DashboardPage({
         syncCode: syncResult.error?.code,
         registrationsCode: registrationsResult.error?.code,
         attendanceCode: attendanceResult.error?.code,
+        contributionCode: contributionResult.error?.code,
       });
       throw new Error("YM Hub dashboard data could not be loaded");
     }
 
-    if (!registrationsResult.data || !attendanceResult.data) {
-      throw new Error("YM Hub queries returned no result set");
+    if (
+      !registrationsResult.data ||
+      !attendanceResult.data ||
+      !contributionResult.data
+    ) {
+      throw new Error("Volunteer activity queries returned no result set");
     }
+
+    contributionCredits = contributionResult.data as Array<{
+      id: string;
+      credit_hours: number | string;
+      credited_at: string;
+    }>;
 
     ymHubReadModel = {
       syncStatus: syncResult.data,
@@ -268,6 +301,11 @@ export default async function DashboardPage({
             Your KELUARGA profile has been updated.
           </div>
         ) : null}
+        {successCode === "registration_withdrawn" ? (
+          <div className="notice notice-success" role="status">
+            Your programme registration has been withdrawn.
+          </div>
+        ) : null}
 
         <section className="panel" aria-labelledby="profile-title">
           <p className="eyebrow">Profile</p>
@@ -331,6 +369,35 @@ export default async function DashboardPage({
 
         {volunteer ? (
           <KeluargaRegistrationSummary volunteerId={volunteer.id} />
+        ) : null}
+
+        {volunteer && contributionCredits.length > 0 ? (
+          <section className="section panel" aria-labelledby="contribution-hours-title">
+            <p className="eyebrow">KELUARGA activity</p>
+            <h2 id="contribution-hours-title">App-recorded contribution hours</h2>
+            <div className="metric-grid">
+              <article className="metric-card">
+                <span className="metric-value">
+                  {contributionCredits
+                    .reduce(
+                      (total, credit) => total + Number(credit.credit_hours),
+                      0,
+                    )
+                    .toFixed(1)}
+                </span>
+                <span className="metric-label">KELUARGA contribution hours</span>
+              </article>
+              <article className="metric-card">
+                <span className="metric-value">{contributionCredits.length}</span>
+                <span className="metric-label">Credited attendance sessions</span>
+              </article>
+            </div>
+            <p className="muted">
+              These hours come from integrated manual Event Operations records. They
+              are kept separate from YM Hub verified hours and do not replace the
+              authoritative organisational attendance record.
+            </p>
+          </section>
         ) : null}
 
         {!volunteer ? (

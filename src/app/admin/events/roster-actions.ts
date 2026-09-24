@@ -52,6 +52,24 @@ function databaseDiagnostic(error: {
       "ROSTER_AMBIGUOUS_MATCH",
     );
   }
+  if (/integrated roster rows need/i.test(message)) {
+    return rosterImportError(
+      "Integrated roster rows need an existing KELUARGA Volunteer ID, email address, or mobile number. Name-only rows can only be kept as isolated event records.",
+      "ROSTER_INTEGRATION_IDENTIFIER_REQUIRED",
+    );
+  }
+  if (/KELUARGA volunteer ID does not exist/i.test(message)) {
+    return rosterImportError(
+      "A KELUARGA Volunteer ID in the CSV does not exist. Correct the ID, or remove it and provide a reliable email or mobile number so a new volunteer record can be created.",
+      "ROSTER_KEL_ID_NOT_FOUND",
+    );
+  }
+  if (/point to different KELUARGA volunteers|match multiple KELUARGA volunteer records/i.test(message)) {
+    return rosterImportError(
+      "The supplied KELUARGA ID, email or mobile number does not resolve to one unambiguous volunteer. Correct the identifiers before importing.",
+      "ROSTER_KEL_IDENTITY_CONFLICT",
+    );
+  }
   if (/volunteer id conflicts/i.test(message)) {
     return rosterImportError(
       "A row contains a Volunteer ID that conflicts with an existing volunteer matched by email or contact number. Check that the identifiers belong to the same person.",
@@ -124,13 +142,56 @@ export async function importRosterWithDiagnostics(
 
   const { userId } = await requireEventManager(`/admin/events/${eventId}/edit`);
   const admin = getPhaseOneAdminClient();
-  const { data, error } = await admin.rpc("phaseone_apply_roster_import", {
-    p_event_id: parsed.data.eventId,
-    p_mode: parsed.data.mode,
-    p_file_name: parsed.data.fileName,
-    p_rows: parsed.data.rows,
-    p_uploaded_by: userId,
-  });
+  const eventResult = await admin
+    .from("phaseone_events")
+    .select("operations_scope")
+    .eq("id", parsed.data.eventId)
+    .maybeSingle();
+
+  if (eventResult.error || !eventResult.data) {
+    return rosterImportError(
+      "The event data boundary could not be checked. No roster rows were changed.",
+      "ROSTER_EVENT_SCOPE_UNAVAILABLE",
+    );
+  }
+
+  const operationsScope = String(eventResult.data.operations_scope);
+  const isManual = operationsScope === "manual_isolated" || operationsScope === "manual_integrated";
+  const integratesVolunteers = operationsScope === "manual_integrated";
+
+  if (
+    integratesVolunteers &&
+    parsed.data.rows.some((row) => {
+      const key = row.volunteer_key?.trim().toUpperCase() ?? "";
+      return !/^KEL[0-9]{5}$/.test(key) && !row.email && !row.mobile;
+    })
+  ) {
+    return rosterImportError(
+      "Integrated manual events require an existing KELUARGA Volunteer ID, email address, or mobile number for every volunteer. Use an isolated manual event if the roster must remain name-only.",
+      "ROSTER_INTEGRATION_IDENTIFIER_REQUIRED",
+    );
+  }
+
+  const rpcName = isManual
+    ? "phaseone_apply_manual_roster_import"
+    : "phaseone_apply_roster_import";
+  const rpcArgs = isManual
+    ? {
+        p_event_id: parsed.data.eventId,
+        p_mode: parsed.data.mode,
+        p_file_name: parsed.data.fileName,
+        p_rows: parsed.data.rows,
+        p_uploaded_by: userId,
+        p_integrate_volunteers: integratesVolunteers,
+      }
+    : {
+        p_event_id: parsed.data.eventId,
+        p_mode: parsed.data.mode,
+        p_file_name: parsed.data.fileName,
+        p_rows: parsed.data.rows,
+        p_uploaded_by: userId,
+      };
+  const { data, error } = await admin.rpc(rpcName, rpcArgs);
 
   if (error) {
     console.error("Unable to import phase-one roster", {
@@ -150,8 +211,23 @@ export async function importRosterWithDiagnostics(
     ? result.row_count
     : parsed.data.rows.length;
 
+  const linkedCount =
+    typeof result.linked_volunteer_count === "number"
+      ? result.linked_volunteer_count
+      : 0;
+  const createdCount =
+    typeof result.created_volunteer_count === "number"
+      ? result.created_volunteer_count
+      : 0;
+  const message =
+    operationsScope === "manual_integrated"
+      ? `${rowCount} assignment${rowCount === 1 ? "" : "s"} imported. ${linkedCount} KELUARGA volunteer${linkedCount === 1 ? "" : "s"} linked, including ${createdCount} new volunteer record${createdCount === 1 ? "" : "s"}.`
+      : operationsScope === "manual_isolated"
+        ? `${rowCount} event-only volunteer assignment${rowCount === 1 ? "" : "s"} imported. No main volunteer records were created or changed.`
+        : `${rowCount} volunteer assignment${rowCount === 1 ? "" : "s"} imported successfully.`;
+
   return {
     status: "success",
-    message: `${rowCount} volunteer assignment${rowCount === 1 ? "" : "s"} imported successfully.`,
+    message,
   };
 }

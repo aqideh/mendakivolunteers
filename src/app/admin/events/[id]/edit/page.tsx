@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
+import { creditManualEventHours } from "@/app/admin/events/manual-actions";
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
@@ -30,6 +31,7 @@ const successMessages: Record<string, string> = {
   event_updated: "Event guide updated.",
   event_duplicated: "Journey duplicated as a draft. Update its title, slug, dates and access settings before publishing.",
   roster_imported: "Roster imported.",
+  manual_event_created: "Manual Event Operations event created. Upload the roster below.",
 };
 
 export default async function EditEventPage({ params, searchParams }: PageProps) {
@@ -40,7 +42,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const [eventResult, timeslotsResult, rosterCountResult, importsResult, rundownImagesResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order, is_opportunity_published")
+      .select("id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order, is_opportunity_published, operations_scope, credit_contribution_hours")
       .eq("id", id)
       .maybeSingle(),
     admin
@@ -55,7 +57,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
       .eq("event_id", id),
     admin
       .from("phaseone_roster_imports")
-      .select("id, mode, file_name, row_count, replaced_count, uploaded_at")
+      .select("id, mode, file_name, row_count, replaced_count, integration_mode, linked_volunteer_count, created_volunteer_count, uploaded_at")
       .eq("event_id", id)
       .order("uploaded_at", { ascending: false })
       .limit(10),
@@ -92,7 +94,19 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const parameters = await searchParams;
   const errorMessage = parameter(parameters, "error");
   const successCode = parameter(parameters, "success");
-  const successMessage = successCode ? successMessages[successCode] : undefined;
+  const successMessage =
+    successCode === "manual_hours_credited"
+      ? `${parameter(parameters, "credited") ?? "0"} completed attendance session(s) credited for ${parameter(parameters, "hours") ?? "0"} KELUARGA contribution hours.${Number(parameter(parameters, "skipped") ?? "0") > 0 ? ` ${parameter(parameters, "skipped")} session(s) were skipped because they were not linked to exactly one KELUARGA volunteer.` : ""}`
+      : successCode
+        ? successMessages[successCode]
+        : undefined;
+  const operationsScope = eventResult.data.operations_scope as
+    | "canonical"
+    | "manual_isolated"
+    | "manual_integrated";
+  const creditContributionHours = Boolean(
+    eventResult.data.credit_contribution_hours,
+  );
   const event = {
     ...eventResult.data,
     timeslots: timeslotsResult.data,
@@ -172,25 +186,67 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             </div>
             <span className="status-pill">{rosterCountResult.count ?? 0} assignments</span>
           </div>
-          <RosterUpload eventId={event.id} timeslots={timeslotsResult.data} />
+          {operationsScope !== "canonical" ? (
+            <div className={operationsScope === "manual_integrated" ? "notice notice-success" : "notice"}>
+              <strong>
+                {operationsScope === "manual_integrated"
+                  ? "Manual event · included in KELUARGA"
+                  : "Manual event · isolated"}
+              </strong>
+              <p>
+                {operationsScope === "manual_integrated"
+                  ? creditContributionHours
+                    ? "CSV volunteers are linked or registered in the main volunteer database. Completed attendance can be credited as KELUARGA contribution hours below."
+                    : "CSV volunteers are linked or registered in the main volunteer database. Contribution-hour crediting is disabled for this event."
+                  : "Roster, attendance, insights and reporting stay inside this event. No main volunteer records or contribution hours are created."}
+              </p>
+            </div>
+          ) : null}
+
+          <RosterUpload
+            eventId={event.id}
+            operationsScope={operationsScope}
+            timeslots={timeslotsResult.data}
+          />
+
+          {operationsScope === "manual_integrated" && creditContributionHours ? (
+            <div className="panel">
+              <p className="eyebrow">Contribution hours</p>
+              <h3>Credit completed attendance to KELUARGA</h3>
+              <p className="muted">
+                Run this after check-out or attendance corrections. It creates or
+                refreshes app-owned KELUARGA contribution-hour credits from completed
+                attendance sessions. These remain separate from YM Hub verified hours.
+              </p>
+              <form action={creditManualEventHours}>
+                <input name="eventId" type="hidden" value={event.id} />
+                <button className="button button-primary" type="submit">
+                  Credit completed hours
+                </button>
+              </form>
+            </div>
+          ) : null}
 
           <details className="phaseone-disclosure phaseone-import-history">
             <summary>Recent roster imports</summary>
             <div className="phaseone-disclosure-body">
               <div className="table-wrap">
                 <table className="content-table">
-                  <thead><tr><th>Uploaded</th><th>File</th><th>Mode</th><th>Rows</th><th>Replaced</th></tr></thead>
+                  <thead><tr><th>Uploaded</th><th>File</th><th>Mode</th><th>Data</th><th>Rows</th><th>Linked</th><th>New</th><th>Replaced</th></tr></thead>
                   <tbody>
                     {importsResult.data.map((item) => (
                       <tr key={item.id}>
                         <td>{formatSingaporeDateTime(item.uploaded_at)}</td>
                         <td>{item.file_name}</td>
                         <td>{item.mode}</td>
+                        <td>{item.integration_mode === "volunteer_database" ? "KELUARGA" : "Event only"}</td>
                         <td>{item.row_count}</td>
+                        <td>{item.linked_volunteer_count}</td>
+                        <td>{item.created_volunteer_count}</td>
                         <td>{item.replaced_count}</td>
                       </tr>
                     ))}
-                    {importsResult.data.length === 0 ? <tr><td colSpan={5}>No roster imports yet.</td></tr> : null}
+                    {importsResult.data.length === 0 ? <tr><td colSpan={8}>No roster imports yet.</td></tr> : null}
                   </tbody>
                 </table>
               </div>
