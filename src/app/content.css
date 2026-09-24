@@ -401,3 +401,97 @@
     flex-direction: column;
   }
 }
+
+
+/* Brand reference header: yellow top rail, black navigation band, logo left, brand + menu right. */
+.portal-header {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 4rem;
+  border-top: 0.35rem solid var(--primary);
+  border-bottom: 0;
+  padding: 0.5rem clamp(0.8rem, 2.5vw, 1.5rem);
+  color: #ffffff;
+  background: var(--brand-strong);
+}
+
+.portal-brand-logo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  text-decoration: none;
+}
+
+.portal-header-end {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 0.55rem;
+}
+
+.portal-brand-copy-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.portal-brand-copy-link .brand-copy {
+  text-align: right;
+}
+
+.portal-brand-copy-link .brand-name {
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.portal-brand-copy-link .brand-title {
+  color: #ffffff;
+  font-size: 0.52rem;
+  letter-spacing: 0.02em;
+}
+
+.portal-header .header-status {
+  justify-self: end;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.portal-header .portal-menu-toggle {
+  color: #ffffff;
+}
+
+.portal-header .portal-menu-toggle:hover {
+  opacity: 1;
+  color: var(--primary);
+}
+
+@media (max-width: 760px) {
+  .portal-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 3.75rem;
+    border-top-width: 0.3rem;
+    padding: 0.42rem 0.65rem;
+  }
+
+  .portal-header .brand-logo {
+    width: 2.55rem;
+  }
+
+  .portal-header-end {
+    gap: 0.4rem;
+  }
+
+  .portal-brand-copy-link .brand-name {
+    font-size: 0.9rem;
+  }
+
+  .portal-brand-copy-link .brand-title {
+    display: block;
+    font-size: 0.46rem;
+  }
+
+  .portal-menu-panel {
+    top: 4rem;
+  }
+}

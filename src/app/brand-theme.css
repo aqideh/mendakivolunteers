@@ -291,3 +291,38 @@ h6 {
     height: auto;
   }
 }
+
+
+/* Primary CTA treatment: black background, yellow text, white decorative icons. */
+.button-primary,
+.button-primary:hover {
+  border-color: #000000;
+  color: var(--primary);
+  background: #000000;
+}
+
+.button-primary:hover {
+  background: var(--brand-strong);
+}
+
+.button-primary span[aria-hidden="true"],
+.button-primary svg {
+  color: #ffffff;
+}
+
+
+/* Portal navigation uses the reference treatment: yellow rail above a black band. */
+.site-header.portal-header {
+  border-top-color: var(--primary);
+  border-bottom-color: transparent;
+  color: #ffffff;
+  background: var(--brand-strong);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+
+@supports (backdrop-filter: blur(16px)) {
+  .site-header.portal-header {
+    background: rgba(38, 40, 36, 0.98);
+    backdrop-filter: none;
+  }
+}

@@ -1,4 +1,6 @@
-import { BrandLockup } from "@/components/brand-lockup";
+import Image from "next/image";
+import Link from "next/link";
+
 import { PortalNav } from "@/components/portal-nav";
 import { createClient } from "@/lib/supabase/server";
 
@@ -42,14 +44,42 @@ export async function PortalHeader({
 
   return (
     <header className="site-header portal-header">
-      <BrandLockup href="/" priority />
-      <PortalNav
-        canManageEvents={canManageEvents}
-        canManagePoints={canManagePoints}
-        canManageVolunteers={canManageVolunteers}
-        isSignedIn={isSignedIn}
-      />
+      <Link
+        className="portal-brand-logo-link"
+        href="/"
+        aria-label="Keluarga MENDAKI home"
+      >
+        <Image
+          className="brand-logo"
+          src="/brand/yayasan-mendaki.webp"
+          width={1000}
+          height={700}
+          alt=""
+          priority
+          unoptimized
+        />
+      </Link>
+
       {!lite ? <p className="header-status">{status}</p> : null}
+
+      <div className="portal-header-end">
+        <Link
+          className="portal-brand-copy-link"
+          href="/"
+          aria-label="Keluarga MENDAKI — Volunteer for Impact!"
+        >
+          <span className="brand-copy">
+            <span className="brand-name">Keluarga MENDAKI</span>
+            <span className="brand-title">Volunteer for Impact!</span>
+          </span>
+        </Link>
+        <PortalNav
+          canManageEvents={canManageEvents}
+          canManagePoints={canManagePoints}
+          canManageVolunteers={canManageVolunteers}
+          isSignedIn={isSignedIn}
+        />
+      </div>
     </header>
   );
 }
