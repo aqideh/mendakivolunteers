@@ -38,7 +38,7 @@ const ctas = [
   {
     key: "contribute",
     label: "Contribute",
-    href: null,
+    href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
   },
   {
     key: "donate",
@@ -87,20 +87,6 @@ export function ContributorHero() {
               const className = highlighted
                 ? styles.primaryAction
                 : styles.secondaryAction;
-
-              if (!cta.href) {
-                return (
-                  <button
-                    aria-disabled="true"
-                    className={`${className} ${styles.pendingAction}`}
-                    key={cta.key}
-                    type="button"
-                  >
-                    <span>{cta.label}</span>
-                    <span aria-hidden="true">↗</span>
-                  </button>
-                );
-              }
 
               if (cta.href.startsWith("#")) {
                 return (
