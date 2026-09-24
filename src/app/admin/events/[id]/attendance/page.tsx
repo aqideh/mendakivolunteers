@@ -492,11 +492,13 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
                 <div className="actions">
                   <span className="status-pill">{visible.length} shown{activeFilterLabel ? ` · ${activeFilterLabel}` : ""}</span>
-                  <BulkCheckoutButton
-                    checkedInCount={counts.signed_in}
-                    eventId={id}
-                    timeslotId={selectedTimeslot.id}
-                  />
+                  {canManageEvent ? (
+                    <BulkCheckoutButton
+                      checkedInCount={counts.signed_in}
+                      eventId={id}
+                      timeslotId={selectedTimeslot.id}
+                    />
+                  ) : null}
                 </div>
               </div>
 
