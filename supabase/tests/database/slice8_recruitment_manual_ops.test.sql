@@ -1,6 +1,6 @@
 begin;
 
-select plan(21);
+select plan(25);
 
 select has_table('public', 'keluarga_recruitment_applications', 'recruitment applications table exists');
 select has_table('public', 'keluarga_recruitment_status_history', 'recruitment status history exists');
