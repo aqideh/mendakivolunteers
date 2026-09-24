@@ -1,6 +1,6 @@
 # KELUARGA
 
-KELUARGA is MENDAKI's volunteer recruitment, registration and event-operations web application. Volunteers use KELUARGA to enter the recruitment journey, discover opportunities, register and participate in events. **YM Hub remains MENDAKI's authoritative backend organisational record; the backend handoff/reconciliation process is managed separately from the volunteer-facing journey.**
+KELUARGA is MENDAKI's volunteer-facing registration and event-operations web application. Prospective volunteers begin through FormSG; MakLom manages the resulting lead review, longitudinal volunteer profile and approved contribution records. KELUARGA and MakLom share one canonical volunteer identity while retaining separate application permissions. YM Hub integration is dormant future infrastructure rather than a current KELUARGA runtime dependency.
 
 KELUARGA provides public volunteer content, app-owned recruitment and registration workflows, staff event-day operations, volunteer-development tools, and read-only views of verified backend records where appropriate.
 
