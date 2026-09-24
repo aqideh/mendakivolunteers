@@ -8,7 +8,7 @@ import { EventForm, type EventFormValue } from "@/components/phaseone/event-form
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
 import { PortalHeader } from "@/components/portal-header";
-import { requireEventManager } from "@/lib/auth/event-access";
+import { hasProgrammeManagerRole, requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { programmeRundownBucket } from "@/lib/phaseone/programme-rundown";
@@ -36,7 +36,7 @@ const successMessages: Record<string, string> = {
 
 export default async function EditEventPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  await requireEventManager(`/admin/events/${id}/edit`);
+  const { roles } = await requireEventManager(`/admin/events/${id}/edit`);\n  const canManageProgramme = hasProgrammeManagerRole(roles);
   const admin = getPhaseOneAdminClient();
 
   const [eventResult, timeslotsResult, rosterCountResult, importsResult, rundownImagesResult] = await Promise.all([
@@ -139,8 +139,12 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         </div>
 
         <nav className="phaseone-task-nav" aria-label="Event editor sections">
-          <a href="#guide">Guide · {event.is_published ? "Published" : "Draft"}</a>
-          <a href="#programme">Programme · {rundownImages.length}</a>
+          {canManageProgramme ? (
+            <>
+              <a href="#guide">Guide · {event.is_published ? "Published" : "Draft"}</a>
+              <a href="#programme">Programme · {rundownImages.length}</a>
+            </>
+          ) : null}
           <a href="#roster">Roster · {rosterCountResult.count ?? 0}</a>
           <Link href={`/admin/registrations?event=${id}`}>Registrations</Link>
           <Link href={`/admin/events/${id}/insights`}>Insights</Link>
@@ -152,7 +156,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         {successMessage ? <div className="notice notice-success" role="status">{successMessage}</div> : null}
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
-        <section className="panel phaseone-admin-section" id="guide" aria-labelledby="event-details-title">
+        {canManageProgramme ? (\n          <>\n        <section className="panel phaseone-admin-section" id="guide" aria-labelledby="event-details-title">
           <div className="section-header">
             <div>
               <p className="eyebrow">Guide details</p>
@@ -178,7 +182,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           />
         </section>
 
-        <section className="section panel phaseone-admin-section" id="roster" aria-labelledby="roster-title">
+          </>\n        ) : (\n          <div className="notice">\n            Event Operations access is active. Programme, opportunity and Event Guide settings are read-only for this account.\n          </div>\n        )}\n\n        <section className="section panel phaseone-admin-section" id="roster" aria-labelledby="roster-title">
           <div className="section-header">
             <div>
               <p className="eyebrow">Roster</p>
@@ -254,15 +258,17 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </details>
         </section>
 
-        <details className="phaseone-disclosure phaseone-page-tools">
-          <summary>More event actions</summary>
-          <div className="phaseone-disclosure-body">
-            <form action={duplicateEvent}>
-              <input type="hidden" name="eventId" value={event.id} />
-              <button className="button button-secondary" type="submit">Duplicate event guide</button>
-            </form>
-          </div>
-        </details>
+        {canManageProgramme ? (
+          <details className="phaseone-disclosure phaseone-page-tools">
+            <summary>More event actions</summary>
+            <div className="phaseone-disclosure-body">
+              <form action={duplicateEvent}>
+                <input type="hidden" name="eventId" value={event.id} />
+                <button className="button button-secondary" type="submit">Duplicate event guide</button>
+              </form>
+            </div>
+          </details>
+        ) : null}
       </main>
     </div>
   );
