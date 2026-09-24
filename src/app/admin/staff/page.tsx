@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { StaffInviteForm } from "@/app/admin/staff/staff-invite-form";
 import { StaffSetupLinkForm } from "@/app/admin/staff/staff-setup-link-form";
 import { PortalHeader } from "@/components/portal-header";
 import { requireAdmin } from "@/lib/auth/staff-access";
+import { staffInviteRoleValues } from "@/lib/auth/staff-roles";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import type { AccountStatus, AppRole } from "@/types/database";
@@ -33,7 +35,7 @@ async function loadStaffAccounts(): Promise<StaffAccount[]> {
       .schema("core")
       .from("user_roles")
       .select("user_id, role")
-      .in("role", ["attendance_manager", "pathway_manager", "admin"]),
+      .in("role", [...staffInviteRoleValues]),
     admin.auth.admin.listUsers({ page: 1, perPage: 200 }),
   ]);
 
@@ -90,9 +92,10 @@ export default async function StaffAccessPage() {
             <p className="eyebrow">Administration</p>
             <h1>Manage staff access</h1>
             <p className="muted">
-              Create single-use password setup links for approved staff accounts.
-              Links expire after one hour, and a replacement revokes the previous
-              link.
+              Invite new staff directly from KELUARGA. Invitations create the
+              account, assign the selected role and email the staff member a secure
+              link to choose their password. Existing staff can be sent a fresh
+              setup email when needed.
             </p>
           </div>
           <div className="actions">
@@ -105,9 +108,12 @@ export default async function StaffAccessPage() {
           </div>
         </div>
 
+        <StaffInviteForm />
+
         <div className="notice" role="status">
-          Share setup links directly with the intended staff member. Do not place
-          them in tickets, pull requests, screenshots, or shared channels.
+          Use the emailed setup flow by default. Manual setup links remain available
+          as an administrative recovery option and should only be shared directly
+          with the intended staff member.
         </div>
 
         <div className="table-wrap">
