@@ -1,400 +1,155 @@
 # Development roadmap
 
-**Last reviewed:** 24 September 2026
+**Last reviewed:** 24 September 2026  
+**Reference branch:** `staging`
 
-This roadmap reflects both the current deployed implementation and the approved 22 September 2026 operating-model change. **KELUARGA will own volunteer recruitment, registration and live event operations; YM Hub remains the authoritative backend organisational record after handoff/reconciliation.** Verified volunteer hours remain YM Hub-owned.
+This roadmap follows the approved KELUARGA + MakLom domain architecture. KELUARGA owns volunteer-facing registration and live event operations. FormSG feeds prospective-volunteer leads to MakLom. MakLom owns Volunteer Management review, the longitudinal profile and approved contribution records. YM Hub is dormant future integration infrastructure and is not a current KELUARGA runtime dependency.
+
+See `docs/architecture/keluarga-maklom-domain-architecture.md` for the domain contract.
 
 ## Status labels
 
-- **Live** — implemented on `main` and used by the application.
-- **Foundation live** — schema/read path exists, but production value depends on policy or upstream data.
-- **Planned** — agreed future work, not yet implemented.
-- **Blocked / dependency** — requires external data, approval or operating process.
-- **Deferred** — intentionally not being built now.
-- **Decision required** — product/operations/security rule must be settled before implementation.
-
-## 1. Platform, security and release controls
+- **Live** — implemented in the active application/database for the referenced environment.
+- **Foundation live** — schema and core contract exist; an operational UI/process is still incomplete.
+- **Planned** — agreed next work.
+- **Decision required** — policy or product rule must be approved before implementation.
+- **Dormant** — retained for possible future use but not part of the current runtime model.
 
-**Status: Live**
-
-Implemented:
-
-- Next.js/Vercel application.
-- Supabase Auth and PostgreSQL backend.
-- role-gated staff functions;
-- Row Level Security and privileged server/service-role boundaries;
-- forward-only database migrations;
-- pgTAP database/RLS tests;
-- Vitest application tests;
-- lint, type-check, production build and dependency audit in CI;
-- production-readiness checks;
-- security headers, redirect validation and CSV injection protection;
-- production handover/runbook documentation.
+## P0 — finish and validate the shared KELUARGA + MakLom operating model
 
-Ongoing work:
+### Canonical identity
 
-- keep dependencies patched;
-- preserve regression coverage when adding operational features;
-- periodically rerun security/source scans for DTI review;
-- document material architecture changes in the same pull request.
+**Staging: live**
 
-## 2. Public volunteer companion and CMS
+- `core.volunteers.id` is the canonical person UUID.
+- `KELxxxxx` remains the human-facing KELUARGA volunteer ID.
+- Every MakLom volunteer profile references a canonical UUID.
+- MakLom legacy volunteer IDs are retained as aliases.
+- New MakLom volunteer profiles automatically create/link canonical identity.
+- Email/mobile may support matching but are not permanent identity keys.
 
-**Status: Live**
+**Next:** run production migration rehearsal against the current production lead schema, then promote only after staging UAT.
 
-Implemented:
-
-- landing page;
-- opportunity discovery;
-- app-owned prospective-volunteer recruitment intake with staff review and status history;
-- news;
-- standalone public FAQ route and navigation, with approved FAQ copy kept in a dedicated content module;
-- KELUARGA-managed programme/event records for public opportunity discovery;
-- direct KELUARGA registration with shift selection and status display;
-- volunteer self-withdrawal and staff cancellation with audited status history and safe roster cleanup before attendance begins;
-- Event Guides with venue, directions, briefing and programme information;
-- published volunteer pathways;
-- retired Volunteer.gov.sg runtime importer and imported-card override flow.
-
-### Next work
+### Prospective-volunteer leads
 
-**Content dependency:** the FAQ page is live as a content-ready shell; Volunteer Management still needs to furnish the approved questions and answers before it becomes a substantive support resource.
-
-**Decision required:** confirm which Event Guide content can be public and which content requires authentication, assignment, access code or signed-link access.
-
-## 3. Staff event operations
-
-**Status: Live**
-
-Implemented:
-
-- event creation/editing;
-- multi-day/multi-shift timeslots;
-- roster upload/paste/template;
-- optional Volunteer ID;
-- walk-ins;
-- dietary/contact/T-shirt fields;
-- check-in/check-out;
-- absent/withdrawn states;
-- bulk checkout;
-- audited corrections;
-- continuous attendance across shifts;
-- live attendance monitor;
-- attendance reconciliation view;
-- attendance export;
-- QR attendance/feedback foundation;
-- Past Events search/filter/sort;
-- compact mobile event-operations UI;
-- Quick Event Operations for manual/last-minute events without a public opportunity;
-- manual CSV/paste roster mode with an explicit isolated-versus-KELUARGA-integrated data boundary;
-- integrated manual rosters and walk-ins can match existing volunteers or create new `KELxxxxx` volunteer records from strong identifiers;
-- optional app-owned KELUARGA contribution-hour crediting from completed manual-event attendance, stored separately from YM Hub verified hours.
+**MakLom foundation: live**
 
-### Next work
+- public KELUARGA role CTAs point to FormSG;
+- the old KELUARGA recruitment UI/RPC write path is retired;
+- MakLom `volunteer_leads` owns lead status and staff review;
+- a lead must be accepted before deliberate conversion;
+- conversion records both the MakLom profile ID and canonical KELUARGA UUID;
+- duplicate ambiguity blocks automatic conversion.
 
-**Live:** confirmed KELUARGA registrations populate Event Operations rosters idempotently with canonical volunteer and registration IDs; walk-ins remain an explicit exception.
+**Next:** complete FormSG webhook configuration and confirm one controlled end-to-end submission.
 
-**Planned:** complete formal backend-handoff tracking for operational attendance sent to YM Hub, including:
+### Contribution hours
 
-- batch IDs;
-- source attendance IDs;
-- assignment matching;
-- walk-in/missing-assignment exceptions;
-- duplicate-export prevention;
-- accepted/rejected downstream outcome where available.
+**Staging foundation: live**
 
-**Planned:** continue event-day UAT with realistic multi-shift rosters, walk-ins, early checkouts and incomplete attendance.
+- KELUARGA records operational attendance;
+- completed sessions populate/refresh `volunteer_contributions`;
+- corrections to an approved session return the record to `needs_review`;
+- KELUARGA cannot approve attendance-derived hours;
+- only MakLom-approved contributions appear as approved hours on the volunteer dashboard;
+- old KELUARGA instant-credit reconciliation is retired.
 
-**Planned:** define explicit retention/support procedures for event-operation data and exported files.
+**Next:** build the MakLom contribution review queue with approve/adjust/reject actions and audit history.
 
-## 4. KELUARGA registration and YM Hub backend handoff
+### Profile and insight review boundaries
 
-**Status: KELUARGA registration foundation live. YM Hub reconciliation foundation live.**
+**Staging foundation: live**
 
-Already implemented:
+- KELUARGA mobile changes can enter a MakLom review inbox;
+- KELUARGA event reviews/accepted insights enter a MakLom inbox with event/source provenance;
+- no event rating or observation silently becomes a permanent profile fact.
 
-- native KELUARGA account provisioning with immutable `KELxxxxx` volunteer IDs;
-- canonical programme/event records and direct opportunity registration;
-- multi-shift selections and optional per-shift capacity;
-- pending / confirmed / waitlisted / rejected / cancelled / withdrawn registration lifecycle;
-- withdrawn/cancelled registrations can be reopened while the opportunity remains open;
-- app-owned recruitment application lifecycle with volunteer submission/withdrawal and Volunteer Management review;
-- staff registration review and in-app registration notifications;
-- idempotent confirmed-registration-to-roster handoff;
-- `ymhub` projection schema, attendance snapshots and sync/freshness state;
-- verified-hours presentation and gamification reconciliation contract.
+**Next:** build MakLom review interfaces for profile changes and longitudinal insight promotion.
 
-### Immediate integration direction
+## P1 — launch hardening
 
-**Status: Planned / operating-process dependency**
+1. Run realistic event-day UAT across single-shift, adjacent-shift, gap-between-shifts, early checkout, walk-in and correction cases.
+2. Test manual isolated and manual integrated CSV rosters.
+3. Verify registration -> roster -> attendance -> contribution candidate -> MakLom approval -> volunteer dashboard end to end.
+4. Verify role boundaries for `admin`, `volteam`, `staff` and `volunteer_leader`.
+5. Verify MakLom entitlement remains separate from KELUARGA roles.
+6. Confirm Event Guide public/private content policy.
+7. Confirm support and retention procedures for operational exports and historical tables.
 
-KELUARGA must no longer wait for inbound YM Hub registration data to operate. Volunteer Management will separately define the KELUARGA -> YM Hub handoff. Controlled batch files remain the immediate practical mechanism where required.
+## P2 — volunteer experience and recognition
 
-Target inbound source sets:
+### Dashboard/profile
 
-1. Person Account;
-2. Volunteer Initiative;
-3. Job Position Shift;
-4. Job Position Assignment.
+**Staging: active shared-data model**
 
-Build a staff-only batch workflow with:
+- KELUARGA identity and registration state;
+- approved MakLom contribution hours;
+- audited self-service display-name/mobile editing;
+- pathway positions and badges;
+- no live YM Hub sync dependency.
 
-- versioned expected templates;
-- schema/header validation;
-- preview before commit;
-- stable Salesforce source IDs;
-- checksum/duplicate-file detection;
-- atomic or explicitly documented partial-failure behaviour;
-- import counts and history;
-- uploader/time/source metadata;
-- exception reports;
-- previous successful snapshot retention;
-- freshness/failure state surfaced to volunteers/staff.
+### Points
 
-### Identity linking
+**Manual recognition: live**  
+**Attendance-derived automation: paused**
 
-**Status: Native identity and account/profile provisioning live**
+Manual staff-recognition awards remain available and audited.
 
-Use the identity chain:
+Before reactivating automatic attendance points, define:
 
-```text
-Supabase Auth user
-        -> core.user_accounts
-        -> core.volunteers.id (internal UUID)
-        -> core.volunteers.volunteer_code (immutable KELxxxxx ID)
-        -> optional Salesforce/YM Hub source ID after handoff
-```
+- eligible approved contribution types;
+- points-per-hour or flat award rule;
+- effective dates;
+- corrections/reversals;
+- appeals;
+- anti-abuse controls.
 
-Implemented / ongoing:
+The input must be MakLom-approved contribution records, not raw KELUARGA check-in/out data.
 
-- verified email signup can create a native KELUARGA volunteer before any YM Hub record exists;
-- every native volunteer receives an immutable `KELxxxxx` ID;
-- an exact eligible legacy email match can be linked without creating a duplicate volunteer;
-- ambiguous legacy matches enter a review state instead of auto-linking;
-- controlled backend source-ID linking/reconciliation and support tooling remain ongoing.
+### Badges/pathways
 
-Do not allow volunteers to claim a profile by typing an unverified source ID or email address.
+Continue staff-confirmed pathway positions and manual recognition badges. Any future automatic advancement must use explicit, reviewable rules and preserve human override.
 
-### Future direct API
+## P3 — Volunteer Management intelligence
 
-**Status: Blocked / future**
+1. Cross-event MakLom volunteer history.
+2. Contribution/hour review reporting.
+3. Reviewed insight/profile inbox.
+4. Duplicate-resolution workflow using canonical UUID + retained aliases.
+5. Impact reporting that explicitly separates unique volunteers, event participations, shifts, sessions and approved hours.
+6. Referral outcomes and rewards only after a defined authoritative success condition.
 
-After DTI/security approval, replace the batch ingestion mechanism with a server-only, least-privilege Salesforce/YM Hub adapter.
+## P4 — controlled legacy retirement
 
-The adapter should populate the existing `ymhub` projection model so volunteer pages do not need to be redesigned.
+Retain until migration/retention requirements are satisfied:
 
-Requirements:
+- historical `keluarga_recruitment_applications`;
+- historical `keluarga_contribution_credits`;
+- Volunteer.gov.sg import/override tables;
+- legacy MakLom `events`, `event_shifts`, `attendance_log`;
+- superseded opportunity CMS tables;
+- dormant `ymhub` and `integration.ymhub_*` objects.
 
-- no Salesforce credential in browser code;
-- typed field mappings;
-- idempotent upserts;
-- explicit freshness/failure states;
-- auditability and observability;
-- safe handling of deletions, merges, status corrections and changed upstream records;
-- batch import/export retained as fallback/recovery where useful.
+Remove a legacy object only after its remaining data has a documented destination or retention decision.
 
-### SSO
+## P5 — future organisational integration
 
-**Status: Not in current phase**
+YM Hub/Salesforce is a future downstream integration project, not a prerequisite for current KELUARGA operation.
 
-KELUARGA and YM Hub remain separate login/session systems. Reassess SSO only as a separate identity project if later approved.
+If reactivated:
 
-## 5. Personal volunteer dashboard
+- keep credentials server-only;
+- map using canonical volunteer/event identifiers;
+- use idempotent, auditable handoff;
+- handle merges/corrections explicitly;
+- do not redesign volunteer-facing flows around Salesforce IDs;
+- keep the shared KELUARGA + MakLom identity model intact.
 
-**Status: UI live with KELUARGA registration state and YM Hub verification separated**
+## Release rules
 
-Implemented:
-
-- KELUARGA volunteer ID display;
-- KELUARGA registration status and recent in-app registration updates;
-- linked/unlinked YM Hub reconciliation state;
-- imported YM Hub registrations as a legacy/backend reconciliation view;
-- imported official attendance;
-- verified hours;
-- separately labelled app-owned KELUARGA contribution hours from integrated manual events;
-- registration self-withdrawal;
-- sync/failure state handling;
-- audited self-service editing for app-owned display name and mobile number.
-
-### Next work
-
-**Planned:** operate the required YM Hub backend projections reliably through the agreed handoff process.
-
-**Planned:** ensure all personal authoritative data surfaces show last successful sync/freshness information and distinguish `not yet synchronised` from a true empty record.
-
-**Planned:** support staff resolution of identity/assignment exceptions before broad volunteer account rollout.
-
-## 6. Gamification and recognition
-
-**Status: Recognition foundation live; policy and authoritative data dependencies remain**
-
-Implemented:
-
-- versioned point-rule model;
-- flat-points and per-hour rules;
-- append-only point ledger;
-- adjustments/reversals;
-- account-scoped points UI;
-- reconciliation from verified YM Hub attendance;
-- role-gated staff points management for explicit manual recognition awards;
-- separate point provenance for verified attendance versus staff recognition;
-- staff-defined recognition badges with audited award/revocation history;
-- volunteer-facing active badge summary.
-
-### Next work
-
-**Policy dependency:** approve verified-attendance point values, eligible activity rules, effective dates, corrections/appeals and anti-abuse controls before activating production attendance rules. Manual recognition is operationally available but should follow an agreed staff-use policy.
-
-**Integration dependency:** only reconcile points after a successful authoritative YM Hub attendance import.
-
-**Live:** manual badges can be defined, awarded and revoked by authorised gamification staff with explicit reasons and retained history. Automatic badge/milestone earning remains unimplemented until criteria and correction rules are approved.
-
-**Planned:** referral rewards only after an authoritative referral outcome can confirm the referred person reached the required eligibility/registration milestone.
-
-## 7. Volunteer pathways
-
-**Status: Map management and staff-confirmed personal positioning live**
-
-Implemented:
-
-- Explorer start;
-- four pathway tracks;
-- stages/roles;
-- staff draft/preview/publish workflow;
-- immutable published versions;
-- role-gated management.
-
-Implemented personal positioning:
-
-- staff-managed position assignment using `core.volunteers.id` and stable stage keys;
-- one active position per volunteer per pathway track;
-- retained assignment history and audit events;
-- volunteer-facing current positions on My Profile and the pathway map;
-- no automatic advancement from attendance, registration or points.
-
-### Next work
-
-**Future:** pathway recommendations using reviewed skills/interests/experience may be considered, but should remain explainable and staff-overridable.
-
-## 8. Volunteer Insights and Reviews
-
-**Status: Live**
-
-Implemented:
-
-- inline event insight capture;
-- structured categories and source type;
-- submitted/accepted/dismissed review flow;
-- volunteer reviews with 1–5 event-role performance rating;
-- positive/concern behaviour tags;
-- comments/follow-up flag;
-- multiple staff reviewers;
-- integration into event reporting/export.
-
-### Next work
-
-**Planned:** cross-event staff view of accepted insights/review history where operationally useful, with appropriate access controls and context.
-
-**Decision required:** define retention, visibility and correction rules before reviews become a major longitudinal decision input.
-
-**Deferred:** automatic MakLom handoff.
-
-If the MakLom handoff is reactivated, use an inbox/matching/review workflow. Do not write accepted event observations directly into the canonical central volunteer profile.
-
-## 9. Feedback and impact reporting
-
-**Status: Event-level foundation live; longitudinal analytics planned**
-
-Implemented:
-
-- event feedback capture;
-- event report export including roster, attendance, continuous-attendance state, dietary data, insights, reviews and feedback.
-
-### Next work
-
-**Planned:** define an impact reporting model that separates:
-
-- unique volunteers;
-- deployments/roster rows;
-- event participations;
-- shifts;
-- attendance sessions;
-- verified volunteer hours;
-- repeat engagement;
-- feedback outcomes;
-- skill/interest development where evidence exists.
-
-**Planned:** create cross-event dashboards only after metric definitions are approved so multi-shift volunteers are not double counted unintentionally.
-
-Potential future metrics include deployment count, attendance rate, repeat participation, retention, contribution mix and feedback trends. Each metric must state its denominator and deduplication rule.
-
-## 10. MakLom integration
-
-**Status: Deferred**
-
-Current state:
-
-- no server-to-server write;
-- no automatic volunteer-profile mutation;
-- KELUARGA insights may be manually exported.
-
-Future option:
-
-```text
-KELUARGA accepted insight
-        -> MakLom inbox
-        -> identity matching
-        -> human review/edit/dismiss
-        -> optional canonical profile attribute
-```
-
-Do not use KELUARGA `attendance_person_key` as the canonical MakLom identity.
-
-## 11. Prioritised delivery order
-
-### P0 — protect and operationalise what is already live
-
-1. Maintain CI/security/database regression coverage.
-2. Complete realistic event-day UAT for attendance, continuous shifts, walk-ins, QR, reconciliation, manual isolated rosters and manual integrated rosters/hour crediting.
-3. Keep Event Guide access policy and registration-state messaging explicit.
-4. Maintain operational runbooks, support ownership and rollback procedures.
-
-### P1 — make the YM Hub batch integration operational
-
-1. Obtain/freeze source templates, field mappings and status mappings.
-2. Build the batch import centre and exception reporting.
-3. Implement identity-link exception/support workflow.
-4. Implement formal attendance export-batch tracking and downstream reconciliation.
-5. Test deletions, merges, changed registrations and corrected attendance.
-
-### P2 — broaden reliable personalised volunteer features
-
-1. Operate reliable production registration/attendance snapshots.
-2. Show freshness/staleness consistently.
-3. Roll out personal account linking/support at scale.
-4. Activate gamification rules only after policy approval and verified data flow.
-5. Operate staff-confirmed pathway positioning and define any future advancement criteria before automation.
-
-### P3 — improve volunteer-management intelligence
-
-1. Cross-event insights/review views.
-2. Longitudinal impact reporting.
-3. Referral outcome integration.
-4. Optional MakLom reviewed inbox if the product decision changes.
-
-### P4 — future enterprise integration
-
-1. Complete required source/security review.
-2. Introduce server-only Salesforce/YM Hub API adapter if approved.
-3. Retain recovery/batch paths.
-4. Assess SSO separately if there is a later organisational requirement.
-
-## Delivery rules
-
-- `main` remains deployable production code.
-- Use short-lived branches and pull requests for changes.
-- Database changes require forward-only migrations and pgTAP coverage where applicable.
-- User-facing feature changes should update `docs/feature-inventory.md` and this roadmap.
-- Newly confirmed material defects should be tracked as GitHub Issues and reflected in `docs/known-issues.md`.
-- External integrations stay server-only, least-privilege, observable and fail closed.
-- Do not represent a foundation/schema as a live operational integration until real source data and workflows are running.
+- `main` remains production.
+- `staging` is the KELUARGA verification environment.
+- Database changes require committed forward migrations and database regression coverage.
+- Do not promote shared-schema changes to production until current production data/contracts have been rehearsed against the migration.
+- User-visible changes update the feature inventory, architecture docs and known-issues register.
+- Security and identity boundaries fail closed.
