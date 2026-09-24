@@ -173,7 +173,7 @@ KELUARGA tiers:
 - **staff**
 - **volunteer leader** (`volunteer_leader`)
 
-Even KELUARGA `admin` requires separate MakLom entitlement.
+KELUARGA `admin` is the intentional entitlement bridge: promotion to Admin creates/updates active MakLom `admin` membership, and demotion removes it transactionally. All other KELUARGA roles remain MakLom-ineligible unless the access model is changed deliberately.
 
 ## Dormant YM Hub boundary
 
