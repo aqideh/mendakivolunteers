@@ -1,14 +1,9 @@
 import type { AppRole } from "@/types/database";
 
 export const staffInviteRoleValues = [
-  "support_officer",
-  "content_editor",
-  "pathway_manager",
-  "publisher",
-  "attendance_manager",
-  "programme_manager",
-  "gamification_manager",
-  "auditor",
+  "volunteer_leader",
+  "staff",
+  "volteam",
   "admin",
 ] as const satisfies readonly AppRole[];
 
@@ -20,58 +15,28 @@ export const staffInviteRoleOptions: readonly Readonly<{
   description: string;
 }>[] = [
   {
-    value: "support_officer",
-    label: "Volunteer manager / support officer",
+    value: "volunteer_leader",
+    label: "Volunteer Leader",
     description:
-      "Review recruitment applications and run volunteer-support workflows.",
+      "Basic event-day operations: view rosters, search/filter volunteers, check in/out, mark absent or withdrawn, continue attendance across adjacent shifts, and display attendance QR codes. No ratings, insights, exports, roster uploads, reconciliation, registration decisions or event editing.",
   },
   {
-    value: "content_editor",
-    label: "Content editor",
+    value: "staff",
+    label: "Staff",
     description:
-      "Create and edit content drafts. Publishing requires the Publisher role.",
+      "Full Event Operations for existing programmes, including rosters, walk-ins, attendance corrections, registration review, reconciliation, reports, ratings and insights. Cannot create, duplicate, structurally edit or delete programmes/events.",
   },
   {
-    value: "pathway_manager",
-    label: "Pathway manager",
+    value: "volteam",
+    label: "VolTeam",
     description:
-      "Manage volunteer pathway content and confirmed pathway positions.",
-  },
-  {
-    value: "publisher",
-    label: "Publisher",
-    description:
-      "Edit content and publish, schedule, unpublish or archive KELUARGA content.",
-  },
-  {
-    value: "attendance_manager",
-    label: "Event operations",
-    description:
-      "Run registration review, rosters, check-in/out, attendance and event-day workflows without programme editing.",
-  },
-  {
-    value: "programme_manager",
-    label: "Programme & event manager",
-    description:
-      "Create, duplicate and edit programmes, opportunity details, schedules and Event Guides. Includes Event Operations access.",
-  },
-  {
-    value: "gamification_manager",
-    label: "Points & badges manager",
-    description:
-      "Manage points, badges and other gamification or recognition workflows.",
-  },
-  {
-    value: "auditor",
-    label: "Auditor",
-    description:
-      "Read audit and oversight data where audit access is implemented. Does not grant operational management access.",
+      "All KELUARGA operational and content access, including programme creation/editing, recruitment, pathways, points and badges. Cannot manage staff access and does not receive MakLom access.",
   },
   {
     value: "admin",
-    label: "Administrator",
+    label: "Admin",
     description:
-      "Full KELUARGA administration, including staff role management. This does not grant MakLom access.",
+      "All KELUARGA access, staff access management, and MakLom administrator access.",
   },
 ];
 
