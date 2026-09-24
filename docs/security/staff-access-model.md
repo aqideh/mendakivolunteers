@@ -71,7 +71,7 @@ VolTeam has all KELUARGA operational and content access, including:
 - all Event Operations;
 - programme/event creation, duplication and editing;
 - opportunity and Event Guide management;
-- volunteer recruitment;
+- KELUARGA registration and volunteer/event management;
 - content publishing;
 - pathways and positions;
 - points and badges;
