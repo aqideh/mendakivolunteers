@@ -14,12 +14,16 @@ Implemented:
 
 - Branded KELUARGA landing page.
 - Public opportunity browsing and opportunity detail pages.
+- In-app prospective-volunteer recruitment intake with role-interest, motivation, skills/experience and availability fields.
+- Volunteer Management review workflow with submitted, reviewing, accepted, not-selected and withdrawn recruitment states.
 - Public news listing and news detail pages.
 - Public FAQ route linked from the global menu, with accessible native disclosure controls ready for approved content.
 - Public volunteer pathways page.
 - KELUARGA-owned programme/event records drive the opportunity listing, Event Guides and Event Operations.
 - Volunteers can register directly in KELUARGA and select one or more available shifts.
-- Registrations use explicit pending, confirmed, waitlisted, rejected and cancelled lifecycle states.
+- Registrations use explicit pending, confirmed, waitlisted, rejected, cancelled and withdrawn lifecycle states.
+- Volunteers can withdraw before attendance starts; authorised staff can cancel with a reason; safe roster rows are removed while registration/history remains.
+- Withdrawn or cancelled registrations can be resubmitted while the opportunity remains open.
 - Confirmed registrations populate Event Operations directly with stable registration and volunteer references.
 - Per-shift capacity can be configured and is enforced transactionally at confirmation.
 - Registration submission/status changes create in-app volunteer notifications.
@@ -79,6 +83,7 @@ Implemented UI/read path:
 - Imported YM Hub registration snapshots remain as a legacy/backend reconciliation view.
 - Imported attendance snapshots.
 - Verified volunteer-hours display derived from authoritative snapshots.
+- Separately labelled app-owned KELUARGA contribution-hour display for integrated manual Event Operations records.
 - Stale/failed/unavailable sync handling in the read model.
 
 Deployment dependency:
@@ -160,6 +165,7 @@ Implemented:
 Implemented:
 
 - Staff Event Operations area at `/admin/events`.
+- Quick Event Operations workflow for manual or last-minute events that do not need a public opportunity.
 - Event creation/editing.
 - Multi-day/multi-shift support through event timeslots.
 - Shift editing and optional per-shift registration capacity.
@@ -175,12 +181,16 @@ Implemented:
 Implemented:
 
 - CSV roster upload.
+- Manual-event imports have an explicit `event only` or `volunteer database` integration mode.
+- Integrated manual imports match by KELUARGA Volunteer ID, email or mobile and can create a new `KELxxxxx` volunteer when no unambiguous match exists.
+- Isolated manual imports do not create or modify main volunteer records.
 - Pasted roster data from Excel/Sheets/CSV text.
 - Roster template export.
 - Optional Volunteer ID.
 - Duplicate/match safeguards using available identifiers.
 - Shift assignment.
 - Walk-in/last-minute volunteer creation.
+- Walk-ins for integrated manual events follow the same strong-identifier matching/new-volunteer rules; isolated-event walk-ins remain event-only.
 - Dietary requirements.
 - T-shirt size and contact details.
 - Entry-method tracking so walk-ins, imports and KELUARGA-confirmed registrations remain distinguishable.
@@ -330,6 +340,7 @@ Implemented:
 Current limitation:
 
 - This is a rich event-level export rather than a complete cross-event impact analytics dashboard.
+- App-owned contribution hours from integrated manual events are not YM Hub verified hours and must remain distinguishable in downstream reporting.
 
 ## 5. Integrations
 
@@ -401,4 +412,4 @@ KELUARGA's target model has four distinct responsibilities:
 3. **Event operations** — rosters, shifts, walk-ins, attendance, reviews, insights, feedback and reporting.
 4. **Backend reconciliation** — read-only YM Hub projections for organisational record matching, verified attendance and verified hours.
 
-The first-class KELUARGA registration domain and registration-to-roster handoff are implemented. Volunteer cancellation/withdrawal self-service and the broader recruitment intake workflow remain follow-on work. Operational attendance must still not be silently substituted for verified YM Hub hours.
+The first-class KELUARGA recruitment intake, registration lifecycle and registration-to-roster handoff are implemented. Manual/last-minute Event Operations can be intentionally isolated or integrated with the volunteer database. Operational attendance and app-owned contribution credits must still not be silently substituted for verified YM Hub hours.
