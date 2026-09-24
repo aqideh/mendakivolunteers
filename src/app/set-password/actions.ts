@@ -83,6 +83,23 @@ export async function setInitialPassword(
           "The password could not be set. Ask an administrator for a new setup link.",
       };
     }
+
+    const { error: activationError } = await admin
+      .schema("core")
+      .rpc("activate_staff_account_after_setup", {
+        p_user_id: parsedUserId.data,
+      });
+
+    if (activationError) {
+      console.error("Unable to activate the staff account after password setup", {
+        code: activationError.code,
+      });
+      return {
+        status: "error",
+        message:
+          "The password was set, but staff access could not be activated. Ask an administrator for assistance.",
+      };
+    }
   } catch (error) {
     console.error("Staff password setup is not configured", error);
     return {
