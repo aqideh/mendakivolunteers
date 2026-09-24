@@ -97,7 +97,12 @@ export function ProfilePhotoUploader({
             : `${displayName} initials`
         }
       >
-        {imageUrl ? <img alt="" src={imageUrl} /> : <span>{initials || "V"}</span>}
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img alt="" src={imageUrl} />
+        ) : (
+          <span>{initials || "V"}</span>
+        )}
       </div>
       <div className={styles.controls}>
         <input
