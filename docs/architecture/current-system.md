@@ -149,7 +149,7 @@ KELUARGA staff tiers:
 - `staff`
 - `volunteer_leader` (displayed as **volunteer leader**)
 
-MakLom access must be provisioned separately.
+MakLom authorization remains separately enforced through `public.app_members`. KELUARGA `admin` intentionally synchronizes an active MakLom `admin` membership; `volteam`, `staff` and `volunteer_leader` do not grant MakLom access.
 
 ## YM Hub / Salesforce boundary
 
