@@ -1,41 +1,39 @@
-# Recruitment, registration and event-operations operating model
+# Recruitment, registration and Event Operations model
 
 **Decision updated:** 24 September 2026  
-**Status:** Approved; staging implementation in progress
+**Status:** approved current model on staging
 
-## 1. Operating model
-
-The volunteer journey is split across three clear domains:
+## Volunteer journey
 
 ```text
 Prospective volunteer
     -> KELUARGA discovery / role pages
-    -> FormSG registration
+    -> FormSG
     -> MakLom lead review
-    -> deliberate volunteer conversion
-    -> shared core.volunteers identity
+    -> deliberate conversion/link
+    -> core.volunteers canonical identity
 
-Existing/canonical volunteer
+Canonical volunteer
     -> KELUARGA opportunity registration
     -> staff confirmation / waitlist / rejection
     -> Event Operations roster
     -> KELUARGA check-in/out
     -> contribution candidate
-    -> MakLom approval/adjustment
+    -> MakLom approval/adjustment/rejection
     -> approved hours shown in KELUARGA
 ```
 
-KELUARGA does not operate a separate recruitment-application workflow. YM Hub is not part of the current volunteer-facing or event-day runtime.
+KELUARGA has no separate live recruitment-application workflow. YM Hub/Salesforce is not part of the current volunteer-facing or event-day runtime.
 
-## 2. Ownership
+## Ownership
 
 | Workflow/data | Owner |
 |---|---|
 | Volunteer discovery and role information | KELUARGA |
 | Prospective-volunteer form | FormSG |
 | Lead review/status/conversion | MakLom |
-| Canonical person UUID | shared `core.volunteers` |
-| Staff-managed longitudinal profile | MakLom `public.volunteers` |
+| Canonical person UUID / KEL code | Shared `core.volunteers` |
+| Staff-managed longitudinal profile | MakLom |
 | Opportunity/programme/event | KELUARGA |
 | Registration/capacity/waitlist | KELUARGA |
 | Roster and Event Guide | KELUARGA |
@@ -43,132 +41,138 @@ KELUARGA does not operate a separate recruitment-application workflow. YM Hub is
 | Approved contribution hours | MakLom review |
 | Pathways/points/badges presentation | KELUARGA |
 | Cross-event Volunteer Management reporting | MakLom |
-| Future YM Hub/organisational handoff | downstream future integration |
+| Future enterprise handoff | Separate downstream integration |
 
-## 3. Recruitment / lead intake
+## Prospective-volunteer intake
 
-Public volunteering CTAs use:
+Public volunteering CTAs use the approved FormSG volunteer registration form.
 
-`https://form.gov.sg/6ab08df24e9cff0f3ac1af45`
-
-A FormSG response becomes a MakLom `volunteer_leads` row. It remains a lead until staff deliberately accept and convert it.
+A FormSG response becomes a MakLom `volunteer_leads` row and remains a lead until staff deliberately accepts and converts/links it.
 
 Conversion must:
 
-1. check for an existing unambiguous MakLom volunteer profile;
+1. check for an existing unambiguous volunteer profile;
 2. link when a single safe match exists;
-3. block when matching is ambiguous;
+3. stop for staff review when matching is ambiguous;
 4. otherwise create a new MakLom profile;
-5. ensure that profile has one canonical `core.volunteers.id`;
-6. retain the old MakLom profile ID as an alias;
-7. store both IDs on the converted lead.
+5. ensure the profile references one `core.volunteers.id`;
+6. retain legacy identifiers as aliases;
+7. record the resulting canonical identity on the converted lead.
 
-Historical KELUARGA recruitment rows remain for provenance but are not a live write path.
+Historical KELUARGA recruitment records remain provenance only.
 
-## 4. Registration
+## Opportunity registration
 
-KELUARGA owns opportunity registration.
+KELUARGA owns first-class opportunity registration.
 
-A logged-in volunteer can submit registration and shift selection. KELUARGA records pending/confirmed/waitlisted/rejected/cancelled/withdrawn states and notifies the volunteer of staff decisions.
+Volunteers can select eligible shifts and receive explicit lifecycle states:
 
-Confirmed registrations populate Event Operations rosters idempotently. Capacity/waitlist rules remain transactional KELUARGA rules.
+- pending;
+- confirmed;
+- waitlisted;
+- rejected;
+- cancelled;
+- withdrawn.
 
-## 5. Event Operations
+Confirmed registrations populate Event Operations rosters idempotently. Waitlisted records never become active roster assignments without an explicit state transition.
 
-KELUARGA owns new operational events using `phaseone_events` and event timeslots.
+## Event Operations
+
+KELUARGA owns new operational events and their timeslots.
 
 Supported workflows include:
 
 - normal programme/event creation;
-- multi-day/multi-shift operation;
+- multi-day and multi-shift operation;
 - registration-to-roster handoff;
 - manual/last-minute events;
 - CSV/paste roster import;
-- isolated manual rosters;
-- integrated manual rosters that link/create canonical volunteers;
+- isolated or integrated manual rosters;
 - walk-ins;
-- continuous attendance across adjacent shifts;
-- checkout/re-check-in for non-adjacent shifts/gaps;
-- attendance correction/audit;
+- continuous attendance across adjacent/overlapping shifts where configured;
+- checkout and new check-in for separated shifts with a gap;
+- early checkout;
+- attendance correction and audit;
 - Event Guides;
-- event reviews, insights, feedback and exports.
+- event insights, reviews, feedback and reports.
 
-Legacy MakLom event/attendance tables remain historical. A legacy MakLom event may reference a KELUARGA event through `public.events.keluarga_event_id`.
+Historical MakLom event/attendance tables are not a second source for new operations.
 
-## 6. Attendance and approved hours
+## Manual-event boundary
 
-KELUARGA attendance is operational evidence, not self-approved longitudinal hours.
+A manual event deliberately chooses:
+
+- **isolated** — event-only roster/attendance; no canonical volunteer creation or longitudinal contribution submission;
+- **integrated** — strong identifiers may match/create canonical volunteers; completed attendance may be submitted to MakLom contribution review.
+
+The mode is explicit and must not change silently.
+
+## Attendance and approved hours
+
+KELUARGA check-in/out is operational evidence.
 
 ```text
 check-in/out
-  -> phaseone_attendance_sessions
+  -> attendance session
   -> volunteer_contributions.pending
   -> MakLom review
-       -> approved (possibly adjusted minutes)
+       -> approved (possibly adjusted)
        -> rejected
-       -> needs_review after later KELUARGA correction
+       -> needs_review after later source correction
 ```
 
-The volunteer dashboard reads only approved records belonging to the current canonical volunteer.
+Only approved contribution records are presented as approved volunteer hours.
 
-Manual integrated events use the same review boundary. The previous direct KELUARGA contribution-credit refresh function is retired.
+The old direct KELUARGA contribution-credit path is historical and is not the current approval model.
 
-## 7. Insights and reviews
+## Insights and reviews
 
-Event reviews and insights remain source-context records.
+Event observations remain contextual.
 
-Accepted insights and reviews can enter `maklom_profile_inbox`, retaining:
+Accepted insights/reviews can enter the MakLom longitudinal review inbox while retaining:
 
-- canonical volunteer where known;
+- canonical volunteer reference where known;
 - event ID;
 - source record ID;
 - event-role context;
-- original observation/review payload.
+- source payload/provenance.
 
-MakLom staff may review, accept/edit/dismiss information for longitudinal use. KELUARGA does not directly mutate permanent MakLom profile facts.
+They do not directly mutate permanent profile facts.
 
-## 8. Profile changes
+## Profile changes
 
-- KELUARGA display name is a presentation field.
-- KELUARGA mobile edits remain usable in the volunteer experience and also create a MakLom review item.
-- Sensitive/managed fields such as NRIC, address, emergency contact, programme history and staff notes belong to MakLom.
+KELUARGA permits only narrow self-service profile editing.
 
-## 9. Manual-event data boundary
+- display name is an app presentation field;
+- mobile changes can be used in KELUARGA and sent to MakLom review;
+- login email follows account/auth workflow;
+- sensitive or staff-managed longitudinal fields belong to MakLom.
 
-A quick/manual event must deliberately choose:
+## Authorization
 
-- **isolated** — roster/attendance stays event-local and does not create canonical volunteer records; or
-- **integrated** — strong identifiers may link/create canonical volunteers and completed attendance may be submitted for MakLom contribution review.
-
-No hidden or automatic conversion between these modes.
-
-## 10. Authorization
-
-KELUARGA and MakLom use separate authorization systems even though the database and Auth tenant are shared.
+KELUARGA and MakLom have separate authorization despite shared infrastructure.
 
 - KELUARGA: `core.user_roles`
 - MakLom: `public.app_members`
 
-KELUARGA role membership never automatically grants MakLom access.
-
 KELUARGA staff tiers:
 
 - `admin`
-- `volteam`
+- `volteam` / **VolTeam**
 - `staff`
-- `volunteer_leader`
+- `volunteer_leader` / **volunteer leader**
 
-MakLom entitlement is separately provisioned because it contains higher-sensitivity Volunteer Management data.
+No KELUARGA tier automatically grants MakLom access.
 
-## 11. YM Hub
+## Future YM Hub/Salesforce integration
 
-YM Hub projection/import/export schemas remain dormant future infrastructure.
+YM Hub/Salesforce integration is dormant and downstream.
 
 No current KELUARGA feature should require:
 
 - a Salesforce/YM Hub volunteer ID;
 - a YM Hub registration;
-- a YM Hub sync-state record; or
+- a YM Hub sync state; or
 - a YM Hub verified-hours import.
 
-If a future organisational handoff is approved, design it downstream of this operating model rather than replacing the KELUARGA/MakLom identity spine.
+Any future handoff must attach to the current canonical identity and preserve KELUARGA/MakLom ownership boundaries.
