@@ -1,64 +1,75 @@
-# Phase 1 threat model
+# KELUARGA + MakLom threat model
+
+**Last reviewed:** 24 September 2026
 
 ## Protected assets
 
-- Volunteer identity links.
-- Downstream YM Hub volunteer data.
-- Staff roles and administrative permissions.
-- Authentication sessions.
-- Future attendance exports, points, referrals, and CMS content.
-- Salesforce and Supabase server credentials.
-- Security and administrative audit records.
+- Canonical volunteer identity and aliases.
+- Volunteer account/contact data.
+- MakLom longitudinal profile and sensitive Volunteer Management data.
+- Prospective-volunteer lead data.
+- Registrations, rosters and attendance evidence.
+- Approved contribution-hour decisions.
+- Staff roles and MakLom entitlements.
+- Points/badge/pathway history.
+- FormSG webhook secret and signature validation.
+- Supabase/Vercel server credentials.
+- Audit records.
 
 ## Trust boundaries
 
-1. Volunteer browser to Next.js and Supabase Data API.
-2. Next.js server runtime to Supabase.
-3. Future integration runtime to YM Hub.
-4. Staff administration interface to privileged server operations.
-5. Local database fixtures to staging and production deployment boundaries.
+1. Volunteer browser -> KELUARGA Next.js/Supabase.
+2. KELUARGA server runtime -> shared Supabase.
+3. Staff browser -> KELUARGA privileged server actions.
+4. MakLom browser/application -> shared Supabase under separate authorization.
+5. FormSG -> signed Supabase Edge Function -> MakLom lead table.
+6. Future enterprise integration -> shared platform (dormant, not current runtime).
 
 ## Principal threats and controls
 
-| Threat | Initial controls |
+| Threat | Control |
 |---|---|
-| A volunteer reads another volunteer's record | Forced RLS, self-only policies, UUID internal keys, unit and pgTAP checks |
-| A user claims another person's YM Hub ID | No browser write policy for identity links; no direct claim endpoint; support-case model |
-| An attacker grants a staff role | No browser write grants or RLS policy on roles; role-change audit trigger |
-| A leaked publishable key bypasses access control | Publishable keys are treated as public; authorization remains in RLS |
-| A leaked service or Salesforce secret exposes data | Secrets remain server-side, environment separated, and excluded from source control |
-| Local fixture data reaches production | Explicit `APP_ENV`, no runtime fixture adapter, and a closed production deployment gate |
-| An incomplete Salesforce integration is enabled | Production deployment remains blocked until the real adapter and mappings are reviewed |
-| Open redirect through authentication callback | Internal-path allowlist and redirect unit tests |
-| Account enumeration through sign-in | Generic response for eligible and ineligible email addresses |
-| Session cookie spoofing | Server and proxy authorization uses `auth.getClaims()` rather than trusting a local session object |
-| Cross-site framing or unsafe browser capabilities | CSP, frame denial, permissions policy, content-type and referrer headers |
-| Dependency compromise or known high-severity issue | Exact top-level versions, Dependabot, CI audit, pinned framework and integration packages |
-| Administrative changes are disputed | Restricted append-only audit stream with targeted events |
+| Volunteer reads another volunteer's data | forced RLS, account-scoped functions, canonical UUID scoping |
+| User self-claims another identity | no browser canonical-link write path; ambiguous matches require staff review |
+| FormSG webhook spoofing | official signature verification, exact endpoint binding, expected form ID |
+| Duplicate webhook retries create duplicate leads | unique source/form/submission identity and idempotent ingestion |
+| Lead automatically becomes a volunteer | explicit staff conversion boundary |
+| KELUARGA role grants MakLom access | separate `core.user_roles` and `public.app_members` authorization |
+| Staff escalates privileges | privileged server-side role management, confirmation step, audit |
+| Raw attendance becomes approved hours | KELUARGA cannot approve attendance-derived contributions; MakLom review required |
+| Event observation becomes permanent profile judgement | reviewed inbox with source/event provenance |
+| Shared database leaks cross-domain data | least-privilege grants, RLS, server-only privileged operations |
+| Publishable key is treated as secret | authorization lives in RLS/server checks, not key secrecy |
+| Service credentials leak | server-only managed secrets; never in browser/source/docs |
+| Unsafe CSV/formula content | CSV neutralisation/validation |
+| Session or redirect abuse | verified auth claims, controlled redirects, security headers |
+| Dependency vulnerability | pinned/managed dependencies, CI audit and review |
+| Legacy table is mistaken for live source | current architecture docs and explicit source-of-truth boundaries |
 
-## Security work required before production
+## Required launch/security work
 
-- Implement and review the Salesforce OAuth client-credentials flow.
-- Restrict the Salesforce integration identity to the minimum objects and fields.
-- Add MFA enforcement for all staff roles.
-- Add central application error monitoring without logging personal data or tokens.
-- Add rate limits for authentication, attendance, reward checks, and referrals.
-- Complete an independent penetration test.
-- Test database and media restoration.
-- Define retention and deletion schedules with MENDAKI's DPO.
-- Review Content Security Policy against the selected deployment platform and analytics tools.
-- Run cross-account RLS tests using real JWTs in staging.
-- Review and approve every lockfile change through dependency CI.
+- Complete realistic cross-account RLS tests in staging.
+- Test role boundaries for all four KELUARGA tiers and MakLom entitlement separation.
+- Validate FormSG webhook signing and secret handling in production.
+- Add/maintain centralized error monitoring without logging secrets or unnecessary personal data.
+- Apply reasonable rate limits to authentication and abuse-prone actions.
+- Test backup/restore procedures.
+- Define retention/deletion schedules with appropriate governance owners.
+- Review CSP and external link/content policies.
+- Continue dependency and source-security review.
+- Conduct independent security testing before broad external rollout where required.
+
+A Salesforce OAuth client is **not** a current production prerequisite. If enterprise integration is later approved, it receives its own scoped threat review.
 
 ## Logging rules
 
 Never log:
 
-- Access or refresh tokens.
-- Magic-link token hashes.
-- Salesforce client secrets.
-- Supabase secret or legacy service-role keys.
-- Complete volunteer records.
-- Raw referral or attendance evidence unless explicitly required and access controlled.
+- access/refresh tokens;
+- magic-link token hashes;
+- Supabase secret/service keys;
+- FormSG secrets or decrypted full submissions;
+- future Salesforce credentials;
+- complete volunteer profiles when an internal ID is sufficient.
 
-Use request IDs and internal UUIDs for diagnostics. External volunteer IDs should appear in restricted operational logs only when needed for reconciliation.
+Use request IDs and canonical internal UUIDs for diagnostics. Retain external IDs only when operationally necessary and access controlled.
