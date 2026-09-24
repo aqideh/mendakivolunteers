@@ -35,12 +35,13 @@ export async function PortalHeader({
       const roles = new Set((roleRows ?? []).map(({ role }) => String(role)));
       canManageEvents =
         roles.has("admin") ||
-        roles.has("attendance_manager") ||
-        roles.has("programme_manager");
+        roles.has("volteam") ||
+        roles.has("staff") ||
+        roles.has("volunteer_leader");
       canManageVolunteers =
-        roles.has("admin") || roles.has("support_officer");
+        roles.has("admin") || roles.has("volteam");
       canManagePoints =
-        roles.has("admin") || roles.has("gamification_manager");
+        roles.has("admin") || roles.has("volteam");
     }
   }
 
