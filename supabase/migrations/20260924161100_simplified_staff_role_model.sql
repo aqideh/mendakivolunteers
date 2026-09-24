@@ -7,7 +7,7 @@ begin
   select count(*)::integer
   into legacy_assignments
   from core.user_roles
-  where role in (
+  where role::text in (
     'support_officer',
     'content_editor',
     'pathway_manager',
@@ -44,7 +44,6 @@ as $$
             'content_editor',
             'pathway_manager',
             'publisher',
-            'programme_manager',
             'gamification_manager'
           )
           and role in ('volteam', 'admin')
@@ -335,7 +334,7 @@ begin
 
   delete from core.user_roles
   where user_id = p_user_id
-    and role in (
+    and role::text in (
       'support_officer',
       'content_editor',
       'pathway_manager',
