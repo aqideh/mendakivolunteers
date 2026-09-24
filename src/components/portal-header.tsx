@@ -54,9 +54,9 @@ export async function PortalHeader({
       >
         <Image
           className="brand-logo"
-          src="/brand/yayasan-mendaki.webp"
-          width={1000}
-          height={700}
+          src="/brand/yayasan-mendaki-yellow.png"
+          width={2048}
+          height={1228}
           alt=""
           priority
           unoptimized
