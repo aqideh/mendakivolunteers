@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm run typecheck",
+    "build": "node scripts/check-environment-boundary.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
@@ -22,8 +22,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint --local",
-    "db:test": "supabase test db",
-    "build:full": "node scripts/check-environment-boundary.mjs && next build"
+    "db:test": "supabase test db"
   },
   "dependencies": {
     "@mantine/core": "9.6.1",
