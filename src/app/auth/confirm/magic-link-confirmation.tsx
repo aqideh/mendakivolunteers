@@ -16,6 +16,7 @@ const allowedOtpTypes = new Set<EmailOtpType>([
   "email",
   "magiclink",
   "recovery",
+  "invite",
 ]);
 
 type ConfirmationState = Readonly<{
@@ -50,6 +51,7 @@ export function MagicLinkConfirmation() {
       "/dashboard",
     );
     const isRecovery = rawType === "recovery";
+    const isInvite = rawType === "invite";
 
     const cleanedUrl = new URL(currentUrl);
     cleanedUrl.hash = "";
@@ -117,6 +119,11 @@ export function MagicLinkConfirmation() {
           status: "recovery",
           message: "Recovery link verified. Choose a new password below.",
         });
+        return;
+      }
+
+      if (isInvite) {
+        window.location.replace(nextPath);
         return;
       }
 
@@ -191,6 +198,17 @@ export function MagicLinkConfirmation() {
           "The password could not be updated. The recovery link may have expired; request a new one and try again.",
       });
       return;
+    }
+
+    const { error: activationError } = await supabase
+      .schema("core")
+      .rpc("activate_current_staff_account");
+
+    if (activationError && activationError.code !== "P0001") {
+      console.error("Staff activation after password recovery failed", {
+        code: activationError.code,
+        message: activationError.message,
+      });
     }
 
     const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
