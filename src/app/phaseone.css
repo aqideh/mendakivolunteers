@@ -450,6 +450,22 @@
   margin: clamp(1.25rem, 2.5vw, 2rem) auto 0;
 }
 
+.phaseone-opportunities-peek {
+  position: relative;
+  z-index: 2;
+  animation: opportunityPeek 2200ms cubic-bezier(0.22, 1, 0.36, 1) 900ms both;
+  will-change: transform;
+}
+
+@keyframes opportunityPeek {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  28%, 60% {
+    transform: translateY(clamp(-7.5rem, -12vh, -5rem));
+  }
+}
+
 .phaseone-opportunities-grid .phaseone-opportunity-card {
   display: flex;
   min-width: 0;
