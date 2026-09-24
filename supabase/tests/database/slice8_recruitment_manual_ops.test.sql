@@ -1,6 +1,6 @@
 begin;
 
-select plan(29);
+select plan(21);
 
 select has_table('public', 'keluarga_recruitment_applications', 'recruitment applications table exists');
 select has_table('public', 'keluarga_recruitment_status_history', 'recruitment status history exists');
@@ -15,28 +15,28 @@ select ok(
 );
 
 select ok(
-  has_function_privilege(
+  not has_function_privilege(
     'authenticated',
     'core.submit_keluarga_recruitment_application(text,text,text,text,text)',
     'EXECUTE'
   ),
-  'authenticated volunteers can submit recruitment intake through the controlled RPC'
-);
-select ok(
-  has_function_privilege(
-    'authenticated',
-    'core.withdraw_keluarga_recruitment_application(uuid)',
-    'EXECUTE'
-  ),
-  'authenticated volunteers can withdraw their recruitment intake'
+  'retired KELUARGA recruitment intake cannot be submitted by authenticated users'
 );
 select ok(
   not has_function_privilege(
     'authenticated',
+    'core.withdraw_keluarga_recruitment_application(uuid)',
+    'EXECUTE'
+  ),
+  'retired KELUARGA recruitment intake cannot be mutated by authenticated users'
+);
+select ok(
+  not has_function_privilege(
+    'service_role',
     'core.review_keluarga_recruitment_application(uuid,text,text,uuid)',
     'EXECUTE'
   ),
-  'browser clients cannot perform staff recruitment review'
+  'retired KELUARGA recruitment review RPC is disabled'
 );
 select ok(
   has_function_privilege(
@@ -55,20 +55,12 @@ select ok(
   'browser clients cannot perform staff registration cancellation'
 );
 select ok(
-  has_table_privilege('authenticated', 'public.keluarga_recruitment_applications', 'SELECT'),
-  'authenticated volunteers can read recruitment rows subject to RLS'
-);
-select ok(
   not has_table_privilege('authenticated', 'public.keluarga_recruitment_applications', 'INSERT'),
-  'browser clients cannot bypass recruitment submission RPC'
-);
-select ok(
-  has_table_privilege('authenticated', 'public.keluarga_contribution_credits', 'SELECT'),
-  'authenticated volunteers can read their app-owned contribution credits subject to RLS'
+  'historical recruitment rows cannot be created directly by browser clients'
 );
 select ok(
   not has_table_privilege('authenticated', 'public.keluarga_contribution_credits', 'INSERT'),
-  'browser clients cannot create contribution credits directly'
+  'legacy contribution-credit rows cannot be created directly by browser clients'
 );
 select ok(
   has_function_privilege(
@@ -87,12 +79,20 @@ select ok(
   'service role can add manual-event walk-ins'
 );
 select ok(
-  has_function_privilege(
+  not has_function_privilege(
     'service_role',
     'core.refresh_manual_event_contribution_credits(uuid,uuid)',
     'EXECUTE'
   ),
-  'service role can reconcile app-owned contribution credits'
+  'legacy instant contribution-credit reconciliation is disabled'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'core.refresh_maklom_contribution_candidates(uuid,uuid)',
+    'EXECUTE'
+  ),
+  'service role can submit operational attendance candidates for MakLom review'
 );
 
 insert into auth.users(id, email, email_confirmed_at)
@@ -107,9 +107,9 @@ where id = '98000000-0000-4000-8000-000000000001';
 insert into core.user_roles(user_id, role, granted_by, reason)
 values (
   '98000000-0000-4000-8000-000000000001',
-  'attendance_manager',
+  'volteam',
   '98000000-0000-4000-8000-000000000001',
-  'Slice 8 regression test'
+  'Slice 8 architecture regression test'
 );
 
 select set_config('request.jwt.claim.sub', '98000000-0000-4000-8000-000000000002', true);
@@ -122,40 +122,6 @@ select is(
   'recruitment volunteer receives a native KELUARGA identity'
 );
 
-select lives_ok(
-  $$
-    select core.submit_keluarga_recruitment_application(
-      'mentor',
-      'I want to support young people through consistent mentoring.',
-      'Peer mentoring and facilitation experience',
-      'Saturday mornings',
-      'KELUARGA website'
-    )
-  $$,
-  'volunteer can submit app-owned recruitment intake'
-);
-
-select is(
-  (
-    select status::text
-    from public.keluarga_recruitment_applications
-    where volunteer_id = core.current_volunteer_id()
-  ),
-  'submitted',
-  'recruitment intake starts submitted'
-);
-
-select is(
-  core.withdraw_keluarga_recruitment_application(
-    (
-      select id
-      from public.keluarga_recruitment_applications
-      where volunteer_id = core.current_volunteer_id()
-    )
-  ),
-  'withdrawn',
-  'volunteer can withdraw an open recruitment intake'
-);
 
 reset role;
 
