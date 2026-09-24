@@ -1,66 +1,85 @@
 # Production handover
 
-## Branch policy
+**Last reviewed:** 24 September 2026
 
-`main` is the only production branch. All changes use a short-lived branch and a pull request into `main`.
+## Release model
 
-Before merging:
+- `main` is production.
+- `staging` is the verification environment/branch for the current shared-platform migration work.
+- Changes use reviewed branches/PRs and forward-only database migrations.
+- Shared KELUARGA + MakLom schema changes must be rehearsed against current production contracts before promotion.
 
-1. Confirm the pull request contains no secrets or generated local environment files.
-2. Require the web, security, and Supabase database CI jobs to pass.
-3. Review the Vercel preview without performing production-data writes.
-4. Obtain approval from a Tech department reviewer.
-5. Merge into `main` and verify the resulting production deployment.
+## Production platform
 
-Direct pushes, force pushes, and branch deletion should be disabled for `main` through GitHub rules.
+| Service | Production responsibility |
+|---|---|
+| GitHub | source, review and release history |
+| Vercel | KELUARGA application hosting |
+| Supabase | shared Auth/database platform for KELUARGA + MakLom |
+| FormSG | prospective-volunteer intake |
+| MakLom | separate Volunteer Management application using the shared Supabase platform |
 
-## Platform inventory
+Secrets remain in their managed environments. Do not place secret values in GitHub, documentation, tickets or chat.
 
-| Service | Production resource |
-| --- | --- |
-| GitHub | `aqideh/mendakivolunteers`, branch `main` |
-| Vercel | Team and project `mendakivolunteers` |
-| Supabase | Project `mendakivolunteers`, ref `glpdougaxlgaipqlzcbq`, Singapore region |
-| Runtime | Node.js 24 |
+## Database release rules
 
-Secrets remain in Vercel and Supabase. Do not copy secret values into GitHub, documentation, tickets, or chat.
+1. Use new forward migrations; never edit an applied migration.
+2. Rebuild from migrations in validation before production promotion.
+3. Run database/RLS regression tests.
+4. Compare repository migration versions with the linked environment history.
+5. Review every new shared table/RPC for grants, RLS and application ownership.
+6. Treat KELUARGA and MakLom authorization as separate even when tables are shared.
+7. Prefer expand/contract releases when application versions may overlap.
 
-## Database changes
+## Pre-production verification
 
-Database changes must be additive and committed as ordered files under `supabase/migrations`.
+Verify the release against the current architecture:
 
-Applied migration timestamps must never be renamed. Supabase compares the filename timestamp with the production migration-history table; changing an applied timestamp makes an old migration appear new.
+- public discovery and opportunity pages load;
+- volunteer authentication/account flows work;
+- direct KELUARGA registration and registration status work;
+- confirmed registrations populate Event Operations correctly;
+- event creation, rosters, walk-ins, check-in/out and reconciliation work;
+- manual isolated/integrated event boundaries remain explicit;
+- volunteer dashboard shows only approved contribution hours;
+- staff roles enforce `admin`, `volteam`, `staff`, `volunteer_leader`;
+- KELUARGA roles do not implicitly grant MakLom access;
+- pathways, points and badges respect their role boundaries;
+- no current volunteer-facing feature requires YM Hub/Salesforce.
 
-Before release:
+For shared-platform changes, also verify:
 
-1. Start the local Supabase stack.
-2. Run `npm run db:reset` to rebuild from migrations.
-3. Run `npm run db:test` to verify grants and Row Level Security.
-4. Compare repository migration versions with the production migration history.
-5. Review new tables for Data API grants and RLS coverage.
-6. Confirm every custom Data API schema is listed in `supabase/config.toml` and
-   in the linked production project's exposed-schema configuration.
+- MakLom can resolve the same canonical `core.volunteers.id`;
+- FormSG lead records remain separate until conversion;
+- contribution candidates cannot self-approve from KELUARGA;
+- review inboxes preserve source provenance.
 
-Avoid destructive or backwards-incompatible migrations in the same release as application code that depends on them. Use expand-and-contract changes across releases.
+## FormSG activation
 
-## Production verification
+When FormSG intake changes:
 
-After a merge to `main`, verify:
+1. verify the production webhook endpoint and signature validation;
+2. ensure the FormSG secret exists only in the server-side Supabase function environment;
+3. submit a controlled test;
+4. verify mapped fields in MakLom;
+5. verify retry/idempotency behaviour;
+6. confirm no canonical volunteer is created before deliberate conversion.
 
-- The Vercel production deployment is `READY` and references the merged `main` commit.
-- Production domains resolve to that deployment.
-- Public opportunity, news, journey, and volunteer pathway pages load.
-- Staff login and authorization redirects behave correctly.
-- Pathway managers can load the pathway editor and preview without exposing drafts
-  to ordinary volunteers.
-- Event administration and attendance pages load for authorized staff.
-- The scheduled import route still requires its cron secret.
-- Supabase logs contain no new authentication, API, or database errors.
+## Post-release verification
+
+After production promotion:
+
+- confirm Vercel deployment is READY and points to the expected `main` commit;
+- verify public routes and volunteer sign-in;
+- verify an authorized staff account and a restricted staff tier;
+- review Supabase logs for new authorization/database errors;
+- verify shared-schema reads from both KELUARGA and MakLom where affected;
+- verify no unintended legacy/YM Hub runtime dependency was reintroduced.
 
 ## Rollback
 
-For an application-only incident, restore the previous known-good Vercel production deployment, then revert the offending commit through a pull request.
+For an application-only incident, restore the previous known-good deployment and revert through the normal review process.
 
-Database migrations are not rolled back automatically. If a migration caused the incident, prefer a forward-fix migration. Use Supabase restore or point-in-time recovery only for a confirmed data-loss incident and with the appropriate organizational approval.
+Database migrations are not rolled back automatically. Prefer a forward-fix migration. Use database restore/PITR only for a confirmed data-loss incident with appropriate organizational approval.
 
-The historical `phaseone` identifiers in code and the database are deployed contracts, not active branch-policy references. Rename them only through an explicitly reviewed migration project.
+Historical `phaseone` names and legacy tables are contracts/provenance, not evidence that an old architecture remains active.
