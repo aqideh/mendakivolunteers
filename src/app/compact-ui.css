@@ -499,3 +499,96 @@ section[aria-labelledby="staff-tools-title"] .card .staff-tool-links .text-link 
     text-align: left;
   }
 }
+
+
+/* My Profile is the role-aware home for both volunteers and staff. */
+.profile-dashboard-page {
+  padding-top: clamp(1.1rem, 2.5vw, 1.8rem);
+}
+
+.profile-dashboard-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0 0 1.25rem !important;
+  background: transparent !important;
+}
+
+.profile-dashboard-header-copy {
+  max-width: 44rem;
+}
+
+.profile-dashboard-header-copy h1 {
+  margin-bottom: 0.35rem !important;
+}
+
+.profile-dashboard-header-copy .muted {
+  max-width: 42rem !important;
+  font-size: 0.98rem !important;
+  line-height: 1.45 !important;
+}
+
+.dashboard-primary-actions {
+  gap: 0.65rem !important;
+}
+
+.dashboard-primary-actions .button {
+  min-height: 2.7rem !important;
+  padding: 0.62rem 1rem !important;
+}
+
+.dashboard-primary-actions .dashboard-secondary-action {
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.dashboard-primary-actions .dashboard-secondary-action:hover {
+  border-color: rgba(55, 58, 54, 0.34);
+  background: var(--surface-subtle);
+  box-shadow: none;
+}
+
+.profile-account-utility {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.86rem;
+}
+
+.profile-account-utility form {
+  margin: 0;
+}
+
+.profile-account-utility .text-link {
+  color: var(--muted);
+}
+
+.profile-account-utility .text-link:hover {
+  color: var(--brand);
+}
+
+@media (max-width: 760px) {
+  .profile-dashboard-header {
+    gap: 0.85rem !important;
+    margin-bottom: 1.1rem !important;
+  }
+
+  .profile-dashboard-header-copy .muted {
+    font-size: 0.86rem !important;
+  }
+
+  .dashboard-primary-actions {
+    width: auto !important;
+  }
+
+  .dashboard-primary-actions .button {
+    min-height: 2.45rem !important;
+    padding: 0.5rem 0.72rem !important;
+    font-size: 0.8rem !important;
+  }
+}
