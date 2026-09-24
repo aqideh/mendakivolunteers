@@ -18,11 +18,13 @@ type RoleCta = Readonly<{
 export function RoleLanding({
   title,
   description,
+  inlineCta,
   items,
   ctas,
 }: Readonly<{
   title: string;
   description: string;
+  inlineCta?: RoleCta;
   items: readonly RoleItem[];
   ctas: readonly RoleCta[];
 }>) {
@@ -41,6 +43,12 @@ export function RoleLanding({
               <div className={styles.heroCopy}>
                 <h1 id="role-title">{title}</h1>
                 <p className={styles.lede}>{description}</p>
+                {inlineCta ? (
+                  <Link className={styles.inlineAction} href={inlineCta.href}>
+                    <span>{inlineCta.label}</span>
+                    <span aria-hidden="true">↗</span>
+                  </Link>
+                ) : null}
               </div>
 
               <div className={styles.heroActions}>
