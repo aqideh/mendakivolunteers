@@ -79,7 +79,8 @@ function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: Adm
 }
 
 export default async function EventsAdminPage({ searchParams }: PageProps) {
-  const { roles } = await requireEventManager();\n  const canManageProgramme = hasProgrammeManagerRole(roles);
+  const { roles } = await requireEventManager();
+  const canManageProgramme = hasProgrammeManagerRole(roles);
   const admin = getPhaseOneAdminClient();
   const [eventsResult, timeslotsResult] = await Promise.all([
     admin
