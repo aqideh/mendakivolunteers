@@ -3,19 +3,30 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database";
 
-const eventOperatorRoles = new Set<AppRole>([
-  "attendance_manager",
-  "programme_manager",
+const attendanceOperatorRoles = new Set<AppRole>([
+  "volunteer_leader",
+  "staff",
+  "volteam",
+  "admin",
+]);
+
+const eventManagerRoles = new Set<AppRole>([
+  "staff",
+  "volteam",
   "admin",
 ]);
 
 const programmeManagerRoles = new Set<AppRole>([
-  "programme_manager",
+  "volteam",
   "admin",
 ]);
 
+export function hasAttendanceOperatorRole(roles: readonly AppRole[]): boolean {
+  return roles.some((role) => attendanceOperatorRoles.has(role));
+}
+
 export function hasEventManagerRole(roles: readonly AppRole[]): boolean {
-  return roles.some((role) => eventOperatorRoles.has(role));
+  return roles.some((role) => eventManagerRoles.has(role));
 }
 
 export function hasProgrammeManagerRole(roles: readonly AppRole[]): boolean {
@@ -63,6 +74,14 @@ async function requireEventAccess(
   }
 
   return { userId, roles };
+}
+
+export async function requireAttendanceOperator(next = "/admin/events") {
+  return requireEventAccess(
+    hasAttendanceOperatorRole,
+    next,
+    "event_access_denied",
+  );
 }
 
 export async function requireEventManager(next = "/admin/events") {
