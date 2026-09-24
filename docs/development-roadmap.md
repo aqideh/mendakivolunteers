@@ -46,10 +46,12 @@ Implemented:
 
 - landing page;
 - opportunity discovery;
+- app-owned prospective-volunteer recruitment intake with staff review and status history;
 - news;
 - standalone public FAQ route and navigation, with approved FAQ copy kept in a dedicated content module;
 - KELUARGA-managed programme/event records for public opportunity discovery;
 - direct KELUARGA registration with shift selection and status display;
+- volunteer self-withdrawal and staff cancellation with audited status history and safe roster cleanup before attendance begins;
 - Event Guides with venue, directions, briefing and programme information;
 - published volunteer pathways;
 - retired Volunteer.gov.sg runtime importer and imported-card override flow.
@@ -57,8 +59,6 @@ Implemented:
 ### Next work
 
 **Content dependency:** the FAQ page is live as a content-ready shell; Volunteer Management still needs to furnish the approved questions and answers before it becomes a substantive support resource.
-
-**Planned:** add audited volunteer/staff cancellation and withdrawal handling on top of the first-class registration lifecycle.
 
 **Decision required:** confirm which Event Guide content can be public and which content requires authentication, assignment, access code or signed-link access.
 
@@ -84,7 +84,11 @@ Implemented:
 - attendance export;
 - QR attendance/feedback foundation;
 - Past Events search/filter/sort;
-- compact mobile event-operations UI.
+- compact mobile event-operations UI;
+- Quick Event Operations for manual/last-minute events without a public opportunity;
+- manual CSV/paste roster mode with an explicit isolated-versus-KELUARGA-integrated data boundary;
+- integrated manual rosters and walk-ins can match existing volunteers or create new `KELxxxxx` volunteer records from strong identifiers;
+- optional app-owned KELUARGA contribution-hour crediting from completed manual-event attendance, stored separately from YM Hub verified hours.
 
 ### Next work
 
@@ -112,7 +116,9 @@ Already implemented:
 - native KELUARGA account provisioning with immutable `KELxxxxx` volunteer IDs;
 - canonical programme/event records and direct opportunity registration;
 - multi-shift selections and optional per-shift capacity;
-- pending / confirmed / waitlisted / rejected registration lifecycle;
+- pending / confirmed / waitlisted / rejected / cancelled / withdrawn registration lifecycle;
+- withdrawn/cancelled registrations can be reopened while the opportunity remains open;
+- app-owned recruitment application lifecycle with volunteer submission/withdrawal and Volunteer Management review;
 - staff registration review and in-app registration notifications;
 - idempotent confirmed-registration-to-roster handoff;
 - `ymhub` projection schema, attendance snapshots and sync/freshness state;
@@ -205,12 +211,12 @@ Implemented:
 - imported YM Hub registrations as a legacy/backend reconciliation view;
 - imported official attendance;
 - verified hours;
+- separately labelled app-owned KELUARGA contribution hours from integrated manual events;
+- registration self-withdrawal;
 - sync/failure state handling;
 - audited self-service editing for app-owned display name and mobile number.
 
 ### Next work
-
-**Planned:** add registration cancellation/withdrawal self-service with audited state transitions. Keep login email, KELUARGA ID and backend identifiers outside ordinary profile editing.
 
 **Planned:** operate the required YM Hub backend projections reliably through the agreed handoff process.
 
@@ -349,7 +355,7 @@ Do not use KELUARGA `attendance_person_key` as the canonical MakLom identity.
 ### P0 — protect and operationalise what is already live
 
 1. Maintain CI/security/database regression coverage.
-2. Complete realistic event-day UAT for attendance, continuous shifts, walk-ins, QR and reconciliation.
+2. Complete realistic event-day UAT for attendance, continuous shifts, walk-ins, QR, reconciliation, manual isolated rosters and manual integrated rosters/hour crediting.
 3. Keep Event Guide access policy and registration-state messaging explicit.
 4. Maintain operational runbooks, support ownership and rollback procedures.
 
