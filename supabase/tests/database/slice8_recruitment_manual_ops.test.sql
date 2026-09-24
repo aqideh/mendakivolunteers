@@ -1,6 +1,6 @@
 begin;
 
-select plan(25);
+select plan(29);
 
 select has_table('public', 'keluarga_recruitment_applications', 'recruitment applications table exists');
 select has_table('public', 'keluarga_recruitment_status_history', 'recruitment status history exists');
@@ -155,6 +155,103 @@ select is(
   ),
   'withdrawn',
   'volunteer can withdraw an open recruitment intake'
+);
+
+reset role;
+
+insert into public.phaseone_events(
+  id,
+  title,
+  slug,
+  venue,
+  navigation_destination,
+  opportunity_summary,
+  is_opportunity_published,
+  created_by,
+  updated_by
+)
+values (
+  '98000000-0000-4000-8000-000000000020',
+  'Slice 8 registration reopen event',
+  'slice-8-registration-reopen-event',
+  'Test venue',
+  'Test venue Singapore',
+  'Registration lifecycle regression event.',
+  true,
+  '98000000-0000-4000-8000-000000000001',
+  '98000000-0000-4000-8000-000000000001'
+);
+
+insert into public.phaseone_event_timeslots(
+  id,
+  event_id,
+  label,
+  starts_at,
+  ends_at,
+  status,
+  sort_order
+)
+values (
+  '98000000-0000-4000-8000-000000000021',
+  '98000000-0000-4000-8000-000000000020',
+  'Main shift',
+  now() + interval '14 days',
+  now() + interval '14 days 2 hours',
+  'scheduled',
+  0
+);
+
+select set_config('request.jwt.claim.sub', '98000000-0000-4000-8000-000000000002', true);
+select set_config('request.jwt.claims', '{"sub":"98000000-0000-4000-8000-000000000002","role":"authenticated"}', true);
+set local role authenticated;
+
+select lives_ok(
+  $
+    select core.submit_keluarga_registration(
+      '98000000-0000-4000-8000-000000000020',
+      array['98000000-0000-4000-8000-000000000021']::uuid[],
+      'Slice Eight Volunteer',
+      '91234567'
+    )
+  $,
+  'volunteer can register before testing withdrawal and reopening'
+);
+
+select is(
+  core.withdraw_keluarga_registration(
+    (
+      select id
+      from public.keluarga_registrations
+      where event_id = '98000000-0000-4000-8000-000000000020'
+        and volunteer_id = core.current_volunteer_id()
+    ),
+    'Plans changed'
+  ),
+  'withdrawn',
+  'volunteer can withdraw a programme registration before attendance starts'
+);
+
+select lives_ok(
+  $
+    select core.submit_keluarga_registration(
+      '98000000-0000-4000-8000-000000000020',
+      array['98000000-0000-4000-8000-000000000021']::uuid[],
+      'Slice Eight Volunteer',
+      '91234567'
+    )
+  $,
+  'withdrawn registration can be reopened while the opportunity remains available'
+);
+
+select is(
+  (
+    select status::text
+    from public.keluarga_registrations
+    where event_id = '98000000-0000-4000-8000-000000000020'
+      and volunteer_id = core.current_volunteer_id()
+  ),
+  'pending',
+  'reopened registration returns to pending review'
 );
 
 reset role;
