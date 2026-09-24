@@ -28,7 +28,7 @@ Implemented:
 - Per-shift capacity can be configured and is enforced transactionally at confirmation.
 - Registration submission/status changes create in-app volunteer notifications.
 - The Volunteer.gov.sg scheduled importer and manual imported-card override workflow are retired from runtime code.
-- YM Hub remains the authoritative backend organisational record after a separately designed handoff/reconciliation process.
+- There is no current KELUARGA-to-YM Hub handoff. MakLom is the current downstream reporting/volunteer-management handoff through manual event-report upload.
 
 FAQ content note:
 
@@ -69,7 +69,7 @@ Implemented:
 
 Important boundary:
 
-- KELUARGA and YM Hub remain separate accounts/sessions during the current batch-integration phase.
+- KELUARGA is the active volunteer-facing and operational system. Existing YM Hub account/reconciliation foundations are dormant and are not part of the current volunteer workflow.
 
 ### Volunteer dashboard
 
@@ -86,9 +86,9 @@ Implemented UI/read path:
 - Separately labelled app-owned KELUARGA contribution-hour display for integrated manual Event Operations records.
 - Stale/failed/unavailable sync handling in the read model.
 
-Deployment dependency:
+Current direction:
 
-- The dashboard only becomes meaningfully personalised when production YM Hub projections are populated reliably.
+- Volunteer-facing personalisation should rely on KELUARGA-owned data. Legacy YM Hub linkage/sync surfaces should be removed or hidden in the next cleanup slice.
 
 ### Points and gamification
 
@@ -109,8 +109,8 @@ Implemented foundation and volunteer UI:
 
 Policy/integration dependency:
 
-- Operational roster attendance does not award points.
-- Attendance-derived points are only generated from verified authoritative YM Hub records.
+- Operational roster attendance does not currently award points.
+- Attendance-derived points remain disabled until Volunteer Management approves a trusted attendance/hour rule under the KELUARGA + MakLom operating model.
 - Manual staff-recognition points require an authorised gamification manager/admin and an explicit reason.
 - A production attendance point rule must be explicitly approved and activated.
 
@@ -244,7 +244,7 @@ Implemented:
 
 Important boundary:
 
-- These records are KELUARGA operational evidence. YM Hub remains the authoritative source of official attendance and verified hours after reconciliation/import.
+- These records are KELUARGA operational evidence. App-owned contribution hours must remain clearly labelled until Volunteer Management defines the verification policy and downstream MakLom treatment.
 
 ### QR attendance and feedback
 
@@ -353,30 +353,21 @@ Retired runtime integration:
 
 ### YM Hub / Salesforce
 
-Implemented foundation:
+Dormant foundation:
 
-- `ymhub` projection schema.
-- Registration snapshots retained for backend reconciliation/legacy compatibility.
-- Attendance snapshots.
-- Volunteer sync state.
-- Volunteer dashboard read path.
-- Gamification reconciliation contract.
-- Documentation of requested YM Hub source fields.
-
-Current integration direction:
-
-- Volunteer Management will define the KELUARGA -> YM Hub backend handoff separately.
-- Controlled batch processing remains the practical immediate mechanism where needed.
-- A future server-only API adapter may replace or supplement batch handoff when DTI approves it.
-- Direct production Salesforce synchronization is not currently enabled.
+- `ymhub` projection schema and snapshot tables remain in the repository/database.
+- No KELUARGA-to-YM Hub batch or API handoff is planned in the current roadmap.
+- These structures are retained only for possible future reuse and must not be treated as a current product dependency.
+- Volunteer-facing flows should not imply that YM Hub linking or synchronisation is required.
 
 ### MakLom
 
 Current state:
 
-- No automatic integration.
-- Volunteer Insights can be exported for manual downstream use.
-- A future reviewed inbox/handoff model has been discussed but intentionally deferred.
+- Event reports are exported from KELUARGA and manually uploaded to MakLom where required.
+- Volunteer Insights/reviews can be included in controlled downstream reporting.
+- No automatic server-to-server integration is currently planned.
+- A future reviewed inbox/handoff model remains optional and would require a separate design review.
 
 ## 6. Platform, security and release engineering
 
@@ -410,6 +401,6 @@ KELUARGA's target model has four distinct responsibilities:
 1. **Recruitment and engagement** — pathways, recruitment intake, discovery and personal account surfaces.
 2. **Registration** — app-owned registrations, waitlists/cancellations and shift selections.
 3. **Event operations** — rosters, shifts, walk-ins, attendance, reviews, insights, feedback and reporting.
-4. **Backend reconciliation** — read-only YM Hub projections for organisational record matching, verified attendance and verified hours.
+4. **Downstream reporting** — current manual event-report handoff to MakLom; YM Hub projections are dormant future infrastructure.
 
-The first-class KELUARGA recruitment intake, registration lifecycle and registration-to-roster handoff are implemented. Manual/last-minute Event Operations can be intentionally isolated or integrated with the volunteer database. Operational attendance and app-owned contribution credits must still not be silently substituted for verified YM Hub hours.
+The first-class KELUARGA recruitment intake, registration lifecycle and registration-to-roster handoff are implemented. Manual/last-minute Event Operations can be intentionally isolated or integrated with the volunteer database. Operational attendance and app-owned contribution credits must remain clearly labelled until the organisation defines which records count as verified hours.
