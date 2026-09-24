@@ -9,28 +9,28 @@ KELUARGA is the volunteer-facing system for recruitment and registration.
 
 Volunteers should discover opportunities, enter the recruitment journey, register for opportunities and manage their participation through KELUARGA. Volunteer managers should use KELUARGA registration data to prepare event rosters and run event-day operations.
 
-YM Hub remains MENDAKI's authoritative organisational source of record on the backend. The operational handoff from KELUARGA to YM Hub will be designed separately by Volunteer Management with the relevant system owners. That backend handoff must not require volunteers to leave KELUARGA to register.
+There is no current KELUARGA-to-YM Hub handoff requirement. KELUARGA remains the operational system for recruitment, registration and Event Operations.
 
-MakLom remains a downstream volunteer-management and reporting destination. The current event-operations report can continue to be exported from KELUARGA and uploaded to MakLom until a separately reviewed integration is introduced.
+MakLom is the current downstream volunteer-management/reporting handoff. Event Operations reports should continue to be exported from KELUARGA and uploaded to MakLom manually until a separately reviewed automation project is approved.
 
 ## 2. Source-of-record boundary
 
 The phrase "source of truth" needs to be scoped by workflow.
 
-| Data / workflow | Operational owner | Organisational authoritative record |
+| Data / workflow | Operational owner | Current downstream treatment |
 |---|---|---|
-| Volunteer recruitment journey | KELUARGA | YM Hub after approved backend handoff |
+| Volunteer recruitment journey | KELUARGA | KELUARGA; include in MakLom handoff where required |
 | KELUARGA account | KELUARGA / Supabase Auth | KELUARGA |
-| App volunteer identity | KELUARGA | Linked to YM Hub when a backend record exists |
-| Opportunity registration | KELUARGA | YM Hub after handoff/reconciliation |
-| Waitlist / cancellation / withdrawal before event | KELUARGA | YM Hub after handoff/reconciliation |
-| Event roster and shift assignment | KELUARGA | YM Hub after handoff where required |
-| Event-day check-in/check-out | KELUARGA operational record | YM Hub after attendance handoff and verification |
-| Verified volunteer hours | YM Hub | YM Hub |
-| KELUARGA points and badges | KELUARGA | KELUARGA, using approved eligibility inputs |
-| Event report / operational outcomes | KELUARGA | MakLom after current manual report upload, where applicable |
+| App volunteer identity | KELUARGA | Stable `KELxxxxx` identity; map downstream explicitly where needed |
+| Opportunity registration | KELUARGA | KELUARGA |
+| Waitlist / cancellation / withdrawal before event | KELUARGA | KELUARGA |
+| Event roster and shift assignment | KELUARGA | KELUARGA; event report may be uploaded to MakLom |
+| Event-day check-in/check-out | KELUARGA | KELUARGA operational record; included in MakLom reporting where required |
+| Volunteer hours | KELUARGA operational evidence / policy-defined verification | Do not label app-owned contribution hours as verified until the verification policy is defined |
+| KELUARGA points and badges | KELUARGA | KELUARGA |
+| Event report / operational outcomes | KELUARGA | Manual upload to MakLom where applicable |
 
-KELUARGA therefore becomes the system of engagement and the live operational source for recruitment, registration and event operations. YM Hub remains the backend master record rather than the public registration workflow.
+KELUARGA is the system of engagement and the live operational source for recruitment, registration and event operations. MakLom is the current downstream reporting/volunteer-management handoff; YM Hub is not part of the active workflow.
 
 ## 3. End-to-end volunteer procedure
 
@@ -140,15 +140,17 @@ manual upload to MakLom
 
 The existing report-upload procedure can remain in place. Automatic KELUARGA -> MakLom synchronization is not part of this decision and should not be introduced without a separately reviewed matching, provenance and error-handling design.
 
-### 3.6 KELUARGA to YM Hub backend handoff
+### 3.6 YM Hub / Salesforce
 
-Volunteer Management will define the detailed handoff separately.
+There is no active KELUARGA-to-YM Hub or Salesforce handoff in the current operating model.
 
-KELUARGA must nevertheless be designed so that recruitment, volunteer, registration, assignment and attendance records can be exported or synchronized using stable identifiers and clear sync state.
+Existing projection tables, source-ID fields and integration code may remain in place as dormant infrastructure, but:
 
-The UI must not depend on the YM Hub handoff completing before a volunteer can register or before staff can operate an event.
-
-When a corresponding YM Hub record exists, KELUARGA should retain the external YM Hub identifier for reconciliation. A failed or delayed backend handoff must be visible to staff as an integration state, not presented to volunteers as a failed KELUARGA registration.
+- volunteer registration must not depend on them;
+- Event Operations must not depend on them;
+- staff should not be asked to complete a YM Hub export as part of the current workflow;
+- volunteer-facing pages should not imply that YM Hub linking/synchronisation is required;
+- new integration work should only resume if a future operating-model decision explicitly requires it.
 
 ## 4. Required data-model changes
 
@@ -288,9 +290,10 @@ KELUARGA registration
 KELUARGA event roster
         ->
 KELUARGA event operations
-        +---------------------> MakLom report upload
-        |
-        +---------------------> YM Hub backend handoff / reconciliation
+        ->
+KELUARGA event report export
+        ->
+manual MakLom upload
 ```
 
 Existing `ymhub.registration_snapshots` and batch-integration code should not be deleted casually. They may still be useful for reconciliation and for displaying backend handoff results, but they must no longer be treated as the source of the volunteer-facing registration workflow.
@@ -310,9 +313,9 @@ For this release, the repository migration versions are aligned with the version
 5. Add the idempotent registration-to-roster handoff. **Implemented.**
 6. Update volunteer pages to use KELUARGA registration status rather than YM Hub registration snapshots. **Implemented.**
 7. Retire external registration link-outs once the in-app flow is production-ready. **Implemented.**
-8. Define the Volunteer Management backend export/sync procedure to YM Hub.
-9. Keep the existing event-report export to MakLom; automate only through a separate reviewed project.
-10. Update gamification inputs only after the authoritative attendance/eligibility policy is agreed.
+8. Keep the existing event-report export and manual MakLom upload as the current downstream handoff.
+9. Remove/hide volunteer-facing YM Hub sync/link states that no longer belong to the active operating model.
+10. Update gamification inputs only after the trusted attendance/eligibility policy under the KELUARGA + MakLom model is agreed.
 
 ## 8. Guardrails
 
@@ -324,8 +327,8 @@ For this release, the repository migration versions are aligned with the version
 - Do not describe app-owned manual-event contribution credits as YM Hub verified hours.
 - Do not treat a waitlist entry as an active deployment.
 - Do not delete registration or attendance history to represent cancellation or correction.
-- Do not let a stale YM Hub import overwrite a newer KELUARGA operational registration state.
-- Do not make a successful backend handoff a prerequisite for event-day operations.
+- Dormant YM Hub imports/projections must not overwrite newer KELUARGA operational state.
+- Do not make any external handoff a prerequisite for event-day operations.
 - Keep all privileged mutations server-side with RLS, role checks and audit events.
-- Keep current MakLom handoff manual until a separately approved integration is designed.
+- Keep the current MakLom handoff manual until a separately approved integration is designed.
 - Preserve stable IDs and reconciliation metadata for all downstream handoffs.
