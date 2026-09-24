@@ -206,14 +206,14 @@ select set_config('request.jwt.claims', '{"sub":"98000000-0000-4000-8000-0000000
 set local role authenticated;
 
 select lives_ok(
-  $
+  $$
     select core.submit_keluarga_registration(
       '98000000-0000-4000-8000-000000000020',
       array['98000000-0000-4000-8000-000000000021']::uuid[],
       'Slice Eight Volunteer',
       '91234567'
     )
-  $,
+  $$,
   'volunteer can register before testing withdrawal and reopening'
 );
 
@@ -232,14 +232,14 @@ select is(
 );
 
 select lives_ok(
-  $
+  $$
     select core.submit_keluarga_registration(
       '98000000-0000-4000-8000-000000000020',
       array['98000000-0000-4000-8000-000000000021']::uuid[],
       'Slice Eight Volunteer',
       '91234567'
     )
-  $,
+  $$,
   'withdrawn registration can be reopened while the opportunity remains available'
 );
 
