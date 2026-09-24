@@ -34,7 +34,7 @@
 | FormSG webhook spoofing | official signature verification, exact endpoint binding, expected form ID |
 | Duplicate webhook retries create duplicate leads | unique source/form/submission identity and idempotent ingestion |
 | Lead automatically becomes a volunteer | explicit staff conversion boundary |
-| KELUARGA role grants MakLom access | separate `core.user_roles` and `public.app_members` authorization |
+| Lower KELUARGA roles accidentally gain MakLom access | separate authorization stores; only the intentional KELUARGA `admin` -> MakLom `admin` entitlement bridge is synchronized transactionally |
 | Staff escalates privileges | privileged server-side role management, confirmation step, audit |
 | Raw attendance becomes approved hours | KELUARGA cannot approve attendance-derived contributions; MakLom review required |
 | Event observation becomes permanent profile judgement | reviewed inbox with source/event provenance |
