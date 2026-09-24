@@ -48,7 +48,7 @@ Event reviews and insights describe a specific role/event context. They must ret
 
 - KELUARGA authorization uses `core.user_roles`.
 - MakLom authorization uses `public.app_members`.
-- KELUARGA roles do not automatically grant MakLom access.
+- KELUARGA and MakLom authorization are enforced separately. The intentional exception is KELUARGA `admin`, which transactionally provisions MakLom `admin`; lower KELUARGA roles do not gain MakLom access.
 - Service-role credentials never belong in browser code.
 - RLS remains a second enforcement layer for sensitive shared tables.
 - Prospective-volunteer leads remain separate from canonical volunteers until deliberate conversion.
