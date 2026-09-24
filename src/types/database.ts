@@ -13,6 +13,7 @@ export type AppRole =
   | "pathway_manager"
   | "publisher"
   | "attendance_manager"
+  | "programme_manager"
   | "gamification_manager"
   | "auditor"
   | "admin";
