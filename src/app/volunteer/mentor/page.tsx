@@ -37,7 +37,7 @@ export default function MentorPage() {
                 className={styles.primaryAction}
                 href="/volunteer/interest?area=mentor"
               >
-                <span>Register your interest</span>
+                <span>Volunteer</span>
                 <span aria-hidden="true">↗</span>
               </Link>
             </div>
