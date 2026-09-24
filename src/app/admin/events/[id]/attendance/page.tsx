@@ -18,7 +18,10 @@ import {
   WalkInSubmitButtons,
 } from "@/components/phaseone/attendance-quick-action";
 import { PortalHeader } from "@/components/portal-header";
-import { requireEventManager } from "@/lib/auth/event-access";
+import {
+  hasEventManagerRole,
+  requireAttendanceOperator,
+} from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
@@ -219,7 +222,8 @@ async function AttendanceAudit({
 
 export default async function AttendancePage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  await requireEventManager(`/admin/events/${id}/attendance`);
+  const { roles } = await requireAttendanceOperator(`/admin/events/${id}/attendance`);
+  const canManageEvent = hasEventManagerRole(roles);
   const admin = getPhaseOneAdminClient();
   const [
     eventResult,
@@ -397,16 +401,22 @@ export default async function AttendancePage({ params, searchParams }: PageProps
             <p className="muted">{event.venue ?? "Venue not set"}</p>
           </div>
           <div className="actions">
-            <Link className="button button-secondary" href={`/admin/events/${id}/edit`}>Event settings / upload roster</Link>
-            <Link className="button button-secondary" href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
-            <Link className="button button-secondary" href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
+            {canManageEvent ? (
+              <>
+                <Link className="button button-secondary" href={`/admin/events/${id}/edit#roster`}>Roster setup</Link>
+                <Link className="button button-secondary" href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
+                <Link className="button button-secondary" href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
+              </>
+            ) : null}
             {selectedTimeslot ? (
               <>
                 <Link className="button button-primary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_in`}>Show check-in QR</Link>
                 <Link className="button button-secondary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_out`}>Show check-out QR</Link>
               </>
             ) : null}
-            <a className="button button-secondary" href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
+            {canManageEvent ? (
+              <a className="button button-secondary" href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
+            ) : null}
           </div>
         </div>
 
@@ -490,6 +500,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
               </div>
 
+              {canManageEvent ? (
               <details className="phaseone-walk-in">
                 <summary className="phaseone-walk-in-summary">
                   <span>+ Walk-in volunteer</span>
@@ -547,6 +558,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   </form>
                 </div>
               </details>
+              ) : null}
 
               <form className="phaseone-attendance-filters phaseone-desktop-filters" method="get">
                 <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
@@ -601,7 +613,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
               </details>
 
-              <p className="muted phaseone-roster-swipe-hint">Swipe a volunteer card right for Review or Insight.</p>
+              {canManageEvent ? (
+                <p className="muted phaseone-roster-swipe-hint">Swipe a volunteer card right for Review or Insight.</p>
+              ) : null}
               <div className="phaseone-attendance-list">
                 {visible.map(({ volunteer, attendance, effectiveAttendance, status }) => {
                   const linkedNextShift = nextShiftLink(effectiveAttendance?.session_id);
@@ -623,7 +637,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       id={`roster-${volunteer.id}`}
                       key={volunteer.id}
                     >
-                      <RosterSwipeActions />
+                      {canManageEvent ? <RosterSwipeActions /> : null}
                       <div className="phaseone-attendance-summary">
                         <div>
                           <div className="phaseone-roster-meta">
@@ -706,6 +720,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         />
                       ) : null}
 
+                      {canManageEvent ? (
+                        <>
                       <VolunteerReviewForm
                         eventId={id}
                         rosterId={volunteer.id}
@@ -785,8 +801,12 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         </form>
                       </details>
 
+                        </>
+                      ) : null}
+
                       {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
 
+                      {canManageEvent ? (
                       {usesInheritedSession ? (
                         <p className="muted phaseone-inherited-note">
                           This shift inherits the volunteer&apos;s event-day check-in. Attendance corrections should be made on the shift where they originally checked in.
@@ -820,6 +840,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                           </form>
                         </details>
                       )}
+                      ) : null}
                     </article>
                   );
                 })}
@@ -829,9 +850,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           </>
         ) : null}
 
-        <Suspense fallback={<section className="section"><p className="muted">Loading recent attendance changes…</p></section>}>
-          <AttendanceAudit eventId={id} rosterNames={rosterNames} />
-        </Suspense>
+        {canManageEvent ? (
+          <Suspense fallback={<section className="section"><p className="muted">Loading recent attendance changes…</p></section>}>
+            <AttendanceAudit eventId={id} rosterNames={rosterNames} />
+          </Suspense>
+        ) : null}
       </main>
     </div>
   );
