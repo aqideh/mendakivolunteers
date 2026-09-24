@@ -96,7 +96,35 @@ The handoff must be idempotent: re-running it must not create duplicate roster r
 
 Waitlisted registrations must not become active roster rows until promoted. A cancellation or withdrawal should update the linked operational state rather than silently deleting history.
 
-### 3.4 Event operations to MakLom
+### 3.4 Manual / last-minute Event Operations exception
+
+Normal KELUARGA registrations must continue to flow directly into Event Operations through the database. CSV is **not** the normal registration-to-roster handoff.
+
+For a manual or last-minute event that needs Event Operations without first creating a public opportunity, authorised staff can create a Quick Event Operations record and choose one data boundary before importing the roster:
+
+```text
+Manual event
+    -> isolated
+       -> event roster + attendance only
+       -> no core volunteer creation
+       -> no KELUARGA contribution-hour credit
+
+    -> integrated
+       -> match existing KEL volunteer by KEL ID / email / mobile
+       -> or create new KELxxxxx volunteer from a reliable identifier
+       -> event roster + attendance
+       -> optional KELUARGA contribution-hour credit
+```
+
+An isolated event still needs a persisted Event Operations record so roster, attendance, audit and reporting functions work, but it is marked `manual_isolated` and must not silently become a canonical volunteer/programme record.
+
+An integrated event is marked `manual_integrated`. Name-only matching is not permitted for database integration. Each volunteer must have an existing KELUARGA Volunteer ID, email address or mobile number. New volunteer records created through this route do not automatically receive a login account.
+
+If contribution-hour crediting is enabled, hours are derived from completed Event Operations attendance sessions and stored as **KELUARGA app-owned contribution credits**. These records are intentionally separate from YM Hub verified attendance and verified hours.
+
+Manual-event walk-ins follow the same event data boundary. Staff can reconcile contribution credits after check-out or attendance corrections so corrected operational attendance is reflected without changing YM Hub verified-hour records.
+
+### 3.5 Event operations to MakLom
 
 For the current operating model:
 
@@ -112,7 +140,7 @@ manual upload to MakLom
 
 The existing report-upload procedure can remain in place. Automatic KELUARGA -> MakLom synchronization is not part of this decision and should not be introduced without a separately reviewed matching, provenance and error-handling design.
 
-### 3.5 KELUARGA to YM Hub backend handoff
+### 3.6 KELUARGA to YM Hub backend handoff
 
 Volunteer Management will define the detailed handoff separately.
 
@@ -275,13 +303,13 @@ For this release, the repository migration versions are aligned with the version
 
 ## 7. Implementation sequence
 
-1. Change the KELUARGA volunteer identity model so a volunteer can exist without a YM Hub ID.
+1. Change the KELUARGA volunteer identity model so a volunteer can exist without a YM Hub ID. **Implemented.**
 2. Use the KELUARGA programme/event record as the canonical opportunity + Event Guide + Event Operations source. **Implemented in Slice 2.**
-3. Add first-class opportunity/event registration, cancellation and waitlist records.
-4. Add shift selection and capacity enforcement.
-5. Add the idempotent registration-to-roster handoff.
-6. Update volunteer pages to use KELUARGA registration status rather than YM Hub registration snapshots.
-7. Retire external registration link-outs once the in-app flow is production-ready.
+3. Add first-class opportunity/event registration, cancellation, withdrawal and waitlist records. **Implemented.**
+4. Add shift selection and capacity enforcement. **Implemented.**
+5. Add the idempotent registration-to-roster handoff. **Implemented.**
+6. Update volunteer pages to use KELUARGA registration status rather than YM Hub registration snapshots. **Implemented.**
+7. Retire external registration link-outs once the in-app flow is production-ready. **Implemented.**
 8. Define the Volunteer Management backend export/sync procedure to YM Hub.
 9. Keep the existing event-report export to MakLom; automate only through a separate reviewed project.
 10. Update gamification inputs only after the authoritative attendance/eligibility policy is agreed.
@@ -291,6 +319,9 @@ For this release, the repository migration versions are aligned with the version
 - Do not require a YM Hub record before allowing KELUARGA recruitment or registration.
 - Do not create duplicate volunteer identities when a later YM Hub record is attached.
 - Do not populate event rosters through manual re-keying when a confirmed KELUARGA registration already exists.
+- Use manual CSV roster ingestion only for the explicit manual/last-minute Event Operations exception, with an isolated or integrated scope selected before import.
+- Do not use name-only matching to promote a manual roster person into the main KELUARGA volunteer database.
+- Do not describe app-owned manual-event contribution credits as YM Hub verified hours.
 - Do not treat a waitlist entry as an active deployment.
 - Do not delete registration or attendance history to represent cancellation or correction.
 - Do not let a stale YM Hub import overwrite a newer KELUARGA operational registration state.
