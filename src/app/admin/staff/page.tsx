@@ -25,7 +25,7 @@ type StaffAccount = Readonly<{
   id: string;
   email: string;
   status: AccountStatus;
-  roles: StaffInviteRole[];
+  role: StaffInviteRole;
   lastSignInAt: string | null;
 }>;
 
@@ -56,35 +56,25 @@ async function loadStaffAccounts(): Promise<StaffAccount[]> {
   const accountsById = new Map(
     (accountsResult.data ?? []).map((account) => [account.id, account.status]),
   );
-  const rolesByUserId = new Map<string, StaffInviteRole[]>();
+  const roleByUserId = new Map<string, StaffInviteRole>();
 
   for (const record of rolesResult.data ?? []) {
-    const role = record.role as StaffInviteRole;
-    const existing = rolesByUserId.get(record.user_id) ?? [];
-    existing.push(role);
-    rolesByUserId.set(record.user_id, existing);
+    roleByUserId.set(record.user_id, record.role as StaffInviteRole);
   }
-
-  const roleOrder = new Map(
-    staffInviteRoleValues.map((role, index) => [role, index]),
-  );
 
   return usersResult.data.users
     .flatMap((user) => {
-      const roles = rolesByUserId.get(user.id);
+      const role = roleByUserId.get(user.id);
       const status = accountsById.get(user.id);
 
-      if (!user.email || !roles || !status) return [];
+      if (!user.email || !role || !status) return [];
 
       return [
         {
           id: user.id,
           email: user.email,
           status: status as AccountStatus,
-          roles: roles.sort(
-            (left, right) =>
-              (roleOrder.get(left) ?? 999) - (roleOrder.get(right) ?? 999),
-          ),
+          role,
           lastSignInAt: user.last_sign_in_at ?? null,
         },
       ];
@@ -104,9 +94,8 @@ export default async function StaffAccessPage() {
           <div>
             <h1>Manage staff access</h1>
             <p className="muted">
-              Invite staff and grant only the KELUARGA roles they need. Roles are
-              additive: one staff member can hold several permissions at the same
-              time. KELUARGA roles do not grant MakLom access.
+              Assign one KELUARGA access level to each staff account. Admin includes
+              MakLom administrator access; the other levels do not grant MakLom access.
             </p>
           </div>
           <div className="actions">
@@ -124,8 +113,8 @@ export default async function StaffAccessPage() {
             <div>
               <h2 id="role-reference-title">KELUARGA roles &amp; permissions</h2>
               <p className="muted">
-                Administrator is the only role that can manage staff access.
-                Programme &amp; event manager includes Event Operations access.
+                Access levels are hierarchical. Admin is the only level that manages
+                staff access and receives MakLom access.
               </p>
             </div>
           </div>
@@ -168,7 +157,7 @@ export default async function StaffAccessPage() {
                   <td>
                     <StaffRoleEditor
                       email={account.email}
-                      roles={account.roles}
+                      role={account.role}
                       userId={account.id}
                     />
                   </td>

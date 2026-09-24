@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database";
 
-const pathwayManagerRoles = new Set<AppRole>(["pathway_manager", "admin"]);
+const pathwayManagerRoles = new Set<AppRole>(["volteam", "admin"]);
 
 export function hasPathwayManagerRole(roles: readonly AppRole[]): boolean {
   return roles.some((role) => pathwayManagerRoles.has(role));

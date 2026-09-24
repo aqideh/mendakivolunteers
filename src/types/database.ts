@@ -8,6 +8,11 @@ export type Json =
 
 export type AppRole =
   | "volunteer"
+  | "volteam"
+  | "staff"
+  | "volunteer_leader"
+  | "admin"
+  // Legacy values remain in the PostgreSQL enum for migration compatibility.
   | "support_officer"
   | "content_editor"
   | "pathway_manager"
@@ -15,8 +20,7 @@ export type AppRole =
   | "attendance_manager"
   | "programme_manager"
   | "gamification_manager"
-  | "auditor"
-  | "admin";
+  | "auditor";
 
 export type AccountStatus =
   | "pending_link"
@@ -207,6 +211,14 @@ export type Database = {
       };
       activate_staff_account_after_setup: {
         Args: { p_user_id: string };
+        Returns: string;
+      };
+      set_staff_access_level: {
+        Args: {
+          p_user_id: string;
+          p_role: AppRole;
+          p_granted_by: string;
+        };
         Returns: string;
       };
       get_current_points_snapshot: {

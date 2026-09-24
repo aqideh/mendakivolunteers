@@ -3,13 +3,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database";
 
-const contentManagerRoles = new Set<AppRole>([
-  "content_editor",
-  "publisher",
-  "admin",
-]);
+const contentManagerRoles = new Set<AppRole>(["volteam", "admin"]);
 
-const publisherRoles = new Set<AppRole>(["publisher", "admin"]);
+const publisherRoles = new Set<AppRole>(["volteam", "admin"]);
 
 export type ContentAccess = Readonly<{
   userId: string;

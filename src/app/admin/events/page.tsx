@@ -3,7 +3,11 @@ import Link from "next/link";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
 import { PortalHeader } from "@/components/portal-header";
-import { hasProgrammeManagerRole, requireEventManager } from "@/lib/auth/event-access";
+import {
+  hasEventManagerRole,
+  hasProgrammeManagerRole,
+  requireAttendanceOperator,
+} from "@/lib/auth/event-access";
 import {
   getAdminEventFirstScheduledTimeslot,
   sortCurrentAdminEvents,
@@ -34,11 +38,18 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 function eventSchedule(event: AdminEventSummary) {
   const first = getAdminEventFirstScheduledTimeslot(event);
   if (!first) return "Schedule not set";
-
   return `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}`;
 }
 
-function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: AdminEventSummary; canManageProgramme: boolean }>) {
+function MobileEventActions({
+  event,
+  canManageEvent,
+  canManageProgramme,
+}: Readonly<{
+  event: AdminEventSummary;
+  canManageEvent: boolean;
+  canManageProgramme: boolean;
+}>) {
   return (
     <div className="phaseone-events-mobile-actions">
       <Link
@@ -47,18 +58,25 @@ function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: Adm
       >
         Roster / check-in
       </Link>
-      <Link
-        className="button button-secondary phaseone-events-mobile-edit"
-        href={`/admin/events/${event.id}/edit#roster`}
-      >
-        {canManageProgramme ? "Edit / roster" : "Roster setup"}
-      </Link>
+
+      {canManageEvent ? (
+        <Link
+          className="button button-secondary phaseone-events-mobile-edit"
+          href={`/admin/events/${event.id}/edit#roster`}
+        >
+          {canManageProgramme ? "Edit / roster" : "Roster setup"}
+        </Link>
+      ) : null}
+
       <details className="phaseone-events-mobile-more">
         <summary aria-label={`More actions for ${event.title}`}>•••</summary>
         <div className="phaseone-events-mobile-more-menu">
-          <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
-            Download event report
-          </a>
+          {canManageEvent ? (
+            <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
+              Download event report
+            </a>
+          ) : null}
+
           {canManageProgramme ? (
             <form action={duplicateEvent}>
               <input type="hidden" name="eventId" value={event.id} />
@@ -67,6 +85,7 @@ function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: Adm
               </button>
             </form>
           ) : null}
+
           {event.is_published ? (
             <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">
               View event guide ↗
@@ -79,9 +98,11 @@ function MobileEventActions({ event, canManageProgramme }: Readonly<{ event: Adm
 }
 
 export default async function EventsAdminPage({ searchParams }: PageProps) {
-  const { roles } = await requireEventManager();
+  const { roles } = await requireAttendanceOperator();
+  const canManageEvent = hasEventManagerRole(roles);
   const canManageProgramme = hasProgrammeManagerRole(roles);
   const admin = getPhaseOneAdminClient();
+
   const [eventsResult, timeslotsResult] = await Promise.all([
     admin
       .from("phaseone_events")
@@ -126,34 +147,41 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
       <main className="page-frame phaseone-events-admin-page">
         <div className="dashboard-header phaseone-events-admin-header">
           <div>
-            <p className="eyebrow">Staff event operations</p>
             <h1>Programmes &amp; events</h1>
             <p className="muted phaseone-events-admin-description">
-              Schedules, rosters, check-in and event-guide settings.
+              Schedules, rosters and event-day operations.
             </p>
           </div>
+
           <div className="actions phaseone-events-admin-top-actions">
-            <Link className="button button-secondary" href="/admin/registrations">
-              Registrations
-            </Link>
-            <Link className="button button-secondary" href="/admin/integrations/ymhub">
-              YM Hub Batch Centre
-            </Link>
-            <Link className="button button-secondary" href="/admin/events/past">
-              Past ({past.length})
-            </Link>
-            <Link className="button button-secondary" href="/admin/events/quick">
-              Quick manual event
-            </Link>
-            {canManageProgramme ? (
-              <Link className="button button-primary" href="/admin/events/new">
-                + New programme
+            {canManageEvent ? (
+              <Link className="button button-secondary" href="/admin/registrations">
+                Registrations
               </Link>
+            ) : null}
+
+            {canManageProgramme ? (
+              <>
+                <Link className="button button-secondary" href="/admin/integrations/ymhub">
+                  YM Hub Batch Centre
+                </Link>
+                <Link className="button button-secondary" href="/admin/events/past">
+                  Past ({past.length})
+                </Link>
+                <Link className="button button-secondary" href="/admin/events/quick">
+                  Quick manual event
+                </Link>
+                <Link className="button button-primary" href="/admin/events/new">
+                  + New programme
+                </Link>
+              </>
             ) : null}
           </div>
         </div>
 
-        {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
+        {errorMessage ? (
+          <div className="notice notice-error" role="alert">{errorMessage}</div>
+        ) : null}
 
         <section className="phaseone-events-mobile-list" aria-label="Current programmes and events">
           {events.map((event) => {
@@ -176,10 +204,15 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                   <span data-ready={pinReady}>{pinReady ? "PINs ready" : "PIN setup needed"}</span>
                 </div>
 
-                <MobileEventActions event={event} canManageProgramme={canManageProgramme} />
+                <MobileEventActions
+                  event={event}
+                  canManageEvent={canManageEvent}
+                  canManageProgramme={canManageProgramme}
+                />
               </article>
             );
           })}
+
           {events.length === 0 ? (
             <div className="panel empty-state">No current or recent programmes.</div>
           ) : null}
@@ -187,41 +220,82 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
 
         <div className="table-wrap phaseone-events-desktop-table">
           <table className="content-table">
-            <thead><tr><th>Event</th><th>Schedule</th><th>Access</th><th>Visibility</th><th>Actions</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Schedule</th>
+                <th>Access</th>
+                <th>Visibility</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
             <tbody>
               {events.map((event) => {
                 const first = getAdminEventFirstScheduledTimeslot(event);
                 return (
                   <tr key={event.id}>
-                    <td><strong>{event.title}</strong><span className="table-subtext">/journey/{event.slug}</span></td>
                     <td>
-                      {first ? `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}` : "Not set"}
-                      {event.timeslots.length > 1 ? <span className="table-subtext">{event.timeslots.length} timeslots</span> : null}
+                      <strong>{event.title}</strong>
+                      <span className="table-subtext">/journey/{event.slug}</span>
                     </td>
-                    <td>{event.has_sign_in_pin && event.has_sign_out_pin ? "Both PINs configured" : "Configuration incomplete"}</td>
-                    <td><span className="status-pill">{getPackageListingStatus(event.timeslots, event.is_published)}</span></td>
+                    <td>
+                      {first
+                        ? `${formatTimeslotDate(first.starts_at)} · ${formatTimeslotTimeRange(first)}`
+                        : "Not set"}
+                      {event.timeslots.length > 1 ? (
+                        <span className="table-subtext">{event.timeslots.length} timeslots</span>
+                      ) : null}
+                    </td>
+                    <td>
+                      {event.has_sign_in_pin && event.has_sign_out_pin
+                        ? "Both PINs configured"
+                        : "Configuration incomplete"}
+                    </td>
+                    <td>
+                      <span className="status-pill">
+                        {getPackageListingStatus(event.timeslots, event.is_published)}
+                      </span>
+                    </td>
                     <td>
                       <div className="actions">
-                        <Link className="text-link" href={`/admin/events/${event.id}/attendance`}>Roster / check-in</Link>
-                        <Link className="text-link" href={`/admin/events/${event.id}/edit#roster`}>
-                          {canManageProgramme ? "Edit / roster" : "Roster setup"}
+                        <Link className="text-link" href={`/admin/events/${event.id}/attendance`}>
+                          Roster / check-in
                         </Link>
-                        <a className="text-link" href={`/admin/events/${event.id}/report/export`}>Download event report</a>
+
+                        {canManageEvent ? (
+                          <>
+                            <Link className="text-link" href={`/admin/events/${event.id}/edit#roster`}>
+                              {canManageProgramme ? "Edit / roster" : "Roster setup"}
+                            </Link>
+                            <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
+                              Download event report
+                            </a>
+                          </>
+                        ) : null}
+
                         {canManageProgramme ? (
                           <form action={duplicateEvent}>
                             <input type="hidden" name="eventId" value={event.id} />
-                            <button className="text-link button-reset" type="submit">Duplicate journey</button>
+                            <button className="text-link button-reset" type="submit">
+                              Duplicate journey
+                            </button>
                           </form>
                         ) : null}
+
                         {event.is_published ? (
-                          <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">View event guide</Link>
+                          <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">
+                            View event guide
+                          </Link>
                         ) : null}
                       </div>
                     </td>
                   </tr>
                 );
               })}
-              {events.length === 0 ? <tr><td colSpan={5}>No current or recent event guides.</td></tr> : null}
+
+              {events.length === 0 ? (
+                <tr><td colSpan={5}>No current or recent event guides.</td></tr>
+              ) : null}
             </tbody>
           </table>
         </div>
