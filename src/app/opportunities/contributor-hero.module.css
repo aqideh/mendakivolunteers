@@ -7,23 +7,31 @@
   background: #ffffff;
 }
 
-.hero::before,
+.heroBackgrounds,
+.heroBackground,
 .hero::after {
   position: absolute;
   inset: 0;
-  content: "";
   pointer-events: none;
 }
 
-.hero::before {
+.heroBackgrounds {
   z-index: -2;
-  background: var(--hero-image) center 46% / cover no-repeat;
+}
+
+.heroBackground {
+  background: var(--state-image) center 46% / cover no-repeat;
+  opacity: 0;
+  transition: opacity 1400ms ease-in-out;
+}
+
+.heroBackgroundActive {
   opacity: 0.48;
-  transition: background-image 300ms ease;
 }
 
 .hero::after {
   z-index: -1;
+  content: "";
   background:
     linear-gradient(
       180deg,
@@ -63,17 +71,42 @@
 
 .heroContent {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 34rem);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-self: center;
   align-items: end;
   gap: clamp(2rem, 6vw, 5rem);
 }
 
 .heroCopy {
+  position: relative;
   display: grid;
-  max-width: 44rem;
+  width: min(100%, 48rem);
+  min-height: 18rem;
+}
+
+.heroCopyState {
+  grid-area: 1 / 1;
+  display: grid;
+  align-content: end;
   justify-items: start;
   gap: 1rem;
+  opacity: 0;
+  transform: translateY(0.35rem);
+  visibility: hidden;
+  transition:
+    opacity 1200ms ease-in-out,
+    transform 1200ms ease-in-out,
+    visibility 0s linear 1200ms;
+}
+
+.heroCopyStateActive {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition:
+    opacity 1200ms ease-in-out,
+    transform 1200ms ease-in-out,
+    visibility 0s;
 }
 
 .heroCopy h1 {
@@ -85,23 +118,26 @@
 }
 
 .heroCopy p {
-  max-width: 38rem;
+  max-width: 44rem;
   margin: 0;
   color: var(--muted);
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-size: clamp(0.98rem, 1.55vw, 1.14rem);
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .heroActions {
   display: grid;
+  width: min(100%, 15rem);
   gap: 0.65rem;
   align-self: end;
+  justify-self: end;
 }
 
 .primaryAction,
 .secondaryAction {
   display: inline-flex;
+  width: 100%;
   min-height: 3.6rem;
   align-items: center;
   justify-content: space-between;
@@ -181,8 +217,11 @@
     padding: 1rem 0 2rem;
   }
 
-  .hero::before {
+  .heroBackground {
     background-position: 52% center;
+  }
+
+  .heroBackgroundActive {
     opacity: 0.4;
   }
 
@@ -204,17 +243,24 @@
     gap: 1.5rem;
   }
 
+  .heroCopy {
+    min-height: 21rem;
+  }
+
   .heroCopy h1 {
     font-size: clamp(2.7rem, 12vw, 4.5rem);
   }
 
   .heroActions {
     width: 100%;
+    justify-self: stretch;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero::before,
+  .heroBackground,
+  .heroCopyState,
+  .heroCopyStateActive,
   .primaryAction,
   .secondaryAction {
     transition: none;
