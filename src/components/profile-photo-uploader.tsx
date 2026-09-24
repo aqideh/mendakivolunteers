@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, CSSProperties } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
@@ -139,7 +139,7 @@ export function ProfilePhotoUploader({
       >
         <span
           className="profile-passport-progress-ring"
-          style={{ "--profile-completion": `${completion * 3.6}deg` } as React.CSSProperties}
+          style={{ "--profile-completion": `${completion * 3.6}deg` } as CSSProperties}
           aria-hidden="true"
         />
         <span className="profile-passport-avatar">
