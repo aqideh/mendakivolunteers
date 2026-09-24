@@ -1,129 +1,101 @@
-# Gamification and points architecture
+# Gamification and recognition architecture
+
+**Last reviewed:** 24 September 2026
 
 ## Purpose
 
-KELUARGA owns the volunteer points programme, recruitment and registration workflow. YM Hub remains the authoritative backend record for verified attendance and verified hours after the approved handoff/reconciliation process.
+KELUARGA owns the volunteer-facing recognition experience: points, badges, pathway status and personal history.
 
-KELUARGA has two explicit point-source paths:
+Attendance-derived recognition must use **MakLom-approved contribution records**, not raw KELUARGA check-in/out data and not dormant YM Hub projections.
+
+## Recognition sources
 
 ```text
-verified ymhub.attendance_snapshots
-        -> approved KELUARGA attendance rule
-        -> append-only point ledger
+MakLom-approved contribution
+        -> approved attendance/contribution rule
+        -> append-only KELUARGA point ledger
 
 staff recognition action
         -> role + reason validation
-        -> append-only manual recognition entry
+        -> append-only manual-recognition entry
 
 both paths
-        -> volunteer point balance and history
+        -> volunteer point balance/history
 ```
 
-Staff roster check-in and check-out records are operational evidence only. They
-are deliberately excluded from point calculation. A roster action cannot award
-points before the corresponding attendance record is verified in YM Hub.
+Raw Event Operations attendance is operational evidence only.
 
-## Public and personal access
+## Identity
 
-Public opportunity and news pages remain available without signing in. Personal
-information requires a KELUARGA session:
-
-- Event Guides and upcoming assignments;
-- official activity and verified-hour records;
-- points and point history.
-
-A passwordless email link creates an ordinary KELUARGA browser session. It is a
-sign-in method, not a requirement to request a new email on every page visit.
-
-External registration destinations are transitional. The target model registers volunteers directly in KELUARGA and hands the resulting records to event operations and, separately, to YM Hub on the backend.
-
-## Account and identity model
-
-The canonical identity chain is:
+Recognition attaches to the canonical volunteer:
 
 ```text
-Supabase Auth user ID
-        <-> core.user_accounts.id
-        <-> core.volunteers.auth_user_id
-        <-> core.volunteers.volunteer_code (KELxxxxx)
-        <-> optional core.volunteers.ymhub_volunteer_id
+auth.users
+  -> core.user_accounts
+  -> core.volunteers.id
+  -> core.volunteers.volunteer_code (KELxxxxx)
 ```
 
-`core.volunteers.id` is the internal relational UUID. `core.volunteers.volunteer_code` is the immutable human-facing KELUARGA identifier (`KEL00001` format). `ymhub_volunteer_id` is optional and attached only for backend reconciliation. Email may assist matching but is not the permanent volunteer identifier.
+External enterprise IDs are optional metadata and are not part of the recognition identity chain.
 
 ## Point rules
 
-Rules are versioned and support two calculation methods:
+Rules are versioned and may support:
 
-- a flat value for each qualifying verified activity;
-- a value per verified volunteer hour.
+- flat points for an eligible approved contribution;
+- points per approved volunteer hour.
 
-Draft rules award nothing. An activated rule is immutable and retained so a
-future recalculation can reproduce the original outcome. Effective periods may
-not overlap. No production rule is created by the foundation migration; MENDAKI
-must approve the point policy, effective date and value before activation.
+Draft rules award nothing. Activated rules should be immutable for their effective period so historical calculation remains reproducible.
+
+Before activating attendance-derived rules, Volunteer Management must define:
+
+- eligible contribution types;
+- value and calculation method;
+- effective dates;
+- correction/reversal behaviour;
+- appeals;
+- anti-abuse controls.
 
 ## Point ledger
 
-`gamification.point_ledger_entries` is append-only. It stores awards,
-adjustments and reversals. When an authoritative YM Hub record changes, the
-reconciliation function appends the difference instead of editing history.
+`gamification.point_ledger_entries` is append-only.
 
-This provides:
+Corrections create adjustments/reversals rather than rewriting history. The ledger must retain clear provenance so volunteers and staff can distinguish:
 
-- idempotent recalculation;
-- a traceable source attendance ID;
-- transparent corrections and reversals;
-- a balance derived from the complete ledger;
-- no dependency on mutable roster attendance.
-
-Only the server-side integration identity can run YM Hub reconciliation. Manual recognition awards use a separate security-definer function that requires an active `gamification_manager` or `admin` role, a positive amount, a reason and an idempotency request ID. Volunteers receive their own balance and recent history through a protected account-scoped function. The private gamification schema is not exposed to ordinary browser queries.
-
-## Batch integration contract
-
-After each successful YM Hub attendance import, the batch worker should call:
-
-```sql
-select ymhub.reconcile_gamification_points();
-```
-
-The function must run only after the authoritative import transaction has
-completed successfully. A failed or partial import must not generate substitute
-points. Future attendance corrections are processed through the same function.
-
-## Staff roster boundary
-
-The gamification schema has no foreign key, trigger or query against:
-
-- `public.phaseone_roster`;
-- `public.phaseone_attendance`;
-- staff event-operation check-in or check-out actions.
-
-The roster is populated from KELUARGA registrations (plus explicit walk-ins) in the target model. Its later handoff to YM Hub may lead to a verified attendance record; only the verified record should enter any points rule that requires verified attendance.
-
+- approved contribution awards;
+- manual staff recognition;
+- adjustments/reversals.
 
 ## Manual recognition
 
-Manual recognition is intentionally not represented as attendance. The source kind is `manual_recognition`, while verified attendance uses `ymhub_verified_attendance`.
+Manual recognition is independent of attendance.
 
-A manual recognition award:
+It requires:
 
-- is created only through `core.award_manual_points`;
-- requires `gamification_manager` or `admin`;
-- requires an explicit reason;
-- uses a request UUID to make retries idempotent;
-- writes an append-only ledger entry and a separate audit event;
-- never creates or edits `ymhub.attendance_snapshots`.
+- an authorized staff role;
+- a positive amount;
+- an explicit reason;
+- an idempotency request identifier;
+- an audit event.
 
-This keeps staff recognition available as an operational KELUARGA feature without weakening the rule that verified hours and verified attendance remain YM Hub-owned.
+It must not create or edit attendance or contribution records.
 
-## Recognition badges
+## Badges
 
-Staff-defined badges are separate from attendance-derived points. Badge definitions and award history remain in the private `gamification` schema. Badge awards require an active `gamification_manager` or `admin` role, an explicit staff reason and a request UUID; revocation retains the historical award rather than deleting it.
+Badge definitions and award/revocation history remain separate from points.
 
-Volunteer browsers do not receive direct access to badge tables. `core.get_current_badges_snapshot()` resolves the signed-in volunteer and returns only the active badge identity, name, description and award timestamp. Internal award/revocation reasons and staff actor identifiers are not returned in the volunteer snapshot.
+Volunteer-facing reads expose only safe badge information. Internal reasons, staff actors and administrative metadata remain restricted.
 
+Automatic badge/milestone earning is not active until objective criteria and correction rules are approved.
 
-## Data API boundary
+## Pathways
 
-The gamification schema is included in PostgREST's schema list so trusted server/service-role administration can address it. This does **not** make gamification tables public: `anon` and `authenticated` browser roles retain no schema usage or direct table grants. Volunteer-facing recognition reads use account-scoped security-definer functions, while privileged administration remains server-side and role-gated.
+Pathway positions are staff-confirmed and do not advance automatically from attendance, points or registrations.
+
+Any future automation must be explicit, explainable, auditable and staff-overridable.
+
+## Dormant YM Hub reconciliation
+
+Earlier YM Hub attendance reconciliation code/schema is retained only as historical/dormant infrastructure. It is not the current input contract for attendance-derived points.
+
+If enterprise synchronization is later reactivated, it must not bypass the MakLom approval boundary for contribution hours unless the operating model is deliberately changed and documented.

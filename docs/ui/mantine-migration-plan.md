@@ -1,130 +1,28 @@
-# Mantine UI migration plan
+# Mantine UI migration plan — historical implementation plan
 
-**Started:** 16 September 2026
+**Started:** 16 September 2026  
+**Status:** retained as UI migration history; not a product/architecture source of truth
 
-KELUARGA will adopt Mantine incrementally. Mantine is a component toolkit inside the existing KELUARGA design system; it is not a wholesale redesign or replacement for product-specific UI.
+KELUARGA adopted Mantine incrementally for interactive primitives while preserving the existing Next.js architecture and product-specific visual language.
 
-## Principles
+## Principles retained
 
-- Preserve the current mobile-first, compact KELUARGA visual language.
-- Keep Server Components and server-side data loading where they already work well.
-- Use Mantine primarily for interactive client-side controls and common UI primitives.
-- Do not convert a working custom component merely to increase Mantine coverage.
-- Remove obsolete bespoke CSS as migrated primitives replace it.
-- Keep each migration step independently reviewable and deployable.
+- mobile-first and compact Event Operations;
+- Server Components/server-side loading where appropriate;
+- Mantine for reusable interactive controls rather than forced whole-app conversion;
+- product-specific KELUARGA UI remains custom where that improves clarity;
+- migration work must not change data ownership, authorization, attendance rules or integration architecture.
 
-## Step 1 — foundation
+## Current architecture authority
 
-**Status:** complete on `mantine-step-1-foundation`.
+For product/data/integration boundaries, use:
 
-- Add `@mantine/core` and `@mantine/hooks`.
-- Add the root `MantineProvider` and required stylesheet / color-scheme setup.
-- Add a KELUARGA theme aligned to the existing brand colours, typography and radius scale.
-- Enable Next.js package-import optimisation.
-- Do not migrate any existing page controls yet.
+- `docs/architecture/current-system.md`
+- `docs/architecture/keluarga-maklom-domain-architecture.md`
+- `docs/security/staff-access-model.md`
 
-Exit criteria: existing application behavior remains unchanged and lint, type-check, tests, production build, dependency audit and database tests pass.
+Older references in this UI plan to YM Hub source-of-truth assumptions or superseded role models are not current requirements.
 
-## Step 2 — KELUARGA primitives
+## Remaining UI rule
 
-**Status:** in progress on `mantine-step-1-foundation`.
-
-Create a small, opinionated application layer for the Mantine components we intend to use repeatedly. Initial targets:
-
-- buttons and action icons;
-- text, number and select inputs;
-- checkboxes and switches;
-- badges / status indicators;
-- alerts;
-- modal and drawer patterns;
-- menus;
-- loading / empty / error states.
-
-The application layer should encode KELUARGA sizing and density so individual pages do not independently configure Mantine styling.
-
-Exit criteria: shared primitives are documented, accessible, compact on mobile and visually compatible with the existing interface.
-
-## Step 3 — small staff workflows
-
-**Status:** started. Walk-in volunteer editing and volunteer reviews now use the shared KELUARGA Mantine primitives; volunteer insight capture and other small event-management forms remain to be migrated.
-
-Migrate self-contained interactive workflows before large pages:
-
-- walk-in volunteer editing;
-- add volunteer insight;
-- volunteer review;
-- other small event-management forms where Mantine reduces custom form CSS.
-
-Keep existing Server Actions, validation and database behavior unchanged.
-
-Exit criteria: migrated workflows have equal or better mobile usability and no attendance/identity regression.
-
-## Step 4 — Event Operations controls
-
-Migrate the reusable controls around staff event operations:
-
-- filters and search;
-- shift selection;
-- status controls and badges;
-- overflow/action menus;
-- drawers/modals used for secondary actions;
-- compact tabular/list controls where appropriate.
-
-Do not force roster cards or operational layouts into Mantine `Card` components if the existing flat layout is clearer.
-
-Exit criteria: event-day controls remain fast and compact, including on narrow mobile screens.
-
-## Step 5 — administration surfaces
-
-Apply the established primitives to:
-
-- event configuration;
-- content administration;
-- pathways administration;
-- staff/account management;
-- reporting and reconciliation controls.
-
-Prefer shared patterns over page-specific component styling.
-
-## Step 6 — selective volunteer-facing adoption
-
-Adopt Mantine only where it improves usability or consistency on volunteer pages. Preserve custom treatment for:
-
-- KELUARGA branding and header presentation;
-- Event Guides;
-- Pathways / skill-tree visualisation;
-- opportunity presentation where bespoke visual treatment is meaningful;
-- product-specific motion and interaction.
-
-Volunteer-facing pages should remain lean and server-rendered where possible.
-
-## Step 7 — CSS consolidation
-
-After migrated components are stable:
-
-- identify unused selectors;
-- remove duplicated button/form/status styles;
-- consolidate responsive rules;
-- preserve product-specific CSS;
-- verify focus, reduced-motion and touch states.
-
-CSS deletion happens only after the relevant page migration is complete.
-
-## Step 8 — hardening
-
-Before declaring the migration complete:
-
-- mobile QA on representative event-day workflows;
-- keyboard and focus-order review;
-- screen-reader label review;
-- reduced-motion verification;
-- bundle / client-boundary review;
-- production build and dependency audit;
-- attendance, multi-shift and walk-in regression testing.
-
-## Explicit non-goals
-
-- No whole-app `AppShell` rewrite at the foundation stage.
-- No automatic conversion of every layout element to Mantine.
-- No changes to Supabase schemas, attendance rules or YM Hub source-of-truth boundaries as part of the UI migration.
-- No visual redesign of KELUARGA unless separately proposed and approved.
+Future UI work should reuse established primitives where useful, remove obsolete CSS after replacement, and validate mobile, keyboard, focus, reduced-motion and event-day workflows before release.

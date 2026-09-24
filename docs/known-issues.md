@@ -1,128 +1,71 @@
 # Known issues, limitations and technical debt
 
-**Last reviewed:** 23 September 2026  
-**Reference branch:** `main`
+**Last reviewed:** 24 September 2026  
+**Reference branch:** `staging`
 
-This register deliberately separates confirmed defects from product limitations, integration dependencies and intentionally deferred work.
+This register reflects the approved KELUARGA + MakLom operating model. See `docs/architecture/keluarga-maklom-domain-architecture.md`.
 
-## Status summary
-
-At the time of this review:
-
-- the first-class KELUARGA registration workflow is implemented; broader recruitment intake and volunteer self-service cancellation/withdrawal remain follow-on work;
-- a default-branch code search found **no explicit `TODO` or `FIXME` markers**;
-- this does **not** mean the application is bug-free;
-- newly confirmed reproducible defects should be opened as GitHub Issues and linked here when material or recurring.
-
-## 1. Open limitations and dependencies
+## Open limitations and decisions
 
 | Area | Status | Limitation / risk | Current handling | Next step |
 |---|---|---|---|---|
-| KELUARGA registration domain | Live foundation | Volunteers can sign up, receive a KEL ID, select shifts and submit registrations; staff can confirm, waitlist or reject, and confirmed registrations populate rosters transactionally. | Capacity is enforced at confirmation and registration status changes generate in-app notifications. | Add volunteer/staff cancellation and withdrawal flows with audited roster-state handling before relying on them operationally. |
-| YM Hub backend reconciliation | Integration dependency | Verified attendance/hours and organisational backend reconciliation depend on a reliable KELUARGA -> YM Hub handoff. | Existing read models fail explicitly rather than fabricating verified records. | Define the Volunteer Management handoff process and build controlled reconciliation state. |
-| YM Hub batch centre | Planned / may be narrowed | The repository has a projection/read-model foundation. Under the new model, inbound registration is no longer required for volunteer-facing operations, but controlled batch tooling may still be needed for backend reconciliation and verified records. | Integration work remains outside the volunteer-facing registration flow. | Scope batch tooling around the final Volunteer Management handoff procedure. |
-| Attendance export to YM Hub | Planned hardening | KELUARGA operational attendance must still be mapped/reconciled into authoritative YM Hub attendance. | Event attendance can be exported; KELUARGA does not claim this is verified YM Hub attendance. | Add formal export-batch tracking, assignment matching and accepted/rejected reconciliation. |
-| YM Hub authentication | Backend-only boundary | Ordinary volunteers should not need YM Hub sign-in for recruitment or registration. | KELUARGA uses its own Supabase Auth session. | Reassess SSO only if a future backend/use case actually requires it. |
-| MakLom handoff | Intentionally deferred | Volunteer Insights are not automatically transferred to MakLom. | Accepted insights remain in KELUARGA and can be exported. | If reactivated, use a reviewed inbox/matching workflow rather than direct profile mutation. |
-| Cross-event impact analytics | Planned feature | Event-level reports are rich, but there is not yet a complete longitudinal impact dashboard across events and volunteers. | Staff can export event attendance, insights, reviews and feedback. | Define agreed impact metrics, then build aggregate reporting without double counting multi-shift volunteers. |
-| Gamification rollout | Policy/integration dependency | Manual points and badges are now available, while attendance-derived awards and automatic milestones still require approved rules plus verified YM Hub attendance. | Roster check-in cannot award points or badges; manual recognition is separately identified, staff-reviewed and audited. | Approve attendance rule values/effective dates, badge/milestone criteria and a staff-use policy before broad automation. |
-| Volunteer.gov.sg import | Retired runtime integration | Historical imported rows remain for provenance, but opportunity discovery and programme operations no longer read from them. | Cron/import/parser and imported-card editing are removed from runtime. | Remove historical database objects only through a later deliberate cleanup migration if retention is no longer useful. |
-| Event Guide sensitive links | Access-policy decision | Guides may contain briefing or WhatsApp links and other operational information. | Database-backed access controls exist, but the intended broad-launch policy must remain explicit. | Confirm which guide sections may be public versus assignment/code/signed-link gated. |
-| `phaseone` naming | Technical debt, not a bug | Historic `phaseone` identifiers remain throughout routes, modules, tables and migrations. | Kept stable to avoid breaking deployed contracts. | Rename only through a planned API/database migration; do not perform cosmetic mass renames. |
+| Shared migration history | Resolved on staging | The database merger originally introduced migration drift. | The three MakLom bootstrap migrations and all architecture migrations have now been recovered from Supabase's applied migration history and committed verbatim to the staging branch. | Keep migration history aligned during production promotion. |
+| Production promotion | Staging only | The canonical identity/contribution/inbox changes in this architecture are not yet promoted to production. | KELUARGA staging is the verification environment. | Complete staging CI/UAT, then promote the same reviewed migrations and code deliberately. |
+| FormSG ingestion | MakLom webhook code ready; external setup pending | MakLom contains the signed FormSG webhook and lead model, but the FormSG webhook configuration/secret still requires controlled production setup and verification. | FormSG remains the public volunteer CTA; duplicate response IDs are designed to be idempotent. | Configure the FormSG webhook secret/endpoint and run one controlled end-to-end submission. |
+| Lead schema coordination | Resolved on staging | KELUARGA staging and MakLom briefly had two incompatible `volunteer_leads` proposals. | Staging now follows MakLom's text-ID/richer lifecycle contract and maps conversion to the canonical UUID. | Keep one shared contract and migrate production only from this reconciled design. |
+| Approved contribution workflow UI | Database foundation live on staging | KELUARGA operational sessions create review candidates, but MakLom still needs a complete staff UI to approve/adjust/reject them. | Records remain pending/needs-review until MakLom acts; KELUARGA cannot self-approve hours. | Build MakLom contribution review queue before production launch of approved-hours display. |
+| Profile-change review UI | Database foundation live on staging | KELUARGA mobile changes can enter the MakLom inbox, but MakLom still needs a dedicated review UI. | Changes retain source and audit context. | Build approve/reject/apply workflow in MakLom. |
+| Insight/review longitudinal UI | Database foundation live on staging | Accepted insights/reviews enter a MakLom inbox but there is no finished cross-event review surface yet. | Event/source provenance is preserved and no permanent profile mutation occurs automatically. | Build MakLom inbox and longitudinal staff view. |
+| Attendance-derived points | Intentionally paused | Previous reconciliation depended on YM Hub verified attendance, which is no longer the current operating model. | Manual audited staff-recognition points remain available. | Define an approved points rule based on MakLom-approved contribution records before reactivating automatic awards. |
+| Dormant YM Hub objects | Technical debt / future infrastructure | `ymhub` and `integration.ymhub_*` schemas still exist and old code/docs may reference them. | Volunteer dashboard and Points no longer require YM Hub on staging. | Continue removing stale runtime references; retain schemas only as dormant future infrastructure until cleanup is approved. |
+| Legacy KELUARGA recruitment tables | Historical only | `keluarga_recruitment_applications` remains in the database. | Public and admin routes are retired; write RPC privileges are revoked on staging. | Keep for provenance until retention requirements permit archival/removal. |
+| Legacy KELUARGA contribution-credit table | Historical only | `keluarga_contribution_credits` predates the reviewed MakLom contribution ledger. | New attendance-derived hours use `volunteer_contributions`; legacy refresh RPC is retired on staging. | Migrate/retain historical rows as required, then remove the legacy write path permanently. |
+| Legacy MakLom event/attendance tables | Historical | MakLom has its own older `events`, `event_shifts` and `attendance_log`. | KELUARGA `phaseone_events` is canonical for new operations; MakLom events can link by `keluarga_event_id`. | Define archival/read-model treatment before any table deletion. |
+| Event Guide sensitive links | Access-policy decision | Guides may contain briefing or WhatsApp links and other operational information. | Existing database-backed access controls remain. | Confirm which guide sections may be public versus assignment/code/signed-link gated. |
+| `phaseone` naming | Technical debt, not a bug | Historic identifiers remain in routes/modules/tables. | Kept stable to avoid breaking deployed contracts. | Rename only through a deliberate API/database migration. |
 
-## 2. Attendance and identity watch-points
+## Identity watch-points
 
-These are high-risk regression areas because event-day data spans multiple shifts and several downstream features.
+- `core.volunteers.id` is the canonical person key.
+- `public.volunteers.id` is a retained MakLom legacy/profile identifier, not a second canonical person identity.
+- Email/mobile are matching evidence only.
+- `attendance_person_key` is event-local continuity and must never become the organisation-wide identity.
+- Ambiguous matches must enter a review workflow rather than being silently merged.
 
-### Cross-shift identity continuity
+## Attendance and hours watch-points
 
-A volunteer can appear in more than one shift and can remain checked in across adjacent shifts. The operational identity is represented by `attendance_person_key`.
+- KELUARGA check-in/out is operational evidence.
+- Completed sessions may populate `volunteer_contributions` as pending review candidates.
+- Only MakLom-approved records are approved volunteer hours in the current operating model.
+- A correction to an already-approved session must return the contribution to `needs_review`.
+- Multi-shift reporting must distinguish unique people, roster rows, event participation, shift attendance and continuous attendance sessions.
 
-Watch for regressions where:
+## Review interpretation
 
-- AM and PM rows become separate people after editing contact details;
-- a walk-in correction updates only one shift;
-- a review or insight becomes detached after an email/name correction;
-- a later-shift extension creates duplicate attendance rather than a continuation;
-- a final checkout does not close the effective attendance session.
+Event reviews and insights describe a specific role/event context. They must retain provenance and must not be presented as permanent judgements of a volunteer's character or suitability without human review.
 
-The current implementation includes regression coverage for continuous attendance and cross-shift walk-in corrections.
+## Security boundaries
 
-### Operational identity is not canonical organisation identity
+- KELUARGA authorization uses `core.user_roles`.
+- MakLom authorization uses `public.app_members`.
+- KELUARGA and MakLom authorization are enforced separately. The intentional exception is KELUARGA `admin`, which transactionally provisions MakLom `admin`; lower KELUARGA roles do not gain MakLom access.
+- Service-role credentials never belong in browser code.
+- RLS remains a second enforcement layer for sensitive shared tables.
+- Prospective-volunteer leads remain separate from canonical volunteers until deliberate conversion.
 
-`attendance_person_key` exists to preserve event-level continuity. It must **not** be treated as:
-
-- a Salesforce Person Account ID;
-- the canonical `core.volunteers.id`;
-- a MakLom volunteer ID;
-- a permanent identifier to exchange between systems.
-
-Future integration should map operational event records from the stable KELUARGA volunteer identity to the corresponding YM Hub backend record through controlled reconciliation.
-
-### Official hours
-
-KELUARGA timestamps can support reconciliation, but they must not silently become final verified volunteer hours. Official attendance and verified hours remain YM Hub-owned.
-
-## 3. Reporting watch-points
-
-### Multi-shift counting
-
-A single person may have multiple roster rows for one event. Any aggregate metric must state whether it counts:
-
-- unique volunteers;
-- roster/deployment records;
-- shifts;
-- attendance sessions; or
-- event participations.
-
-Do not sum shift rows and label the result as unique volunteers.
-
-### Review interpretation
-
-The 1–5 review is intended to describe role/event performance. It should not be presented as a permanent judgement of a volunteer's character or suitability without context and staff review.
-
-### Insight promotion
-
-Accepted event insights are reviewed observations, not automatically canonical profile facts. Any future central-profile update should preserve provenance and allow human review/correction.
-
-## 4. Integration failure modes to preserve
-
-Future development must keep the current fail-closed principles:
-
-- failed YM Hub handoffs/imports must not invalidate a valid KELUARGA registration or produce substitute verified records;
-- stale backend data must be distinguishable from current KELUARGA operational state;
-- ambiguous identity matches must enter an exception workflow rather than auto-linking;
-- failed/partial authoritative attendance imports must not award points;
-- no Salesforce/service-role credentials may reach browser code;
-- unknown external status values should be rejected or quarantined rather than guessed.
-
-## 5. Recently resolved defects and regressions
-
-Keep these here because they are useful regression history even though they are not open bugs.
+## Recently resolved
 
 | Area | Resolved behaviour |
 |---|---|
-| Password recovery | Recovery links now enter the password-reset flow instead of acting like ordinary sign-in links and redirecting to the dashboard. |
-| Supabase session refresh | Server request cookie/session forwarding was corrected so authenticated requests do not continue using stale JWT state. |
-| Roster duplicates | Duplicate and match handling was hardened across available identifiers, including Singapore mobile normalization. |
-| Walk-ins | Duplicate walk-in handling and service-role protections were hardened. |
-| Attendance transitions | Invalid state transitions are enforced server-side rather than relying only on UI controls. |
-| Continuous shifts | Attendance now supports continuity across adjacent shifts and early/final checkout cases. |
-| Walk-in typo correction | Correcting a walk-in's name/email/mobile now propagates across that event's matching shift rows while retaining the same attendance/review/insight identity. |
-| Slice 6 pathway privacy | Personal pathway reads use an account-scoped RPC, browser roles have no direct pathway-position table access, and self-only RLS remains as defense in depth (Issue #160). |
+| Recruitment ownership | KELUARGA recruitment UI is retired; public volunteer CTAs use FormSG and MakLom owns lead review/conversion. |
+| Canonical volunteer identity | Staging MakLom profiles now have a mandatory one-to-one `core_volunteer_id` and retained legacy alias. |
+| New MakLom profile creation | Database triggers create/link the canonical UUID and legacy alias automatically. |
+| Event ownership | MakLom legacy events can reference canonical KELUARGA events; KELUARGA owns new operational event records. |
+| Contribution approval boundary | KELUARGA can generate/refresh candidates but cannot approve attendance-derived hours. |
+| YM Hub dashboard dependency | Volunteer dashboard and Points page no longer require YM Hub projection state on staging. |
+| Continuous shifts | Attendance supports continuity across adjacent shifts and final checkout. |
+| Walk-in corrections | Corrections propagate across matching event shift rows while retaining event identity continuity. |
 
-## 6. How to record new bugs
+## Recording new defects
 
-For a confirmed defect, create a GitHub Issue with:
-
-1. affected route/feature;
-2. reproducible steps;
-3. expected behaviour;
-4. actual behaviour;
-5. event/account conditions needed to reproduce;
-6. screenshots/logs with personal data removed;
-7. severity and operational impact;
-8. whether data integrity or security is involved;
-9. regression test required before closure.
-
-Data-integrity, authentication, authorization, RLS or cross-shift identity defects should be treated as higher priority than cosmetic issues.
+For a confirmed defect, record the affected feature, reproducible steps, expected/actual behaviour, account/event conditions, operational impact, data/security implications and required regression coverage. Identity, authorization, RLS and attendance-integrity defects are higher priority than cosmetic issues.
