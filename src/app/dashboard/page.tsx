@@ -238,6 +238,7 @@ export default async function DashboardPage({
     throw new Error("Linked volunteer is missing its YM Hub read-model result");
   }
 
+  const isAdmin = roles.includes("admin");
   const canManageContent = hasContentManagerRole(roles);
   const canManageGamification = hasGamificationManagerRole(roles);
   const canManagePathways = hasPathwayManagerRole(roles);
@@ -273,6 +274,11 @@ export default async function DashboardPage({
             <Link className="button button-secondary" href="/opportunities">
               View opportunities
             </Link>
+            {isAdmin ? (
+              <Link className="button button-secondary" href="/admin">
+                Admin
+              </Link>
+            ) : null}
             {canManageContent ? (
               <Link className="button button-secondary" href="/admin/content">
                 Manage content
@@ -613,11 +619,28 @@ export default async function DashboardPage({
           </div>
         </section>
 
-        {canManageContent || canManageGamification || canManagePathways ? (
+        {isAdmin || canManageContent || canManageGamification || canManagePathways ? (
           <section className="section" aria-labelledby="staff-tools-title">
             <p className="eyebrow">Staff tools</p>
             <h2 id="staff-tools-title">Management access</h2>
             <div className="card-grid">
+              {isAdmin ? (
+                <article className="card">
+                  <h3>Administration</h3>
+                  <p className="muted">
+                    Open the central staff administration hub, including staff access
+                    and operational tools.
+                  </p>
+                  <div className="staff-tool-links">
+                    <Link className="text-link" href="/admin">
+                      Open admin
+                    </Link>
+                    <Link className="text-link" href="/admin/staff">
+                      Manage staff access
+                    </Link>
+                  </div>
+                </article>
+              ) : null}
               {canManageContent ? (
                 <article className="card">
                   <h3>Content management</h3>
@@ -635,13 +658,14 @@ export default async function DashboardPage({
                   <p className="muted">
                     Award audited staff-recognition points to KELUARGA volunteers.
                   </p>
-                  <Link className="text-link" href="/admin/points">
-                    Manage volunteer points
-                  </Link>
-                  <br />
-                  <Link className="text-link" href="/admin/badges">
-                    Manage badges
-                  </Link>
+                  <div className="staff-tool-links">
+                    <Link className="text-link" href="/admin/points">
+                      Manage volunteer points
+                    </Link>
+                    <Link className="text-link" href="/admin/badges">
+                      Manage badges
+                    </Link>
+                  </div>
                 </article>
               ) : null}
               {canManagePathways ? (
@@ -650,13 +674,14 @@ export default async function DashboardPage({
                   <p className="muted">
                     Edit and publish the volunteer pathway map.
                   </p>
-                  <Link className="text-link" href="/admin/pathways">
-                    Manage pathway map
-                  </Link>
-                  <br />
-                  <Link className="text-link" href="/admin/pathways/positions">
-                    Manage volunteer positions
-                  </Link>
+                  <div className="staff-tool-links">
+                    <Link className="text-link" href="/admin/pathways">
+                      Manage pathway map
+                    </Link>
+                    <Link className="text-link" href="/admin/pathways/positions">
+                      Manage volunteer positions
+                    </Link>
+                  </div>
                 </article>
               ) : null}
             </div>
