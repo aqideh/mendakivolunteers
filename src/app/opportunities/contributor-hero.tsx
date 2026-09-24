@@ -8,7 +8,7 @@ import styles from "./contributor-hero.module.css";
 const states = [
   {
     key: "volunteer",
-    title: "Serve with a Hearth, One Keluarga.",
+    title: "Serve with a Heart, One Keluarga.",
     description:
       "Join upcoming community activities and events that match your interests and availability. Contribute your time through practical volunteer roles that support programme delivery.",
     background: "/home/keluarga-volunteers-hero.jpeg",
@@ -17,7 +17,7 @@ const states = [
     key: "contribute",
     title: "Transform Ideas into Community Impact",
     description:
-      "Have an Idea that can benefit MENDAKI volunteers? Individuals, community groups, and organisations are welcome to propose projects that enhance volunteers' skills, well-being, recognition, or overall volunteering experience.",
+      "Have an idea that benefits MENDAKI volunteers? Individuals, community groups, and organisations are welcome to propose projects that enhance volunteers' skills, well-being, recognition, or overall volunteering experience.",
     background: "/home/keluarga-volunteers-hero.jpeg",
   },
   {
@@ -49,7 +49,6 @@ const ctas = [
 
 export function ContributorHero() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const active = states[activeIndex] ?? states[0];
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -58,17 +57,27 @@ export function ContributorHero() {
 
     const timer = window.setInterval(() => {
       setActiveIndex((index) => (index + 1) % states.length);
-    }, 6500);
+    }, 8000);
 
     return () => window.clearInterval(timer);
   }, []);
 
   return (
-    <section
-      className={styles.hero}
-      aria-labelledby="contributor-hero-title"
-      style={{ "--hero-image": `url("${active.background}")` } as CSSProperties}
-    >
+    <section className={styles.hero} aria-labelledby="contributor-hero-title">
+      <div className={styles.heroBackgrounds} aria-hidden="true">
+        {states.map((state, index) => (
+          <div
+            className={
+              index === activeIndex
+                ? `${styles.heroBackground} ${styles.heroBackgroundActive}`
+                : styles.heroBackground
+            }
+            key={state.key}
+            style={{ "--state-image": `url("${state.background}")` } as CSSProperties}
+          />
+        ))}
+      </div>
+
       <div className={styles.heroInner}>
         <Link className={styles.backLink} href="/">
           <span aria-hidden="true">←</span>
@@ -77,13 +86,31 @@ export function ContributorHero() {
 
         <div className={styles.heroContent}>
           <div className={styles.heroCopy}>
-            <h1 id="contributor-hero-title">{active.title}</h1>
-            <p>{active.description}</p>
+            {states.map((state, index) => {
+              const isActive = index === activeIndex;
+
+              return (
+                <div
+                  aria-hidden={!isActive}
+                  className={
+                    isActive
+                      ? `${styles.heroCopyState} ${styles.heroCopyStateActive}`
+                      : styles.heroCopyState
+                  }
+                  key={state.key}
+                >
+                  <h1 id={isActive ? "contributor-hero-title" : undefined}>
+                    {state.title}
+                  </h1>
+                  <p>{state.description}</p>
+                </div>
+              );
+            })}
           </div>
 
           <div className={styles.heroActions} aria-label="Ways to contribute">
             {ctas.map((cta) => {
-              const highlighted = cta.key === active.key;
+              const highlighted = cta.key === states[activeIndex]?.key;
               const className = highlighted
                 ? styles.primaryAction
                 : styles.secondaryAction;
