@@ -4,10 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/staff-access";
-import {
-  type StaffInviteRole,
-  staffInviteRoleValues,
-} from "@/lib/auth/staff-roles";
+import { staffInviteRoleValues } from "@/lib/auth/staff-roles";
 import { getPublicConfig } from "@/lib/env";
 import {
   buildPasswordSetupUrl,
@@ -37,167 +34,55 @@ export type StaffRoleMutationResult = Readonly<
   | { ok: false; message: string }
 >;
 
-async function grantStaffRoleRecord(
-  userId: string,
-  role: StaffInviteRole,
+async function setStaffAccessLevel(
+  targetUserId: string,
+  role: (typeof staffInviteRoleValues)[number],
   grantedBy: string,
-) {
+): Promise<StaffRoleMutationResult> {
   const admin = getPhaseOneAdminClient();
-  return admin
-    .schema("core")
-    .from("user_roles")
-    .upsert(
-      {
-        user_id: userId,
-        role,
-        granted_by: grantedBy,
-        reason: "Staff access granted through KELUARGA administration",
-      },
-      { onConflict: "user_id,role" },
-    );
+  const { error } = await admin.schema("core").rpc("set_staff_access_level", {
+    p_user_id: targetUserId,
+    p_role: role,
+    p_granted_by: grantedBy,
+  });
+
+  if (error) {
+    console.error("Unable to set staff access level", {
+      code: error.code,
+      targetUserId,
+      role,
+    });
+    const message = error.message.includes("at least one active administrator")
+      ? "KELUARGA must retain at least one active Admin."
+      : error.message.includes("Inactive staff accounts")
+        ? "Reactivate this account before changing its access level."
+        : "The staff access level could not be changed.";
+    return { ok: false, message };
+  }
+
+  revalidatePath("/admin/staff");
+  revalidatePath("/dashboard");
+  return {
+    ok: true,
+    message:
+      role === "admin"
+        ? "Access updated. Admin access includes MakLom administrator access."
+        : "Access level updated.",
+  };
 }
 
-async function loadTargetStaffAccount(userId: string) {
-  const admin = getPhaseOneAdminClient();
-  return admin
-    .schema("core")
-    .from("user_accounts")
-    .select("id, status")
-    .eq("id", userId)
-    .maybeSingle();
-}
-
-export async function grantStaffRole(input: {
+export async function updateStaffRole(input: {
   userId: string;
   role: string;
 }): Promise<StaffRoleMutationResult> {
   const parsedUserId = userIdSchema.safeParse(input.userId);
   const parsedRole = roleSchema.safeParse(input.role);
-
   if (!parsedUserId.success || !parsedRole.success) {
     return { ok: false, message: "Select a valid staff account and role." };
   }
 
   const { userId: grantedBy } = await requireAdmin();
-  const target = await loadTargetStaffAccount(parsedUserId.data);
-
-  if (target.error || !target.data) {
-    console.error("Unable to load staff account before granting role", {
-      code: target.error?.code,
-      targetUserId: parsedUserId.data,
-    });
-    return { ok: false, message: "The staff account could not be loaded." };
-  }
-
-  if (target.data.status === "suspended" || target.data.status === "closed") {
-    return {
-      ok: false,
-      message: "Reactivate this account before granting additional staff access.",
-    };
-  }
-
-  const result = await grantStaffRoleRecord(
-    parsedUserId.data,
-    parsedRole.data,
-    grantedBy,
-  );
-
-  if (result.error) {
-    console.error("Unable to grant staff role", {
-      code: result.error.code,
-      targetUserId: parsedUserId.data,
-      role: parsedRole.data,
-    });
-    return { ok: false, message: "The role could not be granted." };
-  }
-
-  revalidatePath("/admin/staff");
-  revalidatePath("/dashboard");
-  return { ok: true, message: "Role granted." };
-}
-
-export async function revokeStaffRole(input: {
-  userId: string;
-  role: string;
-}): Promise<StaffRoleMutationResult> {
-  const parsedUserId = userIdSchema.safeParse(input.userId);
-  const parsedRole = roleSchema.safeParse(input.role);
-
-  if (!parsedUserId.success || !parsedRole.success) {
-    return { ok: false, message: "Select a valid staff account and role." };
-  }
-
-  await requireAdmin();
-  const admin = getPhaseOneAdminClient();
-
-  if (parsedRole.data === "admin") {
-    const adminRolesResult = await admin
-      .schema("core")
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin");
-
-    if (adminRolesResult.error) {
-      console.error("Unable to verify administrator assignments", {
-        code: adminRolesResult.error.code,
-      });
-      return {
-        ok: false,
-        message: "Administrator coverage could not be verified, so no access was changed.",
-      };
-    }
-
-    const adminIds = (adminRolesResult.data ?? []).map(({ user_id }) => user_id);
-    const activeAccountsResult = adminIds.length
-      ? await admin
-          .schema("core")
-          .from("user_accounts")
-          .select("id")
-          .in("id", adminIds)
-          .eq("status", "active")
-      : { data: [], error: null };
-
-    if (activeAccountsResult.error) {
-      console.error("Unable to verify active administrators", {
-        code: activeAccountsResult.error.code,
-      });
-      return {
-        ok: false,
-        message: "Administrator coverage could not be verified, so no access was changed.",
-      };
-    }
-
-    const activeAdminIds = new Set(
-      (activeAccountsResult.data ?? []).map(({ id }) => String(id)),
-    );
-
-    if (activeAdminIds.has(parsedUserId.data) && activeAdminIds.size <= 1) {
-      return {
-        ok: false,
-        message: "KELUARGA must retain at least one active administrator.",
-      };
-    }
-  }
-
-  const { error } = await admin
-    .schema("core")
-    .from("user_roles")
-    .delete()
-    .eq("user_id", parsedUserId.data)
-    .eq("role", parsedRole.data);
-
-  if (error) {
-    console.error("Unable to revoke staff role", {
-      code: error.code,
-      targetUserId: parsedUserId.data,
-      role: parsedRole.data,
-    });
-    return { ok: false, message: "The role could not be removed." };
-  }
-
-  revalidatePath("/admin/staff");
-  revalidatePath("/dashboard");
-  return { ok: true, message: "Role removed." };
+  return setStaffAccessLevel(parsedUserId.data, parsedRole.data, grantedBy);
 }
 
 export async function inviteStaffMember(
@@ -240,16 +125,13 @@ export async function inviteStaffMember(
     };
   }
 
-  const roleResult = await grantStaffRoleRecord(
+  const roleResult = await setStaffAccessLevel(
     data.user.id,
     parsedRole.data,
     grantedBy,
   );
 
-  if (roleResult.error) {
-    console.error("Unable to grant invited staff role", {
-      code: roleResult.error.code,
-    });
+  if (!roleResult.ok) {
     const rollback = await admin.auth.admin.deleteUser(data.user.id);
     if (rollback.error) {
       console.error("Unable to roll back incomplete staff invitation", {
@@ -259,16 +141,16 @@ export async function inviteStaffMember(
     }
     return {
       status: "error",
-      message:
-        "The invitation could not be completed. No staff access was granted; try again.",
+      message: "The invitation could not be completed. No staff access was granted.",
     };
   }
 
-  revalidatePath("/admin/staff");
   return {
     status: "success",
     message:
-      "Invitation sent. The staff member can use the email link to choose a password and activate their account.",
+      parsedRole.data === "admin"
+        ? "Invitation sent. Admin access includes MakLom administrator access."
+        : "Invitation sent. The staff member can use the email link to choose a password and activate their account.",
   };
 }
 
@@ -287,10 +169,6 @@ export async function sendStaffSetupEmail(
     await admin.auth.admin.getUserById(parsedUserId.data);
 
   if (userError || !userResult.user.email) {
-    console.error("Unable to load staff account for setup email", {
-      code: userError?.code,
-      status: userError?.status,
-    });
     return { status: "error", message: "The setup email could not be sent." };
   }
 
@@ -302,10 +180,6 @@ export async function sendStaffSetupEmail(
   );
 
   if (error) {
-    console.error("Unable to send staff setup email", {
-      code: error.code,
-      status: error.status,
-    });
     return { status: "error", message: "The setup email could not be sent." };
   }
 
@@ -320,21 +194,14 @@ export async function createStaffSetupLink(
   formData: FormData,
 ): Promise<StaffSetupLinkState> {
   const parsedUserId = userIdSchema.safeParse(formData.get("userId"));
-
   if (!parsedUserId.success) {
-    return {
-      status: "error",
-      message: "Select a valid staff account.",
-      link: "",
-    };
+    return { status: "error", message: "Select a valid staff account.", link: "" };
   }
 
   const { userId: createdBy } = await requireAdmin();
   const rawToken = generatePasswordSetupToken();
   const tokenHash = hashPasswordSetupToken(rawToken);
-  const expiresAt = new Date(
-    Date.now() + PASSWORD_SETUP_TOKEN_TTL_MS,
-  ).toISOString();
+  const expiresAt = new Date(Date.now() + PASSWORD_SETUP_TOKEN_TTL_MS).toISOString();
   const admin = getPhaseOneAdminClient();
   const { error } = await admin.schema("core").rpc(
     "issue_staff_password_setup_token",
@@ -347,9 +214,6 @@ export async function createStaffSetupLink(
   );
 
   if (error) {
-    console.error("Unable to issue staff password setup link", {
-      code: error.code,
-    });
     return {
       status: "error",
       message: "A setup link could not be created for this staff account.",
