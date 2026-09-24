@@ -16,6 +16,7 @@ export async function PortalHeader({
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   const isSignedIn = !error && Boolean(userId);
+  let canManageAdmin = false;
   let canManageEvents = false;
   let canManagePoints = false;
   let canManageVolunteers = false;
@@ -32,7 +33,13 @@ export async function PortalHeader({
         rolesCode: rolesError.code,
       });
     } else {
-      canManageEvents = (roleRows ?? []).some(({ role }) => role === "admin");
+      canManageAdmin = (roleRows ?? []).some(({ role }) => role === "admin");
+      canManageEvents = (roleRows ?? []).some(
+        ({ role }) =>
+          role === "admin" ||
+          role === "attendance_manager" ||
+          role === "programme_manager",
+      );
       canManageVolunteers = (roleRows ?? []).some(
         ({ role }) => role === "admin" || role === "support_officer",
       );
@@ -51,9 +58,9 @@ export async function PortalHeader({
       >
         <Image
           className="brand-logo"
-          src="/brand/yayasan-mendaki-yellow.png"
-          width={2048}
-          height={1228}
+          src="/brand/yayasan-mendaki.webp"
+          width={1000}
+          height={700}
           alt=""
           priority
           unoptimized
@@ -74,6 +81,7 @@ export async function PortalHeader({
           </span>
         </Link>
         <PortalNav
+          canManageAdmin={canManageAdmin}
           canManageEvents={canManageEvents}
           canManagePoints={canManagePoints}
           canManageVolunteers={canManageVolunteers}
