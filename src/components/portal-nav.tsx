@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 type PortalNavProps = Readonly<{
-  canManageAdmin: boolean;
   canManageEvents: boolean;
   canManagePoints: boolean;
   canManageVolunteers: boolean;
@@ -15,16 +14,13 @@ type PortalNavProps = Readonly<{
 type NavigationItem = Readonly<{
   href: string;
   label: string;
-  exact?: boolean;
 }>;
 
 function matchesPath(pathname: string, item: NavigationItem): boolean {
-  if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 export function PortalNav({
-  canManageAdmin,
   canManageEvents,
   canManagePoints,
   canManageVolunteers,
@@ -37,9 +33,6 @@ export function PortalNav({
     { href: "/faq", label: "FAQ" },
   ];
 
-  if (canManageAdmin) {
-    items.push({ href: "/admin", label: "Admin", exact: true });
-  }
 
   if (canManageVolunteers) {
     items.push({ href: "/admin/recruitment", label: "Volunteer Recruitment" });
