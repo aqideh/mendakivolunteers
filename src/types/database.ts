@@ -213,6 +213,14 @@ export type Database = {
         Args: { p_user_id: string };
         Returns: string;
       };
+      set_staff_access_level: {
+        Args: {
+          p_user_id: string;
+          p_role: AppRole;
+          p_granted_by: string;
+        };
+        Returns: string;
+      };
       get_current_points_snapshot: {
         Args: Record<never, never>;
         Returns: Json;
