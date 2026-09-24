@@ -698,7 +698,7 @@ begin
     join core.user_roles roles on roles.user_id = accounts.id
     where accounts.id = p_actor_user_id
       and accounts.status = 'active'
-      and roles.role in ('volteam', 'admin')
+      and roles.role::text in ('volteam', 'admin')
   ) then
     raise exception 'Volunteer Team authorization is required'
       using errcode = '42501';
