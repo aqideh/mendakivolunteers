@@ -32,7 +32,7 @@ export default function CoachPage() {
       ctas={[
         {
           href: "/volunteer/interest?area=coach",
-          label: "Register your interest",
+          label: "Volunteer",
         },
       ]}
     />
