@@ -5,6 +5,7 @@ import { StaffInviteForm } from "@/app/admin/staff/staff-invite-form";
 import { StaffSetupLinkForm } from "@/app/admin/staff/staff-setup-link-form";
 import { PortalHeader } from "@/components/portal-header";
 import { requireAdmin } from "@/lib/auth/staff-access";
+import { staffInviteRoleValues } from "@/lib/auth/staff-roles";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import type { AccountStatus, AppRole } from "@/types/database";
@@ -34,7 +35,7 @@ async function loadStaffAccounts(): Promise<StaffAccount[]> {
       .schema("core")
       .from("user_roles")
       .select("user_id, role")
-      .in("role", ["attendance_manager", "pathway_manager", "admin"]),
+      .in("role", [...staffInviteRoleValues]),
     admin.auth.admin.listUsers({ page: 1, perPage: 200 }),
   ]);
 
