@@ -33,7 +33,7 @@ export default function FacilitatorPage() {
       ctas={[
         {
           href: "/volunteer/interest?area=facilitator",
-          label: "Register your interest",
+          label: "Volunteer",
         },
       ]}
     />
