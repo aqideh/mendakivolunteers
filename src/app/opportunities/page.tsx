@@ -25,7 +25,7 @@ export default async function OpportunitiesPage() {
         {opportunities.length > 0 ? (
           <section
             id="opportunity-cards"
-            className="phaseone-opportunity-list phaseone-opportunities-grid"
+            className="phaseone-opportunity-list phaseone-opportunities-grid phaseone-opportunities-peek"
             aria-label="Upcoming volunteer opportunities"
           >
             {opportunities.map((opportunity) => (
