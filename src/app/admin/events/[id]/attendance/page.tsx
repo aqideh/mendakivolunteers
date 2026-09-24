@@ -809,7 +809,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
 
                       {canManageEvent ? (
-                      {usesInheritedSession ? (
+                        usesInheritedSession ? (
                         <p className="muted phaseone-inherited-note">
                           This shift inherits the volunteer&apos;s event-day check-in. Attendance corrections should be made on the shift where they originally checked in.
                         </p>
@@ -841,7 +841,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             <button className="button button-secondary" type="submit">Save correction</button>
                           </form>
                         </details>
-                      )}
+                      )
                       ) : null}
                     </article>
                   );
