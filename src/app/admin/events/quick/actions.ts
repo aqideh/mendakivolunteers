@@ -28,8 +28,10 @@ const quickEventSchema = z
   })
   .superRefine((value, context) => {
     if (
+      isValidSingaporeDateTimeLocal(value.startsAt) &&
+      isValidSingaporeDateTimeLocal(value.endsAt) &&
       singaporeDateTimeLocalToIso(value.endsAt) <=
-      singaporeDateTimeLocalToIso(value.startsAt)
+        singaporeDateTimeLocalToIso(value.startsAt)
     ) {
       context.addIssue({
         code: "custom",
