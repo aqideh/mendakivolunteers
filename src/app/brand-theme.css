@@ -291,3 +291,21 @@ h6 {
     height: auto;
   }
 }
+
+
+/* Primary CTA treatment: black background, yellow text, white decorative icons. */
+.button-primary,
+.button-primary:hover {
+  border-color: #000000;
+  color: var(--primary);
+  background: #000000;
+}
+
+.button-primary:hover {
+  background: var(--brand-strong);
+}
+
+.button-primary span[aria-hidden="true"],
+.button-primary svg {
+  color: #ffffff;
+}
