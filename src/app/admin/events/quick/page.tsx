@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireProgrammeManager } from "@/lib/auth/event-access";
 import { createQuickEvent } from "./actions";
 
 export const metadata: Metadata = { title: "Quick Event Operations" };
@@ -20,7 +20,7 @@ function parameter(
 }
 
 export default async function QuickEventPage({ searchParams }: PageProps) {
-  await requireEventManager("/admin/events/quick");
+  await requireProgrammeManager("/admin/events/quick");
   const params = await searchParams;
   const error = parameter(params, "error");
 
