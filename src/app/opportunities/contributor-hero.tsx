@@ -7,43 +7,43 @@ import styles from "./contributor-hero.module.css";
 
 const states = [
   {
-    key: "specialist",
-    title: "Contribute your expertise.",
+    key: "volunteer",
+    title: "Serve with a Hearth, One Keluarga.",
     description:
-      "Use your professional, technical, or specialist skills to support MENDAKI initiatives where your experience can make a focused difference.",
+      "Join upcoming community activities and events that match your interests and availability. Contribute your time through practical volunteer roles that support programme delivery.",
+    background: "/home/keluarga-volunteers-hero.jpeg",
+  },
+  {
+    key: "contribute",
+    title: "Transform Ideas into Community Impact",
+    description:
+      "Have an Idea that can benefit MENDAKI volunteers? Individuals, community groups, and organisations are welcome to propose projects that enhance volunteers' skills, well-being, recognition, or overall volunteering experience.",
     background: "/home/keluarga-volunteers-hero.jpeg",
   },
   {
     key: "donate",
-    title: "Support the community through giving.",
+    title: "Every Gift Creates Impact",
     description:
-      "Contribute resources that help MENDAKI sustain programmes, opportunities, and support for the community.",
+      "Your contribution supports MENDAKI's efforts to uplift individuals and families through education and community programmes. Every donation helps create opportunities, empower aspirations and build brighter futures for the Malay/Muslim community.",
     background: "/volunteer/mentor/mendaki-ampowered.png",
-  },
-  {
-    key: "volunteer",
-    title: "Volunteer where help is needed.",
-    description:
-      "Join upcoming community activities and events, and contribute your time directly through practical volunteer roles.",
-    background: "/home/keluarga-volunteers-hero.jpeg",
   },
 ] as const;
 
 const ctas = [
   {
-    key: "specialist",
-    label: "Volunteer as a Specialist",
-    href: "/volunteer/specialist",
+    key: "volunteer",
+    label: "Volunteer",
+    href: "#opportunity-cards",
+  },
+  {
+    key: "contribute",
+    label: "Contribute",
+    href: null,
   },
   {
     key: "donate",
     label: "Donate",
-    href: "https://www.mendaki.org.sg/",
-  },
-  {
-    key: "volunteer",
-    label: "Volunteer",
-    href: "#opportunity-cards",
+    href: "https://www.mendaki.org.sg/campaign-listing",
   },
 ] as const;
 
@@ -87,6 +87,20 @@ export function ContributorHero() {
               const className = highlighted
                 ? styles.primaryAction
                 : styles.secondaryAction;
+
+              if (!cta.href) {
+                return (
+                  <button
+                    aria-disabled="true"
+                    className={`${className} ${styles.pendingAction}`}
+                    key={cta.key}
+                    type="button"
+                  >
+                    <span>{cta.label}</span>
+                    <span aria-hidden="true">↗</span>
+                  </button>
+                );
+              }
 
               if (cta.href.startsWith("#")) {
                 return (

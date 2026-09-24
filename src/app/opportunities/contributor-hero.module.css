@@ -108,6 +108,10 @@
   gap: 1.25rem;
   border-radius: 0.65rem;
   padding: 0.7rem 1rem 0.6rem;
+  color: var(--primary);
+  background: #000000;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.16);
+  font: inherit;
   font-weight: 800;
   text-decoration: none;
   transition:
@@ -119,24 +123,31 @@
 }
 
 .primaryAction {
-  border: 1px solid var(--accent-strong);
-  border-bottom: 3px solid #0e6973;
-  color: #ffffff;
-  background: var(--accent-strong);
-  box-shadow: 0 10px 24px rgba(22, 139, 152, 0.22);
+  border: 2px solid var(--primary);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
 .secondaryAction {
-  border: 1px solid rgba(22, 139, 152, 0.22);
-  border-bottom-width: 3px;
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 5px 14px rgba(55, 58, 54, 0.06);
+  border: 2px solid rgba(0, 0, 0, 0.72);
+}
+
+.primaryAction span:last-child,
+.secondaryAction span:last-child {
+  color: #ffffff;
 }
 
 .primaryAction:hover,
 .secondaryAction:hover {
+  border-color: var(--primary);
+  background: var(--brand-strong);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
   transform: translateY(-1px);
+}
+
+.pendingAction {
+  width: 100%;
+  cursor: default;
+  text-align: left;
 }
 
 .pagination {
@@ -152,12 +163,12 @@
   border: 0;
   border-radius: 999px;
   padding: 0;
-  background: rgba(22, 139, 152, 0.22);
+  background: rgba(0, 0, 0, 0.28);
   cursor: pointer;
 }
 
 .paginationDot[aria-pressed="true"] {
-  background: var(--accent-strong);
+  background: var(--primary);
 }
 
 @media (max-width: 760px) {
