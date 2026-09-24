@@ -326,3 +326,13 @@ h6 {
     backdrop-filter: none;
   }
 }
+
+
+/* Profile dashboard is an application surface, not a promotional hero. */
+.profile-dashboard-shell {
+  background: var(--surface);
+}
+
+.profile-dashboard-shell .profile-dashboard-header {
+  background: transparent;
+}
