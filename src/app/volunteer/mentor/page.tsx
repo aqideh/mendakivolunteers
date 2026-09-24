@@ -39,7 +39,7 @@ export default function MentorPage() {
 
               <Link
                 className={styles.primaryAction}
-                href="/volunteer/interest?area=mentor"
+                href="https://form.gov.sg/6ab08df24e9cff0f3ac1af45"
               >
                 <span>Volunteer</span>
                 <span aria-hidden="true">↗</span>
