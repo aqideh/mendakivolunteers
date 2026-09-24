@@ -14,7 +14,7 @@ YM Hub/Salesforce is dormant future downstream integration and is not part of th
 Work through these in order unless a production defect takes priority.
 
 - [ ] **Reconcile KELUARGA staging for production.** Build a clean production change set rather than merging the diverged branch wholesale. Include the approved role model, MakLom admin bridge, retired KELUARGA recruitment workflow, FormSG CTAs, landing/login changes and shared architecture.
-- [ ] **Run shared-database production migration rehearsal.** Verify canonical identity, MakLom profile links, current production leads, aliases, contribution candidates and review inboxes against production-shaped data.
+- [x] **Run shared-database production migration rehearsal.** Passed on 25 September 2026 using rollback-only production SQL. Production has 574/574 linked MakLom profiles, and the production-specific bridge migration is committed.
 - [ ] **Finish MakLom React + Mantine changeover.** Rebuild Events, Attendance and Imports with feature parity, then switch production and retire the superseded static/Web Awesome runtime.
 - [ ] **Build MakLom Contribution Review UI.** Pending/needs-review queue, approve, adjust minutes, reject, audit history and reviewer metadata.
 - [ ] **Build MakLom Profile Change Review UI.** Review KELUARGA-submitted contact/profile proposals with approve/reject/apply actions.
