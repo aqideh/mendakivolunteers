@@ -1,7 +1,7 @@
 # Feature inventory
 
 **Snapshot date:** 24 September 2026  
-**Reference branch:** `main`  
+**Reference branch:** `staging`  
 **Reference commit at start of review:** `aacb313211268bd76c7de6d2b3c35939c9317b90`
 
 This file records implemented capability, not aspirational scope. A feature is listed as implemented when the current application or production migrations contain the relevant routes, actions, schema and tests.
@@ -28,7 +28,7 @@ Implemented:
 - Per-shift capacity can be configured and is enforced transactionally at confirmation.
 - Registration submission/status changes create in-app volunteer notifications.
 - The Volunteer.gov.sg scheduled importer and manual imported-card override workflow are retired from runtime code.
-- YM Hub remains the authoritative backend organisational record after a separately designed handoff/reconciliation process.
+- KELUARGA and MakLom share one canonical `core.volunteers` person identity. YM Hub is dormant future integration infrastructure rather than a current runtime dependency.
 
 FAQ content note:
 
@@ -60,7 +60,7 @@ Implemented:
 - Passwordless volunteer email sign-in.
 - Staff password setup and password-change flows.
 - Password recovery that correctly enters a reset flow rather than silently redirecting to the dashboard.
-- Separate app account identity, stable KELUARGA volunteer identity and optional YM Hub reconciliation identity.
+- Separate app account identity plus one stable shared `core.volunteers` identity used across KELUARGA and MakLom.
 - Verified email signup can provision a native KELUARGA volunteer profile without a YM Hub record.
 - Immutable human-readable `KELxxxxx` volunteer IDs are generated for native volunteer profiles.
 - Account-status handling including pending-link, active, suspended and closed states.
@@ -69,7 +69,7 @@ Implemented:
 
 Important boundary:
 
-- KELUARGA and YM Hub remain separate accounts/sessions during the current batch-integration phase.
+- KELUARGA authorization and MakLom authorization remain separate even though the applications share Supabase Auth and the canonical volunteer UUID.
 
 ### Volunteer dashboard
 
@@ -78,17 +78,14 @@ Implemented UI/read path:
 - Volunteer account dashboard.
 - KELUARGA volunteer ID display.
 - KELUARGA registration status and recent registration notifications.
-- Profile-linking state.
-- YM Hub sync-state display.
-- Imported YM Hub registration snapshots remain as a legacy/backend reconciliation view.
-- Imported attendance snapshots.
-- Verified volunteer-hours display derived from authoritative snapshots.
-- Separately labelled app-owned KELUARGA contribution-hour display for integrated manual Event Operations records.
-- Stale/failed/unavailable sync handling in the read model.
+- Shared canonical volunteer-profile state.
+- Approved contribution-hours display derived only from MakLom-approved contribution records.
+- Audited self-service display-name/mobile editing.
+- No live YM Hub projection or sync-state dependency.
 
 Deployment dependency:
 
-- The dashboard only becomes meaningfully personalised when production YM Hub projections are populated reliably.
+- Approved hours require the MakLom contribution review workflow to be operated.
 
 ### Points and gamification
 
@@ -99,19 +96,19 @@ Implemented foundation and volunteer UI:
 - Flat-points and points-per-hour calculation methods.
 - Append-only point ledger.
 - Award, adjustment and reversal entries.
-- Reconciliation from verified YM Hub attendance snapshots.
+- Historical YM Hub reconciliation infrastructure is retained but is dormant in the current operating model.
 - Personal points balance and history read model with explicit source provenance.
 - Role-gated staff points management at `/admin/points` for audited manual recognition awards.
-- Manual recognition awards are idempotent, append-only and distinct from YM Hub attendance-derived points.
+- Manual recognition awards are idempotent and append-only; attendance-derived automation is currently paused.
 - Tests covering the gamification foundation, reconciliation model and manual recognition workflow.
 - Staff-defined badge catalogue and audited badge award/revocation workflow.
 - Volunteer profile summary of active badges.
 
 Policy/integration dependency:
 
-- Operational roster attendance does not award points.
-- Attendance-derived points are only generated from verified authoritative YM Hub records.
-- Manual staff-recognition points require an authorised gamification manager/admin and an explicit reason.
+- Operational roster attendance does not award points automatically.
+- Attendance-derived automation remains paused until a rule is approved against MakLom-approved contribution records.
+- Manual staff-recognition points require an authorised staff role and an explicit reason.
 - A production attendance point rule must be explicitly approved and activated.
 
 ### Volunteer pathways
@@ -244,7 +241,7 @@ Implemented:
 
 Important boundary:
 
-- These records are KELUARGA operational evidence. YM Hub remains the authoritative source of official attendance and verified hours after reconciliation/import.
+- These records are KELUARGA operational evidence. Completed sessions become contribution candidates and only MakLom-approved records count as approved volunteer hours in the current operating model.
 
 ### QR attendance and feedback
 
@@ -299,10 +296,10 @@ Implemented:
 - Insight export for downstream/manual analysis.
 - RLS/service-role protections.
 
-Deferred by product decision:
+Shared-data boundary:
 
-- No automatic MakLom handoff.
-- Accepted insight does not directly mutate a canonical central volunteer profile.
+- Accepted insights can enter the MakLom review inbox with event/source provenance.
+- Accepted insight does not directly mutate a permanent volunteer-profile fact.
 
 ### Volunteer Reviews
 
