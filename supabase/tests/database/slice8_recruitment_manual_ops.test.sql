@@ -325,6 +325,8 @@ select lives_ok(
   'integrated CSV import can register or link a KELUARGA volunteer'
 );
 
+reset role;
+
 select ok(
   exists (
     select 1
