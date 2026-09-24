@@ -383,7 +383,7 @@ export async function checkoutAllCurrentParticipants(input: {
   }
 
   const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
-  const { userId } = await requireAttendanceOperator(returnPath);
+  const { userId } = await requireEventManager(returnPath);
   const admin = getPhaseOneAdminClient();
   const [rosterResult, attendanceResult] = await Promise.all([
     admin
