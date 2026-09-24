@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/staff-access";
@@ -31,7 +32,12 @@ export type StaffSetupLinkState = Readonly<{
   link: string;
 }>;
 
-async function grantStaffRole(
+export type StaffRoleMutationResult = Readonly<
+  | { ok: true; message: string }
+  | { ok: false; message: string }
+>;
+
+async function grantStaffRoleRecord(
   userId: string,
   role: StaffInviteRole,
   grantedBy: string,
@@ -49,6 +55,133 @@ async function grantStaffRole(
       },
       { onConflict: "user_id,role" },
     );
+}
+
+async function loadTargetStaffAccount(userId: string) {
+  const admin = getPhaseOneAdminClient();
+  return admin
+    .schema("core")
+    .from("user_accounts")
+    .select("id, status")
+    .eq("id", userId)
+    .maybeSingle();
+}
+
+export async function grantStaffRole(input: {
+  userId: string;
+  role: string;
+}): Promise<StaffRoleMutationResult> {
+  const parsedUserId = userIdSchema.safeParse(input.userId);
+  const parsedRole = roleSchema.safeParse(input.role);
+
+  if (!parsedUserId.success || !parsedRole.success) {
+    return { ok: false, message: "Select a valid staff account and role." };
+  }
+
+  const { userId: grantedBy } = await requireAdmin();
+  const target = await loadTargetStaffAccount(parsedUserId.data);
+
+  if (target.error || !target.data) {
+    console.error("Unable to load staff account before granting role", {
+      code: target.error?.code,
+      targetUserId: parsedUserId.data,
+    });
+    return { ok: false, message: "The staff account could not be loaded." };
+  }
+
+  if (target.data.status === "suspended" || target.data.status === "closed") {
+    return {
+      ok: false,
+      message: "Reactivate this account before granting additional staff access.",
+    };
+  }
+
+  const result = await grantStaffRoleRecord(
+    parsedUserId.data,
+    parsedRole.data,
+    grantedBy,
+  );
+
+  if (result.error) {
+    console.error("Unable to grant staff role", {
+      code: result.error.code,
+      targetUserId: parsedUserId.data,
+      role: parsedRole.data,
+    });
+    return { ok: false, message: "The role could not be granted." };
+  }
+
+  revalidatePath("/admin/staff");
+  revalidatePath("/dashboard");
+  return { ok: true, message: "Role granted." };
+}
+
+export async function revokeStaffRole(input: {
+  userId: string;
+  role: string;
+}): Promise<StaffRoleMutationResult> {
+  const parsedUserId = userIdSchema.safeParse(input.userId);
+  const parsedRole = roleSchema.safeParse(input.role);
+
+  if (!parsedUserId.success || !parsedRole.success) {
+    return { ok: false, message: "Select a valid staff account and role." };
+  }
+
+  await requireAdmin();
+  const admin = getPhaseOneAdminClient();
+
+  if (parsedRole.data === "admin") {
+    const { data: activeAdmins, error: adminCountError } = await admin
+      .schema("core")
+      .from("user_roles")
+      .select("user_id, user_accounts!inner(status)")
+      .eq("role", "admin")
+      .eq("user_accounts.status", "active");
+
+    if (adminCountError) {
+      console.error("Unable to verify active administrators", {
+        code: adminCountError.code,
+      });
+      return {
+        ok: false,
+        message: "Administrator coverage could not be verified, so no access was changed.",
+      };
+    }
+
+    const activeAdminIds = new Set(
+      (activeAdmins ?? []).map(({ user_id }) => String(user_id)),
+    );
+
+    if (
+      activeAdminIds.has(parsedUserId.data) &&
+      activeAdminIds.size <= 1
+    ) {
+      return {
+        ok: false,
+        message: "KELUARGA must retain at least one active administrator.",
+      };
+    }
+  }
+
+  const { error } = await admin
+    .schema("core")
+    .from("user_roles")
+    .delete()
+    .eq("user_id", parsedUserId.data)
+    .eq("role", parsedRole.data);
+
+  if (error) {
+    console.error("Unable to revoke staff role", {
+      code: error.code,
+      targetUserId: parsedUserId.data,
+      role: parsedRole.data,
+    });
+    return { ok: false, message: "The role could not be removed." };
+  }
+
+  revalidatePath("/admin/staff");
+  revalidatePath("/dashboard");
+  return { ok: true, message: "Role removed." };
 }
 
 export async function inviteStaffMember(
@@ -91,7 +224,7 @@ export async function inviteStaffMember(
     };
   }
 
-  const roleResult = await grantStaffRole(
+  const roleResult = await grantStaffRoleRecord(
     data.user.id,
     parsedRole.data,
     grantedBy,
@@ -115,6 +248,7 @@ export async function inviteStaffMember(
     };
   }
 
+  revalidatePath("/admin/staff");
   return {
     status: "success",
     message:
