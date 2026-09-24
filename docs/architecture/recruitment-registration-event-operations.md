@@ -162,7 +162,7 @@ KELUARGA staff tiers:
 - `staff`
 - `volunteer_leader` / **volunteer leader**
 
-No KELUARGA tier automatically grants MakLom access.
+Authorization is still enforced separately, but KELUARGA `admin` intentionally provisions MakLom `admin` membership transactionally. `volteam`, `staff` and `volunteer_leader` do not grant MakLom access.
 
 ## Future YM Hub/Salesforce integration
 
