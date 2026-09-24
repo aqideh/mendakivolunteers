@@ -1,326 +1,162 @@
 # Current system architecture
 
-**Last reviewed:** 22 September 2026
+**Last reviewed:** 24 September 2026  
+**Reference branch:** `staging`
 
-This document describes the system as it exists now and the boundaries that future work must preserve.
+KELUARGA and MakLom now use one shared Supabase data platform with one canonical volunteer identity. They remain separate applications with separate permission domains and different operational responsibilities.
+
+For the detailed domain contract, see [KELUARGA + MakLom domain architecture](keluarga-maklom-domain-architecture.md).
 
 ## 1. System context
 
-KELUARGA is a Next.js application hosted on Vercel with Supabase providing authentication and PostgreSQL storage.
+KELUARGA is the volunteer-facing application. It owns:
 
-It combines four layers:
+- public programme and opportunity discovery;
+- KELUARGA accounts and self-service profile presentation;
+- programme registration, waitlist and cancellation;
+- canonical new programme/event records;
+- rosters and Event Guides;
+- event-day check-in/out and operational attendance;
+- pathways, points and badges presentation;
+- event feedback, reviews and operational insights.
 
-1. **Volunteer recruitment and discovery** — pathways, recruitment intake, opportunities and news.
-2. **KELUARGA registration** — event/opportunity registration, waitlist, cancellation and shift selection.
-3. **Staff event operations** — events, shifts, rosters, walk-ins, attendance, reviews, insights, feedback and reporting.
-4. **Backend record reconciliation** — YM Hub/Salesforce projections for organisational record matching, verified attendance and verified hours.
+MakLom is the Volunteer Management application. It owns:
 
-KELUARGA is the volunteer-facing system of engagement and live operational system for recruitment, registration and event operations. YM Hub remains MENDAKI's authoritative backend organisational source of record.
+- FormSG prospective-volunteer lead intake and review;
+- deliberate lead-to-volunteer conversion;
+- the staff-managed longitudinal volunteer profile;
+- duplicate resolution, merge history and data-quality workflows;
+- review of KELUARGA profile-change requests;
+- review of event observations before longitudinal use;
+- approval/adjustment of contribution hours;
+- cross-event volunteer-management reporting;
+- any future organisational/YM Hub handoff.
 
-## 2. System ownership
-
-| Data / capability | Authoritative owner | KELUARGA role |
-|---|---|---|
-| KELUARGA volunteer identity | KELUARGA | App-owned UUID plus immutable `KELxxxxx` volunteer code; may exist before YM Hub linkage |
-| YM Hub volunteer identifier / backend master record | YM Hub / Salesforce | Optional reconciliation link once available |
-| Recruitment journey and application status | KELUARGA | App-owned live workflow |
-| Registration / waitlist / cancellation | KELUARGA | App-owned live workflow; handed off/reconciled to YM Hub backend |
-| Official verified attendance / hours | YM Hub | Returned/read after backend verification |
-| KELUARGA login/session | Supabase Auth / KELUARGA | App-owned |
-| Opportunity presentation | KELUARGA programme/event record | App-owned; the same record feeds public discovery, Event Guides and Event Operations |
-| News | KELUARGA CMS | App-owned |
-| Event Guides and operational instructions | KELUARGA | App-owned |
-| Event roster and shifts | KELUARGA operations | Operational working data |
-| Event-day check-in/check-out | KELUARGA operations | Operational evidence pending reconciliation |
-| Walk-ins / absent / withdrawn | KELUARGA operations | Operational working data pending agreed downstream mapping |
-| Volunteer reviews | KELUARGA | App-owned reviewed event-performance records |
-| Volunteer insights | KELUARGA | App-owned reviewed observations |
-| Event feedback | KELUARGA | App-owned |
-| Points | KELUARGA | Derived only from eligible verified YM Hub records |
-| Pathway map | KELUARGA | App-owned |
-| Canonical central volunteer database in MakLom | MakLom | No automatic write-through from KELUARGA |
-
-## 3. Main data domains
-
-### `core`
-
-Purpose:
-
-- KELUARGA application accounts;
-- internal volunteer records;
-- account-to-volunteer linking;
-- roles and authorization;
-- protected account-scoped read functions.
-
-Canonical account chain:
+## 2. Canonical volunteer identity
 
 ```text
-Supabase Auth user UUID
-        -> core.user_accounts.id
-        -> core.volunteers.id (internal UUID)
+Supabase Auth user (when applicable)
+        -> core.user_accounts
+        -> core.volunteers.id          canonical UUID
         -> core.volunteers.volunteer_code (KELxxxxx)
-        -> optional core.volunteers.ymhub_volunteer_id
+        -> core.volunteer_aliases
+        -> public.volunteers           MakLom 1:1 profile extension
 ```
 
-`core.volunteers.id` is the internal immutable relational key. `core.volunteers.volunteer_code` is the human-readable immutable KELUARGA volunteer ID in `KEL00001` format. Both exist independently of YM Hub; `ymhub_volunteer_id` becomes an optional reconciliation key attached later when available.
+`core.volunteers.id` is the shared person key. Email and mobile can support matching but are not permanent identifiers.
 
-### `ymhub`
+Every MakLom volunteer profile must have `public.volunteers.core_volunteer_id`. Legacy MakLom text IDs are retained as aliases rather than becoming a second identity.
 
-Purpose:
+## 3. Data ownership
 
-- read-only backend projections received from YM Hub/Salesforce;
-- legacy/backend registration snapshots used for reconciliation where required;
-- verified attendance snapshots;
-- volunteer sync/freshness state.
+| Domain | Current owner |
+|---|---|
+| Canonical person UUID / KEL ID | Shared `core.volunteers` |
+| Volunteer-facing account/session | KELUARGA |
+| MakLom managed volunteer profile | MakLom |
+| Prospect/lead lifecycle | FormSG -> MakLom |
+| Programme opportunity/event | KELUARGA |
+| Registration/capacity/roster | KELUARGA |
+| Operational attendance | KELUARGA |
+| Approved contribution hours | MakLom review of KELUARGA attendance evidence |
+| Event reviews/insights | KELUARGA source, MakLom reviewed longitudinal inbox |
+| Pathways/points/badges | KELUARGA |
+| Duplicate/merge management | MakLom |
+| Future YM Hub handoff | Downstream/MakLom integration, not current KELUARGA runtime |
 
-This layer is intentionally independent of the ingestion mechanism. Controlled CSV/batch imports can populate it now; a later server-only Salesforce adapter can populate the same model without redesigning volunteer-facing pages.
+## 4. Recruitment
 
-### `gamification`
-
-Purpose:
-
-- versioned point rules;
-- append-only awards, adjustments and reversals;
-- reconciliation from verified YM Hub attendance;
-- auditable volunteer point balances.
-
-Critical boundary:
+The previous KELUARGA recruitment application is retired.
 
 ```text
-KELUARGA roster attendance
-        X
-        -> does not directly award points
-
-verified ymhub.attendance_snapshots
-        -> approved point rule
-        -> append-only ledger
-        -> volunteer points
+KELUARGA volunteering CTA
+        -> FormSG
+        -> MakLom volunteer_leads
+        -> staff review
+        -> accepted
+        -> deliberate conversion/link
+        -> public.volunteers
+        -> core.volunteers UUID
 ```
 
-### `public.phaseone_*`
+Historical `keluarga_recruitment_applications` records remain for provenance but are not a live workflow.
 
-Purpose:
+## 5. Events and attendance
 
-- canonical KELUARGA programme/event records, including public opportunity presentation fields;
+For new operations, `public.phaseone_events` and `phaseone_event_timeslots` are canonical. MakLom legacy `events`, `event_shifts` and `attendance_log` remain historical and may reference a KELUARGA event.
 
-- current deployed event-operation tables and functions;
-- events/timeslots;
-- roster;
-- operational attendance;
-- packages/Event Guides;
-- volunteer insights;
-- volunteer reviews;
-- event feedback;
-- event-day audit/history support.
-
-The `phaseone` name is historical. These tables now back production-facing features and should not be casually renamed.
-
-## 4. Identity models
-
-KELUARGA deliberately has more than one identity concept.
-
-### Organisational volunteer identity
-
-Use:
+Operational hours flow is:
 
 ```text
-core.volunteers.id (internal UUID)
-        <-> core.volunteers.volunteer_code (KELxxxxx)
-        <-> optional ymhub_volunteer_id / Salesforce source ID
+KELUARGA check-in/out
+        -> phaseone_attendance_sessions
+        -> volunteer_contributions (pending / needs_review)
+        -> MakLom review
+        -> approved or rejected
+        -> approved hours visible to the volunteer
 ```
 
-This KELUARGA identity is the primary app key for recruitment, registration and operations. The YM Hub ID is an optional cross-system reconciliation identifier rather than a prerequisite for creating a volunteer.
+KELUARGA cannot approve its own attendance-derived volunteer hours.
 
-### Event operational identity
+## 6. Profile changes and observations
 
-Event rosters use `attendance_person_key` to keep the same person linked across multiple shift rows, walk-in corrections, reviews and insights.
+KELUARGA display name is an app presentation field.
 
-It solves event-day problems such as:
+A volunteer mobile update is recorded in KELUARGA and also enters `volunteer_profile_change_inbox` for Volunteer Management review.
 
-- a volunteer registered for AM and PM;
-- a volunteer stays into another shift;
-- staff correct a typo in a walk-in email;
-- a review is attached to the person rather than an individual shift row.
+Accepted event insights and event reviews are copied into `maklom_profile_inbox` with their event/source provenance. They do not directly mutate the permanent MakLom profile.
 
-It is **not** a canonical organisation-wide ID and must not be exported as one.
+## 7. Authorization
 
-### Roster row identity
+The database is shared; authorization is not.
 
-A roster row represents one event/timeslot assignment. One person can have several roster rows.
+- KELUARGA roles: `core.user_roles`.
+- MakLom entitlement: `public.app_members`.
 
-This distinction matters for reporting: roster rows/deployments are not the same metric as unique volunteers.
+A KELUARGA role must never implicitly create MakLom access. Even an `admin` receives MakLom access only when separately provisioned in `app_members`.
 
-## 5. Authentication and authorization
+Current KELUARGA role model:
 
-### Volunteers
+- `admin` — full KELUARGA access; MakLom only with separate entitlement.
+- `volteam` — full KELUARGA volunteer/event management without automatic MakLom access.
+- `staff` — event operations without programme creation/deletion.
+- `volunteer_leader` — reduced event operations focused on check-in/out.
 
-- Supabase Auth session.
-- Passwordless email sign-in supported.
-- Access to personal recruitment, registration and event information depends on the KELUARGA account/volunteer link.
-- Volunteers should not need a YM Hub sign-in for ordinary recruitment or registration.
+## 8. YM Hub
 
-### Staff
+The `ymhub` projection schema and `integration.ymhub_*` objects are dormant future infrastructure.
 
-Privileged UI/actions use role checks such as:
+They are not a current prerequisite for:
 
-- event manager;
-- content manager;
-- pathway manager.
+- volunteer registration;
+- Event Operations;
+- volunteer identity creation;
+- contribution-hour display; or
+- KELUARGA-to-MakLom data flow.
 
-Privileged mutations are performed server-side. Browser clients must not receive the service-role key or Salesforce credentials.
+Do not describe YM Hub as the current runtime authority for KELUARGA hours. Any future organisational synchronization is a separate downstream integration project.
 
-Database RLS and grants provide a second enforcement layer for sensitive tables.
+## 9. Legacy objects
 
-## 6. Major data flows
+Keep historical objects until retention/migration is explicitly approved:
 
-### Recruitment, opportunity discovery and registration
+- `keluarga_recruitment_applications`;
+- `keluarga_contribution_credits`;
+- Volunteer.gov.sg import/override history;
+- legacy MakLom event and attendance tables;
+- superseded opportunity CMS objects;
+- dormant YM Hub projection/import/export infrastructure.
 
-```text
-KELUARGA recruitment / account
-        -> public opportunity page
-        -> KELUARGA registration / waitlist / shift selection
-        -> confirmed registration
-        -> KELUARGA event roster
-        -> event operations
-```
-
-KELUARGA registration state is immediate operational truth for the volunteer-facing workflow. A separate backend handoff then reconciles the relevant records into YM Hub.
-
-### Event preparation
-
-```text
-KELUARGA event + package/Event Guide
-        -> briefing / directions / programme information
-        -> volunteer event preparation
-```
-
-Operational link access should follow the agreed event-guide access policy.
-
-### Event-day attendance
-
-```text
-roster / walk-in
-        -> staff or approved QR attendance action
-        -> KELUARGA operational attendance
-        -> monitor / exception handling / reconciliation
-        -> event report / downstream processing
-        -> MakLom manual report upload where applicable
-        -> YM Hub backend attendance handoff / verification
-        -> later verified snapshot returned to KELUARGA
-```
-
-The first KELUARGA attendance record and the later verified YM Hub record are intentionally different concepts.
-
-### Continuous attendance
-
-```text
-person identity
-        -> shift A roster row
-        -> attendance session
-        -> continuation into shift B
-        -> final checkout
-```
-
-The effective attendance view resolves the event/shift state while retaining auditable underlying records.
-
-### Volunteer insights and reviews
-
-```text
-event roster person
-        -> staff insight / review
-        -> KELUARGA reviewed event record
-        -> event reporting / manual export
-```
-
-No automatic MakLom profile mutation occurs.
-
-### Points
-
-```text
-official YM Hub attendance snapshot
-        -> point reconciliation
-        -> append-only ledger
-        -> account-scoped points UI
-```
-
-## 7. Integration direction
-
-### Immediate: KELUARGA-owned workflow plus controlled backend handoff
-
-Volunteer-facing recruitment and registration no longer depend on inbound YM Hub registration data. KELUARGA must create and retain its own stable volunteer, recruitment, registration, shift-assignment and roster records.
-
-Volunteer Management will define the detailed KELUARGA -> YM Hub handoff separately. Any batch or API process must include stable identifiers, validation, checksums/idempotency, history, exception handling and visible reconciliation state.
-
-### Future: server-only Salesforce/YM Hub adapter
-
-If approved after security review, a future adapter should:
-
-- run only server-side;
-- use least-privilege read scopes initially;
-- map upstream data into the existing `ymhub` projection model;
-- preserve visible freshness/failure states;
-- be idempotent;
-- retain audit/reconciliation capability;
-- never expose Salesforce credentials to the browser.
-
-The backend handoff mechanism may change without changing KELUARGA's ownership of the volunteer-facing recruitment/registration workflow or YM Hub's role as the authoritative organisational backend record.
-
-### MakLom
-
-Automatic KELUARGA -> MakLom synchronization remains intentionally off. The current procedure is to generate the event-operations report in KELUARGA and upload it to MakLom manually.
-
-If later implemented, use a reviewed inbox model:
-
-```text
-KELUARGA accepted insight
-        -> MakLom insight inbox
-        -> identity match / ambiguity handling
-        -> human review
-        -> optional canonical profile attribute
-```
-
-Do not write event observations directly into the canonical central volunteer profile without review and provenance.
-
-## 8. Security model
-
-Core principles:
-
-- fail closed for authoritative data dependencies;
-- RLS on sensitive data;
-- server-only service-role use;
-- explicit staff role checks;
-- immutable/auditable attendance changes where required;
-- append-only point history;
-- input validation for roster/content/admin flows;
-- CSV formula neutralisation on exports;
-- safe redirect validation;
-- CSP/security headers;
-- no silent fabrication when source integrations fail.
-
-See `docs/security/threat-model.md` for the detailed threat model.
-
-## 9. Reporting semantics
-
-Always specify the unit being counted:
-
-- **unique volunteer** — one person, deduplicated by the appropriate identity;
-- **deployment/roster record** — one person assigned to one shift;
-- **event participation** — one person participating in one event;
-- **shift attendance** — attendance state for a particular shift;
-- **attendance session** — continuous check-in to final checkout, potentially spanning shifts;
-- **verified hours** — authoritative hours returned from YM Hub.
-
-These must not be used interchangeably.
+These must not be used as parallel live sources merely because they still exist.
 
 ## 10. Architecture invariants
 
-Future changes should preserve these rules unless there is an explicit approved architecture decision:
-
-1. KELUARGA owns the operational volunteer identity, recruitment and registration workflow; YM Hub remains the authoritative backend organisational record after handoff, including verified attendance and hours.
-2. Operational KELUARGA attendance cannot directly become verified hours or points.
-3. `attendance_person_key` is an event-operations identity, not a cross-system canonical identifier.
-4. Browser code never receives service-role or Salesforce credentials.
-5. Ambiguous identity matches fail to an exception workflow rather than auto-linking.
-6. Points remain reproducible and auditable from verified source records.
-7. Reviews and insights preserve source/context instead of silently overwriting canonical volunteer data.
-8. Multi-shift reporting must distinguish unique people from shift/deployment rows.
+1. One person has one canonical `core.volunteers.id`.
+2. Email is never the permanent cross-system join key.
+3. A FormSG respondent is a lead until staff deliberately converts them.
+4. KELUARGA owns new operational events, registrations, rosters and attendance.
+5. MakLom owns the managed longitudinal profile and approved contribution-hours record.
+6. Event observations retain source context and require review before longitudinal use.
+7. KELUARGA and MakLom permissions remain separate.
+8. YM Hub is not a current KELUARGA runtime dependency.
+9. Legacy data is retained for provenance until an explicit cleanup migration.
