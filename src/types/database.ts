@@ -99,6 +99,8 @@ export type Database = {
           display_name: string | null;
           primary_email_normalized: string | null;
           mobile: string | null;
+          profile_photo_path: string | null;
+          profile_photo_updated_at: string | null;
           ymhub_status: string | null;
           source_updated_at: string | null;
           last_synced_at: string | null;
@@ -113,6 +115,8 @@ export type Database = {
           display_name?: string | null;
           primary_email_normalized?: string | null;
           mobile?: string | null;
+          profile_photo_path?: string | null;
+          profile_photo_updated_at?: string | null;
           ymhub_status?: string | null;
           source_updated_at?: string | null;
           last_synced_at?: string | null;
@@ -220,6 +224,10 @@ export type Database = {
           p_granted_by: string;
         };
         Returns: string;
+      };
+      set_current_volunteer_profile_photo: {
+        Args: { p_storage_path?: string | null };
+        Returns: Json;
       };
       get_current_points_snapshot: {
         Args: Record<never, never>;
