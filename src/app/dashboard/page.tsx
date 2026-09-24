@@ -262,8 +262,7 @@ export default async function DashboardPage({
             <p className="eyebrow">Your KELUARGA account</p>
             <h1>Welcome, {displayName}</h1>
             <p className="muted">
-              Use KELUARGA for recruitment, registrations, Event Guides and volunteer
-              updates. YM Hub remains the authoritative backend record for verified
+              Use KELUARGA for registrations, Event Guides and volunteer updates. YM Hub remains the authoritative backend record for verified
               attendance and hours after handoff.
             </p>
           </div>
@@ -410,8 +409,7 @@ export default async function DashboardPage({
           <section className="section notice" aria-labelledby="link-title">
             <h2 id="link-title">Backend profile not linked yet</h2>
             <p>
-              Your KELUARGA account can still be used for app-owned recruitment,
-              registration and event operations. A YM Hub backend link is added
+              Your KELUARGA account can still be used for registration and event operations. A YM Hub backend link is added
               separately when the organisational record is reconciled.
             </p>
             <Link className="text-link" href="/journey">
