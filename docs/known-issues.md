@@ -25,7 +25,7 @@ At the time of this review:
 | YM Hub authentication | Backend-only boundary | Ordinary volunteers should not need YM Hub sign-in for recruitment or registration. | KELUARGA uses its own Supabase Auth session. | Reassess SSO only if a future backend/use case actually requires it. |
 | MakLom handoff | Intentionally deferred | Volunteer Insights are not automatically transferred to MakLom. | Accepted insights remain in KELUARGA and can be exported. | If reactivated, use a reviewed inbox/matching workflow rather than direct profile mutation. |
 | Cross-event impact analytics | Planned feature | Event-level reports are rich, but there is not yet a complete longitudinal impact dashboard across events and volunteers. | Staff can export event attendance, insights, reviews and feedback. | Define agreed impact metrics, then build aggregate reporting without double counting multi-shift volunteers. |
-| Gamification rollout | Policy/integration dependency | Manual points and badges are now available, while attendance-derived awards and automatic milestones still require approved rules plus verified YM Hub attendance. | Roster check-in cannot award points or badges; manual recognition is separately identified, staff-reviewed and audited. | Approve attendance rule values/effective dates, badge/milestone criteria and a staff-use policy before broad automation. |
+| Gamification rollout | Policy/integration dependency | Manual points and badges are now available, while attendance-derived awards and automatic milestones still require approved rules plus a trusted KELUARGA/MakLom attendance-hour policy. | Roster check-in cannot award points or badges; manual recognition is separately identified, staff-reviewed and audited. | Approve attendance rule values/effective dates, the trusted attendance/hour source, badge/milestone criteria and a staff-use policy before broad automation. |
 | Volunteer.gov.sg import | Retired runtime integration | Historical imported rows remain for provenance, but opportunity discovery and programme operations no longer read from them. | Cron/import/parser and imported-card editing are removed from runtime. | Remove historical database objects only through a later deliberate cleanup migration if retention is no longer useful. |
 | Event Guide sensitive links | Access-policy decision | Guides may contain briefing or WhatsApp links and other operational information. | Database-backed access controls exist, but the intended broad-launch policy must remain explicit. | Confirm which guide sections may be public versus assignment/code/signed-link gated. |
 | `phaseone` naming | Technical debt, not a bug | Historic `phaseone` identifiers remain throughout routes, modules, tables and migrations. | Kept stable to avoid breaking deployed contracts. | Rename only through a planned API/database migration; do not perform cosmetic mass renames. |
@@ -89,10 +89,10 @@ Accepted event insights are reviewed observations, not automatically canonical p
 
 Future development must keep the current fail-closed principles:
 
-- failed YM Hub handoffs/imports must not invalidate a valid KELUARGA registration or produce substitute verified records;
-- stale backend data must be distinguishable from current KELUARGA operational state;
-- ambiguous identity matches must enter an exception workflow rather than auto-linking;
-- failed/partial authoritative attendance imports must not award points;
+- dormant YM Hub projections must not invalidate or overwrite valid KELUARGA operational records;
+- downstream MakLom upload failures must not invalidate KELUARGA registrations or attendance;
+- ambiguous downstream identity matches must be reviewed rather than auto-linked;
+- incomplete or unverified attendance must not award automated points;
 - no Salesforce/service-role credentials may reach browser code;
 - unknown external status values should be rejected or quarantined rather than guessed.
 
