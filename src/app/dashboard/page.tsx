@@ -9,8 +9,10 @@ import { PortalHeader } from "@/components/portal-header";
 import { ProfileEditor } from "@/components/profile-editor";
 import { VolunteerJourneySummary } from "@/components/volunteer-journey-summary";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
+import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { hasGamificationManagerRole } from "@/lib/auth/gamification-access";
 import { hasPathwayManagerRole } from "@/lib/auth/pathway-access";
+import { hasVolunteerManagerRole } from "@/lib/auth/volunteer-management-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -43,6 +45,18 @@ const dashboardErrors: Record<string, string> = {
     "Your account does not have permission to manage volunteer points.",
   gamification_authorization_unavailable:
     "Points-management permissions could not be checked. No point data was changed.",
+  event_access_denied:
+    "Your account does not have permission to manage Event Operations.",
+  event_authorization_unavailable:
+    "Event Operations permissions could not be checked.",
+  volunteer_management_access_denied:
+    "Your account does not have permission to manage volunteer recruitment.",
+  volunteer_management_authorization_unavailable:
+    "Volunteer-management permissions could not be checked.",
+  staff_access_denied:
+    "Your account does not have permission to manage staff access.",
+  staff_authorization_unavailable:
+    "Staff administration permissions could not be checked.",
   profile_validation:
     "Enter a valid full name and mobile number.",
   profile_update_failed:
@@ -240,8 +254,10 @@ export default async function DashboardPage({
 
   const isAdmin = roles.includes("admin");
   const canManageContent = hasContentManagerRole(roles);
+  const canManageEvents = hasEventManagerRole(roles);
   const canManageGamification = hasGamificationManagerRole(roles);
   const canManagePathways = hasPathwayManagerRole(roles);
+  const canManageVolunteers = hasVolunteerManagerRole(roles);
   const syncStatus = ymHubReadModel?.syncStatus ?? null;
   const syncOutcome = getYmHubSyncOutcome(syncStatus);
   const parameters = await searchParams;
@@ -253,47 +269,28 @@ export default async function DashboardPage({
     volunteer?.display_name?.trim() || account.display_name?.trim() || "Volunteer";
 
   return (
-    <div className="site-shell">
+    <div className="site-shell profile-dashboard-shell">
       <PortalHeader status="KELUARGA account" dashboard />
 
-      <main className="page-frame">
-        <div className="dashboard-header">
-          <div>
-            <p className="eyebrow">Your KELUARGA account</p>
+      <main className="page-frame profile-dashboard-page">
+        <div className="dashboard-header profile-dashboard-header">
+          <div className="profile-dashboard-header-copy">
             <h1>Welcome, {displayName}</h1>
             <p className="muted">
-              Use KELUARGA for recruitment, registrations, Event Guides and volunteer
-              updates. YM Hub remains the authoritative backend record for verified
-              attendance and hours after handoff.
+              Use KELUARGA for registrations, Event Guides, volunteer updates and
+              recognition.
             </p>
           </div>
-          <div className="actions">
+          <div className="actions dashboard-primary-actions">
             <Link className="button button-primary" href="/journey">
               Open Event Guide
             </Link>
-            <Link className="button button-secondary" href="/opportunities">
+            <Link
+              className="button button-secondary dashboard-secondary-action"
+              href="/opportunities"
+            >
               View opportunities
             </Link>
-            {isAdmin ? (
-              <Link className="button button-secondary" href="/admin">
-                Admin
-              </Link>
-            ) : null}
-            {canManageContent ? (
-              <Link className="button button-secondary" href="/admin/content">
-                Manage content
-              </Link>
-            ) : null}
-            {canManagePathways ? (
-              <Link className="button button-secondary" href="/admin/pathways">
-                Manage pathways
-              </Link>
-            ) : null}
-            <form action={signOut}>
-              <button className="button button-secondary" type="submit">
-                Sign out
-              </button>
-            </form>
           </div>
         </div>
 
@@ -369,6 +366,13 @@ export default async function DashboardPage({
               </div>
             </details>
           ) : null}
+          <div className="profile-account-utility">
+            <form action={signOut}>
+              <button className="text-link button-reset" type="submit">
+                Sign out
+              </button>
+            </form>
+          </div>
         </section>
 
         {volunteer ? <VolunteerJourneySummary /> : null}
@@ -619,24 +623,38 @@ export default async function DashboardPage({
           </div>
         </section>
 
-        {isAdmin || canManageContent || canManageGamification || canManagePathways ? (
+        {isAdmin ||
+        canManageContent ||
+        canManageEvents ||
+        canManageGamification ||
+        canManagePathways ||
+        canManageVolunteers ? (
           <section className="section" aria-labelledby="staff-tools-title">
-            <p className="eyebrow">Staff tools</p>
             <h2 id="staff-tools-title">Management access</h2>
             <div className="card-grid">
-              {isAdmin ? (
+              {canManageVolunteers ? (
                 <article className="card">
-                  <h3>Administration</h3>
+                  <h3>Volunteer recruitment</h3>
                   <p className="muted">
-                    Open the central staff administration hub, including staff access
-                    and operational tools.
+                    Review prospective volunteers and manage recruitment status.
+                  </p>
+                  <Link className="text-link" href="/admin/recruitment">
+                    Open volunteer recruitment
+                  </Link>
+                </article>
+              ) : null}
+              {canManageEvents ? (
+                <article className="card">
+                  <h3>Programmes &amp; Event Operations</h3>
+                  <p className="muted">
+                    Review registrations, manage rosters and run event-day attendance.
                   </p>
                   <div className="staff-tool-links">
-                    <Link className="text-link" href="/admin">
-                      Open admin
+                    <Link className="text-link" href="/admin/events">
+                      Open Event Operations
                     </Link>
-                    <Link className="text-link" href="/admin/staff">
-                      Manage staff access
+                    <Link className="text-link" href="/admin/registrations">
+                      Review registrations
                     </Link>
                   </div>
                 </article>
@@ -654,9 +672,9 @@ export default async function DashboardPage({
               ) : null}
               {canManageGamification ? (
                 <article className="card">
-                  <h3>Points management</h3>
+                  <h3>Points &amp; badges</h3>
                   <p className="muted">
-                    Award audited staff-recognition points to KELUARGA volunteers.
+                    Manage audited volunteer recognition points and badges.
                   </p>
                   <div className="staff-tool-links">
                     <Link className="text-link" href="/admin/points">
@@ -672,7 +690,7 @@ export default async function DashboardPage({
                 <article className="card">
                   <h3>Volunteer pathways</h3>
                   <p className="muted">
-                    Edit and publish the volunteer pathway map.
+                    Edit the pathway map and manage reviewed volunteer positions.
                   </p>
                   <div className="staff-tool-links">
                     <Link className="text-link" href="/admin/pathways">
@@ -682,6 +700,17 @@ export default async function DashboardPage({
                       Manage volunteer positions
                     </Link>
                   </div>
+                </article>
+              ) : null}
+              {isAdmin ? (
+                <article className="card">
+                  <h3>Staff access</h3>
+                  <p className="muted">
+                    Invite staff, assign access and resend account setup emails.
+                  </p>
+                  <Link className="text-link" href="/admin/staff">
+                    Manage staff access
+                  </Link>
                 </article>
               ) : null}
             </div>
