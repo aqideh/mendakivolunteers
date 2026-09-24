@@ -1,138 +1,32 @@
-# Phase 2: Native opportunity and news CMS
+# Phase 2 CMS — historical record
 
-## Purpose
+**Status:** historical implementation record  
+**Current content/event model:** see [Current system architecture](current-system.md) and [Feature inventory](../feature-inventory.md)
 
-Phase 2 adds app-owned volunteer content. The original implementation used external registration links; the September 2026 operating-model decision supersedes that registration boundary. KELUARGA is now the target volunteer-facing registration system, while YM Hub remains the authoritative backend organisational record.
+## Why this document remains
 
-The portal owns:
+Phase 2 introduced app-owned opportunity/news publishing, revision history and content-security controls. It originally assumed external registration links and a separate CMS opportunity model.
 
-- Opportunity discovery listings.
-- News and announcements.
-- Content workflow state.
-- Revision snapshots and publication audit events.
+That registration and opportunity architecture is no longer current.
 
-The original Phase 2 slice did not own registration; every registration action was an HTTPS link-out. That implementation is now transitional. The target KELUARGA registration domain is documented in `recruitment-registration-event-operations.md` and will be introduced through new schema migrations rather than by rewriting this historical phase.
+## Foundations retained
 
-## Application routes
+- KELUARGA owns volunteer-facing content and news.
+- Staff content actions remain role-gated and server-validated.
+- Published content is separated from draft/review state.
+- Revision/audit history should be preserved.
+- Content timestamps are handled in a timezone-aware manner.
+- Browser clients do not receive privileged credentials.
 
-Public routes:
+## Superseded behaviour
 
-- `/opportunities`
-- `/opportunities/[slug]`
-- `/news`
-- `/news/[slug]`
+The following Phase 2 assumptions are historical:
 
-Staff routes:
+- opportunity registration through external links;
+- `content.opportunities` as the canonical live opportunity source;
+- required external registration URLs;
+- Volunteer.gov.sg/imported-card driven discovery.
 
-- `/admin/content`
-- `/admin/content/opportunities/new`
-- `/admin/content/opportunities/[id]/edit`
-- `/admin/content/news/new`
-- `/admin/content/news/[id]/edit`
+For new operations, KELUARGA programme/event records and their publication controls drive opportunities, registrations, Event Guides and Event Operations.
 
-The session proxy requires authentication for all `/admin` routes. Page loaders and server actions separately verify the active account and application roles.
-
-## Content workflow
-
-Supported states:
-
-```text
-draft -> in_review -> scheduled -> published -> archived
-```
-
-Content editors may:
-
-- Create records in `draft` or `in_review`.
-- Edit records that are still in `draft` or `in_review`.
-- Read revision history.
-
-Publishers and administrators may additionally:
-
-- Schedule content.
-- Publish content.
-- Archive content.
-- Edit scheduled, published, or archived records.
-
-The interface restricts available states, but PostgreSQL triggers and Row Level Security are the authoritative enforcement layer. A crafted browser request cannot bypass publisher-only transitions.
-
-## Database model
-
-The `content` schema contains:
-
-- `content.opportunities`
-- `content.news_posts`
-- `content.revisions`
-
-Opportunity records currently contain an optional `ymhub_activity_id` and required HTTPS `registration_url`. These fields remain for compatibility during the transition. A future migration will decouple opportunity publication from an external registration URL and link opportunities to first-class KELUARGA registration records.
-
-Content bodies are stored as plain text in this phase. This deliberately avoids introducing an unsanitized HTML or rich-text execution surface. A later rich-text editor must define an allowlist, server-side sanitization, media policy, and migration approach before it is enabled.
-
-## Publication visibility
-
-Anonymous and authenticated volunteers can only read content when:
-
-- The record is published, or its scheduled publication time has arrived.
-- Its effective publication time is not in the future.
-- It has not expired.
-
-Staff content roles can read the full workflow set.
-
-All CMS timestamps are entered as Singapore local time and converted to timezone-aware UTC values before storage. User-facing dates are formatted in `Asia/Singapore`.
-
-## Revisions and auditing
-
-Database triggers create an append-only snapshot after every insert and update. Each revision records:
-
-- Content type and record ID.
-- Revision number.
-- Operation.
-- Workflow status.
-- Full JSON snapshot.
-- Acting user, where available.
-- Creation timestamp.
-
-Status changes also create audit events. Browser clients have no insert, update, or delete privilege on revision records.
-
-Deleting CMS records is intentionally excluded from this phase. Archiving preserves references, revision history, and accountability.
-
-## Security controls
-
-- Forced Row Level Security on all content tables.
-- Least-privilege table grants.
-- Active-account checks for CMS users.
-- Separate editor and publisher roles.
-- Database-enforced protection for already-live content.
-- HTTPS-only external registration URLs while the transitional link-out remains in use.
-- UUID validation before edit queries or writes.
-- Server-side validation for length, date ordering, status requirements, and URLs.
-- No Salesforce or Supabase service credentials in browser code.
-- No direct browser writes to audit or revision tables.
-
-## Local role assignment
-
-Use `supabase/snippets/grant_content_role.sql` in the local SQL editor after creating a test account. Role grants are administrative operations and are not exposed through the web application.
-
-## Validation
-
-The release checks include:
-
-- ESLint.
-- TypeScript checking.
-- Vitest validation and identifier tests.
-- Next.js production build.
-- Dependency vulnerability audit.
-- Supabase migration reset and explicit local fixture seed.
-- pgTAP tests for RLS, grants, revision triggers, and publisher-only edits.
-
-## Deferred work
-
-The following remain outside this delivery slice:
-
-- Media-library uploads.
-- Rich-text authoring.
-- Revision rollback UI.
-- Audience segmentation.
-- Content analytics beyond standard application telemetry.
-- Salesforce opportunity synchronisation.
-
-These should be introduced only with explicit ownership, security, retention, and operational requirements.
+Retained CMS tables may remain for provenance until an explicit migration/retention decision.
