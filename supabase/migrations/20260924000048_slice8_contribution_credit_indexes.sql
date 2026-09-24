@@ -1,0 +1,4 @@
+create index keluarga_contribution_credits_credited_by_idx
+  on public.keluarga_contribution_credits(credited_by);
+create index keluarga_contribution_credits_updated_by_idx
+  on public.keluarga_contribution_credits(updated_by);
