@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireEventManager, requireProgrammeManager } from "@/lib/auth/event-access";
+import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   buildPackagePinUpdate,
@@ -53,7 +53,7 @@ export async function duplicateEvent(formData: FormData) {
     redirect(`/admin/events?error=${encode("Select an event guide to duplicate.")}`);
   }
 
-  const { userId } = await requireProgrammeManager("/admin/events");
+  const { userId } = await requireEventManager("/admin/events");
   const admin = getPhaseOneAdminClient();
   const [eventResult, timeslotsResult, rundownImagesResult] = await Promise.all([
     admin
@@ -236,7 +236,7 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
     );
   }
 
-  const { userId } = await requireProgrammeManager(eventPath(parsed.data.id));
+  const { userId } = await requireEventManager(eventPath(parsed.data.id));
   const admin = getPhaseOneAdminClient();
   const current = parsed.data.id
     ? await admin
