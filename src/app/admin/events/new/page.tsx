@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { EventForm } from "@/components/phaseone/event-form";
 import { PortalHeader } from "@/components/portal-header";
 import { SectionIndex } from "@/components/section-index";
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireProgrammeManager } from "@/lib/auth/event-access";
 
 export const metadata: Metadata = { title: "New programme" };
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 }
 
 export default async function NewEventPage({ searchParams }: PageProps) {
-  await requireEventManager("/admin/events/new");
+  await requireProgrammeManager("/admin/events/new");
   const parameters = await searchParams;
   const errorMessage = parameter(parameters, "error");
 
