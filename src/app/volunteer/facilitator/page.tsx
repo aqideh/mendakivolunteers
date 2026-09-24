@@ -5,14 +5,14 @@ import { RoleLanding } from "@/components/role-landing";
 export const metadata: Metadata = {
   title: "Volunteer as a Facilitator",
   description:
-    "Explore ReadySetLearn Language Explorer, Math Explorer, and Befriender roles.",
+    "Empower parents of children to support learning at home through practical play based tips, interactive workshops, hands on activities and resources that build their confidence.",
 };
 
 export default function FacilitatorPage() {
   return (
     <RoleLanding
-      title="Create engaging experiences for participants."
-      description="Facilitator roles are for volunteers who enjoy working directly with groups, guiding activities, and helping participants feel engaged and supported."
+      title="Inspire Learning. Build Confidence."
+      description="Empower parents of children to support learning at home through practical play based tips, interactive workshops, hands on activities and resources that build their confidence."
       items={[
         {
           title: "ReadySetLearn Language Explorer",

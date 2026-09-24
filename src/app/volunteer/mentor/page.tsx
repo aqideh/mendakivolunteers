@@ -8,7 +8,8 @@ import styles from "./mentor.module.css";
 
 export const metadata: Metadata = {
   title: "Volunteer as a Mentor",
-  description: "Helping potential bloom through meaningful mentoring with MENDAKI.",
+  description:
+    "#amPowered is a structured mentoring programme that helps Malay/Muslim youth aged 13 to 18 discover their strengths and maximise their potential.",
 };
 
 export default function MentorPage() {
@@ -25,11 +26,14 @@ export default function MentorPage() {
 
             <div className={styles.heroContent}>
               <div className={styles.heroCopy}>
-                <h1 id="mentor-title">
-                  Helping Potential Bloom Through Meaningful Mentoring
-                </h1>
+                <h1 id="mentor-title">Bloom Through Meaningful Mentoring.</h1>
                 <p className={styles.lede}>
-                  The right mentor. The right stage. For the right outcome.
+                  #amPowered is a structured mentoring programme that helps
+                  Malay/Muslim youth aged 13 to 18 discover their strengths and
+                  maximise their potential. Through guidance and meaningful
+                  connections, youth are supported to remain in school, set goals,
+                  explore education and career pathways, and build strong networks
+                  for their future.
                 </p>
               </div>
 

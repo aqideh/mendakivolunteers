@@ -143,6 +143,31 @@
   color: #ffffff;
 }
 
+.inlineAction {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  border: 2px solid var(--primary);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.75rem 0.45rem;
+  color: var(--primary);
+  background: #000000;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    box-shadow 120ms ease,
+    transform 120ms ease,
+    background-color 120ms ease;
+}
+
+.inlineAction span:last-child {
+  color: #ffffff;
+}
+
 .secondaryAction {
   border: 1px solid rgba(22, 139, 152, 0.3);
   border-bottom-width: 3px;
@@ -152,12 +177,14 @@
 }
 
 .primaryAction:hover,
-.secondaryAction:hover {
+.secondaryAction:hover,
+.inlineAction:hover {
   box-shadow: 0 12px 24px rgba(55, 58, 54, 0.14);
   transform: translateY(-1px);
 }
 
-.primaryAction:hover {
+.primaryAction:hover,
+.inlineAction:hover {
   background: var(--brand-strong);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
 }
@@ -269,7 +296,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .primaryAction,
-  .secondaryAction {
+  .secondaryAction,
+  .inlineAction {
     transition: none;
   }
 }
