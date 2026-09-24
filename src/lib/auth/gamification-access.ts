@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database";
 
-const gamificationManagerRoles = new Set<AppRole>(["gamification_manager", "admin"]);
+const gamificationManagerRoles = new Set<AppRole>(["volteam", "admin"]);
 
 export function hasGamificationManagerRole(roles: readonly AppRole[]): boolean {
   return roles.some((role) => gamificationManagerRoles.has(role));
