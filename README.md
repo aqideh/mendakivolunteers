@@ -1,113 +1,162 @@
-# KELUARGA
+# KELUARGA MENDAKI
 
-KELUARGA is MENDAKI's volunteer recruitment, registration and event-operations web application. Volunteers use KELUARGA to enter the recruitment journey, discover opportunities, register and participate in events. **YM Hub remains MENDAKI's authoritative backend organisational record; the backend handoff/reconciliation process is managed separately from the volunteer-facing journey.**
+KELUARGA is MENDAKI's volunteer-facing web application for discovering ways to contribute, registering for opportunities, preparing for deployments, participating in event operations, and tracking recognised volunteer development.
 
-KELUARGA provides public volunteer content, app-owned recruitment and registration workflows, staff event-day operations, volunteer-development tools, and read-only views of verified backend records where appropriate.
+KELUARGA is one part of a shared Volunteer Management platform:
 
-## Production ownership
+- **KELUARGA** owns the volunteer-facing experience, opportunity registration, rosters, Event Guides, event-day attendance, feedback, pathways and recognition surfaces.
+- **FormSG** is the public intake channel for prospective volunteers.
+- **MakLom** is the higher-sensitivity Volunteer Management application for FormSG lead review, staff-managed longitudinal volunteer profiles, duplicate/data-quality work, contribution-hour approval, reviewed profile changes/insights, and cross-event reporting.
+- **Supabase** is the shared data platform. KELUARGA and MakLom share one canonical volunteer identity but retain separate authorization domains.
+- **YM Hub/Salesforce** is dormant future downstream integration infrastructure. It is not a current KELUARGA runtime dependency.
 
-- GitHub repository: `aqideh/mendakivolunteers`
-- Production branch: `main`
-- Hosting: Vercel project `mendakivolunteers`
-- Backend: Supabase project `mendakivolunteers` in `ap-southeast-1`
-- Supabase project ref: `glpdougaxlgaipqlzcbq`
-- Runtime: Node.js 24
+## Mission
 
-Only `main` may deploy to production. Development must use short-lived branches and pull requests. Vercel previews are for review; merging an approved pull request into `main` is the production release action.
+KELUARGA should make volunteering with MENDAKI easier from discovery to deployment while giving staff reliable event operations and preserving strong data-governance boundaries.
 
-The `phaseone` name remains in some routes, modules, CSS classes, tables, and migrations because it is part of the deployed application and database contract. Do not rename those identifiers as branch cleanup; a rename requires a separately planned API and database migration.
+The product is designed around five principles:
+
+1. volunteers can discover and register without waiting for an external backend record;
+2. event operations work directly from KELUARGA registrations and canonical volunteer identity;
+3. operational attendance is evidence, not automatically approved longitudinal volunteer hours;
+4. MakLom reviews and owns higher-sensitivity longitudinal Volunteer Management data;
+5. external organisational integrations remain downstream and must not dictate the volunteer-facing workflow.
+
+## Current architecture
+
+```text
+Prospective volunteer
+    -> KELUARGA discovery / role pages
+    -> FormSG
+    -> MakLom volunteer lead
+    -> staff review / deliberate conversion
+    -> core.volunteers canonical identity
+
+Canonical volunteer
+    -> KELUARGA opportunity registration
+    -> registration decision / waitlist
+    -> Event Operations roster
+    -> check-in / check-out
+    -> volunteer_contributions candidate
+    -> MakLom review / adjustment
+    -> approved contribution hours
+    -> KELUARGA volunteer dashboard
+```
+
+The canonical person key is `core.volunteers.id`. The immutable human-facing volunteer code is `KELxxxxx`.
+
+MakLom extends the same person through `public.volunteers.core_volunteer_id`. Email and mobile can support matching but are not permanent cross-system identity keys.
+
+### Authorization boundary
+
+The database and Auth tenant are shared; permissions are not.
+
+- KELUARGA authorization: `core.user_roles`
+- MakLom authorization: `public.app_members`
+
+KELUARGA staff tiers are:
+
+- **admin** — full KELUARGA access; MakLom still requires separate entitlement
+- **VolTeam** — full KELUARGA management/operations except MakLom
+- **staff** — event operations on existing programmes; no programme creation/deletion
+- **volunteer leader** — reduced event operations focused on basic check-in/out
+
+KELUARGA authorization and MakLom authorization are enforced separately. The one intentional entitlement bridge is `admin`: promoting a staff member to KELUARGA Admin also provisions MakLom administrator membership transactionally; demoting them removes that MakLom membership. Lower KELUARGA roles do not gain MakLom access.
 
 ## Current capabilities
 
 ### Volunteer-facing
 
-- Public landing page, opportunities and news.
-- Event Guides with venue, directions, briefing, programme information and shift details.
-- Passwordless volunteer sign-in/sign-up with automatic immutable `KELxxxxx` volunteer IDs, a protected account dashboard and audited self-service name/mobile editing.
-- KELUARGA-owned programme/event records are the canonical source for opportunity discovery, shift selection, registrations, Event Guides and Event Operations.
-- Volunteers can register directly in KELUARGA and see pending/confirmed/waitlisted/rejected status plus in-app registration updates.
-- Read-only YM Hub attendance and verified-hours presentation when authoritative snapshots are available.
-- Points UI and append-only gamification ledger with separate verified-attendance and audited staff-recognition sources.
-- Staff-defined, audited volunteer badges with reversible active awards.
-- Staff-confirmed personal pathway positions with one active position per track and retained history.
+- Public landing pages, role/pathway discovery, opportunities, news and FAQ shell.
+- Passwordless volunteer sign-in and immutable `KELxxxxx` identity.
+- Direct KELUARGA opportunity registration with shift selection.
+- Pending, confirmed, waitlisted, rejected, cancelled and withdrawn registration states.
+- Event Guides and event preparation information.
+- Volunteer dashboard with registration state, approved contribution hours, pathways, badges and points history.
+- Self-service app-owned display-name/mobile editing with audit/review boundaries.
 - Public volunteer Pathways skill tree.
 
 ### Staff-facing
 
-- Role-gated content, pathway, staff-access, points-management and event administration.
-- Staff registration review with Confirm, Waitlist and Reject actions; confirmed registrations populate Event Operations directly.
-- Multi-day events and multiple shifts/timeslots with optional per-shift registration capacity.
-- CSV/pasted roster import, roster templates and optional Volunteer ID.
-- Walk-in/last-minute volunteers, dietary requirements and contact corrections.
-- Check-in/check-out, absent/withdrawn states, audited corrections and bulk checkout.
-- Continuous attendance across adjacent shifts and spontaneous shift extensions.
-- Live attendance monitor and reconciliation view.
+- Programme/event creation and publishing.
+- Registration review and capacity/waitlist handling.
+- Multi-day and multi-shift Event Operations.
+- CSV/paste roster import, walk-ins and manual-event modes.
+- Integrated or intentionally isolated manual rosters.
+- Check-in/out, continuous adjacent-shift attendance, early checkout, corrections and reconciliation.
 - QR attendance/feedback foundation.
-- Attendance and event-report exports.
-- Volunteer Insights with staff review/accept/dismiss workflow.
-- Volunteer Reviews with 1–5 event-role performance rating, behaviour tags, comments and follow-up flags.
-- Event reporting combining roster, attendance, insights, reviews and volunteer feedback.
+- Event reviews, insights, feedback and event reporting.
+- Points, badge and pathway administration.
+- Staff access management using the four KELUARGA access tiers.
 
-### Platform and integration
+### Shared Volunteer Management platform
 
-- Supabase migrations, Row Level Security policies and pgTAP database tests.
-- GitHub Actions validation for lint, type checking, tests, builds, dependency audit and database checks.
-- KELUARGA-owned programme/event records drive public opportunity discovery, Event Guides and Event Operations.
-- Read-only YM Hub projection foundations and volunteer sync-state model remain for backend reconciliation and verified records.
-- The KELUARGA -> YM Hub backend handoff is being designed separately by Volunteer Management; direct production Salesforce synchronization is not enabled.
+- One canonical volunteer UUID across KELUARGA and MakLom.
+- FormSG -> MakLom volunteer-lead pipeline.
+- Deliberate lead conversion with duplicate/match safeguards.
+- KELUARGA attendance -> contribution candidate -> MakLom approval boundary.
+- Reviewed profile-change and longitudinal insight inboxes.
+- Legacy identifiers retained as aliases rather than parallel identities.
 
-## System boundaries
+## Data ownership
 
-KELUARGA owns the live recruitment, registration and event-operations workflow. Event-day attendance remains an **operational record** until the agreed backend handoff/reconciliation is completed; verified volunteer hours remain YM Hub-owned.
+| Domain | Owner |
+|---|---|
+| Canonical person identity / KEL code | Shared `core.volunteers` |
+| Volunteer-facing account/session | KELUARGA |
+| Opportunity, registration, roster, Event Guide | KELUARGA |
+| Event-day operational attendance | KELUARGA |
+| Prospective-volunteer form | FormSG |
+| Lead review and conversion | MakLom |
+| Staff-managed longitudinal volunteer profile | MakLom |
+| Approved contribution hours | MakLom review of KELUARGA evidence |
+| Duplicate/data-quality management | MakLom |
+| Pathways, points and badges presentation | KELUARGA |
+| Future YM Hub/Salesforce handoff | Separate downstream integration |
 
-Likewise:
+## Legacy and dormant components
 
-- roster check-in alone cannot award points;
-- manual staff-recognition points remain distinct from verified-attendance points and do not create YM Hub attendance records;
-- `attendance_person_key` is an event-level continuity key, not a canonical organisation-wide volunteer ID;
-- Volunteer Insights and Reviews do not automatically overwrite a central volunteer profile;
-- automatic MakLom handoff is currently deferred.
+Some historical tables, modules and names remain because they are deployed contracts or retained provenance. They are not parallel current sources of truth.
 
-## Project documentation
+Examples include:
+
+- `keluarga_recruitment_applications`
+- `keluarga_contribution_credits`
+- legacy MakLom event/attendance tables
+- Volunteer.gov.sg import/override history
+- superseded opportunity CMS objects
+- `ymhub` and `integration.ymhub_*` schemas
+- historical `phaseone` naming
+
+Retire these only through deliberate forward migrations after retention and migration requirements are settled.
+
+## Production ownership
+
+- GitHub repository: `aqideh/mendakivolunteers`
+- Production branch: `main`
+- Verification branch/environment: `staging`
+- Hosting: Vercel
+- Shared backend: Supabase, Singapore region
+- Runtime: Node.js 24
+
+`main` remains production. Shared-schema changes must be rehearsed and verified before promotion.
+
+## Documentation
 
 Start with [docs/README.md](docs/README.md).
 
-Key project records:
+Canonical current-state documents:
 
-- [Feature inventory](docs/feature-inventory.md) — implemented capability on `main`.
-- [Development roadmap](docs/development-roadmap.md) — upcoming work, dependencies and sequencing.
-- [Known issues and technical debt](docs/known-issues.md) — confirmed bugs, limitations, deferred work and regression watch-points.
-- [Current system architecture](docs/architecture/current-system.md) — data ownership, identity, integrations and architecture invariants.
-- [Recruitment, registration and event-operations operating model](docs/architecture/recruitment-registration-event-operations.md) — the September 2026 target workflow and handoff boundaries.
-- [Launch and batch-integration decision record](docs/operations/launch-readiness-and-batch-integration-direction.md).
-- [Production handover](docs/operations/production-handover.md).
-- [Threat model](docs/security/threat-model.md).
+- [KELUARGA + MakLom domain architecture](docs/architecture/keluarga-maklom-domain-architecture.md)
+- [Current system architecture](docs/architecture/current-system.md)
+- [Recruitment, registration and Event Operations model](docs/architecture/recruitment-registration-event-operations.md)
+- [Feature inventory](docs/feature-inventory.md)
+- [Development roadmap](docs/development-roadmap.md)
+- [Known issues](docs/known-issues.md)
+- [Production handover](docs/operations/production-handover.md)
+- [Threat model](docs/security/threat-model.md)
 
-When adding a material user-visible feature, update the feature inventory and roadmap in the same pull request. Confirmed material defects should be tracked as GitHub Issues and reflected in the known-issues register where useful.
-
-## Local setup
-
-Requirements:
-
-- Node.js 24.
-- npm 10 or 11.
-- A Docker-compatible runtime for the local Supabase stack.
-
-```bash
-npm ci
-cp .env.example .env.local
-npm run db:start
-npm run db:reset
-npm run dev
-```
-
-Run `npx supabase status -o env` after starting Supabase and copy the local project URL and publishable key into `.env.local`.
-
-Useful local URLs:
-
-- Application: `http://localhost:3000`
-- Supabase Studio: `http://127.0.0.1:54323`
-- Local email inbox: `http://127.0.0.1:54324`
+Documents labelled historical/dormant are retained for implementation history only and must not override the current-state documents above.
 
 ## Validation
 
@@ -120,45 +169,4 @@ npm run security:audit
 npm run db:test
 ```
 
-`npm run db:test` requires the local Supabase stack. Pull requests and `main` are also validated by GitHub Actions.
-
-## Production configuration
-
-Production must provide these environment variables through Vercel:
-
-```text
-NEXT_PUBLIC_APP_URL
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-SUPABASE_SERVICE_ROLE_KEY
-PIN_COOKIE_SECRET
-APP_ENV=production
-```
-
-Before promotion, run:
-
-```bash
-npm run check:production
-```
-
-Never commit environment files, service-role keys, or PIN-cookie secrets.
-
-<!-- Deployment retry: 2026-09-21 -->
-
-## Project structure
-
-```text
-src/app                    Next.js routes and server actions
-src/components             Shared application components
-src/lib/auth               Server-side authorization helpers
-src/lib/content            Content validation and time utilities
-src/lib/gamification       Points presentation/read model
-src/lib/phaseone           Deployed event and attendance domain
-src/lib/pathways           Versioned volunteer pathway loading and validation
-src/lib/supabase           Browser, server, and session clients
-src/lib/security           Security and serialization helpers
-src/lib/ymhub              Read-only YM Hub presentation invariants
-supabase/migrations        Ordered production database migrations
-supabase/tests/database    pgTAP database and RLS tests
-docs                       Product, architecture, roadmap, security and operations records
-```
+Database changes use forward-only migrations and require regression coverage where applicable. Never commit environment files, service-role keys, FormSG secrets or other credentials.

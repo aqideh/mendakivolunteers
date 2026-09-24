@@ -1,44 +1,57 @@
 # KELUARGA documentation
 
-This directory is the project record for the KELUARGA — MENDAKI Volunteer App.
+This directory is the project record for KELUARGA MENDAKI and its shared Volunteer Management data platform with MakLom.
 
-**Last consolidated:** 22 September 2026
+**Last consolidated:** 24 September 2026  
+**Current reference architecture:** KELUARGA staging
 
-Start here when assessing what exists, what is planned, and what still needs attention.
+## Product mission
 
-## Product and delivery status
+KELUARGA is the volunteer-facing application. It helps volunteers discover opportunities, register, prepare for deployments, participate in event operations and see recognised volunteer-development information.
 
-- [Feature inventory](feature-inventory.md) — what is implemented on `main`, grouped by volunteer, staff and platform capability.
-- [Development roadmap](development-roadmap.md) — upcoming work, dependencies, decisions and sequencing.
-- [Known issues and technical debt](known-issues.md) — confirmed defects, operational limitations, deferred work and regression watch-points.
-- [Current system architecture](architecture/current-system.md) — system boundaries, data ownership, identity model and integrations.
-- [Recruitment, registration and event-operations operating model](architecture/recruitment-registration-event-operations.md) — current target workflow from recruitment through roster, MakLom reporting and YM Hub backend handoff.
+MakLom is the higher-sensitivity Volunteer Management application. It reviews prospective-volunteer leads, maintains the managed longitudinal profile, resolves data-quality issues, approves contribution hours and supports cross-event staff intelligence.
 
-## Detailed architecture
+Both applications use the same canonical person identity in Supabase while retaining separate authorization.
 
-- [Phase 1 foundation](architecture/phase-1.md) — application identity, roles and security foundation.
-- [Phase 2 content CMS](architecture/phase-2-cms.md) — opportunity and news publishing model.
-- [Phase 3 YM Hub read model](architecture/phase-3-ymhub-read-model.md) — authoritative volunteer-data projection.
-- [Phase 4 volunteer pathways](architecture/phase-4-volunteer-pathways.md) — versioned pathway maps and publication controls.
-- [Gamification and points](architecture/gamification.md) — points ledger and YM Hub verification boundary.
+YM Hub/Salesforce is not a current runtime dependency. Any future organisational handoff is downstream of the KELUARGA + MakLom operating model.
 
-## Operations and integration
+## Canonical current-state documents
 
-- [Launch readiness and batch-integration direction](operations/launch-readiness-and-batch-integration-direction.md) — September 2026 integration decision record and rollout notes.
-- [Production handover](operations/production-handover.md) — release, migration and rollback procedure.
-- [YM Hub field request](ymhub-field-request.md) — requested source fields and mapping requirements.
+These documents define current behaviour and take precedence over historical phase records:
 
-## Security
+1. [KELUARGA + MakLom domain architecture](architecture/keluarga-maklom-domain-architecture.md)
+2. [Current system architecture](architecture/current-system.md)
+3. [Recruitment, registration and Event Operations model](architecture/recruitment-registration-event-operations.md)
+4. [Feature inventory](feature-inventory.md)
+5. [Development roadmap](development-roadmap.md)
+6. [Known issues and technical debt](known-issues.md)
+7. [Staff access model](security/staff-access-model.md)
+8. [Threat model](security/threat-model.md)
+9. [Production handover](operations/production-handover.md)
 
-- [Threat model](security/threat-model.md)
-- [`SECURITY.md`](../SECURITY.md)
+## Historical / dormant design records
 
-## Documentation rules
+These explain how the system evolved. They are not current sources of product ownership or integration authority:
 
-1. The deployed code and applied database migrations are the source of truth for whether a feature exists.
-2. KELUARGA owns the volunteer-facing recruitment and registration workflow plus live event operations. YM Hub remains the authoritative backend organisational record; verified attendance/hours and the backend handoff are reconciled separately.
-3. A feature is not described as live merely because a schema, prototype or roadmap item exists.
-4. Intentional deferrals are recorded separately from bugs.
-5. New user-visible features should update the feature inventory and roadmap in the same pull request.
-6. Newly discovered unresolved defects should be logged in GitHub Issues and linked from `known-issues.md` when they are material or recurring.
-7. Do not place credentials, personal data, private correspondence or commercial details in these public repository documents.
+- [Phase 1 foundation](architecture/phase-1.md)
+- [Phase 2 CMS](architecture/phase-2-cms.md)
+- [Phase 3 YM Hub read model](architecture/phase-3-ymhub-read-model.md)
+- [Phase 4 pathways](architecture/phase-4-volunteer-pathways.md)
+- [Launch/backend integration decision record](operations/launch-readiness-and-batch-integration-direction.md)
+- [YM Hub field request](ymhub-field-request.md)
+
+Where a historical document conflicts with a canonical current-state document, the current-state document wins.
+
+## Core documentation rules
+
+1. `core.volunteers.id` is the canonical person key shared by KELUARGA and MakLom.
+2. KELUARGA owns volunteer-facing registration and live Event Operations.
+3. Prospective-volunteer intake uses FormSG; MakLom owns lead review and deliberate conversion.
+4. MakLom owns the staff-managed longitudinal profile and approves contribution hours.
+5. KELUARGA operational attendance is evidence until MakLom approves the contribution record.
+6. KELUARGA and MakLom authorization remain separate.
+7. YM Hub is dormant future integration infrastructure unless a later approved decision explicitly reactivates it.
+8. Legacy tables may be retained for provenance without being active sources of truth.
+9. A schema/foundation is not documented as a completed operational feature until its UI/process is usable.
+10. Material feature or architecture changes update the feature inventory, roadmap and relevant architecture record together.
+11. Never place credentials, personal data, private correspondence or commercial details in public repository documents.
