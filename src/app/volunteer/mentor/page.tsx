@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { PortalHeader } from "@/components/portal-header";
+import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 import styles from "./mentor.module.css";
 
@@ -12,12 +14,18 @@ export const metadata: Metadata = {
     "#amPowered is a structured mentoring programme that helps Malay/Muslim youth aged 13 to 18 discover their strengths and maximise their potential.",
 };
 
-export default function MentorPage() {
+export default async function MentorPage() {
+  const heroImage = await getLandingPageImage("mentor");
+
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
       <main className={styles.frame}>
-        <section className={styles.hero} aria-labelledby="mentor-title">
+        <section
+          className={styles.hero}
+          aria-labelledby="mentor-title"
+          style={{ "--mentor-hero-image": `url("${heroImage}")` } as CSSProperties}
+        >
           <div className={styles.heroInner}>
             <Link className={styles.backLink} href="/">
               <span aria-hidden="true">←</span>
@@ -68,7 +76,6 @@ export default function MentorPage() {
             />
           </div>
         </section>
-
       </main>
     </div>
   );

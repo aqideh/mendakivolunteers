@@ -27,6 +27,11 @@ const tools: readonly AdminTool[] = [
     description: "Manage opportunities, programme content and volunteer updates.",
   },
   {
+    href: "/admin/content/landing-pages",
+    title: "Landing page photos",
+    description: "Upload and set hero photos for Home and the five volunteer landing pages.",
+  },
+  {
     href: "/admin/events",
     title: "Event Operations",
     description: "Manage events, rosters, attendance, QR check-in and event-day operations.",
