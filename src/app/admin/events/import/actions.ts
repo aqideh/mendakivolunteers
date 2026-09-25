@@ -3,7 +3,6 @@
 import { createHash } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -14,7 +13,6 @@ import {
   type OpportunityWorkbookEvent,
   type OpportunityWorkbookIssue,
 } from "@/lib/phaseone/opportunity-workbook";
-import { createClient } from "@/lib/supabase/server";
 
 export type OpportunityImportPreview = Readonly<{
   fileName: string;
@@ -177,9 +175,8 @@ export async function commitOpportunityWorkbook(
       };
     }
 
-    const supabase = await createClient();
-    const rpcClient = supabase as unknown as SupabaseClient;
-    const { data, error } = await rpcClient.rpc("phaseone_import_opportunity_workbook", {
+    const admin = getPhaseOneAdminClient();
+    const { data, error } = await admin.rpc("phaseone_import_opportunity_workbook", {
       p_file_name: preview.fileName,
       p_file_sha256: preview.sha256,
       p_uploaded_by: userId,
