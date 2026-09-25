@@ -66,7 +66,7 @@ export default async function NewEventPage({ searchParams }: PageProps) {
         />
 
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
-        <EventForm draft={draft} />
+        {draft ? <EventForm draft={draft} /> : <EventForm />}
       </main>
     </div>
   );
