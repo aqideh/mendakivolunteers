@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { requireEventManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -229,5 +230,290 @@ export async function importRosterWithDiagnostics(
   return {
     status: "success",
     message,
+  };
+}
+
+
+const volunteerDatabaseSearchSchema = z.object({
+  eventId: z.string().uuid(),
+  query: z.string().trim().min(2).max(80),
+});
+
+const databaseRosterAddSchema = z.object({
+  eventId: z.string().uuid(),
+  timeslotIds: z.array(z.string().uuid()).min(1).max(100),
+  volunteerIds: z.array(z.string().uuid()).min(1).max(100),
+});
+
+export type RosterVolunteerDatabaseItem = Readonly<{
+  id: string;
+  volunteerCode: string;
+  displayName: string;
+  email: string | null;
+  mobile: string | null;
+  age: number | null;
+}>;
+
+export type RosterVolunteerDatabaseSearchState = Readonly<{
+  status: "idle" | "success" | "error";
+  message: string;
+  volunteers: RosterVolunteerDatabaseItem[];
+}>;
+
+export type DatabaseRosterAddState = Readonly<{
+  status: "idle" | "success" | "error";
+  message: string;
+}>;
+
+function cleanVolunteerSearchTerm(value: string): string {
+  return value
+    .trim()
+    .replace(/[%_,()]/g, " ")
+    .replace(/\\/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
+}
+
+function databaseRosterAddError(message: string): DatabaseRosterAddState {
+  return { status: "error", message };
+}
+
+export async function searchRosterVolunteerDatabase(input: {
+  eventId: string;
+  query: string;
+}): Promise<RosterVolunteerDatabaseSearchState> {
+  const parsed = volunteerDatabaseSearchSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Enter at least 2 characters to search the volunteer database.",
+      volunteers: [],
+    };
+  }
+
+  await requireEventManager(`/admin/events/${parsed.data.eventId}/edit`);
+  const admin = getPhaseOneAdminClient();
+
+  const eventResult = await admin
+    .from("phaseone_events")
+    .select("operations_scope")
+    .eq("id", parsed.data.eventId)
+    .maybeSingle();
+
+  if (eventResult.error || !eventResult.data) {
+    return {
+      status: "error",
+      message: "The event could not be checked before searching.",
+      volunteers: [],
+    };
+  }
+
+  if (String(eventResult.data.operations_scope) === "manual_isolated") {
+    return {
+      status: "error",
+      message: "This event is isolated from the shared volunteer database.",
+      volunteers: [],
+    };
+  }
+
+  const term = cleanVolunteerSearchTerm(parsed.data.query);
+  if (term.length < 2) {
+    return {
+      status: "error",
+      message: "Enter at least 2 letters or numbers to search.",
+      volunteers: [],
+    };
+  }
+
+  const columns =
+    "id, volunteer_code, display_name, primary_email_normalized, mobile, age";
+  const mobileTerm = term.replace(/\D/g, "");
+
+  const queries = [
+    admin
+      .schema("core")
+      .from("volunteers")
+      .select(columns)
+      .ilike("volunteer_code", `%${term}%`)
+      .limit(20),
+    admin
+      .schema("core")
+      .from("volunteers")
+      .select(columns)
+      .ilike("display_name", `%${term}%`)
+      .limit(20),
+    admin
+      .schema("core")
+      .from("volunteers")
+      .select(columns)
+      .ilike("primary_email_normalized", `%${term}%`)
+      .limit(20),
+  ];
+
+  if (mobileTerm.length >= 3) {
+    queries.push(
+      admin
+        .schema("core")
+        .from("volunteers")
+        .select(columns)
+        .ilike("mobile", `%${mobileTerm}%`)
+        .limit(20),
+    );
+  }
+
+  const results = await Promise.all(queries);
+  const firstError = results.find((result) => result.error)?.error;
+  if (firstError) {
+    console.error("Unable to search volunteer database for roster assignment", {
+      code: firstError.code,
+      eventId: parsed.data.eventId,
+    });
+    return {
+      status: "error",
+      message: "The volunteer database could not be searched.",
+      volunteers: [],
+    };
+  }
+
+  const byId = new Map<string, RosterVolunteerDatabaseItem>();
+  for (const result of results) {
+    for (const row of result.data ?? []) {
+      const id = String(row.id);
+      if (byId.has(id)) continue;
+      byId.set(id, {
+        id,
+        volunteerCode: String(row.volunteer_code),
+        displayName:
+          typeof row.display_name === "string" && row.display_name.trim()
+            ? row.display_name.trim()
+            : String(row.volunteer_code),
+        email:
+          typeof row.primary_email_normalized === "string"
+            ? row.primary_email_normalized
+            : null,
+        mobile: typeof row.mobile === "string" ? row.mobile : null,
+        age: typeof row.age === "number" ? row.age : null,
+      });
+    }
+  }
+
+  const volunteers = [...byId.values()]
+    .sort((a, b) => {
+      const nameOrder = a.displayName.localeCompare(b.displayName, "en-SG", {
+        sensitivity: "base",
+      });
+      return nameOrder || a.volunteerCode.localeCompare(b.volunteerCode);
+    })
+    .slice(0, 20);
+
+  return {
+    status: "success",
+    message:
+      volunteers.length === 0
+        ? "No volunteers matched that search."
+        : `${volunteers.length} volunteer${volunteers.length === 1 ? "" : "s"} found.`,
+    volunteers,
+  };
+}
+
+export async function addDatabaseVolunteersToRoster(input: {
+  eventId: string;
+  timeslotIds: string[];
+  volunteerIds: string[];
+}): Promise<DatabaseRosterAddState> {
+  const parsed = databaseRosterAddSchema.safeParse(input);
+  if (!parsed.success) {
+    return databaseRosterAddError(
+      "Select at least one volunteer and one active event shift.",
+    );
+  }
+
+  const uniqueTimeslotIds = [...new Set(parsed.data.timeslotIds)];
+  const uniqueVolunteerIds = [...new Set(parsed.data.volunteerIds)];
+  const { userId } = await requireEventManager(
+    `/admin/events/${parsed.data.eventId}/edit`,
+  );
+  const admin = getPhaseOneAdminClient();
+
+  const { data, error } = await admin.rpc(
+    "phaseone_add_database_volunteers_to_roster",
+    {
+      p_event_id: parsed.data.eventId,
+      p_timeslot_ids: uniqueTimeslotIds,
+      p_volunteer_ids: uniqueVolunteerIds,
+      p_actor_user_id: userId,
+    },
+  );
+
+  if (error) {
+    console.error("Unable to add database volunteers to event roster", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+    });
+
+    if (/isolated manual events/i.test(error.message)) {
+      return databaseRosterAddError(
+        "This isolated event cannot link volunteers from the shared database.",
+      );
+    }
+    if (
+      /linked to a different volunteer|different roster records|conflicts/i.test(
+        error.message,
+      )
+    ) {
+      return databaseRosterAddError(
+        "An existing roster row has conflicting volunteer details. Resolve that roster record before adding this volunteer.",
+      );
+    }
+    if (/selected shifts are unavailable/i.test(error.message)) {
+      return databaseRosterAddError(
+        "One or more selected shifts are no longer available. Refresh the page and try again.",
+      );
+    }
+    if (error.code === "42501") {
+      return databaseRosterAddError(
+        "Your account does not have permission to change this roster.",
+      );
+    }
+
+    return databaseRosterAddError(
+      "The selected volunteers could not be added to the roster.",
+    );
+  }
+
+  const result =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+  const created =
+    typeof result.created_assignments === "number"
+      ? result.created_assignments
+      : 0;
+  const linked =
+    typeof result.linked_existing_assignments === "number"
+      ? result.linked_existing_assignments
+      : 0;
+  const alreadyAssigned =
+    typeof result.already_assigned === "number"
+      ? result.already_assigned
+      : 0;
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/edit`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance/monitor`);
+
+  const changed = created + linked;
+  const parts = [
+    `${changed} roster assignment${changed === 1 ? "" : "s"} added or linked.`,
+  ];
+  if (alreadyAssigned > 0) {
+    parts.push(
+      `${alreadyAssigned} assignment${alreadyAssigned === 1 ? " was" : "s were"} already on the roster.`,
+    );
+  }
+
+  return {
+    status: "success",
+    message: parts.join(" "),
   };
 }
