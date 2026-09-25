@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
   requestVolunteerSignUpLink,
   type VolunteerSignUpState,
 } from "@/app/login/volunteer-sign-up-actions";
+import { VolunteerVerificationResendForm } from "@/app/login/volunteer-verification-resend-form";
 
 const initialState: VolunteerSignUpState = {
   status: "idle",
@@ -17,10 +18,36 @@ type VolunteerSignUpFormProps = Readonly<{
 }>;
 
 export function VolunteerSignUpForm({ nextPath }: VolunteerSignUpFormProps) {
+  const [email, setEmail] = useState("");
   const [state, formAction, pending] = useActionState(
     requestVolunteerSignUpLink,
     initialState,
   );
+
+  if (state.status === "success") {
+    return (
+      <div className="auth-verification-state">
+        <p className="form-message" data-status="success" aria-live="polite">
+          {state.message}
+        </p>
+        <p className="auth-verification-email">
+          Verification email sent to <strong>{email}</strong>.
+        </p>
+        <VolunteerVerificationResendForm
+          nextPath={nextPath}
+          defaultEmail={email}
+          compact
+        />
+        <button
+          className="text-link auth-change-email"
+          type="button"
+          onClick={() => window.location.reload()}
+        >
+          Use a different email
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="auth-primary-form" noValidate>
@@ -38,6 +65,8 @@ export function VolunteerSignUpForm({ nextPath }: VolunteerSignUpFormProps) {
           required
           disabled={pending}
           aria-describedby="community-signup-email-help"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
         />
         <span className="form-help" id="community-signup-email-help">
           Use an email address you can access. You will verify it before your

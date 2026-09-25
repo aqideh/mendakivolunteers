@@ -9,6 +9,7 @@ import {
   isValidRecoveryPassword,
   recoveryPasswordRequirements,
 } from "@/lib/auth/password-recovery";
+import { VolunteerVerificationResendForm } from "@/app/login/volunteer-verification-resend-form";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 import { createClient } from "@/lib/supabase/client";
 
@@ -46,7 +47,7 @@ export function MagicLinkConfirmation() {
     const errorDescription =
       hashParameters.get("error_description") ??
       currentUrl.searchParams.get("error_description");
-    const nextPath = getSafeRedirectPath(
+    const resolvedNextPath = getSafeRedirectPath(
       currentUrl.searchParams.get("next"),
       "/dashboard",
     );
@@ -123,7 +124,7 @@ export function MagicLinkConfirmation() {
       }
 
       if (isInvite) {
-        window.location.replace(nextPath);
+        window.location.replace(resolvedNextPath);
         return;
       }
 
@@ -150,7 +151,7 @@ export function MagicLinkConfirmation() {
         return;
       }
 
-      if (nextPath === "/dashboard") {
+      if (resolvedNextPath === "/dashboard") {
         const volunteerResult = await accountClient
           .schema("core")
           .from("volunteers")
@@ -175,7 +176,7 @@ export function MagicLinkConfirmation() {
         }
       }
 
-      window.location.replace(nextPath);
+      window.location.replace(resolvedNextPath);
     }
 
     void completeAuthentication();
@@ -311,9 +312,16 @@ export function MagicLinkConfirmation() {
       ) : null}
 
       {state.status === "error" ? (
-        <Link className="button button-secondary" href="/login">
-          Return to sign in
-        </Link>
+        <div className="auth-verification-recovery">
+          <p className="muted">
+            Enter the email address you used to create your account and we’ll
+            send a fresh verification link.
+          </p>
+          <VolunteerVerificationResendForm nextPath="/dashboard" />
+          <Link className="button button-secondary" href="/login">
+            Return to sign in
+          </Link>
+        </div>
       ) : null}
     </>
   );
