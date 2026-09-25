@@ -16,7 +16,7 @@ export function OpportunityFilter({ categories }: OpportunityFilterProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [date, setDate] = useState("");
-  const [resultCount, setResultCount] = useState<number | null>(null);
+  const resultCountRef = useRef<HTMLParagraphElement>(null);
 
   const hasFilters = Boolean(search.trim() || category || date);
 
@@ -63,7 +63,10 @@ export function OpportunityFilter({ categories }: OpportunityFilterProps) {
       if (show) matches += 1;
     });
 
-    setResultCount(matches);
+    if (resultCountRef.current) {
+      resultCountRef.current.textContent =
+        `${matches} ${matches === 1 ? "opportunity" : "opportunities"} shown`;
+    }
 
     const emptyState = document.getElementById("opportunity-filter-empty");
     if (emptyState) {
@@ -119,11 +122,7 @@ export function OpportunityFilter({ categories }: OpportunityFilterProps) {
           <div className="phaseone-opportunity-filter-heading">
             <div>
               <h2 id="opportunity-filter-title">Filter opportunities</h2>
-              <p>
-                {resultCount === null
-                  ? "Search upcoming opportunities."
-                  : `${resultCount} ${resultCount === 1 ? "opportunity" : "opportunities"} shown`}
-              </p>
+              <p ref={resultCountRef}>Search upcoming opportunities.</p>
             </div>
             <button
               className="phaseone-opportunity-filter-close"
