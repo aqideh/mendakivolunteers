@@ -361,6 +361,28 @@ export async function saveEducationStep(formData: FormData) {
   stepRedirect("photo", isEdit, "education");
 }
 
+export async function savePhotoVisibilityStep(formData: FormData) {
+  const isEdit = editMode(formData);
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=photo");
+  const result = await client
+    .from("keluarga_volunteer_profiles")
+    .upsert(
+      {
+        volunteer_id: volunteerId,
+        event_card_photo_opt_in: formData.get("eventCardPhotoOptIn") === "on",
+      },
+      { onConflict: "volunteer_id" },
+    );
+
+  if (result.error) {
+    redirect(`/profile/setup?step=photo&error=save${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  refreshProfilePaths();
+  revalidatePath("/opportunities");
+  stepRedirect("about", isEdit, "photo");
+}
+
 export async function saveAboutStep(formData: FormData) {
   const isEdit = editMode(formData);
   const bio = optionalText(formData.get("bio"), 500);
