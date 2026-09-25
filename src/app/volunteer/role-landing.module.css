@@ -25,7 +25,9 @@
 .heroMedia {
   z-index: -2;
   overflow: hidden;
-  background: #eef0f1;
+  background-color: #eef0f1;
+  background-repeat: no-repeat;
+  background-size: cover;
   opacity: 0.62;
 }
 
