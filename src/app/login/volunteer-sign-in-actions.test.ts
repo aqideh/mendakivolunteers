@@ -48,7 +48,7 @@ describe("volunteer email sign-in", () => {
     ).toBe("AsyncFunction");
   });
 
-  it("normalizes email and permits native KELUARGA account creation", async () => {
+  it("normalizes email and does not create an account during sign in", async () => {
     const result = await volunteerSignInActions.requestVolunteerSignInLink(
       { status: "idle", message: "" },
       formData(" New.Volunteer@Example.Test ", "/opportunities/community-day"),
@@ -58,7 +58,7 @@ describe("volunteer email sign-in", () => {
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "new.volunteer@example.test",
       options: {
-        shouldCreateUser: true,
+        shouldCreateUser: false,
         emailRedirectTo:
           "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fopportunities%2Fcommunity-day",
       },
@@ -74,7 +74,7 @@ describe("volunteer email sign-in", () => {
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "volunteer@example.test",
       options: expect.objectContaining({
-        shouldCreateUser: true,
+        shouldCreateUser: false,
         emailRedirectTo:
           "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fdashboard",
       }),
