@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { PortalHeader } from "@/components/portal-header";
 
@@ -19,20 +20,31 @@ export function RoleLanding({
   title,
   description,
   inlineCta,
+  heroImage,
+  heroPosition,
   items,
   ctas,
 }: Readonly<{
   title: string;
   description: string;
   inlineCta?: RoleCta;
+  heroImage?: string;
+  heroPosition?: string;
   items: readonly RoleItem[];
   ctas: readonly RoleCta[];
 }>) {
+  const heroStyle = heroImage
+    ? ({
+        "--role-hero-image": `url("${heroImage}")`,
+        ...(heroPosition ? { "--role-hero-position": heroPosition } : {}),
+      } as CSSProperties)
+    : undefined;
+
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
       <main className={styles.frame}>
-        <section className={styles.hero} aria-labelledby="role-title">
+        <section className={styles.hero} aria-labelledby="role-title" style={heroStyle}>
           <div className={styles.heroInner}>
             <Link className={styles.backLink} href="/">
               <span aria-hidden="true">←</span>

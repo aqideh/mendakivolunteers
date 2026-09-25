@@ -25,7 +25,13 @@
 
 .hero::before {
   z-index: -2;
-  background: url("/home/keluarga-volunteers-hero.jpeg") center 46% / cover no-repeat;
+  background-image: var(
+    --role-hero-image,
+    url("/home/keluarga-volunteers-hero.jpeg")
+  );
+  background-position: var(--role-hero-position, center 46%);
+  background-size: cover;
+  background-repeat: no-repeat;
   opacity: 0.48;
 }
 
@@ -239,7 +245,7 @@
   }
 
   .hero::before {
-    background-position: 52% center;
+    background-position: var(--role-hero-position, 52% center);
     opacity: 0.4;
   }
 
