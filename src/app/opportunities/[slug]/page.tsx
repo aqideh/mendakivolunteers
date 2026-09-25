@@ -359,6 +359,21 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
               </p>
             )}
           </section>
+
+          <div className="phaseone-opportunity-consent-note">
+            <p>
+              By volunteering for this activity, you consent to the sharing of your
+              personal information with MENDAKI and agree to be registered as a
+              MENDAKI volunteer. MENDAKI may contact you with updates on future
+              volunteer opportunities.
+            </p>
+            <p>
+              Please also note that photos, videos, and/or interviews may be captured
+              during events and used by Yayasan MENDAKI and/or the organiser for
+              marketing and publicity purposes. Volunteers will be notified in advance
+              should there be any changes to the programme.
+            </p>
+          </div>
         </article>
       </main>
     </div>
