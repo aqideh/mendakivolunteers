@@ -1,7 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import {
+  useRef,
+  useState,
+  useTransition,
+  type DragEvent,
+  type KeyboardEvent,
+} from "react";
 
 import {
   attachLandingPageImage,
@@ -29,14 +35,17 @@ export type LandingPagePhotoItem = Readonly<{
 function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
   const [currentUrl, setCurrentUrl] = useState(item.imageUrl);
   const [isCustom, setIsCustom] = useState(item.isCustom);
   const [message, setMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const isBusy = uploading || isPending;
 
   async function upload(file: File | undefined) {
-    if (!file) return;
+    if (!file || isBusy) return;
 
     setUploading(true);
     setMessage(null);
@@ -86,6 +95,8 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
   }
 
   function reset() {
+    if (isBusy) return;
+
     setMessage(null);
     startTransition(async () => {
       try {
@@ -104,13 +115,78 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
     });
   }
 
+  function openFilePicker() {
+    if (!isBusy) inputRef.current?.click();
+  }
+
+  function onDropZoneKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openFilePicker();
+  }
+
+  function onDragEnter(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isBusy) return;
+
+    dragDepthRef.current += 1;
+    setIsDragging(true);
+  }
+
+  function onDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isBusy) return;
+
+    event.dataTransfer.dropEffect = "copy";
+  }
+
+  function onDragLeave(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isBusy) return;
+
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDragging(false);
+  }
+
+  function onDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    dragDepthRef.current = 0;
+    setIsDragging(false);
+
+    if (isBusy) return;
+    void upload(event.dataTransfer.files?.[0]);
+  }
+
   return (
     <article className={styles.card}>
-      <div className={styles.preview}>
+      <div
+        aria-busy={isBusy}
+        aria-disabled={isBusy}
+        aria-label={`Upload a photo for ${item.label}. Drag and drop a JPEG, PNG or WebP image here, or press Enter to browse.`}
+        className={`${styles.preview} ${isDragging ? styles.previewDragging : ""}`}
+        onClick={openFilePicker}
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onKeyDown={onDropZoneKeyDown}
+        role="button"
+        tabIndex={isBusy ? -1 : 0}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={currentUrl} alt="" />
+        <span className={styles.previewShade} aria-hidden="true" />
         <span className={styles.statusBadge}>
           {isCustom ? "Custom photo" : "Default photo"}
+        </span>
+        <span className={styles.dropPrompt}>
+          <strong>{isDragging ? "Drop photo to upload" : "Drag & drop photo here"}</strong>
+          <span>{uploading ? "Uploading…" : "or click to browse"}</span>
         </span>
       </div>
 
@@ -134,8 +210,8 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
           <button
             className="button button-secondary"
             type="button"
-            disabled={uploading || isPending}
-            onClick={() => inputRef.current?.click()}
+            disabled={isBusy}
+            onClick={openFilePicker}
           >
             {uploading ? "Uploading…" : isCustom ? "Replace photo" : "Upload photo"}
           </button>
@@ -144,7 +220,7 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
             <button
               className="text-link button-reset"
               type="button"
-              disabled={uploading || isPending}
+              disabled={isBusy}
               onClick={reset}
             >
               Reset to default
