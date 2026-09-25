@@ -9,10 +9,10 @@ import {
   resetLandingPageImage,
 } from "@/app/admin/content/landing-pages/actions";
 import type { LandingPageKey } from "@/lib/content/landing-page-media";
-import { processImageForUpload } from "@/lib/media/image-processing";
 import {
   landingPageImageBucket,
   landingPageImageMaxBytes,
+  landingPageImageMimeTypes,
 } from "@/lib/media/storage";
 import { createClient } from "@/lib/supabase/client";
 
@@ -42,28 +42,27 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
     setMessage(null);
 
     try {
-      const processed = await processImageForUpload(file, {
-        width: 1600,
-        height: 900,
-        maxBytes: landingPageImageMaxBytes,
-      });
+      if (!(landingPageImageMimeTypes as readonly string[]).includes(file.type)) {
+        throw new Error("Use a JPEG, PNG or WebP image.");
+      }
+      if (file.size <= 0 || file.size > landingPageImageMaxBytes) {
+        throw new Error("Choose an image up to 20 MB.");
+      }
 
       const signed = await requestLandingPageImageUpload({
         pageKey: item.key,
-        contentType: processed.type,
-        fileSize: processed.size,
+        contentType: file.type,
+        fileSize: file.size,
       });
 
       const supabase = createClient();
       const { error } = await supabase.storage
         .from(landingPageImageBucket)
-        .uploadToSignedUrl(signed.storagePath, signed.token, processed, {
-          contentType: processed.type,
+        .uploadToSignedUrl(signed.storagePath, signed.token, file, {
+          contentType: file.type,
         });
 
-      if (error) {
-        throw new Error("The landing page photo could not be uploaded.");
-      }
+      if (error) throw new Error("The landing page photo could not be uploaded.");
 
       const result = await attachLandingPageImage({
         pageKey: item.key,
@@ -72,7 +71,7 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
 
       setCurrentUrl(result.publicUrl);
       setIsCustom(true);
-      setMessage("Photo updated.");
+      setMessage("Photo updated at original resolution.");
       router.refresh();
     } catch (error) {
       setMessage(
@@ -118,12 +117,7 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
       <div className={styles.cardBody}>
         <div>
           <h2>{item.label}</h2>
-          <a
-            className="text-link"
-            href={item.href}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a className="text-link" href={item.href} target="_blank" rel="noreferrer">
             View page ↗
           </a>
         </div>
@@ -132,7 +126,7 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
           ref={inputRef}
           className={styles.hiddenInput}
           type="file"
-          accept="image/*"
+          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
           onChange={(event) => void upload(event.currentTarget.files?.[0])}
         />
 
@@ -143,7 +137,7 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
             disabled={uploading || isPending}
             onClick={() => inputRef.current?.click()}
           >
-            {uploading ? "Preparing photo…" : isCustom ? "Replace photo" : "Upload photo"}
+            {uploading ? "Uploading…" : isCustom ? "Replace photo" : "Upload photo"}
           </button>
 
           {isCustom ? (
@@ -158,11 +152,7 @@ function LandingPagePhotoCard({ item }: { item: LandingPagePhotoItem }) {
           ) : null}
         </div>
 
-        {message ? (
-          <p className={styles.message} role="status">
-            {message}
-          </p>
-        ) : null}
+        {message ? <p className={styles.message} role="status">{message}</p> : null}
       </div>
     </article>
   );
@@ -175,9 +165,7 @@ export function LandingPagePhotoManager({
 }) {
   return (
     <div className={styles.grid}>
-      {pages.map((item) => (
-        <LandingPagePhotoCard item={item} key={item.key} />
-      ))}
+      {pages.map((item) => <LandingPagePhotoCard item={item} key={item.key} />)}
     </div>
   );
 }
