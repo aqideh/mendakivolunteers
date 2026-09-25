@@ -4,6 +4,8 @@ import { ContributorHero } from "@/app/opportunities/contributor-hero";
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDate } from "@/lib/content/dates";
 import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
+import { loadOpportunitySocialProof } from "@/lib/phaseone/opportunity-social-proof";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Volunteer opportunities",
@@ -13,8 +15,23 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+function formatSingaporeTime(value: string) {
+  return new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export default async function OpportunitiesPage() {
   const opportunities = await getUpcomingPhaseOneOpportunities();
+  const supabase = await createClient();
+  const userResult = await supabase.auth.getUser();
+  const isSignedIn = Boolean(userResult.data.user);
+  const socialProof = await loadOpportunitySocialProof(
+    opportunities.map((opportunity) => opportunity.id),
+    isSignedIn,
+  );
 
   return (
     <div className="site-shell phaseone-shell">
@@ -39,45 +56,73 @@ export default async function OpportunitiesPage() {
                   )}
                 </div>
                 <div className="phaseone-opportunity-body">
-                  <p className="phaseone-opportunity-date">
-                    {formatSingaporeDate(opportunity.starts_at)}
+                  <div className="phaseone-opportunity-pills" aria-label="Opportunity schedule">
+                    <span>{formatSingaporeDate(opportunity.starts_at)}</span>
+                    <span>{formatSingaporeTime(opportunity.starts_at)}</span>
+                    {opportunity.timeslots.length > 1 ? (
+                      <span>{opportunity.timeslots.length} shifts</span>
+                    ) : null}
+                  </div>
+
+                  <div className="phaseone-opportunity-heading">
+                    <h2>{opportunity.title}</h2>
+                    {opportunity.category ? (
+                      <span className="phaseone-opportunity-category">
+                        {opportunity.category}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <p className="phaseone-opportunity-venue">
+                    {opportunity.venue ?? "Venue details to be confirmed"}
                   </p>
-                  <h2>{opportunity.title}</h2>
+
                   {opportunity.summary ? (
                     <p className="phaseone-opportunity-summary">
                       {opportunity.summary}
                     </p>
                   ) : null}
-                  {opportunity.category ? (
-                    <p className="eyebrow">{opportunity.category}</p>
-                  ) : null}
-                  <dl className="phaseone-opportunity-details">
-                    <div>
-                      <dt>Venue</dt>
-                      <dd>
-                        {opportunity.venue ??
-                          "See the opportunity details for more information"}
-                      </dd>
-                    </div>
-                    {opportunity.timeslots.length > 1 ? (
-                      <div>
-                        <dt>Schedule</dt>
-                        <dd>{opportunity.timeslots.length} available shifts</dd>
-                      </div>
-                    ) : null}
-                    {opportunity.ends_at ? (
-                      <div>
-                        <dt>Ends</dt>
-                        <dd>{formatSingaporeDate(opportunity.ends_at)}</dd>
-                      </div>
-                    ) : null}
-                  </dl>
-                  <a
-                    className="button button-primary phaseone-opportunity-cta"
-                    href={`/opportunities/${opportunity.slug}`}
-                  >
-                    Register
-                  </a>
+
+                  <div className="phaseone-opportunity-card-footer">
+                    {(() => {
+                      const proof = socialProof.get(opportunity.id) ?? {
+                        confirmedCount: 0,
+                        avatarUrls: [],
+                      };
+                      return proof.confirmedCount > 0 ? (
+                        <div
+                          className="phaseone-opportunity-social-proof"
+                          aria-label={`${proof.confirmedCount} confirmed volunteers`}
+                        >
+                          {isSignedIn && proof.avatarUrls.length > 0 ? (
+                            <div className="phaseone-opportunity-avatar-stack" aria-hidden="true">
+                              {proof.avatarUrls.map((url, index) => (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={url} alt="" key={`${url}-${index}`} />
+                              ))}
+                            </div>
+                          ) : null}
+                          <span>
+                            {proof.confirmedCount === 1
+                              ? "1 volunteer registered"
+                              : `${proof.confirmedCount} volunteers registered`}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="phaseone-opportunity-social-empty">
+                          Be among the first to volunteer
+                        </span>
+                      );
+                    })()}
+
+                    <a
+                      className="button button-primary phaseone-opportunity-cta"
+                      href={`/opportunities/${opportunity.slug}`}
+                    >
+                      Volunteer
+                      <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
                 </div>
               </article>
             ))}
