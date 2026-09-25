@@ -14,13 +14,22 @@ import {
 import {
   landingPageImageBucket,
   landingPageImageMaxBytes,
+  landingPageImageMimeTypes,
 } from "@/lib/media/storage";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const pageKeySchema = z.enum(landingPageKeys);
+const allowedMimeTypes = new Set<string>(landingPageImageMimeTypes);
 
 function pageRoute(key: LandingPageKey): string {
   return getLandingPageDefinition(key).href;
+}
+
+function extensionForMimeType(contentType: string): string {
+  if (contentType === "image/jpeg") return "jpg";
+  if (contentType === "image/png") return "png";
+  if (contentType === "image/webp") return "webp";
+  throw new Error("Use a JPEG, PNG or WebP image.");
 }
 
 async function getLandingRecord(key: LandingPageKey) {
@@ -57,8 +66,8 @@ export async function requestLandingPageImageUpload(input: {
 }) {
   const pageKey = pageKeySchema.parse(input.pageKey);
 
-  if (input.contentType !== "image/webp") {
-    throw new Error("Landing page photos must be prepared as WebP images.");
+  if (!allowedMimeTypes.has(input.contentType)) {
+    throw new Error("Use a JPEG, PNG or WebP image.");
   }
 
   if (
@@ -66,15 +75,14 @@ export async function requestLandingPageImageUpload(input: {
     input.fileSize <= 0 ||
     input.fileSize > landingPageImageMaxBytes
   ) {
-    throw new Error("Landing page photos must be 1 MB or smaller.");
+    throw new Error("Landing page photos must be 20 MB or smaller.");
   }
 
-  await requireContentManager({
-    next: "/admin/content/landing-pages",
-  });
+  await requireContentManager({ next: "/admin/content/landing-pages" });
   await getLandingRecord(pageKey);
 
-  const storagePath = `${pageKey}/${randomUUID()}.webp`;
+  const extension = extensionForMimeType(input.contentType);
+  const storagePath = `${pageKey}/${randomUUID()}.${extension}`;
   const admin = getPhaseOneAdminClient();
   const { data, error } = await admin.storage
     .from(landingPageImageBucket)
@@ -93,10 +101,7 @@ export async function attachLandingPageImage(input: {
 }) {
   const pageKey = pageKeySchema.parse(input.pageKey);
 
-  if (
-    !input.storagePath.startsWith(`${pageKey}/`) ||
-    !input.storagePath.endsWith(".webp")
-  ) {
+  if (!input.storagePath.startsWith(`${pageKey}/`)) {
     throw new Error("Invalid landing page photo path.");
   }
 
@@ -162,9 +167,7 @@ export async function resetLandingPageImage(value: LandingPageKey) {
     })
     .eq("page_key", pageKey);
 
-  if (error) {
-    throw new Error("The landing page photo could not be reset.");
-  }
+  if (error) throw new Error("The landing page photo could not be reset.");
 
   if (current.storage_path) {
     const { error: removeError } = await admin.storage
