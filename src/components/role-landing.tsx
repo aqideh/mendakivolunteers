@@ -1,5 +1,5 @@
+import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties } from "react";
 
 import { PortalHeader } from "@/components/portal-header";
 
@@ -33,18 +33,25 @@ export function RoleLanding({
   items: readonly RoleItem[];
   ctas: readonly RoleCta[];
 }>) {
-  const heroStyle = heroImage
-    ? ({
-        "--role-hero-image": `url("${heroImage}")`,
-        ...(heroPosition ? { "--role-hero-position": heroPosition } : {}),
-      } as CSSProperties)
-    : undefined;
-
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
       <main className={styles.frame}>
-        <section className={styles.hero} aria-labelledby="role-title" style={heroStyle}>
+        <section className={styles.hero} aria-labelledby="role-title">
+          <div className={styles.heroMedia} aria-hidden="true">
+            <Image
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              src={heroImage ?? "/home/keluarga-volunteers-hero.jpeg"}
+              style={{
+                objectFit: "cover",
+                objectPosition: heroPosition ?? "center 46%",
+              }}
+            />
+          </div>
+          <div className={styles.heroShade} aria-hidden="true" />
           <div className={styles.heroInner}>
             <Link className={styles.backLink} href="/">
               <span aria-hidden="true">←</span>

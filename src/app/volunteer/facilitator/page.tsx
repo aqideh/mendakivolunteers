@@ -13,6 +13,8 @@ export default function FacilitatorPage() {
     <RoleLanding
       title="Inspire Learning. Build Confidence."
       description="Empower parents of children to support learning at home through practical play based tips, interactive workshops, hands on activities and resources that build their confidence."
+      heroImage="/volunteer/facilitator-hero.jpg"
+      heroPosition="72% center"
       items={[
         {
           title: "ReadySetLearn Language Explorer",

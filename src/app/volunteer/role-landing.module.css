@@ -15,42 +15,36 @@
   isolation: isolate;
 }
 
-.hero::before,
-.hero::after {
+.heroMedia,
+.heroShade {
   position: absolute;
   inset: 0;
-  content: "";
   pointer-events: none;
 }
 
-.hero::before {
+.heroMedia {
   z-index: -2;
-  background-image: var(
-    --role-hero-image,
-    url("/home/keluarga-volunteers-hero.jpeg")
-  );
-  background-position: var(--role-hero-position, center 46%);
-  background-size: cover;
-  background-repeat: no-repeat;
-  opacity: 0.48;
+  overflow: hidden;
+  background: #eef0f1;
+  opacity: 0.62;
 }
 
-.hero::after {
+.heroShade {
   z-index: -1;
   background:
     linear-gradient(
       180deg,
       rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.03) 58%,
-      rgba(255, 255, 255, 0.68) 82%,
-      rgba(255, 255, 255, 0.96) 95%,
+      rgba(255, 255, 255, 0.02) 58%,
+      rgba(255, 255, 255, 0.62) 82%,
+      rgba(255, 255, 255, 0.94) 95%,
       #ffffff 100%
     ),
     linear-gradient(
       90deg,
-      rgba(247, 247, 244, 0.82) 0%,
-      rgba(247, 247, 244, 0.58) 50%,
-      rgba(247, 247, 244, 0.34) 100%
+      rgba(247, 247, 244, 0.78) 0%,
+      rgba(247, 247, 244, 0.50) 48%,
+      rgba(247, 247, 244, 0.20) 100%
     );
 }
 
@@ -244,19 +238,18 @@
     padding: 1rem 0 5rem;
   }
 
-  .hero::before {
-    background-position: var(--role-hero-position, 52% center);
-    opacity: 0.4;
+  .heroMedia {
+    opacity: 0.52;
   }
 
-  .hero::after {
+  .heroShade {
     background:
       linear-gradient(
         180deg,
-        rgba(247, 247, 244, 0.68) 0%,
-        rgba(247, 247, 244, 0.5) 50%,
-        rgba(255, 255, 255, 0.72) 80%,
-        rgba(255, 255, 255, 0.97) 95%,
+        rgba(247, 247, 244, 0.58) 0%,
+        rgba(247, 247, 244, 0.42) 50%,
+        rgba(255, 255, 255, 0.68) 80%,
+        rgba(255, 255, 255, 0.96) 95%,
         #ffffff 100%
       );
   }
