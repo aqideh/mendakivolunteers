@@ -17,7 +17,7 @@ Work through these in order unless a production defect takes priority.
 - [x] **Run shared-database production migration rehearsal.** Passed on 25 September 2026 using rollback-only production SQL. Production has 574/574 linked MakLom profiles, and the production-specific bridge migration is committed.
 - [x] **Finish MakLom React + Mantine changeover.** Rebuild Events, Attendance and Imports with feature parity, then switch production and retire the superseded static/Web Awesome runtime.
 - [x] **Build MakLom Contribution Review UI.** Pending/needs-review queue, approve, adjust minutes, reject, audit history and reviewer metadata.
-- [ ] **Build MakLom Profile Change Review UI.** Review KELUARGA-submitted contact/profile proposals with approve/reject/apply actions.
+- [x] **Build MakLom Profile Change Review UI.** Searchable review queue, before/proposed/current-value comparison, approve-and-apply, reject, reviewer notes and concurrent-change protection are live in MakLom production for the current mobile-change inbox contract.
 - [ ] **Build MakLom Insights & Reviews Inbox.** Preserve event/source context, support accept/edit/dismiss and provide longitudinal volunteer history.
 - [x] **Activate FormSG -> MakLom production webhook.** Configure secret/endpoint, run a controlled submission, verify field mapping and verify retry/idempotency.
 - [ ] **Activate OneMap address enrichment in staging.** The server-side integration is implemented: postal code -> verified address/coordinates -> planning area -> GE2025 GRC/SMC. Add the staging OneMap credentials in Vercel, then run live postal-code UAT and confirm derived geography before marking complete.
