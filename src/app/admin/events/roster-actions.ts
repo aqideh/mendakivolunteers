@@ -703,3 +703,105 @@ export async function addManualVolunteerToRoster(input: {
     volunteerCreated,
   };
 }
+
+
+const rosterProfileDetailsSchema = z.object({
+  eventId: z.string().uuid(),
+  volunteerId: z.string().uuid(),
+  tshirtSize: z
+    .enum(["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"])
+    .nullable()
+    .optional(),
+  dietaryRequirements: z.string().trim().max(800).optional().default(""),
+});
+
+export type RosterProfileDetailsState = Readonly<{
+  status: "idle" | "success" | "error";
+  message: string;
+}>;
+
+export async function updateRosterVolunteerProfileDetails(input: {
+  eventId: string;
+  volunteerId: string;
+  tshirtSize?: "S" | "M" | "L" | "XL" | "2XL" | "3XL" | "5XL" | "7XL" | null;
+  dietaryRequirements?: string;
+}): Promise<RosterProfileDetailsState> {
+  const parsed = rosterProfileDetailsSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message:
+        parsed.error.issues[0]?.message ??
+        "Check the T-shirt size and dietary requirements.",
+    };
+  }
+
+  const { userId } = await requireEventManager(
+    `/admin/events/${parsed.data.eventId}/attendance`,
+  );
+  const admin = getPhaseOneAdminClient();
+
+  const { error } = await admin.rpc(
+    "phaseone_admin_update_roster_profile_details",
+    {
+      p_event_id: parsed.data.eventId,
+      p_volunteer_id: parsed.data.volunteerId,
+      p_tshirt_size: parsed.data.tshirtSize ?? null,
+      p_dietary_requirements:
+        parsed.data.dietaryRequirements.trim() || null,
+      p_actor_user_id: userId,
+    },
+  );
+
+  if (error) {
+    console.error("Unable to update roster volunteer profile details", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+      volunteerId: parsed.data.volunteerId,
+    });
+
+    if (/not linked to this event roster/i.test(error.message)) {
+      return {
+        status: "error",
+        message:
+          "This roster entry is not linked to a canonical KELUARGA volunteer.",
+      };
+    }
+    if (/does not support canonical volunteer profile updates/i.test(error.message)) {
+      return {
+        status: "error",
+        message:
+          "This isolated event does not update the shared volunteer database.",
+      };
+    }
+    if (/supported T-shirt size/i.test(error.message)) {
+      return { status: "error", message: "Choose a supported T-shirt size." };
+    }
+    if (/dietary requirements/i.test(error.message)) {
+      return {
+        status: "error",
+        message: "Dietary requirements must be 800 characters or fewer.",
+      };
+    }
+    if (error.code === "42501") {
+      return {
+        status: "error",
+        message: "Your account does not have permission to update this profile.",
+      };
+    }
+
+    return {
+      status: "error",
+      message: "The volunteer profile details could not be updated.",
+    };
+  }
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/edit`);
+
+  return {
+    status: "success",
+    message:
+      "Saved to the volunteer profile and refreshed this event roster.",
+  };
+}
