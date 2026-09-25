@@ -11,7 +11,7 @@ create or replace function public.phaseone_admin_create_or_link_volunteer_to_ros
 )
 returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = pg_catalog, public, core, auth
 as $$
 declare
@@ -150,30 +150,6 @@ begin
       updated_at = now()
     where id = v_volunteer_id
       and auth_user_id is null;
-  end if;
-
-  if v_normalized_tshirt is not null or v_normalized_dietary is not null then
-    insert into public.volunteer_private_details(
-      volunteer_id,
-      tshirt_size,
-      dietary_requirements
-    )
-    values (
-      v_volunteer_id,
-      v_normalized_tshirt,
-      v_normalized_dietary
-    )
-    on conflict (volunteer_id) do update
-    set
-      tshirt_size = coalesce(
-        public.volunteer_private_details.tshirt_size,
-        excluded.tshirt_size
-      ),
-      dietary_requirements = coalesce(
-        public.volunteer_private_details.dietary_requirements,
-        excluded.dietary_requirements
-      ),
-      updated_at = now();
   end if;
 
   v_assignment_result := public.phaseone_add_database_volunteers_to_roster(
