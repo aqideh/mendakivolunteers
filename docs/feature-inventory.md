@@ -85,6 +85,7 @@ Implemented:
 - private volunteer-details domain keyed by the canonical volunteer UUID;
 - VolTeam/Admin volunteer directory with search and filtering by available planning area, electoral division, T-shirt size and highest qualification;
 - GE2025 electoral boundary reference dataset, PostGIS boundary storage and coordinate-to-GRC/SMC resolver;
+- server-side OneMap postal-code verification that derives normalized address, coordinates and planning area before GE2025 electoral lookup;
 - filtered volunteer CSV export;
 - volunteer-shirt catalogue for round-neck and collared shirts in S, M, L, XL, 2XL, 3XL, 5XL and 7XL;
 - append-only stock movements for opening stock, receipts, adjustments, returns and issues;
@@ -92,7 +93,7 @@ Implemented:
 - one-shirt-per-volunteer database constraint;
 - legacy shirt-issue recording for volunteers who received a shirt before KELUARGA inventory tracking.
 
-Neighbourhood, planning-area and electoral-division fields are stored separately from the volunteer-entered address and are only intended to be populated from a verified geographic/boundary source.
+Planning-area and electoral-division fields are stored separately from volunteer input and are populated only through verified geographic enrichment. OneMap credentials must be configured in the deployment environment before live postal-code verification can run.
 
 ### Registration review
 
