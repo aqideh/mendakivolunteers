@@ -126,7 +126,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <section className="section" aria-labelledby="admin-tools-title">
+        <section className="section" aria-label="Admin tools">
           <div className="card-grid">
             {visibleTools.map((tool) => {
               const body = (
