@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function SpecialistInterestPage() {
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Community volunteers" lite />
+      <PortalHeader status="Volunteers" lite />
       <main className={styles.frame}>
         <Link className={styles.backLink} href="/volunteer/specialist">
           ← Back to Specialist

@@ -66,7 +66,7 @@ export function OpportunityAuthOverlay({
       <dialog
         ref={dialogRef}
         className="phaseone-opportunity-auth-dialog"
-        aria-labelledby="community-auth-title"
+        aria-labelledby="volunteer-auth-title"
         aria-describedby="opportunity-auth-copy"
         onClick={(event) => {
           if (event.target === event.currentTarget) {
@@ -85,8 +85,8 @@ export function OpportunityAuthOverlay({
           </button>
 
           <div id="opportunity-auth-copy" className="phaseone-opportunity-auth-copy">
-            Create a community volunteer account or sign in to an existing
-            KELUARGA account. Your selected shifts will be kept.
+            Create a KELUARGA account or sign in to an existing account. Your
+            selected shifts will be kept.
           </div>
 
           <VolunteerAuthPanel
