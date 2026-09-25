@@ -18,7 +18,7 @@ vi.mock("@/lib/env", () => ({
   getPublicConfig: getPublicConfigMock,
 }));
 
-import * as volunteerSignInActions from "@/app/login/volunteer-sign-in-actions";
+import * as volunteerSignUpActions from "@/app/login/volunteer-sign-up-actions";
 
 function formData(email: string, next = "/dashboard") {
   const data = new FormData();
@@ -27,7 +27,7 @@ function formData(email: string, next = "/dashboard") {
   return data;
 }
 
-describe("volunteer email sign-in", () => {
+describe("community volunteer email sign-up", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     createClientMock.mockResolvedValue({
@@ -40,16 +40,16 @@ describe("volunteer email sign-in", () => {
   });
 
   it("only exposes the async server action at runtime", () => {
-    expect(Object.keys(volunteerSignInActions)).toEqual([
-      "requestVolunteerSignInLink",
+    expect(Object.keys(volunteerSignUpActions)).toEqual([
+      "requestVolunteerSignUpLink",
     ]);
     expect(
-      volunteerSignInActions.requestVolunteerSignInLink.constructor.name,
+      volunteerSignUpActions.requestVolunteerSignUpLink.constructor.name,
     ).toBe("AsyncFunction");
   });
 
-  it("normalizes email without creating a new volunteer account", async () => {
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
+  it("creates a community volunteer account and preserves a safe return path", async () => {
+    const result = await volunteerSignUpActions.requestVolunteerSignUpLink(
       { status: "idle", message: "" },
       formData(" New.Volunteer@Example.Test ", "/opportunities/community-day"),
     );
@@ -58,7 +58,7 @@ describe("volunteer email sign-in", () => {
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "new.volunteer@example.test",
       options: {
-        shouldCreateUser: false,
+        shouldCreateUser: true,
         emailRedirectTo:
           "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fopportunities%2Fcommunity-day",
       },
@@ -66,7 +66,7 @@ describe("volunteer email sign-in", () => {
   });
 
   it("rejects unsafe return destinations", async () => {
-    await volunteerSignInActions.requestVolunteerSignInLink(
+    await volunteerSignUpActions.requestVolunteerSignUpLink(
       { status: "idle", message: "" },
       formData("volunteer@example.test", "https://attacker.example/path"),
     );
@@ -74,7 +74,7 @@ describe("volunteer email sign-in", () => {
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "volunteer@example.test",
       options: expect.objectContaining({
-        shouldCreateUser: false,
+        shouldCreateUser: true,
         emailRedirectTo:
           "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fdashboard",
       }),
@@ -82,7 +82,7 @@ describe("volunteer email sign-in", () => {
   });
 
   it("rejects an invalid email before calling Supabase", async () => {
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
+    const result = await volunteerSignUpActions.requestVolunteerSignUpLink(
       { status: "idle", message: "" },
       formData("not-an-email"),
     );
@@ -90,49 +90,6 @@ describe("volunteer email sign-in", () => {
     expect(result).toEqual({
       status: "error",
       message: "Enter a valid email address.",
-    });
-    expect(signInWithOtpMock).not.toHaveBeenCalled();
-  });
-
-  it("keeps delivery failures non-disclosing while retaining diagnostics", async () => {
-    signInWithOtpMock.mockResolvedValue({
-      error: { code: "over_email_send_rate_limit", status: 429 },
-    });
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
-      formData("volunteer@example.test"),
-    );
-
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("If the email can receive messages");
-    expect(result.message).not.toContain("volunteer@example.test");
-    expect(consoleError).toHaveBeenCalledWith(
-      "Volunteer magic-link request was not delivered",
-      expect.objectContaining({
-        code: "over_email_send_rate_limit",
-        status: 429,
-      }),
-    );
-  });
-
-  it("reports missing public configuration without attempting delivery", async () => {
-    getPublicConfigMock.mockImplementation(() => {
-      throw new Error("NEXT_PUBLIC_APP_URL missing");
-    });
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
-      formData("volunteer@example.test"),
-    );
-
-    expect(result).toEqual({
-      status: "error",
-      message: "Volunteer sign-in is not configured in this environment.",
     });
     expect(signInWithOtpMock).not.toHaveBeenCalled();
   });

@@ -8,18 +8,18 @@ import { createClient } from "@/lib/supabase/server";
 
 const emailSchema = z.string().trim().email().max(254);
 
-export type VolunteerSignInState = Readonly<{
+export type VolunteerSignUpState = Readonly<{
   status: "idle" | "success" | "error";
   message: string;
 }>;
 
 const genericSuccessMessage =
-  "If the email can receive messages, a KELUARGA sign-in link has been sent. Check your inbox and junk folder.";
+  "If the email can receive messages, a KELUARGA account link has been sent. Open it to verify your email and finish creating your account.";
 
-export async function requestVolunteerSignInLink(
-  _previousState: VolunteerSignInState,
+export async function requestVolunteerSignUpLink(
+  _previousState: VolunteerSignUpState,
   formData: FormData,
-): Promise<VolunteerSignInState> {
+): Promise<VolunteerSignUpState> {
   const parsedEmail = emailSchema.safeParse(formData.get("email"));
   if (!parsedEmail.success) {
     return { status: "error", message: "Enter a valid email address." };
@@ -40,22 +40,22 @@ export async function requestVolunteerSignInLink(
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        shouldCreateUser: false,
+        shouldCreateUser: true,
         emailRedirectTo: callbackUrl.toString(),
       },
     });
 
     if (error) {
-      console.error("Volunteer magic-link request was not delivered", {
+      console.error("Volunteer sign-up link request was not delivered", {
         code: error.code,
         status: error.status,
       });
     }
   } catch (error) {
-    console.error("Volunteer magic-link sign-in is not configured", error);
+    console.error("Volunteer sign-up is not configured", error);
     return {
       status: "error",
-      message: "Volunteer sign-in is not configured in this environment.",
+      message: "Volunteer sign-up is not configured in this environment.",
     };
   }
 
