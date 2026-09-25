@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 
 export type ProfilePassportTab = "overview" | "activity" | "recognition";
 
 type ProfilePassportTabsProps = Readonly<{
   initialTab: ProfilePassportTab;
-  overview: ReactNode;
-  activity: ReactNode;
-  recognition: ReactNode;
 }>;
 
 function tabFromLocation(): ProfilePassportTab {
@@ -22,11 +18,20 @@ function tabFromLocation(): ProfilePassportTab {
 
 export function ProfilePassportTabs({
   initialTab,
-  overview,
-  activity,
-  recognition,
 }: ProfilePassportTabsProps) {
   const [activeTab, setActiveTab] = useState<ProfilePassportTab>(initialTab);
+
+  useEffect(() => {
+    const panels = document.querySelectorAll<HTMLElement>(
+      "[data-profile-passport-panel]",
+    );
+
+    for (const panel of panels) {
+      const isActive = panel.dataset.profilePassportPanel === activeTab;
+      panel.hidden = !isActive;
+      panel.dataset.active = isActive ? "true" : "false";
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     function handlePopState() {
@@ -54,57 +59,39 @@ export function ProfilePassportTabs({
     window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
-  const panel =
-    activeTab === "activity"
-      ? activity
-      : activeTab === "recognition"
-        ? recognition
-        : overview;
-
   return (
-    <>
-      <div
-        className="profile-passport-tabs"
-        role="tablist"
-        aria-label="Profile sections"
+    <div
+      className="profile-passport-tabs"
+      role="tablist"
+      aria-label="Profile sections"
+    >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeTab === "overview"}
+        aria-controls="profile-passport-panel-overview"
+        onClick={() => switchTab("overview")}
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "overview"}
-          aria-controls="profile-passport-tab-panel"
-          onClick={() => switchTab("overview")}
-        >
-          Overview
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "activity"}
-          aria-controls="profile-passport-tab-panel"
-          onClick={() => switchTab("activity")}
-        >
-          Activity
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "recognition"}
-          aria-controls="profile-passport-tab-panel"
-          onClick={() => switchTab("recognition")}
-        >
-          Recognition
-        </button>
-      </div>
-
-      <div
-        id="profile-passport-tab-panel"
-        className="profile-passport-tab-transition"
-        role="tabpanel"
-        key={activeTab}
+        Overview
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeTab === "activity"}
+        aria-controls="profile-passport-panel-activity"
+        onClick={() => switchTab("activity")}
       >
-        {panel}
-      </div>
-    </>
+        Activity
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeTab === "recognition"}
+        aria-controls="profile-passport-panel-recognition"
+        onClick={() => switchTab("recognition")}
+      >
+        Recognition
+      </button>
+    </div>
   );
 }
