@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
 import { submitManualEventHoursForReview } from "@/app/admin/events/manual-actions";
+import { DatabaseVolunteerRosterPicker } from "@/components/phaseone/database-volunteer-roster-picker";
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
@@ -210,11 +211,18 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
               <p>
                 {operationsScope === "manual_integrated"
                   ? creditContributionHours
-                    ? "CSV volunteers are linked or registered in the shared volunteer database. Completed attendance is submitted to MakLom for review before hours become approved."
-                    : "CSV volunteers are linked or registered in the shared volunteer database. Contribution-hour submission is disabled for this event."
+                    ? "Volunteers added from the shared database or through integrated roster imports are linked to canonical KELUARGA records. Completed attendance is submitted to MakLom for review before hours become approved."
+                    : "Volunteers added from the shared database or through integrated roster imports are linked to canonical KELUARGA records. Contribution-hour submission is disabled for this event."
                   : "Roster, attendance, insights and reporting stay inside this event. No main volunteer records or contribution hours are created."}
               </p>
             </div>
+          ) : null}
+
+          {operationsScope !== "manual_isolated" ? (
+            <DatabaseVolunteerRosterPicker
+              eventId={event.id}
+              timeslots={timeslotsResult.data}
+            />
           ) : null}
 
           <RosterUpload
