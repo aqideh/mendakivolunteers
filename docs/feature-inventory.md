@@ -76,6 +76,9 @@ Implemented:
 - programme rundowns;
 - multi-day/multi-shift configuration;
 - optional per-shift registration capacity;
+- XLSX bulk programme/opportunity ingestion using the standard Opportunities + Shifts workbook;
+- preview-first workbook validation with duplicate slug and duplicate-file protection;
+- atomic import of programmes and shifts as unpublished drafts for staff review;
 - retained revision/history foundations.
 
 ### Volunteer data and inventory
@@ -248,4 +251,4 @@ Implemented:
 
 ## 10. Current limitations
 
-See [Known issues](known-issues.md) and [Development roadmap](development-roadmap.md) for remaining work. The largest active gaps are MakLom review UIs, production reconciliation/promotion, end-to-end UAT and policy-dependent recognition automation.
+See [Known issues](known-issues.md) and [Development roadmap](development-roadmap.md) for remaining work. The largest active gaps are the MakLom insight/review inbox, production reconciliation/promotion, end-to-end UAT and policy-dependent recognition automation.
