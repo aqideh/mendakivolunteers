@@ -10,6 +10,7 @@ import {
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
 import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
+import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
 import {
   BulkCheckoutButton,
@@ -238,7 +239,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
+      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key, volunteer_id")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(2000),
@@ -711,6 +712,16 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         rosterId={volunteer.id}
                         timeslotId={selectedTimeslot.id}
                       />
+
+                      {volunteer.volunteer_id ? (
+                        <RosterProfileDetailsEditor
+                          dietaryRequirements={volunteer.dietary_requirements}
+                          eventId={id}
+                          tshirtSize={volunteer.tshirt_size}
+                          volunteerId={volunteer.volunteer_id}
+                          volunteerName={volunteer.volunteer_name}
+                        />
+                      ) : null}
 
                       {volunteer.entry_method === "walk_in" ? (
                         <WalkInEditForm
