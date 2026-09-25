@@ -225,7 +225,7 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Volunteer opportunity" lite />
-      <main className="page-frame narrow-frame">
+      <main className="page-frame phaseone-opportunity-detail-frame">
         <Link className="back-link" href="/opportunities">
           ← All opportunities
         </Link>
@@ -263,7 +263,9 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
               </p>
             ) : null}
 
-            <div className="phaseone-opportunity-facts">
+            <div className="phaseone-opportunity-detail-grid">
+              <div className="phaseone-opportunity-about-column">
+                <div className="phaseone-opportunity-facts">
               <div>
                 <span>Venue</span>
                 <strong>{event.venue ?? "Details to be confirmed"}</strong>
@@ -299,10 +301,13 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
               </section>
             ) : null}
 
-            <section
-              className="phaseone-opportunity-registration"
-              aria-labelledby="register-title"
-            >
+              </div>
+
+              <aside className="phaseone-opportunity-signup-column">
+                <section
+                  className="phaseone-opportunity-registration"
+                  aria-labelledby="register-title"
+                >
               <div className="phaseone-opportunity-registration-heading">
                 <div>
                   <h2 id="register-title">
@@ -447,19 +452,21 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
               )}
             </section>
 
-            <div className="phaseone-opportunity-consent-note">
-              <p>
-                By volunteering for this activity, you consent to the sharing of your
-                personal information with MENDAKI and agree to be registered as a
-                MENDAKI volunteer. MENDAKI may contact you with updates on future
-                volunteer opportunities.
-              </p>
-              <p>
-                Please also note that photos, videos, and/or interviews may be captured
-                during events and used by Yayasan MENDAKI and/or the organiser for
-                marketing and publicity purposes. Volunteers will be notified in advance
-                should there be any changes to the programme.
-              </p>
+                <div className="phaseone-opportunity-consent-note">
+                  <p>
+                    By volunteering for this activity, you consent to the sharing of your
+                    personal information with MENDAKI and agree to be registered as a
+                    MENDAKI volunteer. MENDAKI may contact you with updates on future
+                    volunteer opportunities.
+                  </p>
+                  <p>
+                    Please also note that photos, videos, and/or interviews may be captured
+                    during events and used by Yayasan MENDAKI and/or the organiser for
+                    marketing and publicity purposes. Volunteers will be notified in advance
+                    should there be any changes to the programme.
+                  </p>
+                </div>
+              </aside>
             </div>
           </div>
         </article>
