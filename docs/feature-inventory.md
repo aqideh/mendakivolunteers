@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Snapshot date:** 24 September 2026  
+**Snapshot date:** 25 September 2026  
 **Reference branch:** `staging`
 
 This inventory records implemented capability in the current KELUARGA + MakLom architecture. It is not a backlog.
@@ -34,6 +34,10 @@ Implemented:
 - registration notifications;
 - Event Guides with venue, directions, briefing and programme information;
 - volunteer dashboard;
+- guided first-time profile onboarding with resumable completion milestones;
+- direct section-by-section profile editing after onboarding, including single-purpose photo changes;
+- private volunteer operational profile data for date of birth, home address/postal code, dietary requirements, food allergies, T-shirt size, education, languages and emergency contact;
+- profile-completeness milestones covering contact, home area, personal details, interests, skills, availability, event readiness, education and photo;
 - approved contribution-hours display from MakLom-approved contribution records;
 - audited self-service display-name/mobile editing;
 - points balance/history;
@@ -74,6 +78,21 @@ Implemented:
 - optional per-shift registration capacity;
 - retained revision/history foundations.
 
+### Volunteer data and inventory
+
+Implemented:
+
+- private volunteer-details domain keyed by the canonical volunteer UUID;
+- VolTeam/Admin volunteer directory with search and filtering by available planning area, electoral division, T-shirt size and highest qualification;
+- filtered volunteer CSV export;
+- volunteer-shirt catalogue for round-neck and collared shirts in S, M, L, XL, 2XL, 3XL, 5XL and 7XL;
+- append-only stock movements for opening stock, receipts, adjustments, returns and issues;
+- transactional stock decrement on shirt issue;
+- one-shirt-per-volunteer database constraint;
+- legacy shirt-issue recording for volunteers who received a shirt before KELUARGA inventory tracking.
+
+Neighbourhood, planning-area and electoral-division fields are stored separately from the volunteer-entered address and are only intended to be populated from a verified geographic/boundary source.
+
 ### Registration review
 
 Implemented:
@@ -112,7 +131,9 @@ Implemented:
 - event report export;
 - contextual volunteer insights;
 - contextual volunteer reviews;
-- event feedback.
+- event feedback;
+- first-shirt status and issuance from Event Operations for linked volunteers;
+- transactional shirt issue enforcement so each volunteer has at most one recorded volunteer shirt.
 
 Operational attendance remains evidence until contribution review.
 
