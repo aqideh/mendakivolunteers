@@ -132,8 +132,9 @@ export async function resolveSingaporePostalCode(
     `/api/public/popapi/getPlanningarea?latitude=${encodeURIComponent(String(latitude))}&longitude=${encodeURIComponent(String(longitude))}&year=2019`,
   );
   const planningParsed = z.array(planningAreaSchema).safeParse(planningPayload);
-  if (planningParsed.success && planningParsed.data.length > 0) {
-    planningArea = planningParsed.data[0].pln_area_n.trim() || null;
+  const planningMatch = planningParsed.success ? planningParsed.data.at(0) : null;
+  if (planningMatch) {
+    planningArea = planningMatch.pln_area_n.trim() || null;
   }
 
   return {
