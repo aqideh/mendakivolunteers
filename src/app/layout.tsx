@@ -24,6 +24,7 @@ import "./volunteer-insights.css";
 import "./field-roster.css";
 import "./brand-theme.css";
 import "./profile-passport.css";
+import "./profile-setup.css";
 
 const golosText = Golos_Text({
   subsets: ["latin"],

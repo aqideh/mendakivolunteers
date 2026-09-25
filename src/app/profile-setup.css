@@ -1,0 +1,325 @@
+.profile-setup-shell {
+  min-height: 100vh;
+  background: #fff;
+}
+
+.profile-setup-layout {
+  display: grid;
+  grid-template-columns: minmax(15rem, 20rem) minmax(0, 42rem);
+  gap: clamp(2rem, 5vw, 5rem);
+  width: min(100% - 2rem, 70rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) 0 5rem;
+}
+
+.profile-setup-progress {
+  align-self: start;
+  position: sticky;
+  top: 1.25rem;
+}
+
+.profile-setup-back {
+  display: inline-flex;
+  margin-bottom: 2rem;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.profile-setup-back:hover,
+.profile-setup-back:focus-visible {
+  color: var(--ink);
+}
+
+.profile-setup-progress-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-setup-progress-summary strong {
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.profile-setup-progress-summary span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.profile-setup-progress-bar {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+}
+
+.profile-setup-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+  transition: width 220ms ease;
+}
+
+.profile-setup-step-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 1.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-setup-step-list li a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.75rem;
+  padding: 0.65rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.profile-setup-step-list li[data-current="true"] a {
+  background: var(--surface-subtle);
+  color: var(--ink);
+}
+
+.profile-setup-step-list li[data-complete="true"] a {
+  color: var(--ink);
+}
+
+.profile-setup-step-marker {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.profile-setup-step-list li[data-complete="true"] .profile-setup-step-marker {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--ink);
+}
+
+.profile-setup-step-list li a > span:last-child {
+  display: grid;
+  gap: 0.05rem;
+}
+
+.profile-setup-step-list strong {
+  font-size: 0.88rem;
+}
+
+.profile-setup-step-list small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.profile-setup-stage {
+  min-width: 0;
+}
+
+.profile-setup-stage-header {
+  margin-bottom: 1.8rem;
+}
+
+.profile-setup-stage-header > p:first-child {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.profile-setup-stage-header h1 {
+  max-width: 38rem;
+  margin: 0;
+  font-size: clamp(2.1rem, 5vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.profile-setup-stage-header > p:last-child {
+  max-width: 36rem;
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.profile-setup-form {
+  display: grid;
+  gap: 1.35rem;
+  max-width: 36rem;
+}
+
+.profile-setup-form .form-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.profile-setup-form input,
+.profile-setup-form textarea {
+  width: 100%;
+}
+
+.profile-setup-choice-group {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.profile-setup-choice-group legend {
+  margin-bottom: 0.6rem;
+  font-weight: 800;
+}
+
+.profile-setup-choice-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 3rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  cursor: pointer;
+}
+
+.profile-setup-choice-group label:has(input:checked) {
+  border-color: var(--ink);
+  background: var(--surface-subtle);
+}
+
+.profile-setup-choice-group input {
+  width: auto;
+}
+
+.profile-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.profile-setup-photo {
+  display: grid;
+  gap: 1rem;
+  max-width: 36rem;
+}
+
+.profile-setup-review {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 38rem;
+}
+
+.profile-setup-review-score {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.profile-setup-review-score strong {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.profile-setup-review-score span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.profile-setup-review-list {
+  border-top: 1px solid var(--border);
+}
+
+.profile-setup-review-list a {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.profile-setup-review-check {
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.profile-setup-review-check[data-complete="true"] {
+  border-color: var(--brand);
+  background: var(--brand);
+}
+
+@media (max-width: 760px) {
+  .profile-setup-layout {
+    grid-template-columns: 1fr;
+    width: min(100% - 1.25rem, 42rem);
+    gap: 1.8rem;
+    padding-top: 1rem;
+  }
+
+  .profile-setup-progress {
+    position: static;
+  }
+
+  .profile-setup-back {
+    margin-bottom: 1rem;
+  }
+
+  .profile-setup-step-list {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(8.5rem, 1fr);
+    overflow-x: auto;
+    padding-bottom: 0.4rem;
+    scrollbar-width: thin;
+  }
+
+  .profile-setup-step-list li a {
+    min-height: 3.6rem;
+    padding: 0.55rem;
+  }
+
+  .profile-setup-step-list small {
+    display: none;
+  }
+
+  .profile-setup-stage-header h1 {
+    font-size: clamp(2.2rem, 11vw, 3.4rem);
+  }
+
+  .profile-setup-actions {
+    align-items: stretch;
+  }
+
+  .profile-setup-actions .button {
+    flex: 1 1 10rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-setup-progress-bar span {
+    transition: none;
+  }
+}
