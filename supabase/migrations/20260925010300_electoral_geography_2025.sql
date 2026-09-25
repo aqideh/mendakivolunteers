@@ -755,14 +755,20 @@ on public.volunteer_private_details
 for each row execute function public.apply_volunteer_electoral_geography_2025();
 
 update public.volunteer_private_details as details
-set
-  electoral_division_code = lookup.boundary_code,
-  electoral_division = lookup.electoral_division,
-  electoral_boundary_version = lookup.boundary_version
-from lateral public.lookup_electoral_division_2025(
-  details.latitude::double precision,
-  details.longitude::double precision
-) as lookup
+set (
+  electoral_division_code,
+  electoral_division,
+  electoral_boundary_version
+) = (
+  select
+    lookup.boundary_code,
+    lookup.electoral_division,
+    lookup.boundary_version
+  from public.lookup_electoral_division_2025(
+    details.latitude::double precision,
+    details.longitude::double precision
+  ) as lookup
+)
 where details.latitude is not null
   and details.longitude is not null;
 
