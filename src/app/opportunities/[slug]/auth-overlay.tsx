@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-import { VolunteerSignInForm } from "@/app/login/volunteer-sign-in-form";
+import { VolunteerAuthPanel } from "@/app/login/volunteer-auth-panel";
 
 type OpportunityAuthOverlayProps = Readonly<{
   slug: string;
@@ -66,7 +66,7 @@ export function OpportunityAuthOverlay({
       <dialog
         ref={dialogRef}
         className="phaseone-opportunity-auth-dialog"
-        aria-labelledby="opportunity-auth-title"
+        aria-labelledby="community-auth-title"
         aria-describedby="opportunity-auth-copy"
         onClick={(event) => {
           if (event.target === event.currentTarget) {
@@ -78,22 +78,22 @@ export function OpportunityAuthOverlay({
           <button
             className="phaseone-opportunity-auth-close"
             type="button"
-            aria-label="Close sign in"
+            aria-label="Close sign in or sign up"
             onClick={closeDialog}
           >
             ×
           </button>
 
-          <div className="phaseone-opportunity-auth-intro">
-            <h2 id="opportunity-auth-title">Sign in or sign up</h2>
-            <p id="opportunity-auth-copy">
-              Enter your email and we&apos;ll send you a secure link. If you
-              already have a KELUARGA account, it signs you in. If you
-              don&apos;t, the same link creates your account.
-            </p>
+          <div id="opportunity-auth-copy" className="phaseone-opportunity-auth-copy">
+            Create a community volunteer account or sign in to an existing
+            KELUARGA account. Your selected shifts will be kept.
           </div>
 
-          <VolunteerSignInForm key={nextPath} nextPath={nextPath} />
+          <VolunteerAuthPanel
+            key={nextPath}
+            initialMode="signup"
+            nextPath={nextPath}
+          />
         </div>
       </dialog>
     </>
