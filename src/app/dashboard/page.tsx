@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -6,9 +7,6 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/dashboard/actions";
 import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-summary";
 import { PortalHeader } from "@/components/portal-header";
-import { ProfileEditor } from "@/components/profile-editor";
-import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
-import { ProfileEditToggle } from "@/components/profile-edit-toggle";
 import { ProfilePassportTabs } from "@/components/profile-passport-tabs";
 import { VolunteerJourneySummary } from "@/components/volunteer-journey-summary";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
@@ -36,6 +34,9 @@ type KeluargaVolunteerProfile = {
   interests: string[];
   skills: string[];
   availability_notes: string | null;
+  availability_slots: string[];
+  preferred_commitment: string | null;
+  onboarding_completed_at: string | null;
 };
 
 type PointsSnapshot = {
@@ -98,27 +99,23 @@ function profileTab(value: string | undefined): ProfileTab {
   return "overview";
 }
 
-function profileCompletion(input: {
+function profileMilestones(input: {
   avatarPath: string | null;
   displayName: string;
   mobile: string | null;
-  bio: string | null;
   interests: string[];
   skills: string[];
-  availabilityNotes: string | null;
+  availabilitySlots: string[];
+  preferredCommitment: string | null;
 }) {
-  const checks = [
-    Boolean(input.avatarPath),
-    Boolean(input.displayName.trim()),
-    Boolean(input.mobile?.trim()),
-    Boolean(input.bio?.trim()),
-    input.interests.length > 0,
-    input.skills.length > 0,
-    Boolean(input.availabilityNotes?.trim()),
-  ];
-  return Math.round(
-    (checks.filter(Boolean).length / checks.length) * 100,
-  );
+  return {
+    contact: Boolean(input.displayName.trim() && input.mobile?.trim()),
+    interests: input.interests.length > 0,
+    skills: input.skills.length > 0,
+    availability:
+      input.availabilitySlots.length > 0 && Boolean(input.preferredCommitment),
+    photo: Boolean(input.avatarPath),
+  };
 }
 
 export default async function DashboardPage({
@@ -231,7 +228,7 @@ export default async function DashboardPage({
         accountClient
           .from("keluarga_volunteer_profiles")
           .select(
-            "volunteer_id, avatar_path, bio, interests, skills, availability_notes",
+            "volunteer_id, avatar_path, bio, interests, skills, availability_notes, availability_slots, preferred_commitment, onboarding_completed_at",
           )
           .eq("volunteer_id", volunteer.id)
           .maybeSingle(),
@@ -279,7 +276,6 @@ export default async function DashboardPage({
   const activeTab = profileTab(readParameter(parameters, "tab"));
   const errorCode = readParameter(parameters, "error");
   const successCode = readParameter(parameters, "success");
-  const profileMode = readParameter(parameters, "profile");
   const errorMessage = errorCode ? dashboardErrors[errorCode] : undefined;
 
   const displayName =
@@ -289,6 +285,8 @@ export default async function DashboardPage({
   const skills = presentationProfile?.skills ?? [];
   const bio = presentationProfile?.bio ?? null;
   const availabilityNotes = presentationProfile?.availability_notes ?? null;
+  const availabilitySlots = presentationProfile?.availability_slots ?? [];
+  const preferredCommitment = presentationProfile?.preferred_commitment ?? null;
   const avatarPath = presentationProfile?.avatar_path ?? null;
   const approvedMinutes = approvedContributions.reduce(
     (total, contribution) =>
@@ -296,15 +294,17 @@ export default async function DashboardPage({
     0,
   );
   const approvedHours = approvedMinutes / 60;
-  const completion = profileCompletion({
+  const milestones = profileMilestones({
     avatarPath,
     displayName,
     mobile: volunteer?.mobile ?? null,
-    bio,
     interests,
     skills,
-    availabilityNotes,
+    availabilitySlots,
+    preferredCommitment,
   });
+  const milestoneCount = Object.values(milestones).filter(Boolean).length;
+  const completion = milestoneCount * 20;
 
   let avatarUrl: string | null = null;
   if (avatarPath) {
@@ -357,25 +357,33 @@ export default async function DashboardPage({
 
         <section className="profile-passport-hero" aria-labelledby="profile-passport-title">
           <div className="profile-passport-hero-topline">
-            {volunteer ? (
-              <ProfilePhotoUploader
-                volunteerId={volunteer.id}
-                userId={userId}
-                displayName={displayName}
-                avatarUrl={avatarUrl}
-                avatarPath={avatarPath}
-                completion={completion}
-              />
-            ) : (
-              <div className="profile-passport-avatar profile-passport-avatar-static" aria-hidden="true">
-                {firstName.slice(0, 1).toUpperCase()}
+            <div className="profile-passport-photo-block">
+              <div className="profile-passport-avatar-button profile-passport-avatar-summary">
+                <span
+                  className="profile-passport-progress-ring"
+                  style={{ "--profile-completion": `${completion * 3.6}deg` } as CSSProperties}
+                  aria-hidden="true"
+                />
+                <span className="profile-passport-avatar">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="" />
+                  ) : (
+                    <span aria-hidden="true">{firstName.slice(0, 1).toUpperCase()}</span>
+                  )}
+                </span>
               </div>
-            )}
+              <span className="profile-passport-completion">{completion}% complete</span>
+            </div>
 
-            <ProfileEditToggle
-              initialEditing={profileMode === "edit"}
-              variant="settings"
-            />
+            <Link
+              className="profile-passport-settings"
+              href="/profile/setup"
+              aria-label="Edit profile"
+              title="Edit profile"
+            >
+              <span aria-hidden="true">⚙</span>
+            </Link>
           </div>
 
           <div className="profile-passport-copy">
@@ -408,43 +416,6 @@ export default async function DashboardPage({
             ) : null}
           </div>
         </section>
-
-        {volunteer ? (
-          <section
-            id="profile-passport-edit-panel"
-            className="profile-passport-edit-panel"
-            aria-labelledby="profile-edit-title"
-            data-profile-edit-panel
-            hidden={profileMode !== "edit"}
-          >
-            <div className="profile-passport-section-heading">
-              <div>
-                <h2 id="profile-edit-title">Edit profile</h2>
-                <p>
-                  This is your volunteer-facing KELUARGA profile. Longitudinal Volunteer
-                  Management records remain managed separately in MakLom.
-                </p>
-              </div>
-              <ProfileEditToggle initialEditing={profileMode === "edit"} />
-            </div>
-            <ProfileEditor
-              displayName={displayName}
-              mobile={volunteer.mobile}
-              bio={bio}
-              interests={interests}
-              skills={skills}
-              availabilityNotes={availabilityNotes}
-            />
-            <div className="profile-passport-account-row">
-              <span>{authUser.email ?? "Email unavailable"}</span>
-              <form action={signOut}>
-                <button className="text-link button-reset" type="submit">
-                  Sign out
-                </button>
-              </form>
-            </div>
-          </section>
-        ) : null}
 
         <ProfilePassportTabs initialTab={activeTab} />
 
@@ -483,13 +454,47 @@ export default async function DashboardPage({
               </div>
             </section>
 
+            <section className="profile-passport-completeness" aria-labelledby="profile-completeness-title">
+              <div className="profile-passport-section-heading">
+                <div>
+                  <h2 id="profile-completeness-title">Profile completeness</h2>
+                  <p>
+                    Complete these essentials so we can match you with relevant opportunities
+                    and contact you when needed.
+                  </p>
+                </div>
+                <Link className="text-link" href="/profile/setup">
+                  {completion === 100 ? "Review" : "Complete profile"}
+                </Link>
+              </div>
+
+              <div className="profile-passport-milestones">
+                {[
+                  ["Contact details", milestones.contact],
+                  ["Volunteering interests", milestones.interests],
+                  ["Skills", milestones.skills],
+                  ["Availability", milestones.availability],
+                  ["Profile photo", milestones.photo],
+                ].map(([label, done]) => (
+                  <Link key={String(label)} href="/profile/setup">
+                    <span className="profile-passport-milestone-check" data-complete={done ? "true" : "false"}>
+                      {done ? "✓" : "○"}
+                    </span>
+                    <span>{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
             <section className="profile-passport-story" aria-labelledby="profile-story-title">
               <div className="profile-passport-section-heading">
                 <div>
                   <h2 id="profile-story-title">Your volunteer profile</h2>
                   <p>Interests and strengths you have chosen to share in KELUARGA.</p>
                 </div>
-                <ProfileEditToggle initialEditing={profileMode === "edit"} />
+                <Link className="text-link" href="/profile/setup">
+                  Edit profile
+                </Link>
               </div>
 
               <div className="profile-passport-story-grid">
