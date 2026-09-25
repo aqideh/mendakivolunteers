@@ -201,7 +201,7 @@ create or replace function public.phaseone_add_database_volunteers_to_roster(
 )
 returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = pg_catalog, public, core, auth
 as $$
 declare
