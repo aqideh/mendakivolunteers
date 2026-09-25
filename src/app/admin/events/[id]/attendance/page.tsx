@@ -742,7 +742,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             <span className="status-pill" data-state="verified">
                               Shirt issued
                             </span>
-                          ) : preferredShirtSize ? (
+                          ) : preferredShirtSize && canManageEvent ? (
                             <details>
                               <summary>
                                 Shirt due · {preferredShirtSize}
@@ -768,6 +768,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                                 </button>
                               </form>
                             </details>
+                          ) : preferredShirtSize ? (
+                            <span className="status-pill">Shirt due · {preferredShirtSize}</span>
                           ) : (
                             <span className="status-pill">Shirt size needed</span>
                           )}
