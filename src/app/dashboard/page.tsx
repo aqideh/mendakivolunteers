@@ -9,9 +9,6 @@ import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-
 import { PortalHeader } from "@/components/portal-header";
 import { ProfilePassportTabs } from "@/components/profile-passport-tabs";
 import { VolunteerJourneySummary } from "@/components/volunteer-journey-summary";
-import { hasContentManagerRole } from "@/lib/auth/content-access";
-import { hasGamificationManagerRole } from "@/lib/auth/gamification-access";
-import { hasPathwayManagerRole } from "@/lib/auth/pathway-access";
 import { createClient } from "@/lib/supabase/server";
 import type { AccountStatus } from "@/types/database";
 
@@ -355,19 +352,6 @@ export default async function DashboardPage({
     }
     avatarUrl = signedUrlResult.data.signedUrl;
   }
-
-  const isAdmin = roles.includes("admin");
-  const canManageContent = hasContentManagerRole(roles);
-  const canManageGamification = hasGamificationManagerRole(roles);
-  const canManagePathways = hasPathwayManagerRole(roles);
-  const isStaffUser =
-    isAdmin ||
-    canManageContent ||
-    canManageGamification ||
-    canManagePathways ||
-    roles.includes("staff") ||
-    roles.includes("volteam") ||
-    roles.includes("volunteer_leader");
 
   return (
     <div className="site-shell profile-passport-shell">
@@ -721,91 +705,6 @@ export default async function DashboardPage({
               </div>
             </section>
           </div>
-
-        {isStaffUser ? (
-          <section className="profile-passport-management" aria-labelledby="staff-tools-title">
-            <div className="profile-passport-section-heading">
-              <div>
-                <h2 id="staff-tools-title">Management access</h2>
-                <p>Staff tools available to your account.</p>
-              </div>
-            </div>
-            <div className="profile-passport-action-list">
-              {isAdmin ? (
-                <>
-                  <Link href="/admin/staff">
-                    <span>
-                      <strong>Staff access</strong>
-                      <small>Invite staff and manage KELUARGA permissions</small>
-                    </span>
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                  <a href="https://voldatabasetool.vercel.app/">
-                    <span>
-                      <strong>MakLom</strong>
-                      <small>Open the Volunteer Management workspace</small>
-                    </span>
-                    <span aria-hidden="true">↗</span>
-                  </a>
-                </>
-              ) : null}
-              {(isAdmin || roles.includes("volteam")) ? (
-                <>
-                  <Link href="/admin/volunteers">
-                    <span>
-                      <strong>Volunteer directory</strong>
-                      <small>Filter and export volunteer profile data</small>
-                    </span>
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                  <Link href="/admin/inventory/shirts">
-                    <span>
-                      <strong>Shirt inventory</strong>
-                      <small>Track stock and volunteer shirt issues</small>
-                    </span>
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                </>
-              ) : null}
-              {(isAdmin || roles.includes("volteam") || roles.includes("staff") || roles.includes("volunteer_leader")) ? (
-                <Link href="/admin/events">
-                  <span>
-                    <strong>Event Operations</strong>
-                    <small>Rosters, attendance and event-day operations</small>
-                  </span>
-                  <span aria-hidden="true">→</span>
-                </Link>
-              ) : null}
-              {canManageContent ? (
-                <Link href="/admin/content">
-                  <span>
-                    <strong>Content management</strong>
-                    <small>Manage opportunities and volunteer updates</small>
-                  </span>
-                  <span aria-hidden="true">→</span>
-                </Link>
-              ) : null}
-              {canManageGamification ? (
-                <Link href="/admin/points">
-                  <span>
-                    <strong>Points and badges</strong>
-                    <small>Manage reviewed volunteer recognition</small>
-                  </span>
-                  <span aria-hidden="true">→</span>
-                </Link>
-              ) : null}
-              {canManagePathways ? (
-                <Link href="/admin/pathways">
-                  <span>
-                    <strong>Volunteer pathways</strong>
-                    <small>Manage the pathway map and reviewed positions</small>
-                  </span>
-                  <span aria-hidden="true">→</span>
-                </Link>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
 
         <div className="profile-passport-footer-actions">
           <span>{authUser.email ?? "Email unavailable"}</span>
