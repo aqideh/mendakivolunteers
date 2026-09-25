@@ -689,6 +689,37 @@
   padding: clamp(1.25rem, 3vw, 2rem);
 }
 
+.phaseone-opportunity-detail-frame {
+  width: min(86rem, calc(100% - 2rem));
+}
+
+.phaseone-opportunity-detail-grid {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  margin-top: 1.5rem;
+}
+
+.phaseone-opportunity-about-column,
+.phaseone-opportunity-signup-column {
+  min-width: 0;
+}
+
+.phaseone-opportunity-signup-column .phaseone-opportunity-registration {
+  margin-top: 0;
+}
+
+@media (min-width: 960px) {
+  .phaseone-opportunity-detail-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
+    align-items: start;
+  }
+
+  .phaseone-opportunity-signup-column {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
 .phaseone-opportunity-detail h1 {
   max-width: 16ch;
   margin-bottom: 0.65rem;
