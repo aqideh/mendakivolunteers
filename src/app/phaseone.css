@@ -603,7 +603,7 @@
   margin: clamp(2rem, 4vw, 3rem) auto 0;
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1600px) {
   .phaseone-opportunities-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -613,10 +613,6 @@
   .phaseone-opportunities-hero-inner,
   .phaseone-opportunities-grid {
     width: min(120rem, calc(100% - 3rem));
-  }
-
-  .phaseone-opportunities-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
