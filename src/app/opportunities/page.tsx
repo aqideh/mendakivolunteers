@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ContributorHero } from "@/app/opportunities/contributor-hero";
 import { PortalHeader } from "@/components/portal-header";
+import { getLandingPageImage } from "@/lib/content/landing-page-media";
 import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 import { loadOpportunitySocialProof } from "@/lib/phaseone/opportunity-social-proof";
 import { createClient } from "@/lib/supabase/server";
@@ -53,7 +54,10 @@ function formatOpportunityDateRange(startsAt: string, endsAt: string | null) {
 }
 
 export default async function OpportunitiesPage() {
-  const opportunities = await getUpcomingPhaseOneOpportunities();
+  const [opportunities, contributorHeroImage] = await Promise.all([
+    getUpcomingPhaseOneOpportunities(),
+    getLandingPageImage("contributor"),
+  ]);
   const supabase = await createClient();
   const userResult = await supabase.auth.getUser();
   const isSignedIn = Boolean(userResult.data.user);
@@ -66,7 +70,7 @@ export default async function OpportunitiesPage() {
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
       <main className="phaseone-frame phaseone-opportunities-frame">
-        <ContributorHero />
+        <ContributorHero heroImage={contributorHeroImage} />
 
         {opportunities.length > 0 ? (
           <section
