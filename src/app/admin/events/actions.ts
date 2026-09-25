@@ -438,6 +438,18 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
     );
   }
 
+  const { error: draftClearError } = await admin
+    .from("phaseone_event_form_drafts")
+    .delete()
+    .eq("user_id", userId);
+
+  if (draftClearError) {
+    console.error("Unable to clear programme recovery draft after creation", {
+      code: draftClearError.code,
+      userId,
+    });
+  }
+
   revalidateEventRoutes(parsed.data.slug);
   redirect(`/admin/events/${created.id}/edit?success=event_created`);
 }
