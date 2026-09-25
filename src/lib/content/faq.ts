@@ -59,7 +59,7 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
       {
         question: "Can I request a volunteer testimonial?",
         answer:
-          "Yes. Volunteers may request a testimonial after completing a minimum of 24 hours of service within the same calendar year. Please allow up to 10 working days for your request to be processed.",
+          "Yes. Volunteers may request a testimonial after completing a minimum of 24 hours of service within the same calendar year. Please allow up to 5 working days for your request to be processed.",
       },
       {
         question: "Who can I contact if I have a question or issue?",
