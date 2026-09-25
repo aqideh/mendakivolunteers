@@ -13,13 +13,13 @@ YM Hub/Salesforce is dormant future downstream integration and is not part of th
 
 Work through these in order unless a production defect takes priority.
 
-- [ ] **Reconcile KELUARGA staging for production.** Build a clean production change set rather than merging the diverged branch wholesale. Include the approved role model, MakLom admin bridge, retired KELUARGA recruitment workflow, FormSG CTAs, landing/login changes and shared architecture.
+- [x] **Reconcile KELUARGA staging for production.** Build a clean production change set rather than merging the diverged branch wholesale. Include the approved role model, MakLom admin bridge, retired KELUARGA recruitment workflow, FormSG CTAs, landing/login changes and shared architecture.
 - [x] **Run shared-database production migration rehearsal.** Passed on 25 September 2026 using rollback-only production SQL. Production has 574/574 linked MakLom profiles, and the production-specific bridge migration is committed.
-- [ ] **Finish MakLom React + Mantine changeover.** Rebuild Events, Attendance and Imports with feature parity, then switch production and retire the superseded static/Web Awesome runtime.
-- [ ] **Build MakLom Contribution Review UI.** Pending/needs-review queue, approve, adjust minutes, reject, audit history and reviewer metadata.
+- [x] **Finish MakLom React + Mantine changeover.** Rebuild Events, Attendance and Imports with feature parity, then switch production and retire the superseded static/Web Awesome runtime.
+- [x] **Build MakLom Contribution Review UI.** Pending/needs-review queue, approve, adjust minutes, reject, audit history and reviewer metadata.
 - [ ] **Build MakLom Profile Change Review UI.** Review KELUARGA-submitted contact/profile proposals with approve/reject/apply actions.
 - [ ] **Build MakLom Insights & Reviews Inbox.** Preserve event/source context, support accept/edit/dismiss and provide longitudinal volunteer history.
-- [ ] **Activate FormSG -> MakLom production webhook.** Configure secret/endpoint, run a controlled submission, verify field mapping and verify retry/idempotency.
+- [x] **Activate FormSG -> MakLom production webhook.** Configure secret/endpoint, run a controlled submission, verify field mapping and verify retry/idempotency.
 - [ ] **Complete geographic enrichment for volunteer home areas.** Resolve volunteer-entered postal/address data against an authoritative Singapore location source, derive planning area/neighbourhood and electoral division using versioned boundary data, then test reprocessing when boundary versions change.
 - [ ] **Load and reconcile opening volunteer-shirt stock.** Enter the physical stocktake by type/size and record known historical shirt recipients before using first-event issuance operationally.
 - [ ] **Run full Event Operations UAT.** Single shifts, adjacent/overlapping shifts, gaps, early/missing checkout, walk-ins, manual rosters, cancellations, corrections, QR, mobile event-day use and first-shirt issuance.
