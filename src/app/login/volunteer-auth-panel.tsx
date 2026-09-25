@@ -24,7 +24,7 @@ export function VolunteerAuthPanel({
       <div
         className="auth-mode-switch"
         role="tablist"
-        aria-label="Community volunteer account"
+        aria-label="Volunteer account"
       >
         <button
           aria-selected={!signingUp}
@@ -47,12 +47,12 @@ export function VolunteerAuthPanel({
       </div>
 
       <div className="auth-login-intro">
-        <h1 id="community-auth-title">
+        <h1 id="volunteer-auth-title">
           {signingUp ? "Create your account" : "Sign in"}
         </h1>
         <p className="auth-login-copy">
           {signingUp
-            ? "Community volunteers can create a KELUARGA account with their email address. No password is needed."
+            ? "Create your KELUARGA account with your email address. No password is needed."
             : "Enter the email linked to your KELUARGA account and we’ll send you a secure sign-in link."}
         </p>
       </div>
