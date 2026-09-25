@@ -359,6 +359,62 @@
   max-width: 36rem;
 }
 
+
+.profile-passport-completeness {
+  border-top: 1px solid var(--border);
+  padding-top: 1.3rem;
+}
+
+.profile-passport-milestones {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-passport-milestones a {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  border-right: 1px solid var(--border);
+  padding: 0.9rem 0.8rem;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.profile-passport-milestones a:first-child {
+  padding-left: 0;
+}
+
+.profile-passport-milestones a:last-child {
+  border-right: 0;
+}
+
+.profile-passport-milestone-check {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.profile-passport-milestone-check[data-complete="true"] {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--ink);
+}
+
+.profile-passport-avatar-summary {
+  cursor: default;
+}
+
 .profile-passport-story {
   border-top: 1px solid var(--border);
   padding-top: 1.3rem;
@@ -520,6 +576,20 @@
   }
 
   .profile-passport-metrics-compact article {
+    border-bottom: 0;
+  }
+
+  .profile-passport-milestones {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-passport-milestones a {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0.8rem 0;
+  }
+
+  .profile-passport-milestones a:last-child {
     border-bottom: 0;
   }
 
