@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { PortalHeader } from "@/components/portal-header";
+import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 import styles from "./landing.module.css";
 
@@ -12,40 +14,25 @@ export const metadata: Metadata = {
 };
 
 const volunteerPaths = [
-  {
-    number: "01",
-    title: "Coach",
-    href: "/volunteer/coach",
-  },
-  {
-    number: "02",
-    title: "Facilitator",
-    href: "/volunteer/facilitator",
-  },
-  {
-    number: "03",
-    title: "Mentor",
-    href: "/volunteer/mentor",
-  },
-  {
-    number: "04",
-    title: "Professional",
-    href: "/volunteer/specialist",
-  },
-  {
-    number: "05",
-    title: "Contributor",
-    href: "/opportunities",
-  },
+  { number: "01", title: "Coach", href: "/volunteer/coach" },
+  { number: "02", title: "Facilitator", href: "/volunteer/facilitator" },
+  { number: "03", title: "Mentor", href: "/volunteer/mentor" },
+  { number: "04", title: "Professional", href: "/volunteer/specialist" },
+  { number: "05", title: "Contributor", href: "/opportunities" },
 ];
 
+export default async function Home() {
+  const heroImage = await getLandingPageImage("home");
 
-export default function Home() {
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Community volunteers" lite />
       <main className={`phaseone-frame ${styles.frame}`}>
-        <section className={styles.hero} aria-labelledby="landing-title">
+        <section
+          className={styles.hero}
+          aria-labelledby="landing-title"
+          style={{ "--home-hero-image": `url("${heroImage}")` } as CSSProperties}
+        >
           <div className={styles.heroCopy}>
             <h1 id="landing-title">
               Welcome to <span>Keluarga MENDAKI</span>
@@ -64,15 +51,12 @@ export default function Home() {
                     <span className={styles.roleNumber}>{number}</span>
                     <strong>{title}</strong>
                   </span>
-                  <span className={styles.roleArrow} aria-hidden="true">
-                    ↗
-                  </span>
+                  <span className={styles.roleArrow} aria-hidden="true">↗</span>
                 </Link>
               </div>
             ))}
           </div>
         </section>
-
       </main>
       <footer className="site-footer">
         © 2026{" "}
