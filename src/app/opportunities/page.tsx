@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ContributorHero } from "@/app/opportunities/contributor-hero";
+import { OpportunityFilter } from "@/app/opportunities/opportunity-filter";
 import { PortalHeader } from "@/components/portal-header";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
@@ -28,6 +29,20 @@ function singaporeDateParts(value: string) {
     month: parts.find((part) => part.type === "month")?.value ?? "",
     year: parts.find((part) => part.type === "year")?.value ?? "",
   };
+}
+
+function singaporeDateKey(value: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(value));
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  return `${year}-${month}-${day}`;
 }
 
 function formatOpportunityDateRange(startsAt: string, endsAt: string | null) {
@@ -65,6 +80,13 @@ export default async function OpportunitiesPage() {
     opportunities.map((opportunity) => opportunity.id),
     isSignedIn,
   );
+  const categories = Array.from(
+    new Set(
+      opportunities
+        .map((opportunity) => opportunity.category?.trim())
+        .filter((category): category is string => Boolean(category)),
+    ),
+  ).sort((a, b) => a.localeCompare(b, "en-SG"));
 
   return (
     <div className="site-shell phaseone-shell">
@@ -79,7 +101,22 @@ export default async function OpportunitiesPage() {
             aria-label="Upcoming volunteer opportunities"
           >
             {opportunities.map((opportunity) => (
-              <article className="phaseone-opportunity-card" key={opportunity.id}>
+              <article
+                className="phaseone-opportunity-card"
+                key={opportunity.id}
+                data-opportunity-filter-card
+                data-search={[
+                  opportunity.title,
+                  opportunity.venue,
+                  opportunity.summary,
+                  opportunity.category,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                data-category={opportunity.category?.trim() ?? ""}
+                data-starts-at={singaporeDateKey(opportunity.starts_at)}
+                data-ends-at={singaporeDateKey(opportunity.ends_at ?? opportunity.starts_at)}
+              >
                 <div className="phaseone-opportunity-image" aria-hidden="true">
                   {opportunity.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -173,6 +210,21 @@ export default async function OpportunitiesPage() {
             </p>
           </section>
         )}
+
+        {opportunities.length > 0 ? (
+          <>
+            <section
+              id="opportunity-filter-empty"
+              className="panel empty-state phaseone-empty-state phaseone-opportunity-filter-empty"
+              hidden
+              aria-live="polite"
+            >
+              <h2>No matching opportunities.</h2>
+              <p className="muted">Try changing or clearing your filters.</p>
+            </section>
+            <OpportunityFilter categories={categories} />
+          </>
+        ) : null}
       </main>
       <footer className="site-footer">
         <span className="site-footer-copyright">
