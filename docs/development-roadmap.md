@@ -1,6 +1,6 @@
 # Development roadmap
 
-**Last reviewed:** 24 September 2026  
+**Last reviewed:** 25 September 2026  
 **Reference branch:** `staging`
 
 ## Current mission
@@ -20,7 +20,9 @@ Work through these in order unless a production defect takes priority.
 - [ ] **Build MakLom Profile Change Review UI.** Review KELUARGA-submitted contact/profile proposals with approve/reject/apply actions.
 - [ ] **Build MakLom Insights & Reviews Inbox.** Preserve event/source context, support accept/edit/dismiss and provide longitudinal volunteer history.
 - [ ] **Activate FormSG -> MakLom production webhook.** Configure secret/endpoint, run a controlled submission, verify field mapping and verify retry/idempotency.
-- [ ] **Run full Event Operations UAT.** Single shifts, adjacent/overlapping shifts, gaps, early/missing checkout, walk-ins, manual rosters, cancellations, corrections, QR and mobile event-day use.
+- [ ] **Complete geographic enrichment for volunteer home areas.** Resolve volunteer-entered postal/address data against an authoritative Singapore location source, derive planning area/neighbourhood and electoral division using versioned boundary data, then test reprocessing when boundary versions change.
+- [ ] **Load and reconcile opening volunteer-shirt stock.** Enter the physical stocktake by type/size and record known historical shirt recipients before using first-event issuance operationally.
+- [ ] **Run full Event Operations UAT.** Single shifts, adjacent/overlapping shifts, gaps, early/missing checkout, walk-ins, manual rosters, cancellations, corrections, QR, mobile event-day use and first-shirt issuance.
 - [ ] **Run end-to-end shared-platform UAT.** FormSG lead -> MakLom conversion -> KELUARGA registration -> roster -> attendance -> contribution review -> approved hours on dashboard.
 - [ ] **Clean stale repository state.** Close/reconcile obsolete PRs/issues and remove stale runtime/document references to superseded YM Hub, Volunteer.gov.sg and KELUARGA recruitment architecture.
 - [ ] **Define recognition policy.** Approved contribution eligibility, points values, effective dates, reversals/appeals, badge milestones and referral-success criteria.
@@ -53,6 +55,12 @@ Work through these in order unless a production defect takes priority.
 - implement referrals only after an authoritative success condition is defined.
 
 ### P3 — management intelligence
+
+- verified neighbourhood/planning-area and electoral-division enrichment from volunteer address data;
+- volunteer population filtering/export by location, education and operational readiness;
+- volunteer-shirt stock and issuance reporting;
+
+
 
 - cross-event volunteer history;
 - approved contribution reporting;
