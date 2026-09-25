@@ -7,6 +7,8 @@ import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 import styles from "./landing.module.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Keluarga MENDAKI — Volunteer with MENDAKI",
   description:
