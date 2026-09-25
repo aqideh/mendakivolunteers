@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 
 import { saveEvent } from "@/app/admin/events/actions";
+import { saveEventFormDraft } from "@/app/admin/events/draft-actions";
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
 import { EventImageUploader } from "./event-image-uploader";
@@ -53,11 +54,57 @@ type SaveState = Readonly<{
   message: string;
 }>;
 
+type EventFormDraft = Readonly<{
+  payload: Record<string, unknown>;
+  updatedAt: string;
+}>;
+
+function slugify(value: string): string {
+  return value
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+function draftString(draft: EventFormDraft | undefined, key: string): string {
+  const value = draft?.payload[key];
+  return typeof value === "string" ? value : "";
+}
+
+function draftTimeslots(draft: EventFormDraft | undefined) {
+  const serialized = draftString(draft, "timeslotsJson");
+  if (!serialized) return [];
+  try {
+    const value = JSON.parse(serialized) as unknown;
+    if (!Array.isArray(value)) return [];
+    return value
+      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+      .map((item) => ({
+        ...(typeof item.id === "string" ? { id: item.id } : {}),
+        label: typeof item.label === "string" ? item.label : "",
+        startsAt: typeof item.startsAt === "string" ? item.startsAt : "",
+        endsAt: typeof item.endsAt === "string" ? item.endsAt : "",
+        status: item.status === "cancelled" ? "cancelled" as const : "scheduled" as const,
+        registrationCapacity:
+          typeof item.registrationCapacity === "number" && Number.isFinite(item.registrationCapacity)
+            ? item.registrationCapacity
+            : null,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export function EventForm({
   event,
+  draft,
 }: {
   event?: EventFormValue;
+  draft?: EventFormDraft;
 }) {
+  const restoredTimeslots = !event ? draftTimeslots(draft) : [];
   const initialTimeslots = (event?.timeslots ?? []).map((timeslot) => ({
     id: timeslot.id,
     label: timeslot.label ?? "",
@@ -66,13 +113,79 @@ export function EventForm({
     status: timeslot.status,
     registrationCapacity: timeslot.registration_capacity,
   }));
+  const effectiveInitialTimeslots = initialTimeslots.length > 0 ? initialTimeslots : restoredTimeslots;
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle", message: "" });
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved" | "error">(
+    draft ? "saved" : "idle",
+  );
   const [recoveryEventId, setRecoveryEventId] = useState<string | null>(null);
   const [opportunityImageUrl, setOpportunityImageUrl] = useState(
-    event?.opportunity_image_url ?? "",
+    event?.opportunity_image_url ?? draftString(draft, "opportunityImageUrl"),
   );
+  const [slug, setSlug] = useState(event?.slug ?? draftString(draft, "slug"));
+  const [slugTouched, setSlugTouched] = useState(Boolean(event?.slug || draftString(draft, "slug")));
   const [isSaving, startSaving] = useTransition();
   const currentEventId = event?.id ?? recoveryEventId;
+
+  useEffect(() => {
+    if (event || !draft || !formRef.current) return;
+    const form = formRef.current;
+    for (const [name, value] of Object.entries(draft.payload)) {
+      if (name === "timeslotsJson" || name === "opportunityImageUrl" || name === "slug") continue;
+      const control = form.elements.namedItem(name);
+      if (control instanceof HTMLInputElement) {
+        if (control.type === "checkbox") control.checked = value === true;
+        else if (typeof value === "string" || typeof value === "number") control.value = String(value);
+      } else if (control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement) {
+        if (typeof value === "string" || typeof value === "number") control.value = String(value);
+      }
+    }
+  }, [draft, event]);
+
+  function draftPayload(form: HTMLFormElement) {
+    const data = new FormData(form);
+    const payload: Record<string, string | boolean> = {};
+    for (const [key, value] of data.entries()) {
+      if (typeof value !== "string") continue;
+      if (["id", "signInPin", "signOutPin", "clearSignInPin", "clearSignOutPin"].includes(key)) continue;
+      payload[key] = value;
+    }
+    payload.isOpportunityPublished =
+      (form.elements.namedItem("isOpportunityPublished") as HTMLInputElement | null)?.checked ?? false;
+    payload.isPublished =
+      (form.elements.namedItem("isPublished") as HTMLInputElement | null)?.checked ?? false;
+    return payload;
+  }
+
+  async function autosaveNow() {
+    if (event || !formRef.current) return;
+    setDraftStatus("saving");
+    try {
+      const result = await saveEventFormDraft(draftPayload(formRef.current));
+      setDraftStatus("error" in result ? "error" : "saved");
+    } catch (error) {
+      console.error("Unable to autosave programme draft", error);
+      setDraftStatus("error");
+    }
+  }
+
+  function scheduleAutosave() {
+    if (event) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    setDraftStatus("saving");
+    autosaveTimer.current = setTimeout(() => {
+      void autosaveNow();
+    }, 700);
+  }
+
+  useEffect(
+    () => () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    },
+    [],
+  );
 
   function handleSubmit(submitEvent: FormEvent<HTMLFormElement>) {
     submitEvent.preventDefault();
@@ -101,14 +214,29 @@ export function EventForm({
   }
 
   return (
-    <form className="phaseone-admin-form" onSubmit={handleSubmit}>
+    <form
+      className="phaseone-admin-form"
+      onChange={scheduleAutosave}
+      onInput={scheduleAutosave}
+      onSubmit={handleSubmit}
+      ref={formRef}
+    >
       {event?.id || recoveryEventId ? (
         <input name="id" type="hidden" value={event?.id ?? recoveryEventId ?? ""} />
       ) : null}
 
       <div className="form-field event-form-anchor" id="event-schedule">
         <label htmlFor="title">Event title</label>
-        <input defaultValue={event?.title} id="title" maxLength={160} name="title" required />
+        <input
+          defaultValue={event?.title ?? draftString(draft, "title")}
+          id="title"
+          maxLength={160}
+          name="title"
+          onChange={(inputEvent) => {
+            if (!event && !slugTouched) setSlug(slugify(inputEvent.currentTarget.value));
+          }}
+          required
+        />
       </div>
 
       <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-opportunity">
@@ -209,7 +337,7 @@ export function EventForm({
         </div>
       </fieldset>
 
-      <TimeslotEditor initialTimeslots={initialTimeslots} />
+      <TimeslotEditor initialTimeslots={effectiveInitialTimeslots} />
 
       <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-location">
         <legend>Location</legend>
@@ -356,12 +484,14 @@ export function EventForm({
             <label htmlFor="slug">Public journey URL</label>
             <input
               autoCapitalize="none"
-              defaultValue={event?.slug}
               id="slug"
               name="slug"
-              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-              placeholder="event-name"
-              required
+              onChange={(inputEvent) => {
+                setSlugTouched(true);
+                setSlug(inputEvent.currentTarget.value);
+              }}
+              placeholder="Generated from the event title"
+              value={slug}
             />
           </div>
         </div>
@@ -374,6 +504,20 @@ export function EventForm({
         </label>
         <p className="muted">Publishing needs a scheduled shift, venue and directions address. Other features are optional.</p>
       </div>
+
+      {!event ? (
+        <p className="muted phaseone-draft-status" aria-live="polite">
+          {draftStatus === "saving"
+            ? "Saving draft…"
+            : draftStatus === "saved"
+              ? draft
+                ? "Recovered draft · changes autosave"
+                : "Draft saved"
+              : draftStatus === "error"
+                ? "Draft autosave unavailable — keep this page open until saved."
+                : "Changes will autosave as you work."}
+        </p>
+      ) : null}
 
       {saveState.status === "error" ? (
         <div className="notice notice-error" role="alert" aria-live="polite">{saveState.message}</div>
