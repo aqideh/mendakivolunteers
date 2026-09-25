@@ -39,9 +39,9 @@ where id = '81000000-0000-4000-8000-000000000001';
 insert into core.user_roles(user_id, role, granted_by, reason)
 values (
   '81000000-0000-4000-8000-000000000001',
-  'attendance_manager',
+  'staff',
   '81000000-0000-4000-8000-000000000001',
-  'Slice 3 test'
+  'Slice 3 staff regression test'
 );
 
 insert into public.phaseone_events(
