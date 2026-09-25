@@ -168,6 +168,9 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                 <Link className="button button-secondary" href="/admin/events/quick">
                   Quick manual event
                 </Link>
+                <Link className="button button-secondary" href="/admin/events/import">
+                  Import events
+                </Link>
                 <Link className="button button-primary" href="/admin/events/new">
                   + New programme
                 </Link>
