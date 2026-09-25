@@ -749,6 +749,24 @@ export default async function DashboardPage({
                   </a>
                 </>
               ) : null}
+              {(isAdmin || roles.includes("volteam")) ? (
+                <>
+                  <Link href="/admin/volunteers">
+                    <span>
+                      <strong>Volunteer directory</strong>
+                      <small>Filter and export volunteer profile data</small>
+                    </span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  <Link href="/admin/inventory/shirts">
+                    <span>
+                      <strong>Shirt inventory</strong>
+                      <small>Track stock and volunteer shirt issues</small>
+                    </span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                </>
+              ) : null}
               {(isAdmin || roles.includes("volteam") || roles.includes("staff") || roles.includes("volunteer_leader")) ? (
                 <Link href="/admin/events">
                   <span>
