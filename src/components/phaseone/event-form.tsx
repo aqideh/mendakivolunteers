@@ -5,6 +5,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { saveEvent } from "@/app/admin/events/actions";
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
+import { EventImageUploader } from "./event-image-uploader";
 import { TimeslotEditor } from "./timeslot-editor";
 
 const defaultAttireNotes = "Wear your MENDAKI volunteer shirt if you have one.";
@@ -67,7 +68,11 @@ export function EventForm({
   }));
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle", message: "" });
   const [recoveryEventId, setRecoveryEventId] = useState<string | null>(null);
+  const [opportunityImageUrl, setOpportunityImageUrl] = useState(
+    event?.opportunity_image_url ?? "",
+  );
   const [isSaving, startSaving] = useTransition();
+  const currentEventId = event?.id ?? recoveryEventId;
 
   function handleSubmit(submitEvent: FormEvent<HTMLFormElement>) {
     submitEvent.preventDefault();
@@ -138,26 +143,36 @@ export function EventForm({
             rows={6}
           />
         </div>
-        <div className="phaseone-admin-grid">
-          <div className="form-field">
-            <label htmlFor="opportunityCategory">Category</label>
-            <input
-              defaultValue={event?.opportunity_category ?? ""}
-              id="opportunityCategory"
-              maxLength={120}
-              name="opportunityCategory"
-              placeholder="Community event, mentoring, learning support…"
+        <div className="form-field">
+          <label htmlFor="opportunityCategory">Category</label>
+          <input
+            defaultValue={event?.opportunity_category ?? ""}
+            id="opportunityCategory"
+            maxLength={120}
+            name="opportunityCategory"
+            placeholder="Community event, mentoring, learning support…"
+          />
+        </div>
+        <div className="form-field">
+          <label>Card image</label>
+          <input
+            id="opportunityImageUrl"
+            name="opportunityImageUrl"
+            type="hidden"
+            value={opportunityImageUrl}
+          />
+          {currentEventId ? (
+            <EventImageUploader
+              eventId={currentEventId}
+              imageUrl={opportunityImageUrl || null}
+              onImageChange={(url) => setOpportunityImageUrl(url ?? "")}
             />
-          </div>
-          <div className="form-field">
-            <label htmlFor="opportunityImageUrl">Card image URL</label>
-            <input
-              defaultValue={event?.opportunity_image_url ?? ""}
-              id="opportunityImageUrl"
-              name="opportunityImageUrl"
-              type="url"
-            />
-          </div>
+          ) : (
+            <p className="form-help">
+              Create the programme first. You can then upload its opportunity image
+              from this section.
+            </p>
+          )}
         </div>
         <div className="form-field">
           <label htmlFor="opportunityEligibility">Eligibility / requirements</label>
