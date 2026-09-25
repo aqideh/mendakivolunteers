@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { OpportunityAuthPrompt } from "@/components/opportunity-auth-prompt";
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -266,15 +267,9 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
             {!userId ? (
               <>
                 <p>
-                  Sign in or create a KELUARGA account with your email address. You
-                  will return here to select your shift and submit your registration.
+                  Sign in or create a community volunteer account to continue.
                 </p>
-                <Link
-                  className="button button-primary"
-                  href={`/login?next=${encodeURIComponent(`/opportunities/${slug}`)}`}
-                >
-                  Sign in or sign up to register
-                </Link>
+                <OpportunityAuthPrompt nextPath={`/opportunities/${slug}`} />
               </>
             ) : editable ? (
               <form action={submitOpportunityRegistration} className="phaseone-admin-form">
