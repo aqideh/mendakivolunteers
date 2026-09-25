@@ -127,7 +127,7 @@ export async function resolveSingaporePostalCode(
 
   let planningArea: string | null = null;
   const planningPayload = await oneMapGet(
-    `/api/public/popapi/getPlanningarea?lat=${encodeURIComponent(String(latitude))}&long=${encodeURIComponent(String(longitude))}&year=2019`,
+    `/api/public/popapi/getPlanningarea?latitude=${encodeURIComponent(String(latitude))}&longitude=${encodeURIComponent(String(longitude))}&year=2019`,
   );
   const planningParsed = z.array(planningAreaSchema).safeParse(planningPayload);
   if (planningParsed.success && planningParsed.data.length > 0) {
