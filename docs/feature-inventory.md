@@ -201,10 +201,13 @@ Shared-platform foundation implemented:
 - longitudinal insight/review inbox;
 - contribution-review data model.
 
-Still to complete in MakLom:
+Implemented in MakLom:
 
 - contribution review UI;
-- profile-change review UI;
+- profile-change review UI for the current mobile-change inbox contract.
+
+Still to complete in MakLom:
+
 - insight/review longitudinal inbox;
 - cross-event volunteer intelligence/reporting.
 
