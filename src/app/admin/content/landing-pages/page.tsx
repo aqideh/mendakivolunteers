@@ -16,9 +16,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function LandingPagePhotosAdminPage() {
-  await requireContentManager({
-    next: "/admin/content/landing-pages",
-  });
+  await requireContentManager({ next: "/admin/content/landing-pages" });
 
   const media = await getLandingPageMedia();
   const pages: LandingPagePhotoItem[] = media.map((item) => ({
@@ -35,9 +33,7 @@ export default async function LandingPagePhotosAdminPage() {
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
-            <Link className="text-link" href="/admin">
-              ← Admin
-            </Link>
+            <Link className="text-link" href="/admin">← Admin</Link>
             <h1>Landing page photos</h1>
             <p className="muted">
               Upload and set the hero photo used on Home and each of the five
@@ -49,8 +45,8 @@ export default async function LandingPagePhotosAdminPage() {
         <section className="section" aria-label="Landing page photo settings">
           <LandingPagePhotoManager pages={pages} />
           <p className="form-help">
-            Photos are centre-cropped to 16:9, resized to 1600 × 900 and converted
-            to WebP before upload.
+            JPEG, PNG and WebP files up to 20 MB are stored unchanged at their
+            original resolution. The page crops them visually to fill the hero area.
           </p>
         </section>
       </main>
