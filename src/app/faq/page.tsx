@@ -19,12 +19,7 @@ export default function FaqPage() {
       <PortalHeader status="Frequently asked questions" />
       <main className="page-frame narrow-frame">
         <section className={styles.hero}>
-          <p className="eyebrow">Help and support</p>
           <h1>How can we help?</h1>
-          <p className="lede">
-            Quick answers about volunteering, attendance records, VolunteerSG
-            and testimonials.
-          </p>
         </section>
 
         {hasFaqContent ? (
@@ -34,7 +29,6 @@ export default function FaqPage() {
                 section.items.length > 0 ? (
                   <section className={styles.section} key={section.title}>
                     <div className={styles.sectionHeading}>
-                      <p>{section.eyebrow}</p>
                       <h2>{section.title}</h2>
                     </div>
                     <div className={styles.questions}>
@@ -52,7 +46,6 @@ export default function FaqPage() {
 
             <section className={styles.supportCard} aria-labelledby="faq-support">
               <div>
-                <p className={styles.supportEyebrow}>Still need help?</p>
                 <h2 id="faq-support">We’re here to help.</h2>
                 <p>
                   For any volunteering queries, account issues or other support,
