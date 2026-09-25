@@ -7,8 +7,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
 
-const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
+const MAX_STORED_BYTES = 512 * 1024;
+const AVATAR_SIZE = 512;
 
 type ProfilePhotoUploaderProps = Readonly<{
   volunteerId: string;
@@ -28,15 +29,81 @@ function initialsFor(name: string) {
     .join("");
 }
 
-function extensionFor(file: File) {
-  switch (file.type) {
-    case "image/png":
-      return "png";
-    case "image/webp":
-      return "webp";
-    default:
-      return "jpg";
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("This image could not be read. Try a JPG, PNG or WebP image."));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function canvasToWebp(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("The image could not be prepared for upload."));
+      },
+      "image/webp",
+      quality,
+    );
+  });
+}
+
+async function prepareProfilePhoto(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.size <= 0) {
+    throw new Error("Choose a valid image file.");
   }
+  if (file.size > MAX_SOURCE_BYTES) {
+    throw new Error("Choose an image smaller than 20 MB.");
+  }
+
+  const image = await loadImage(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = AVATAR_SIZE;
+  canvas.height = AVATAR_SIZE;
+  const context = canvas.getContext("2d", { alpha: false });
+  if (!context) throw new Error("Your browser could not prepare this image.");
+
+  const cropSize = Math.min(image.naturalWidth, image.naturalHeight);
+  const sourceX = (image.naturalWidth - cropSize) / 2;
+  const sourceY = (image.naturalHeight - cropSize) / 2;
+
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    cropSize,
+    cropSize,
+    0,
+    0,
+    AVATAR_SIZE,
+    AVATAR_SIZE,
+  );
+
+  let quality = 0.84;
+  let blob = await canvasToWebp(canvas, quality);
+  while (blob.size > MAX_STORED_BYTES && quality > 0.5) {
+    quality -= 0.08;
+    blob = await canvasToWebp(canvas, quality);
+  }
+
+  if (blob.size > MAX_STORED_BYTES) {
+    throw new Error("The processed image is still too large. Try a simpler photo.");
+  }
+
+  return new File([blob], "avatar.webp", {
+    type: "image/webp",
+    lastModified: Date.now(),
+  });
 }
 
 export function ProfilePhotoUploader({
@@ -54,78 +121,68 @@ export function ProfilePhotoUploader({
   const [message, setMessage] = useState<string | null>(null);
 
   async function onFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const sourceFile = event.target.files?.[0];
     event.target.value = "";
-
-    if (!file) {
-      return;
-    }
-
-    if (!ALLOWED_TYPES.has(file.type)) {
-      setMessage("Use a JPG, PNG or WebP image.");
-      return;
-    }
-
-    if (file.size > MAX_PHOTO_BYTES) {
-      setMessage("Profile photos must be 2 MB or smaller.");
-      return;
-    }
+    if (!sourceFile) return;
 
     setIsUploading(true);
     setMessage(null);
 
-    const supabase = createClient() as unknown as SupabaseClient;
-    const extension = extensionFor(file);
-    const nextPath = `${userId}/avatar-${Date.now()}.${extension}`;
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
+    let objectUrl: string | null = null;
+    try {
+      const file = await prepareProfilePhoto(sourceFile);
+      const supabase = createClient() as unknown as SupabaseClient;
+      const nextPath = `${userId}/avatar-${Date.now()}.webp`;
+      objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
 
-    const { error: uploadError } = await supabase.storage
-      .from("volunteer-profile-photos")
-      .upload(nextPath, file, {
-        cacheControl: "3600",
-        contentType: file.type,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      URL.revokeObjectURL(objectUrl);
-      setPreviewUrl(avatarUrl);
-      setMessage("Photo upload failed. Try again.");
-      setIsUploading(false);
-      return;
-    }
-
-    const { error: profileError } = await supabase
-      .from("keluarga_volunteer_profiles")
-      .upsert(
-        {
-          volunteer_id: volunteerId,
-          avatar_path: nextPath,
-        },
-        { onConflict: "volunteer_id" },
-      );
-
-    if (profileError) {
-      await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("volunteer-profile-photos")
-        .remove([nextPath]);
-      URL.revokeObjectURL(objectUrl);
+        .upload(nextPath, file, {
+          cacheControl: "3600",
+          contentType: "image/webp",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error("Photo upload failed. Try again.");
+      }
+
+      const { error: profileError } = await supabase
+        .from("keluarga_volunteer_profiles")
+        .upsert(
+          {
+            volunteer_id: volunteerId,
+            avatar_path: nextPath,
+          },
+          { onConflict: "volunteer_id" },
+        );
+
+      if (profileError) {
+        await supabase.storage.from("volunteer-profile-photos").remove([nextPath]);
+        throw new Error("Photo could not be saved to your profile.");
+      }
+
+      if (avatarPath && avatarPath !== nextPath) {
+        const { error: removeError } = await supabase.storage
+          .from("volunteer-profile-photos")
+          .remove([avatarPath]);
+        if (removeError) {
+          console.error("Unable to remove previous profile photo", {
+            message: removeError.message,
+          });
+        }
+      }
+
+      setMessage("Profile photo updated.");
+      router.refresh();
+    } catch (error) {
       setPreviewUrl(avatarUrl);
-      setMessage("Photo could not be saved to your profile.");
+      setMessage(error instanceof Error ? error.message : "Photo upload failed.");
+    } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
       setIsUploading(false);
-      return;
     }
-
-    if (avatarPath && avatarPath !== nextPath) {
-      await supabase.storage
-        .from("volunteer-profile-photos")
-        .remove([avatarPath]);
-    }
-
-    setMessage("Profile photo updated.");
-    setIsUploading(false);
-    router.refresh();
   }
 
   return (
@@ -144,6 +201,7 @@ export function ProfilePhotoUploader({
         />
         <span className="profile-passport-avatar">
           {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={previewUrl} alt="" />
           ) : (
             <span aria-hidden="true">{initialsFor(displayName) || "K"}</span>
@@ -157,7 +215,7 @@ export function ProfilePhotoUploader({
         ref={inputRef}
         className="profile-passport-file-input"
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         onChange={onFileChange}
       />
       <span className="profile-passport-completion">{completion}% complete</span>
