@@ -21,7 +21,7 @@ export default async function MentorPage() {
 
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Community volunteers" lite />
+      <PortalHeader status="Volunteers" lite />
       <main className={styles.frame}>
         <section
           className={styles.hero}
