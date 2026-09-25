@@ -699,7 +699,7 @@ export async function addManualVolunteerToRoster(input: {
   return {
     status: "success",
     message: identityMessage + assignmentMessage,
-    volunteerCode,
+    ...(volunteerCode ? { volunteerCode } : {}),
     volunteerCreated,
   };
 }
