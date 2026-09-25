@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 
 import { ContributorHero } from "@/app/opportunities/contributor-hero";
 import { PortalHeader } from "@/components/portal-header";
-import { formatSingaporeDate } from "@/lib/content/dates";
 import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 import { loadOpportunitySocialProof } from "@/lib/phaseone/opportunity-social-proof";
 import { createClient } from "@/lib/supabase/server";
@@ -15,12 +14,42 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-function formatSingaporeTime(value: string) {
-  return new Intl.DateTimeFormat("en-SG", {
+function singaporeDateParts(value: string) {
+  const parts = new Intl.DateTimeFormat("en-SG", {
     timeZone: "Asia/Singapore",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).formatToParts(new Date(value));
+
+  return {
+    day: parts.find((part) => part.type === "day")?.value ?? "",
+    month: parts.find((part) => part.type === "month")?.value ?? "",
+    year: parts.find((part) => part.type === "year")?.value ?? "",
+  };
+}
+
+function formatOpportunityDateRange(startsAt: string, endsAt: string | null) {
+  const start = singaporeDateParts(startsAt);
+  const end = singaporeDateParts(endsAt ?? startsAt);
+
+  if (
+    start.year === end.year &&
+    start.month === end.month &&
+    start.day === end.day
+  ) {
+    return `${start.day} ${start.month} ${start.year}`;
+  }
+
+  if (start.year === end.year && start.month === end.month) {
+    return `${start.day} – ${end.day} ${start.month} ${start.year}`;
+  }
+
+  if (start.year === end.year) {
+    return `${start.day} ${start.month} – ${end.day} ${end.month} ${start.year}`;
+  }
+
+  return `${start.day} ${start.month} ${start.year} – ${end.day} ${end.month} ${end.year}`;
 }
 
 export default async function OpportunitiesPage() {
@@ -56,21 +85,26 @@ export default async function OpportunitiesPage() {
                   )}
                 </div>
                 <div className="phaseone-opportunity-body">
-                  <div className="phaseone-opportunity-pills" aria-label="Opportunity schedule">
-                    <span>{formatSingaporeDate(opportunity.starts_at)}</span>
-                    <span>{formatSingaporeTime(opportunity.starts_at)}</span>
-                    {opportunity.timeslots.length > 1 ? (
-                      <span>{opportunity.timeslots.length} shifts</span>
-                    ) : null}
-                  </div>
-
-                  <div className="phaseone-opportunity-heading">
-                    <h2>{opportunity.title}</h2>
+                  <div className="phaseone-opportunity-pills" aria-label="Opportunity details">
                     {opportunity.category ? (
                       <span className="phaseone-opportunity-category">
                         {opportunity.category}
                       </span>
                     ) : null}
+                    <span>
+                      {formatOpportunityDateRange(
+                        opportunity.starts_at,
+                        opportunity.ends_at,
+                      )}
+                    </span>
+                    <span>
+                      {opportunity.timeslots.length}{" "}
+                      {opportunity.timeslots.length === 1 ? "shift" : "shifts"}
+                    </span>
+                  </div>
+
+                  <div className="phaseone-opportunity-heading">
+                    <h2>{opportunity.title}</h2>
                   </div>
 
                   <p className="phaseone-opportunity-venue">
