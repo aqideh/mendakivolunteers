@@ -13,6 +13,7 @@ import {
   saveHomeStep,
   saveInterestsStep,
   savePersonalStep,
+  savePhotoVisibilityStep,
   saveSkillsStep,
 } from "@/app/profile/setup/actions";
 import { PortalHeader } from "@/components/portal-header";
@@ -51,6 +52,7 @@ type SetupProfile = {
   availability_slots: string[];
   preferred_commitment: string | null;
   onboarding_completed_at: string | null;
+  event_card_photo_opt_in: boolean;
 };
 
 type PrivateDetails = {
@@ -192,7 +194,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
     client
       .from("keluarga_volunteer_profiles")
       .select(
-        "avatar_path, bio, interests, skills, availability_notes, availability_slots, preferred_commitment, onboarding_completed_at",
+        "avatar_path, bio, interests, skills, availability_notes, availability_slots, preferred_commitment, onboarding_completed_at, event_card_photo_opt_in",
       )
       .eq("volunteer_id", volunteer.id)
       .maybeSingle(),
@@ -688,7 +690,8 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
           ) : null}
 
           {currentStep === "photo" ? (
-            <div className="profile-setup-photo">
+            <form action={savePhotoVisibilityStep} className="profile-setup-photo">
+              {editMode ? <input type="hidden" name="mode" value="edit" /> : null}
               <ProfilePhotoUploader
                 volunteerId={volunteer.id}
                 userId={userId}
@@ -698,19 +701,24 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                 completion={completion}
               />
               <p className="muted">Tap the photo to choose or replace your image.</p>
+              <label className="profile-setup-inline-check">
+                <input
+                  type="checkbox"
+                  name="eventCardPhotoOptIn"
+                  defaultChecked={profile?.event_card_photo_opt_in ?? false}
+                />
+                <span>
+                  Show my profile photo alongside activities I&apos;ve registered for.
+                  My photo may appear to other signed-in KELUARGA volunteers viewing the activity.
+                </span>
+              </label>
               <div className="profile-setup-actions">
-                {editMode ? (
-                  <Link className="button button-primary" href="/profile/edit?success=photo">
-                    Done
-                  </Link>
-                ) : (
-                  <>
-                    <Link className="button button-secondary" href={stepHref("education", false)}>Back</Link>
-                    <Link className="button button-primary" href={stepHref("about", false)}>Continue</Link>
-                  </>
-                )}
+                {!editMode ? <Link className="button button-secondary" href={stepHref("education", false)}>Back</Link> : null}
+                <button className="button button-primary" type="submit">
+                  {editMode ? "Save preference" : "Save and continue"}
+                </button>
               </div>
-            </div>
+            </form>
           ) : null}
 
           {currentStep === "about" ? (
