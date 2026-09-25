@@ -264,7 +264,9 @@ export function DatabaseVolunteerRosterPicker({
           >
             {isAdding
               ? "Adding…"
-              : `Add ${selectedVolunteers.length || ""} selected volunteer${selectedVolunteers.length === 1 ? "" : "s"}`.trim()}
+              : selectedVolunteers.length === 0
+                ? "Select volunteers to add"
+                : `Add ${selectedVolunteers.length} selected volunteer${selectedVolunteers.length === 1 ? "" : "s"}`}
           </button>
           {selectedVolunteers.length > 0 ? (
             <span className="muted">
