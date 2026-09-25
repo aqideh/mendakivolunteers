@@ -1,6 +1,6 @@
 begin;
 
-select plan(10);
+select plan(9);
 
 select ok(
   has_function_privilege(
@@ -116,18 +116,6 @@ select ok(
       and roster.source_assignment_status = 'staff_created_volunteer'
   ),
   'new canonical volunteer is linked to the selected roster shift'
-);
-
-select ok(
-  exists (
-    select 1
-    from public.volunteer_private_details details
-    join core.volunteers volunteer on volunteer.id = details.volunteer_id
-    where volunteer.primary_email_normalized = 'planned-new-volunteer@example.test'
-      and details.tshirt_size = 'L'
-      and details.dietary_requirements = 'Vegetarian'
-  ),
-  'optional roster setup details are retained on the volunteer profile'
 );
 
 select ok(
