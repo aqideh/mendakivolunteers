@@ -39,6 +39,16 @@ type KeluargaVolunteerProfile = {
   onboarding_completed_at: string | null;
 };
 
+type PrivateDetails = {
+  date_of_birth: string | null;
+  postal_code: string | null;
+  address_line: string | null;
+  tshirt_size: string | null;
+  food_allergies: string | null;
+  no_known_food_allergies: boolean;
+  highest_qualification: string | null;
+};
+
 type PointsSnapshot = {
   balance?: number | string;
 };
@@ -107,13 +117,25 @@ function profileMilestones(input: {
   skills: string[];
   availabilitySlots: string[];
   preferredCommitment: string | null;
+  privateDetails: PrivateDetails | null;
 }) {
   return {
     contact: Boolean(input.displayName.trim() && input.mobile?.trim()),
+    home: Boolean(
+      input.privateDetails?.postal_code && input.privateDetails?.address_line,
+    ),
+    personal: Boolean(input.privateDetails?.date_of_birth),
     interests: input.interests.length > 0,
     skills: input.skills.length > 0,
     availability:
       input.availabilitySlots.length > 0 && Boolean(input.preferredCommitment),
+    eventReadiness:
+      Boolean(input.privateDetails?.tshirt_size) &&
+      Boolean(
+        input.privateDetails?.no_known_food_allergies ||
+          input.privateDetails?.food_allergies?.trim(),
+      ),
+    education: Boolean(input.privateDetails?.highest_qualification),
     photo: Boolean(input.avatarPath),
   };
 }
@@ -214,6 +236,7 @@ export default async function DashboardPage({
   }
 
   let presentationProfile: KeluargaVolunteerProfile | null = null;
+  let privateDetails: PrivateDetails | null = null;
   let approvedContributions: Array<{
     id: string;
     approved_minutes: number;
@@ -223,12 +246,19 @@ export default async function DashboardPage({
   let badgeCount = 0;
 
   if (volunteer) {
-    const [profileResult, contributionResult, pointsResult, badgesResult] =
+    const [profileResult, privateResult, contributionResult, pointsResult, badgesResult] =
       await Promise.all([
         accountClient
           .from("keluarga_volunteer_profiles")
           .select(
             "volunteer_id, avatar_path, bio, interests, skills, availability_notes, availability_slots, preferred_commitment, onboarding_completed_at",
+          )
+          .eq("volunteer_id", volunteer.id)
+          .maybeSingle(),
+        accountClient
+          .from("volunteer_private_details")
+          .select(
+            "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification",
           )
           .eq("volunteer_id", volunteer.id)
           .maybeSingle(),
@@ -244,12 +274,14 @@ export default async function DashboardPage({
 
     if (
       profileResult.error ||
+      privateResult.error ||
       contributionResult.error ||
       pointsResult.error ||
       badgesResult.error
     ) {
       console.error("Unable to load volunteer profile passport", {
         profileCode: profileResult.error?.code,
+        privateProfileCode: privateResult.error?.code,
         contributionCode: contributionResult.error?.code,
         pointsCode: pointsResult.error?.code,
         badgesCode: badgesResult.error?.code,
@@ -259,6 +291,8 @@ export default async function DashboardPage({
 
     presentationProfile =
       (profileResult.data as KeluargaVolunteerProfile | null) ?? null;
+    privateDetails =
+      (privateResult.data as PrivateDetails | null) ?? null;
     approvedContributions =
       (contributionResult.data as Array<{
         id: string;
@@ -302,9 +336,10 @@ export default async function DashboardPage({
     skills,
     availabilitySlots,
     preferredCommitment,
+    privateDetails,
   });
   const milestoneCount = Object.values(milestones).filter(Boolean).length;
-  const completion = milestoneCount * 20;
+  const completion = Math.round((milestoneCount / 9) * 100);
 
   let avatarUrl: string | null = null;
   if (avatarPath) {
@@ -358,7 +393,11 @@ export default async function DashboardPage({
         <section className="profile-passport-hero" aria-labelledby="profile-passport-title">
           <div className="profile-passport-hero-topline">
             <div className="profile-passport-photo-block">
-              <div className="profile-passport-avatar-button profile-passport-avatar-summary">
+              <Link
+                className="profile-passport-avatar-button profile-passport-avatar-summary"
+                href="/profile/setup?step=photo&mode=edit"
+                aria-label="Change profile photo"
+              >
                 <span
                   className="profile-passport-progress-ring"
                   style={{ "--profile-completion": `${completion * 3.6}deg` } as CSSProperties}
@@ -372,13 +411,13 @@ export default async function DashboardPage({
                     <span aria-hidden="true">{firstName.slice(0, 1).toUpperCase()}</span>
                   )}
                 </span>
-              </div>
+              </Link>
               <span className="profile-passport-completion">{completion}% complete</span>
             </div>
 
             <Link
               className="profile-passport-settings"
-              href="/profile/setup"
+              href="/profile/edit"
               aria-label="Edit profile"
               title="Edit profile"
             >
@@ -463,20 +502,30 @@ export default async function DashboardPage({
                     and contact you when needed.
                   </p>
                 </div>
-                <Link className="text-link" href="/profile/setup">
-                  {completion === 100 ? "Review" : "Complete profile"}
+                <Link
+                  className="text-link"
+                  href={completion === 100 ? "/profile/edit" : "/profile/setup"}
+                >
+                  {completion === 100 ? "Edit profile" : "Complete profile"}
                 </Link>
               </div>
 
               <div className="profile-passport-milestones">
                 {[
-                  ["Contact details", milestones.contact],
-                  ["Volunteering interests", milestones.interests],
-                  ["Skills", milestones.skills],
-                  ["Availability", milestones.availability],
-                  ["Profile photo", milestones.photo],
-                ].map(([label, done]) => (
-                  <Link key={String(label)} href="/profile/setup">
+                  ["Contact details", milestones.contact, "contact"],
+                  ["Home area", milestones.home, "home"],
+                  ["Personal details", milestones.personal, "personal"],
+                  ["Interests", milestones.interests, "interests"],
+                  ["Skills", milestones.skills, "skills"],
+                  ["Availability", milestones.availability, "availability"],
+                  ["Event readiness", milestones.eventReadiness, "event-readiness"],
+                  ["Education", milestones.education, "education"],
+                  ["Profile photo", milestones.photo, "photo"],
+                ].map(([label, done, step]) => (
+                  <Link
+                    key={String(label)}
+                    href={done ? `/profile/setup?step=${step}&mode=edit` : `/profile/setup?step=${step}`}
+                  >
                     <span className="profile-passport-milestone-check" data-complete={done ? "true" : "false"}>
                       {done ? "✓" : "○"}
                     </span>
@@ -492,7 +541,7 @@ export default async function DashboardPage({
                   <h2 id="profile-story-title">Your volunteer profile</h2>
                   <p>Interests and strengths you have chosen to share in KELUARGA.</p>
                 </div>
-                <Link className="text-link" href="/profile/setup">
+                <Link className="text-link" href="/profile/edit">
                   Edit profile
                 </Link>
               </div>
