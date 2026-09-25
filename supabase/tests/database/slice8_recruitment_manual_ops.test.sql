@@ -175,9 +175,7 @@ select lives_ok(
   $$
     select core.submit_keluarga_registration(
       '98000000-0000-4000-8000-000000000020',
-      array['98000000-0000-4000-8000-000000000021']::uuid[],
-      'Slice Eight Volunteer',
-      '91234567'
+      array['98000000-0000-4000-8000-000000000021']::uuid[]
     )
   $$,
   'volunteer can register before testing withdrawal and reopening'
@@ -201,9 +199,7 @@ select lives_ok(
   $$
     select core.submit_keluarga_registration(
       '98000000-0000-4000-8000-000000000020',
-      array['98000000-0000-4000-8000-000000000021']::uuid[],
-      'Slice Eight Volunteer',
-      '91234567'
+      array['98000000-0000-4000-8000-000000000021']::uuid[]
     )
   $$,
   'withdrawn registration can be reopened while the opportunity remains available'
