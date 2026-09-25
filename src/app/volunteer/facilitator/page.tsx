@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { RoleLanding } from "@/components/role-landing";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Volunteer as a Facilitator",
   description:
