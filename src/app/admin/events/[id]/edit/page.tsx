@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { duplicateEvent } from "@/app/admin/events/actions";
 import { creditManualEventHours } from "@/app/admin/events/manual-actions";
 import { DatabaseVolunteerRosterPicker } from "@/components/phaseone/database-volunteer-roster-picker";
+import { ManualRosterVolunteerForm } from "@/components/phaseone/manual-roster-volunteer-form";
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
@@ -205,10 +206,16 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           ) : null}
 
           {operationsScope !== "manual_isolated" ? (
-            <DatabaseVolunteerRosterPicker
-              eventId={event.id}
-              timeslots={timeslotsResult.data}
-            />
+            <>
+              <DatabaseVolunteerRosterPicker
+                eventId={event.id}
+                timeslots={timeslotsResult.data}
+              />
+              <ManualRosterVolunteerForm
+                eventId={event.id}
+                timeslots={timeslotsResult.data}
+              />
+            </>
           ) : null}
 
           <RosterUpload
