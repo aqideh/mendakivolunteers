@@ -590,8 +590,12 @@
   margin-top: auto;
 }
 
-.phaseone-opportunities-grid .phaseone-opportunity-cta {
+.phaseone-opportunities-grid .phaseone-opportunity-card-footer {
   margin-top: auto;
+}
+
+.phaseone-opportunities-grid .phaseone-opportunity-cta {
+  margin-top: 0;
 }
 
 .phaseone-opportunities-frame .phaseone-empty-state {
