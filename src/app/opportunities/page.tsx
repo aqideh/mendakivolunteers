@@ -171,7 +171,6 @@ export default async function OpportunitiesPage() {
         )}
       </main>
       <footer className="site-footer">
-        <span>Keluarga MENDAKI manages volunteer opportunity discovery, registration and event participation.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
