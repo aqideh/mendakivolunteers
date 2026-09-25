@@ -8,6 +8,7 @@ import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-
 import { PortalHeader } from "@/components/portal-header";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
+import { ProfilePassportTabs } from "@/components/profile-passport-tabs";
 import { VolunteerJourneySummary } from "@/components/volunteer-journey-summary";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
 import { hasGamificationManagerRole } from "@/lib/auth/gamification-access";
@@ -413,29 +414,15 @@ export default async function DashboardPage({
           </section>
         ) : null}
 
-        <nav className="profile-passport-tabs" aria-label="Profile sections">
-          <Link
-            href="/dashboard?tab=overview"
-            aria-current={activeTab === "overview" ? "page" : undefined}
-          >
-            Overview
-          </Link>
-          <Link
-            href="/dashboard?tab=activity"
-            aria-current={activeTab === "activity" ? "page" : undefined}
-          >
-            Activity
-          </Link>
-          <Link
-            href="/dashboard?tab=recognition"
-            aria-current={activeTab === "recognition" ? "page" : undefined}
-          >
-            Recognition
-          </Link>
-        </nav>
+        <ProfilePassportTabs initialTab={activeTab} />
 
-        {activeTab === "overview" ? (
-          <div className="profile-passport-tab-panel">
+        <div
+          id="profile-passport-panel-overview"
+          className="profile-passport-tab-panel profile-passport-tab-transition"
+          data-profile-passport-panel="overview"
+          data-active={activeTab === "overview" ? "true" : "false"}
+          hidden={activeTab !== "overview"}
+        >
             <section aria-labelledby="impact-title">
               <div className="profile-passport-section-heading">
                 <div>
@@ -542,10 +529,14 @@ export default async function DashboardPage({
               </div>
             </section>
           </div>
-        ) : null}
 
-        {activeTab === "activity" ? (
-          <div className="profile-passport-tab-panel">
+        <div
+          id="profile-passport-panel-activity"
+          className="profile-passport-tab-panel profile-passport-tab-transition"
+          data-profile-passport-panel="activity"
+          data-active={activeTab === "activity" ? "true" : "false"}
+          hidden={activeTab !== "activity"}
+        >
             <section aria-labelledby="activity-summary-title">
               <div className="profile-passport-section-heading">
                 <div>
@@ -612,10 +603,14 @@ export default async function DashboardPage({
               </section>
             ) : null}
           </div>
-        ) : null}
 
-        {activeTab === "recognition" ? (
-          <div className="profile-passport-tab-panel profile-passport-recognition">
+        <div
+          id="profile-passport-panel-recognition"
+          className="profile-passport-tab-panel profile-passport-recognition profile-passport-tab-transition"
+          data-profile-passport-panel="recognition"
+          data-active={activeTab === "recognition" ? "true" : "false"}
+          hidden={activeTab !== "recognition"}
+        >
             {volunteer ? <VolunteerJourneySummary /> : null}
             <section aria-labelledby="recognition-links-title">
               <div className="profile-passport-section-heading">
@@ -642,7 +637,6 @@ export default async function DashboardPage({
               </div>
             </section>
           </div>
-        ) : null}
 
         {isStaffUser ? (
           <section className="profile-passport-management" aria-labelledby="staff-tools-title">
