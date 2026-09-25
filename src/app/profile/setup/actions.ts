@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireActiveAccount } from "@/lib/auth/account-access";
+import { resolveSingaporePostalCode } from "@/lib/onemap/server";
 
 const contactSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
@@ -149,23 +150,38 @@ export async function saveHomeStep(formData: FormData) {
   const isEdit = editMode(formData);
   const parsed = z.object({
     postalCode: z.string().trim().regex(/^[0-9]{6}$/),
-    addressLine: z.string().trim().min(3).max(500),
   }).safeParse({
     postalCode: formData.get("postalCode"),
-    addressLine: formData.get("addressLine"),
   });
 
   if (!parsed.success) {
     redirect(`/profile/setup?step=home&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
-  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=home");
-  const result = await upsertPrivateDetails(client, volunteerId, {
-    postal_code: parsed.data.postalCode,
-    address_line: parsed.data.addressLine,
+  const { client } = await getVolunteerContext("/profile/setup?step=home");
+
+  let verifiedLocation;
+  try {
+    verifiedLocation = await resolveSingaporePostalCode(parsed.data.postalCode);
+  } catch (error) {
+    console.error("Unable to verify volunteer home location with OneMap", {
+      message: error instanceof Error ? error.message : "Unknown OneMap error",
+    });
+    redirect(`/profile/setup?step=home&error=location_lookup${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  const result = await client.rpc("update_current_volunteer_home_location", {
+    p_postal_code: verifiedLocation.postalCode,
+    p_address_line: verifiedLocation.normalizedAddress,
+    p_latitude: verifiedLocation.latitude,
+    p_longitude: verifiedLocation.longitude,
+    p_planning_area: verifiedLocation.planningArea,
   });
 
   if (result.error) {
+    console.error("Unable to save verified volunteer home location", {
+      code: result.error.code,
+    });
     redirect(`/profile/setup?step=home&error=save${isEdit ? "&mode=edit" : ""}`);
   }
 
