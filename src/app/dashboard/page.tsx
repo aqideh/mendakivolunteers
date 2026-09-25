@@ -8,6 +8,7 @@ import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-
 import { PortalHeader } from "@/components/portal-header";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
+import { ProfileEditToggle } from "@/components/profile-edit-toggle";
 import { ProfilePassportTabs } from "@/components/profile-passport-tabs";
 import { VolunteerJourneySummary } from "@/components/volunteer-journey-summary";
 import { hasContentManagerRole } from "@/lib/auth/content-access";
@@ -340,14 +341,10 @@ export default async function DashboardPage({
               </div>
             )}
 
-            <Link
-              className="profile-passport-settings"
-              href="/dashboard?profile=edit"
-              aria-label="Edit profile"
-              title="Edit profile"
-            >
-              <span aria-hidden="true">⚙</span>
-            </Link>
+            <ProfileEditToggle
+              initialEditing={profileMode === "edit"}
+              variant="settings"
+            />
           </div>
 
           <div className="profile-passport-copy">
@@ -381,8 +378,14 @@ export default async function DashboardPage({
           </div>
         </section>
 
-        {profileMode === "edit" && volunteer ? (
-          <section className="profile-passport-edit-panel" aria-labelledby="profile-edit-title">
+        {volunteer ? (
+          <section
+            id="profile-passport-edit-panel"
+            className="profile-passport-edit-panel"
+            aria-labelledby="profile-edit-title"
+            data-profile-edit-panel
+            hidden={profileMode !== "edit"}
+          >
             <div className="profile-passport-section-heading">
               <div>
                 <h2 id="profile-edit-title">Edit profile</h2>
@@ -391,9 +394,7 @@ export default async function DashboardPage({
                   Management records remain managed separately in MakLom.
                 </p>
               </div>
-              <Link className="text-link" href="/dashboard">
-                Close
-              </Link>
+              <ProfileEditToggle initialEditing={profileMode === "edit"} />
             </div>
             <ProfileEditor
               displayName={displayName}
@@ -457,9 +458,7 @@ export default async function DashboardPage({
                   <h2 id="profile-story-title">Your volunteer profile</h2>
                   <p>Interests and strengths you have chosen to share in KELUARGA.</p>
                 </div>
-                <Link className="text-link" href="/dashboard?profile=edit">
-                  Edit
-                </Link>
+                <ProfileEditToggle initialEditing={profileMode === "edit"} />
               </div>
 
               <div className="profile-passport-story-grid">
@@ -705,16 +704,14 @@ export default async function DashboardPage({
           </section>
         ) : null}
 
-        {profileMode !== "edit" ? (
-          <div className="profile-passport-footer-actions">
-            <span>{authUser.email ?? "Email unavailable"}</span>
-            <form action={signOut}>
-              <button className="text-link button-reset" type="submit">
-                Sign out
-              </button>
-            </form>
-          </div>
-        ) : null}
+        <div className="profile-passport-footer-actions">
+          <span>{authUser.email ?? "Email unavailable"}</span>
+          <form action={signOut}>
+            <button className="button button-secondary profile-passport-signout" type="submit">
+              Sign out
+            </button>
+          </form>
+        </div>
       </main>
     </div>
   );
