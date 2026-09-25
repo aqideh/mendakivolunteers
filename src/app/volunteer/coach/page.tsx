@@ -13,7 +13,7 @@ export default function CoachPage() {
     <RoleLanding
       title="Coaching Every Learner Forward."
       description="Guide primary and secondary students in their learning journey by providing quality academic support, building their confidence and equipping them to succeed in school and beyond."
-      heroImage="/volunteer/coach-hero.webp"
+      heroImage="/volunteer/coach-hero.jpg"
       heroPosition="67% center"
       items={[
         {
