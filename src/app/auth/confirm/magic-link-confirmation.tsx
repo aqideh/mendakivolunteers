@@ -150,6 +150,31 @@ export function MagicLinkConfirmation() {
         return;
       }
 
+      if (nextPath === "/dashboard") {
+        const volunteerResult = await accountClient
+          .schema("core")
+          .from("volunteers")
+          .select("id")
+          .eq("auth_user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
+          .maybeSingle();
+
+        if (!volunteerResult.error && volunteerResult.data) {
+          const profileResult = await accountClient
+            .from("keluarga_volunteer_profiles")
+            .select("onboarding_completed_at")
+            .eq("volunteer_id", volunteerResult.data.id)
+            .maybeSingle();
+
+          if (
+            !profileResult.error &&
+            !profileResult.data?.onboarding_completed_at
+          ) {
+            window.location.replace("/profile/setup");
+            return;
+          }
+        }
+      }
+
       window.location.replace(nextPath);
     }
 
