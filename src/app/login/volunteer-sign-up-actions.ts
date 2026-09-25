@@ -1,5 +1,6 @@
 "use server";
 
+import type { AuthError } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { getPublicConfig } from "@/lib/env";
@@ -33,10 +34,7 @@ function getEmailRedirectTo(nextPath: string) {
   return callbackUrl.toString();
 }
 
-function isEmailRateLimitError(error: {
-  code?: string;
-  status?: number;
-}): boolean {
+function isEmailRateLimitError(error: AuthError): boolean {
   return (
     error.status === 429 ||
     error.code === "email_rate_limit_exceeded" ||
