@@ -281,7 +281,7 @@ export default async function DashboardPage({
 
     if (signedUrlResult.error) {
       console.error("Unable to create profile photo URL", {
-        code: signedUrlResult.error.code,
+        message: signedUrlResult.error.message,
       });
       throw new Error("Profile photo could not be loaded");
     }
