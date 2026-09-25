@@ -28,7 +28,7 @@ export default async function Home() {
 
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Community volunteers" lite />
+      <PortalHeader status="Volunteers" lite />
       <main className={`phaseone-frame ${styles.frame}`}>
         <section
           className={styles.hero}
