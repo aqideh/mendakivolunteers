@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-import { requireAttendanceOperator } from "@/lib/auth/event-access";
+import { requireEventManager } from "@/lib/auth/event-access";
 import { createClient } from "@/lib/supabase/server";
 
 const sizes = ["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"] as const;
@@ -31,7 +31,7 @@ export async function issueVolunteerShirt(formData: FormData) {
   }
 
   const back = `/admin/events/${parsed.data.eventId}/attendance${parsed.data.timeslotId ? `?timeslot=${encodeURIComponent(parsed.data.timeslotId)}` : ""}`;
-  await requireAttendanceOperator(back);
+  await requireEventManager(back);
   const supabase = (await createClient()) as unknown as SupabaseClient;
 
   const result = await supabase.rpc("issue_volunteer_shirt", {
