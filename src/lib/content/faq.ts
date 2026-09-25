@@ -61,11 +61,6 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
         answer:
           "Yes. Volunteers may request a testimonial after completing a minimum of 24 hours of service within the same calendar year. Please allow up to 5 working days for your request to be processed.",
       },
-      {
-        question: "Who can I contact if I have a question or issue?",
-        answer:
-          "For volunteering queries, account issues or other support, please contact the MENDAKI Volunteer Management team at volunteer@mendaki.org.sg.",
-      },
     ],
   },
 ];
