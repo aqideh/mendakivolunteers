@@ -160,31 +160,9 @@ export async function saveHomeStep(formData: FormData) {
   }
 
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=home");
-  const existing = await client
-    .from("volunteer_private_details")
-    .select("postal_code")
-    .eq("volunteer_id", volunteerId)
-    .maybeSingle();
-
-  if (existing.error) {
-    redirect(`/profile/setup?step=home&error=save${isEdit ? "&mode=edit" : ""}`);
-  }
-
-  const postalChanged = existing.data?.postal_code !== parsed.data.postalCode;
   const result = await upsertPrivateDetails(client, volunteerId, {
     postal_code: parsed.data.postalCode,
     address_line: parsed.data.addressLine,
-    ...(postalChanged
-      ? {
-          latitude: null,
-          longitude: null,
-          neighbourhood: null,
-          planning_area: null,
-          electoral_division: null,
-          electoral_boundary_version: null,
-          address_verified_at: null,
-        }
-      : {}),
   });
 
   if (result.error) {
