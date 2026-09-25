@@ -235,9 +235,11 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
       ? "Check the fields below before continuing."
       : error === "incomplete"
         ? "Complete all required profile milestones before finishing setup."
-        : error
-          ? "That change could not be saved. Try again."
-          : null;
+        : error === "location_lookup"
+          ? "We could not verify that postal code. Check the 6-digit postal code and try again."
+          : error
+            ? "That change could not be saved. Try again."
+            : null;
 
   const currentIndex = steps.findIndex((step) => step.key === currentStep);
 
@@ -348,7 +350,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
             </h1>
             <p>
               {currentStep === "home"
-                ? "Your postal code and address help us understand where our volunteers are based. Neighbourhood and constituency reporting is derived separately from verified location data."
+                ? "Enter your 6-digit postal code. KELUARGA verifies the address and location automatically so neighbourhood and constituency reporting stays consistent."
                 : currentStep === "event-readiness"
                   ? "These details help us prepare meals and volunteer shirts for activities."
                   : currentStep === "personal"
@@ -417,26 +419,17 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                   maxLength={6}
                   defaultValue={privateDetails?.postal_code ?? ""}
                   placeholder="6-digit postal code"
-                  required
-                />
-              </div>
-              <div className="form-field">
-                <label htmlFor="setup-address">Address</label>
-                <textarea
-                  id="setup-address"
-                  name="addressLine"
-                  rows={3}
-                  maxLength={500}
-                  defaultValue={privateDetails?.address_line ?? ""}
-                  placeholder="Block / house number and street name"
+                  autoComplete="postal-code"
                   required
                 />
                 <span className="form-help">
-                  Unit number is not required for neighbourhood reporting.
+                  We use your postal code to verify your address and derive your home area.
+                  Unit number is not required.
                 </span>
               </div>
-              {privateDetails?.planning_area || privateDetails?.electoral_division ? (
+              {privateDetails?.address_line ? (
                 <div className="profile-setup-derived-location">
+                  <span>Verified address: <strong>{privateDetails.address_line}</strong></span>
                   {privateDetails.planning_area ? (
                     <span>Planning area: <strong>{privateDetails.planning_area}</strong></span>
                   ) : null}
@@ -452,7 +445,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                   </Link>
                 ) : null}
                 <button className="button button-primary" type="submit">
-                  {editMode ? "Save changes" : "Save and continue"}
+                  {editMode ? "Verify and save" : "Verify and continue"}
                 </button>
               </div>
             </form>
