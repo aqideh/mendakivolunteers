@@ -517,3 +517,189 @@ export async function addDatabaseVolunteersToRoster(input: {
     message: parts.join(" "),
   };
 }
+
+
+const manualRosterVolunteerSchema = z
+  .object({
+    eventId: z.string().uuid(),
+    timeslotIds: z.array(z.string().uuid()).min(1).max(100),
+    volunteerName: z.string().trim().min(1).max(120),
+    email: z.string().trim().max(254).optional().default(""),
+    mobile: z.string().trim().max(40).optional().default(""),
+    age: z.number().int().min(0).max(120).nullable().optional(),
+    tshirtSize: z
+      .enum(["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"])
+      .nullable()
+      .optional(),
+    dietaryRequirements: z.string().trim().max(500).optional().default(""),
+  })
+  .superRefine((value, context) => {
+    if (!value.email && !value.mobile) {
+      context.addIssue({
+        code: "custom",
+        path: ["email"],
+        message: "Enter an email address or mobile number.",
+      });
+    }
+    if (value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email)) {
+      context.addIssue({
+        code: "custom",
+        path: ["email"],
+        message: "Enter a valid email address.",
+      });
+    }
+  });
+
+export type ManualRosterVolunteerState = Readonly<{
+  status: "idle" | "success" | "error";
+  message: string;
+  volunteerCode?: string;
+  volunteerCreated?: boolean;
+}>;
+
+function manualRosterVolunteerError(
+  message: string,
+): ManualRosterVolunteerState {
+  return { status: "error", message };
+}
+
+export async function addManualVolunteerToRoster(input: {
+  eventId: string;
+  timeslotIds: string[];
+  volunteerName: string;
+  email?: string;
+  mobile?: string;
+  age?: number | null;
+  tshirtSize?: "S" | "M" | "L" | "XL" | "2XL" | "3XL" | "5XL" | "7XL" | null;
+  dietaryRequirements?: string;
+}): Promise<ManualRosterVolunteerState> {
+  const parsed = manualRosterVolunteerSchema.safeParse(input);
+  if (!parsed.success) {
+    return manualRosterVolunteerError(
+      parsed.error.issues[0]?.message ??
+        "Check the volunteer details and selected shift.",
+    );
+  }
+
+  const uniqueTimeslotIds = [...new Set(parsed.data.timeslotIds)];
+  const { userId } = await requireEventManager(
+    `/admin/events/${parsed.data.eventId}/edit`,
+  );
+  const admin = getPhaseOneAdminClient();
+
+  const { data, error } = await admin.rpc(
+    "phaseone_admin_create_or_link_volunteer_to_roster",
+    {
+      p_event_id: parsed.data.eventId,
+      p_timeslot_ids: uniqueTimeslotIds,
+      p_volunteer_name: parsed.data.volunteerName,
+      p_email: parsed.data.email || null,
+      p_mobile: parsed.data.mobile || null,
+      p_age: parsed.data.age ?? null,
+      p_tshirt_size: parsed.data.tshirtSize ?? null,
+      p_dietary_requirements: parsed.data.dietaryRequirements || null,
+      p_actor_user_id: userId,
+    },
+  );
+
+  if (error) {
+    console.error("Unable to manually add volunteer to roster", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+    });
+
+    if (/isolated manual events/i.test(error.message)) {
+      return manualRosterVolunteerError(
+        "This isolated event cannot create or link KELUARGA volunteer records.",
+      );
+    }
+    if (/match multiple KELUARGA volunteer records/i.test(error.message)) {
+      return manualRosterVolunteerError(
+        "The email and mobile details match different volunteer records. Search the volunteer database and resolve the identity before adding this person.",
+      );
+    }
+    if (/selected shifts are unavailable/i.test(error.message)) {
+      return manualRosterVolunteerError(
+        "One or more selected shifts are no longer available. Refresh the page and try again.",
+      );
+    }
+    if (/email or mobile number is required/i.test(error.message)) {
+      return manualRosterVolunteerError(
+        "Enter an email address or mobile number so the volunteer can be identified reliably.",
+      );
+    }
+    if (/valid email address/i.test(error.message)) {
+      return manualRosterVolunteerError("Enter a valid email address.");
+    }
+    if (/supported T-shirt size/i.test(error.message)) {
+      return manualRosterVolunteerError("Choose a supported T-shirt size.");
+    }
+    if (
+      /linked to a different volunteer|different roster records|conflicts/i.test(
+        error.message,
+      )
+    ) {
+      return manualRosterVolunteerError(
+        "An existing roster record conflicts with this volunteer identity. Resolve the existing roster entry before retrying.",
+      );
+    }
+    if (error.code === "42501") {
+      return manualRosterVolunteerError(
+        "Your account does not have permission to change this roster.",
+      );
+    }
+
+    return manualRosterVolunteerError(
+      "The volunteer could not be added to the roster.",
+    );
+  }
+
+  const result =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+  const volunteerCode =
+    typeof result.volunteer_code === "string"
+      ? result.volunteer_code
+      : undefined;
+  const volunteerCreated = result.volunteer_created === true;
+  const createdAssignments =
+    typeof result.created_assignments === "number"
+      ? result.created_assignments
+      : 0;
+  const linkedAssignments =
+    typeof result.linked_existing_assignments === "number"
+      ? result.linked_existing_assignments
+      : 0;
+  const alreadyAssigned =
+    typeof result.already_assigned === "number"
+      ? result.already_assigned
+      : 0;
+  const changed = createdAssignments + linkedAssignments;
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/edit`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance/monitor`);
+
+  const identityMessage = volunteerCreated
+    ? volunteerCode
+      ? `Created new volunteer ${volunteerCode}.`
+      : "Created a new KELUARGA volunteer record."
+    : volunteerCode
+      ? `Matched existing volunteer ${volunteerCode}.`
+      : "Matched an existing KELUARGA volunteer.";
+
+  const assignmentMessage =
+    changed > 0
+      ? ` Added to ${changed} shift${changed === 1 ? "" : "s"}.`
+      : alreadyAssigned > 0
+        ? " Already on the selected roster."
+        : "";
+
+  return {
+    status: "success",
+    message: identityMessage + assignmentMessage,
+    ...(volunteerCode ? { volunteerCode } : {}),
+    volunteerCreated,
+  };
+}
