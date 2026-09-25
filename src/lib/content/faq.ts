@@ -5,7 +5,6 @@ export type FaqItem = Readonly<{
 
 export type FaqSection = Readonly<{
   title: string;
-  eyebrow: string;
   items: readonly FaqItem[];
 }>;
 
@@ -16,7 +15,6 @@ export type FaqSection = Readonly<{
 export const FAQ_SECTIONS: readonly FaqSection[] = [
   {
     title: "Getting started",
-    eyebrow: "Volunteering with MENDAKI",
     items: [
       {
         question: "Do I need to be Malay/Muslim to volunteer with MENDAKI?",
@@ -37,7 +35,6 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
   },
   {
     title: "Participation and volunteering records",
-    eyebrow: "Hours, attendance and cancellations",
     items: [
       {
         question: "What will happen to my volunteering hours on VolunteerSG after the migration?",
@@ -58,7 +55,6 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
   },
   {
     title: "Testimonials and support",
-    eyebrow: "Recognition and help",
     items: [
       {
         question: "Can I request a volunteer testimonial?",
