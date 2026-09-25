@@ -2,7 +2,7 @@
 
 import type { EmailOtpType, SupabaseClient } from "@supabase/supabase-js";
 import Link from "next/link";
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 
 import {
   getRecoveryLinkType,
@@ -32,7 +32,6 @@ export function MagicLinkConfirmation() {
   });
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const nextPathRef = useRef("/dashboard");
 
   useEffect(() => {
     const currentUrl = new URL(window.location.href);
@@ -52,7 +51,6 @@ export function MagicLinkConfirmation() {
       currentUrl.searchParams.get("next"),
       "/dashboard",
     );
-    nextPathRef.current = resolvedNextPath;
     const isRecovery = rawType === "recovery";
     const isInvite = rawType === "invite";
 
@@ -319,7 +317,7 @@ export function MagicLinkConfirmation() {
             Enter the email address you used to create your account and we’ll
             send a fresh verification link.
           </p>
-          <VolunteerVerificationResendForm nextPath={nextPathRef.current} />
+          <VolunteerVerificationResendForm nextPath="/dashboard" />
           <Link className="button button-secondary" href="/login">
             Return to sign in
           </Link>
