@@ -177,12 +177,43 @@ export default async function DashboardPage({
   }
 
   const account = accountResult.data;
-  const volunteer = volunteerResult.data;
+  let volunteer = volunteerResult.data;
   const roles = rolesResult.data.map(({ role }) => role);
   const authUser = userResult.data.user;
 
   if (!account || !authUser || roles.length === 0) {
     throw new Error("Volunteer account invariants are incomplete");
+  }
+
+  if (!volunteer && roles.includes("volunteer")) {
+    const ensureResult = await accountClient
+      .schema("core")
+      .rpc("ensure_current_keluarga_volunteer");
+
+    if (ensureResult.error) {
+      console.error("Unable to ensure KELUARGA volunteer profile", {
+        code: ensureResult.error.code,
+        userId,
+      });
+    } else if (!["needs_review", "email_unverified", "account_inactive"].includes(
+      String(ensureResult.data ?? ""),
+    )) {
+      const refreshedVolunteerResult = await supabase
+        .schema("core")
+        .from("volunteers")
+        .select("id, volunteer_code, display_name, mobile")
+        .eq("auth_user_id", userId)
+        .maybeSingle();
+
+      if (refreshedVolunteerResult.error) {
+        console.error("Unable to reload ensured volunteer profile", {
+          code: refreshedVolunteerResult.error.code,
+          userId,
+        });
+      } else {
+        volunteer = refreshedVolunteerResult.data;
+      }
+    }
   }
 
   let presentationProfile: KeluargaVolunteerProfile | null = null;
