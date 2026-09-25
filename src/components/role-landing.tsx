@@ -34,7 +34,7 @@ export function RoleLanding({
 }>) {
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Community volunteers" lite />
+      <PortalHeader status="Volunteers" lite />
       <main className={styles.frame}>
         <section className={styles.hero} aria-labelledby="role-title">
           <div
