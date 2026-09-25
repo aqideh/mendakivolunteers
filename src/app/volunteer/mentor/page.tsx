@@ -8,6 +8,8 @@ import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 import styles from "./mentor.module.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Volunteer as a Mentor",
   description:
