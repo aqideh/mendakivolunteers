@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { RoleLanding } from "@/components/role-landing";
+import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 export const metadata: Metadata = {
   title: "Volunteer as a Facilitator",
@@ -8,12 +9,14 @@ export const metadata: Metadata = {
     "Empower parents of children to support learning at home through practical play based tips, interactive workshops, hands on activities and resources that build their confidence.",
 };
 
-export default function FacilitatorPage() {
+export default async function FacilitatorPage() {
+  const heroImage = await getLandingPageImage("facilitator");
+
   return (
     <RoleLanding
       title="Inspire Learning. Build Confidence."
       description="Empower parents of children to support learning at home through practical play based tips, interactive workshops, hands on activities and resources that build their confidence."
-      heroImage="/volunteer/facilitator-hero.jpg"
+      heroImage={heroImage}
       heroPosition="72% center"
       items={[
         {
@@ -32,12 +35,7 @@ export default function FacilitatorPage() {
             "Build rapport with participants and help create a welcoming, supportive experience.",
         },
       ]}
-      ctas={[
-        {
-          href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45",
-          label: "Volunteer",
-        },
-      ]}
+      ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
     />
   );
 }
