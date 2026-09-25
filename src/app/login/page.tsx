@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LoginForm } from "@/app/login/login-form";
-import { VolunteerSignInForm } from "@/app/login/volunteer-sign-in-form";
+import { VolunteerAuthPanel } from "@/app/login/volunteer-auth-panel";
 import { BrandLockup } from "@/components/brand-lockup";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 
@@ -40,7 +40,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const passwordReset = Array.isArray(parameters.password_reset)
     ? parameters.password_reset[0]
     : parameters.password_reset;
+  const requestedMode = Array.isArray(parameters.mode)
+    ? parameters.mode[0]
+    : parameters.mode;
   const nextPath = getSafeRedirectPath(requestedNext);
+  const initialMode = requestedMode === "signup" ? "signup" : "signin";
   const initialError = getLoginErrorMessage(errorCode);
 
   return (
@@ -50,13 +54,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       </header>
 
       <main className="auth-layout auth-login-layout">
-        <section className="auth-panel auth-login-card" aria-labelledby="sign-in-title">
-          <div className="auth-login-intro">
-            <h1 id="sign-in-title">Sign in</h1>
-            <p className="auth-login-copy">
-              Enter your email and we&apos;ll send you a secure sign-in link.
-            </p>
-          </div>
+        <section className="auth-panel auth-login-card" aria-labelledby="community-auth-title">
 
           {initialError ? (
             <div className="notice notice-error" role="alert">
@@ -70,7 +68,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
           ) : null}
 
-          <VolunteerSignInForm nextPath={nextPath} />
+          <VolunteerAuthPanel initialMode={initialMode} nextPath={nextPath} />
 
           <details className="auth-password-disclosure">
             <summary>Staff or password login</summary>
