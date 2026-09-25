@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireAttendanceOperator } from "@/lib/auth/event-access";
@@ -31,7 +32,7 @@ export async function issueVolunteerShirt(formData: FormData) {
 
   const back = `/admin/events/${parsed.data.eventId}/attendance${parsed.data.timeslotId ? `?timeslot=${encodeURIComponent(parsed.data.timeslotId)}` : ""}`;
   await requireAttendanceOperator(back);
-  const supabase = await createClient();
+  const supabase = (await createClient()) as unknown as SupabaseClient;
 
   const result = await supabase.rpc("issue_volunteer_shirt", {
     p_volunteer_id: parsed.data.volunteerId,
