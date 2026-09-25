@@ -90,7 +90,7 @@ export default async function OpportunitiesPage() {
 
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Community volunteers" lite />
+      <PortalHeader status="Volunteers" lite />
       <main className="phaseone-frame phaseone-opportunities-frame">
         <ContributorHero heroImage={contributorHeroImage} />
 
