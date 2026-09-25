@@ -7,6 +7,7 @@ import {
   addWalkInVolunteer,
   applyAttendanceChange,
 } from "@/app/admin/events/[id]/attendance/actions";
+import { issueVolunteerShirt } from "@/app/admin/events/[id]/attendance/shirt-actions";
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
 import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
@@ -242,7 +243,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
+      .select("id, timeslot_id, volunteer_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(2000),
@@ -271,6 +272,55 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   ) {
     throw new Error("Attendance operations data could not be loaded");
   }
+
+  const canonicalVolunteerIds = Array.from(
+    new Set(
+      rosterResult.data
+        .map((item) => item.volunteer_id)
+        .filter((value): value is string => Boolean(value)),
+    ),
+  );
+
+  const [privateDetailsResult, shirtIssuanceResult, shirtStockResult] =
+    await Promise.all([
+      canonicalVolunteerIds.length
+        ? admin
+            .from("volunteer_private_details")
+            .select("volunteer_id, tshirt_size, dietary_requirements, food_allergies, no_known_food_allergies")
+            .in("volunteer_id", canonicalVolunteerIds)
+        : Promise.resolve({ data: [], error: null }),
+      canonicalVolunteerIds.length
+        ? admin
+            .from("volunteer_shirt_issuances")
+            .select("volunteer_id, issued_at, issuance_source, volunteer_shirt_skus(shirt_type,size)")
+            .in("volunteer_id", canonicalVolunteerIds)
+        : Promise.resolve({ data: [], error: null }),
+      admin
+        .from("volunteer_shirt_stock")
+        .select("shirt_type, size, quantity_on_hand")
+        .eq("active", true),
+    ]);
+
+  if (
+    privateDetailsResult.error ||
+    shirtIssuanceResult.error ||
+    shirtStockResult.error
+  ) {
+    throw new Error("Volunteer readiness data could not be loaded");
+  }
+
+  const privateDetailsByVolunteer = new Map(
+    (privateDetailsResult.data ?? []).map((item) => [item.volunteer_id, item]),
+  );
+  const shirtIssueByVolunteer = new Map(
+    (shirtIssuanceResult.data ?? []).map((item) => [item.volunteer_id, item]),
+  );
+  const shirtStock = shirtStockResult.data ?? [];
+
+  const stockFor = (shirtType: string, size: string) =>
+    shirtStock.find(
+      (item) => item.shirt_type === shirtType && item.size === size,
+    )?.quantity_on_hand ?? 0;
 
   const timeslots = timeslotsResult.data as Timeslot[];
   const activeTimeslots = timeslots.filter((timeslot) => timeslot.status !== "cancelled");
@@ -378,8 +428,18 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               ? "Volunteer review saved."
               : successCode === "walk_in_updated"
                 ? "Walk-in volunteer details updated."
-                : undefined;
-  const errorMessage = parameter(parameters, "error");
+                : successCode === "shirt_issued"
+                  ? "Volunteer shirt issued and inventory updated."
+                  : undefined;
+  const errorCode = parameter(parameters, "error");
+  const errorMessage =
+    errorCode === "shirt_already_issued"
+      ? "This volunteer already has a recorded shirt issue."
+      : errorCode === "shirt_out_of_stock"
+        ? "The selected shirt is out of stock."
+        : errorCode === "shirt_issue_failed"
+          ? "The shirt could not be issued."
+          : errorCode;
   const event = eventResult.data;
 
   const dayGroups = new Map<string, Timeslot[]>();
@@ -629,6 +689,22 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                     && effectiveAttendance.session_checked_in_at
                     && !attendance?.signed_in_at,
                   );
+                  const canonicalVolunteerId = volunteer.volunteer_id as string | null;
+                  const privateDetails = canonicalVolunteerId
+                    ? privateDetailsByVolunteer.get(canonicalVolunteerId)
+                    : undefined;
+                  const shirtIssue = canonicalVolunteerId
+                    ? shirtIssueByVolunteer.get(canonicalVolunteerId)
+                    : undefined;
+                  const preferredShirtSize =
+                    privateDetails?.tshirt_size ?? volunteer.tshirt_size ?? null;
+                  const dietaryRequirements =
+                    privateDetails?.dietary_requirements ??
+                    volunteer.dietary_requirements ??
+                    null;
+                  const allergySummary = privateDetails?.no_known_food_allergies
+                    ? "No known food allergies"
+                    : privateDetails?.food_allergies ?? null;
 
                   return (
                     <article
@@ -653,11 +729,52 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             ) : null}
                           </div>
                           <h3>{volunteer.volunteer_name}</h3>
-                          <p className="muted">{volunteer.mobile ?? "No contact number"} · Age: {volunteer.age ?? "—"} · T-shirt: {volunteer.tshirt_size ?? "—"}</p>
-                          <p className="muted"><strong>Meal / dietary:</strong> {volunteer.dietary_requirements ?? "—"}</p>
+                          <p className="muted">{volunteer.mobile ?? "No contact number"} · Age: {volunteer.age ?? "—"} · T-shirt: {preferredShirtSize ?? "—"}</p>
+                          <p className="muted"><strong>Meal / dietary:</strong> {dietaryRequirements ?? "—"}</p>
+                          {allergySummary ? <p className="muted"><strong>Food allergies:</strong> {allergySummary}</p> : null}
                         </div>
                         <span className="status-pill" data-state={status}>{statusLabel(status)}</span>
                       </div>
+
+                      {canonicalVolunteerId ? (
+                        <div className="phaseone-shirt-status">
+                          {shirtIssue ? (
+                            <span className="status-pill" data-state="verified">
+                              Shirt issued
+                            </span>
+                          ) : preferredShirtSize && canManageEvent ? (
+                            <details>
+                              <summary>
+                                Shirt due · {preferredShirtSize}
+                              </summary>
+                              <form action={issueVolunteerShirt} className="phaseone-shirt-issue-form">
+                                <input type="hidden" name="eventId" value={id} />
+                                <input type="hidden" name="volunteerId" value={canonicalVolunteerId} />
+                                <input type="hidden" name="timeslotId" value={selectedTimeslot.id} />
+                                <div className="form-field">
+                                  <label htmlFor={`shirt-type-${volunteer.id}`}>Shirt type</label>
+                                  <select id={`shirt-type-${volunteer.id}`} name="shirtType" required>
+                                    <option value="round_neck">
+                                      Round-neck · {stockFor("round_neck", preferredShirtSize)} in stock
+                                    </option>
+                                    <option value="collared">
+                                      Collared · {stockFor("collared", preferredShirtSize)} in stock
+                                    </option>
+                                  </select>
+                                </div>
+                                <input type="hidden" name="size" value={preferredShirtSize} />
+                                <button className="button button-secondary" type="submit">
+                                  Confirm shirt issue
+                                </button>
+                              </form>
+                            </details>
+                          ) : preferredShirtSize ? (
+                            <span className="status-pill">Shirt due · {preferredShirtSize}</span>
+                          ) : (
+                            <span className="status-pill">Shirt size needed</span>
+                          )}
+                        </div>
+                      ) : null}
 
                       {effectiveAttendance?.signed_in_at || effectiveAttendance?.signed_out_at || status === "withdrawn" || status === "absent" ? (
                         <dl className="phaseone-attendance-times">

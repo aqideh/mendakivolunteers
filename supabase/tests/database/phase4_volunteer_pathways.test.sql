@@ -203,8 +203,8 @@ where id = '60000000-0000-4000-8000-000000000001';
 insert into core.user_roles (user_id, role, reason)
 values (
   '60000000-0000-4000-8000-000000000001',
-  'pathway_manager',
-  'Volunteer pathways database test'
+  'volteam',
+  'Volunteer pathways VolTeam database test'
 );
 
 select set_config(

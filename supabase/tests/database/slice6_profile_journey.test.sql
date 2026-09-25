@@ -148,8 +148,8 @@ where id = '93000000-0000-4000-8000-000000000002';
 insert into core.user_roles (user_id, role, reason)
 values (
   '93000000-0000-4000-8000-000000000002',
-  'gamification_manager',
-  'Slice 6 badge regression test'
+  'volteam',
+  'Slice 6 VolTeam badge regression test'
 )
 on conflict (user_id, role) do nothing;
 
@@ -400,8 +400,8 @@ where id = '93000000-0000-4000-8000-000000000003';
 insert into core.user_roles (user_id, role, reason)
 values (
   '93000000-0000-4000-8000-000000000003',
-  'pathway_manager',
-  'Slice 6 pathway regression test'
+  'volteam',
+  'Slice 6 VolTeam pathway regression test'
 )
 on conflict (user_id, role) do nothing;
 

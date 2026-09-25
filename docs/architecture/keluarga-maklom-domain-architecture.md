@@ -1,7 +1,7 @@
 # KELUARGA + MakLom domain architecture
 
 **Status:** approved current architecture on KELUARGA staging  
-**Last reviewed:** 24 September 2026
+**Last reviewed:** 25 September 2026
 
 ## Purpose
 
@@ -16,7 +16,7 @@ The architecture is designed so the volunteer-facing journey does not depend on 
 Volunteer-facing and event-operations application:
 
 - discovery, role/pathway information and opportunities;
-- volunteer account and personal dashboard;
+- volunteer account, guided onboarding, personal dashboard and self-service operational profile;
 - programme registration, shift selection, waitlist and cancellation;
 - Event Guides;
 - rosters, walk-ins and manual-event operations;
@@ -85,6 +85,9 @@ Rules:
 | Event Guide | KELUARGA | Volunteer-facing operational information |
 | Event-day attendance | KELUARGA | Operational evidence and duration |
 | Pathways/points/badges presentation | KELUARGA | Volunteer-facing recognition/development |
+| Volunteer-controlled presentation profile | KELUARGA | Photo, bio, interests, skills and availability |
+| Volunteer self-service operational details | KELUARGA | Private contact/readiness/location/education details maintained by the volunteer; separate from MakLom longitudinal profile truth |
+| Volunteer shirt stock and issuance | KELUARGA | Operational inventory ledger and one-shirt-per-volunteer issuance record |
 | Prospective-volunteer intake | FormSG -> MakLom | Submission becomes a lead |
 | Lead review/conversion | MakLom | Deliberate conversion/link to canonical identity |
 | Managed longitudinal profile | MakLom | Sensitive Volunteer Management fields |
@@ -148,7 +151,34 @@ KELUARGA does not approve its own attendance-derived longitudinal hours.
 
 Manual integrated events use the same review boundary.
 
+## Volunteer shirt inventory
+
+KELUARGA owns operational volunteer-shirt inventory.
+
+```text
+shirt SKU (type + size)
+      -> stock movement ledger
+      -> eligible volunteer
+      -> one shirt issuance
+      -> transactional -1 stock movement
+```
+
+Rules:
+
+- shirt types are round-neck and collared;
+- sizes are S, M, L, XL, 2XL, 3XL, 5XL and 7XL;
+- each canonical volunteer may have at most one issuance record;
+- legacy/pre-KELUARGA shirt issues can be recorded without decrementing current stock;
+- Event Operations may issue shirts but only VolTeam/Admin may alter stock balances;
+- inventory cannot be reduced below zero.
+
 ## Profile and observation review
+
+KELUARGA separates volunteer-facing presentation data and self-service operational details from MakLom's staff-managed longitudinal profile.
+
+- `keluarga_volunteer_profiles` contains volunteer-controlled presentation/onboarding fields.
+- `volunteer_private_details` contains private operational details needed for KELUARGA workflows and reporting.
+- MakLom's managed longitudinal profile remains a separate domain.
 
 KELUARGA self-service changes and event observations are not automatically promoted into permanent MakLom profile truth.
 
