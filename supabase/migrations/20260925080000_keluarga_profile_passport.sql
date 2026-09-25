@@ -99,8 +99,8 @@ values (
   'volunteer-profile-photos',
   'volunteer-profile-photos',
   false,
-  2097152,
-  array['image/jpeg', 'image/png', 'image/webp']
+  524288,
+  array['image/webp']
 )
 on conflict (id) do update
 set
