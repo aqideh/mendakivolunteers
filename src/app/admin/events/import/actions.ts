@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -177,7 +178,8 @@ export async function commitOpportunityWorkbook(
     }
 
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc("phaseone_import_opportunity_workbook", {
+    const rpcClient = supabase as unknown as SupabaseClient;
+    const { data, error } = await rpcClient.rpc("phaseone_import_opportunity_workbook", {
       p_file_name: preview.fileName,
       p_file_sha256: preview.sha256,
       p_uploaded_by: userId,
@@ -207,14 +209,15 @@ export async function commitOpportunityWorkbook(
     revalidatePath("/opportunities");
     revalidatePath("/journey");
 
-    return {
+    const success: OpportunityImportActionState = {
       status: "success",
       message: result?.status === "duplicate"
         ? "This exact workbook was already imported earlier. No duplicate programmes were created."
         : `Imported ${result?.opportunity_count ?? preview.opportunityRows} programme drafts and ${result?.shift_count ?? preview.shiftRows} shifts. Review each programme before publishing.`,
       preview,
-      batchId: result?.batch_id,
+      ...(result?.batch_id ? { batchId: result.batch_id } : {}),
     };
+    return success;
   } catch (error) {
     console.error("Unable to commit opportunity workbook", error);
     return initialError("The workbook could not be imported. No partial import was kept.");
