@@ -38,6 +38,22 @@ const commitmentValues = [
   "flexible",
 ] as const;
 
+const shirtSizes = ["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"] as const;
+
+const qualificationValues = [
+  "primary",
+  "secondary",
+  "n_level",
+  "o_level",
+  "a_level",
+  "ite",
+  "diploma",
+  "professional_certificate",
+  "bachelors",
+  "postgraduate",
+  "other",
+] as const;
+
 function parseTags(value: FormDataEntryValue | null) {
   if (typeof value !== "string") return [];
   return Array.from(
@@ -48,6 +64,24 @@ function parseTags(value: FormDataEntryValue | null) {
         .filter(Boolean),
     ),
   );
+}
+
+function optionalText(value: FormDataEntryValue | null, max: number) {
+  if (typeof value !== "string") return null;
+  const clean = value.trim().slice(0, max);
+  return clean || null;
+}
+
+function editMode(formData: FormData) {
+  return formData.get("mode") === "edit";
+}
+
+function stepRedirect(step: string, isEdit: boolean, success?: string): never {
+  if (isEdit) {
+    const suffix = success ? `?success=${encodeURIComponent(success)}` : "";
+    redirect(`/profile/edit${suffix}`);
+  }
+  redirect(`/profile/setup?step=${step}`);
 }
 
 async function getVolunteerContext(next: string) {
@@ -67,14 +101,34 @@ async function getVolunteerContext(next: string) {
   return { client, volunteerId: volunteerResult.data.id };
 }
 
+async function upsertPrivateDetails(
+  client: SupabaseClient,
+  volunteerId: string,
+  values: Record<string, unknown>,
+) {
+  return client
+    .from("volunteer_private_details")
+    .upsert(
+      { volunteer_id: volunteerId, ...values },
+      { onConflict: "volunteer_id" },
+    );
+}
+
+function refreshProfilePaths() {
+  revalidatePath("/dashboard");
+  revalidatePath("/profile/edit");
+  revalidatePath("/profile/setup");
+}
+
 export async function saveContactStep(formData: FormData) {
+  const isEdit = editMode(formData);
   const parsed = contactSchema.safeParse({
     displayName: formData.get("displayName"),
     mobile: formData.get("mobile"),
   });
 
   if (!parsed.success) {
-    redirect("/profile/setup?step=contact&error=validation");
+    redirect(`/profile/setup?step=contact&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
   const { client } = await getVolunteerContext("/profile/setup?step=contact");
@@ -84,22 +138,113 @@ export async function saveContactStep(formData: FormData) {
   });
 
   if (result.error) {
-    redirect("/profile/setup?step=contact&error=save");
+    redirect(`/profile/setup?step=contact&error=save${isEdit ? "&mode=edit" : ""}`);
   }
 
-  revalidatePath("/dashboard");
-  redirect("/profile/setup?step=interests");
+  refreshProfilePaths();
+  stepRedirect("home", isEdit, "contact");
+}
+
+export async function saveHomeStep(formData: FormData) {
+  const isEdit = editMode(formData);
+  const parsed = z.object({
+    postalCode: z.string().trim().regex(/^[0-9]{6}$/),
+    addressLine: z.string().trim().min(3).max(500),
+  }).safeParse({
+    postalCode: formData.get("postalCode"),
+    addressLine: formData.get("addressLine"),
+  });
+
+  if (!parsed.success) {
+    redirect(`/profile/setup?step=home&error=validation${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=home");
+  const existing = await client
+    .from("volunteer_private_details")
+    .select("postal_code")
+    .eq("volunteer_id", volunteerId)
+    .maybeSingle();
+
+  if (existing.error) {
+    redirect(`/profile/setup?step=home&error=save${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  const postalChanged = existing.data?.postal_code !== parsed.data.postalCode;
+  const result = await upsertPrivateDetails(client, volunteerId, {
+    postal_code: parsed.data.postalCode,
+    address_line: parsed.data.addressLine,
+    ...(postalChanged
+      ? {
+          latitude: null,
+          longitude: null,
+          neighbourhood: null,
+          planning_area: null,
+          electoral_division: null,
+          electoral_boundary_version: null,
+          address_verified_at: null,
+        }
+      : {}),
+  });
+
+  if (result.error) {
+    redirect(`/profile/setup?step=home&error=save${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  refreshProfilePaths();
+  stepRedirect("personal", isEdit, "home");
+}
+
+export async function savePersonalStep(formData: FormData) {
+  const isEdit = editMode(formData);
+  const dateString = typeof formData.get("dateOfBirth") === "string"
+    ? String(formData.get("dateOfBirth"))
+    : "";
+  const parsed = z.string().date().safeParse(dateString);
+
+  if (!parsed.success) {
+    redirect(`/profile/setup?step=personal&error=validation${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  const date = new Date(`${parsed.data}T00:00:00Z`);
+  const today = new Date();
+  if (
+    Number.isNaN(date.getTime()) ||
+    date > today ||
+    date < new Date("1900-01-01T00:00:00Z")
+  ) {
+    redirect(`/profile/setup?step=personal&error=validation${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  const languages = parseTags(formData.get("languagesSpoken"));
+  if (languages.some((value) => value.length > 60) || languages.length > 12) {
+    redirect(`/profile/setup?step=personal&error=validation${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=personal");
+  const result = await upsertPrivateDetails(client, volunteerId, {
+    date_of_birth: parsed.data,
+    languages_spoken: languages,
+    emergency_contact_name: optionalText(formData.get("emergencyContactName"), 160),
+    emergency_contact_mobile: optionalText(formData.get("emergencyContactMobile"), 40),
+  });
+
+  if (result.error) {
+    redirect(`/profile/setup?step=personal&error=save${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  refreshProfilePaths();
+  stepRedirect("interests", isEdit, "personal");
 }
 
 export async function saveInterestsStep(formData: FormData) {
+  const isEdit = editMode(formData);
   const parsed = tagsSchema.safeParse(parseTags(formData.get("interests")));
   if (!parsed.success) {
-    redirect("/profile/setup?step=interests&error=validation");
+    redirect(`/profile/setup?step=interests&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
-  const { client, volunteerId } = await getVolunteerContext(
-    "/profile/setup?step=interests",
-  );
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=interests");
   const result = await client
     .from("keluarga_volunteer_profiles")
     .upsert(
@@ -108,22 +253,21 @@ export async function saveInterestsStep(formData: FormData) {
     );
 
   if (result.error) {
-    redirect("/profile/setup?step=interests&error=save");
+    redirect(`/profile/setup?step=interests&error=save${isEdit ? "&mode=edit" : ""}`);
   }
 
-  revalidatePath("/dashboard");
-  redirect("/profile/setup?step=skills");
+  refreshProfilePaths();
+  stepRedirect("skills", isEdit, "interests");
 }
 
 export async function saveSkillsStep(formData: FormData) {
+  const isEdit = editMode(formData);
   const parsed = tagsSchema.safeParse(parseTags(formData.get("skills")));
   if (!parsed.success) {
-    redirect("/profile/setup?step=skills&error=validation");
+    redirect(`/profile/setup?step=skills&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
-  const { client, volunteerId } = await getVolunteerContext(
-    "/profile/setup?step=skills",
-  );
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=skills");
   const result = await client
     .from("keluarga_volunteer_profiles")
     .upsert(
@@ -132,39 +276,27 @@ export async function saveSkillsStep(formData: FormData) {
     );
 
   if (result.error) {
-    redirect("/profile/setup?step=skills&error=save");
+    redirect(`/profile/setup?step=skills&error=save${isEdit ? "&mode=edit" : ""}`);
   }
 
-  revalidatePath("/dashboard");
-  redirect("/profile/setup?step=availability");
+  refreshProfilePaths();
+  stepRedirect("availability", isEdit, "skills");
 }
 
 export async function saveAvailabilityStep(formData: FormData) {
+  const isEdit = editMode(formData);
   const slots = formData
     .getAll("availabilitySlots")
     .filter((value): value is string => typeof value === "string");
 
-  const slotsParsed = z
-    .array(z.enum(availabilitySlotValues))
-    .min(1)
-    .max(5)
-    .safeParse(slots);
-  const commitmentParsed = z
-    .enum(commitmentValues)
-    .safeParse(formData.get("preferredCommitment"));
+  const slotsParsed = z.array(z.enum(availabilitySlotValues)).min(1).max(5).safeParse(slots);
+  const commitmentParsed = z.enum(commitmentValues).safeParse(formData.get("preferredCommitment"));
 
   if (!slotsParsed.success || !commitmentParsed.success) {
-    redirect("/profile/setup?step=availability&error=validation");
+    redirect(`/profile/setup?step=availability&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
-  const notes =
-    typeof formData.get("availabilityNotes") === "string"
-      ? String(formData.get("availabilityNotes")).trim().slice(0, 800) || null
-      : null;
-
-  const { client, volunteerId } = await getVolunteerContext(
-    "/profile/setup?step=availability",
-  );
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=availability");
   const result = await client
     .from("keluarga_volunteer_profiles")
     .upsert(
@@ -172,25 +304,73 @@ export async function saveAvailabilityStep(formData: FormData) {
         volunteer_id: volunteerId,
         availability_slots: slotsParsed.data,
         preferred_commitment: commitmentParsed.data,
-        availability_notes: notes,
+        availability_notes: optionalText(formData.get("availabilityNotes"), 800),
       },
       { onConflict: "volunteer_id" },
     );
 
   if (result.error) {
-    redirect("/profile/setup?step=availability&error=save");
+    redirect(`/profile/setup?step=availability&error=save${isEdit ? "&mode=edit" : ""}`);
   }
 
-  revalidatePath("/dashboard");
-  redirect("/profile/setup?step=photo");
+  refreshProfilePaths();
+  stepRedirect("event-readiness", isEdit, "availability");
+}
+
+export async function saveEventReadinessStep(formData: FormData) {
+  const isEdit = editMode(formData);
+  const shirtSize = z.enum(shirtSizes).safeParse(formData.get("tshirtSize"));
+  const noKnownAllergies = formData.get("noKnownFoodAllergies") === "on";
+  const foodAllergies = optionalText(formData.get("foodAllergies"), 800);
+  const dietaryRequirements = optionalText(formData.get("dietaryRequirements"), 800);
+
+  if (!shirtSize.success || (!noKnownAllergies && !foodAllergies)) {
+    redirect(`/profile/setup?step=event-readiness&error=validation${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=event-readiness");
+  const result = await upsertPrivateDetails(client, volunteerId, {
+    tshirt_size: shirtSize.data,
+    dietary_requirements: dietaryRequirements,
+    no_known_food_allergies: noKnownAllergies,
+    food_allergies: noKnownAllergies ? null : foodAllergies,
+  });
+
+  if (result.error) {
+    redirect(`/profile/setup?step=event-readiness&error=save${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  refreshProfilePaths();
+  stepRedirect("education", isEdit, "event-readiness");
+}
+
+export async function saveEducationStep(formData: FormData) {
+  const isEdit = editMode(formData);
+  const qualification = z.enum(qualificationValues).safeParse(formData.get("highestQualification"));
+
+  if (!qualification.success) {
+    redirect(`/profile/setup?step=education&error=validation${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=education");
+  const result = await upsertPrivateDetails(client, volunteerId, {
+    highest_qualification: qualification.data,
+    institution: optionalText(formData.get("institution"), 200),
+    field_of_study: optionalText(formData.get("fieldOfStudy"), 200),
+  });
+
+  if (result.error) {
+    redirect(`/profile/setup?step=education&error=save${isEdit ? "&mode=edit" : ""}`);
+  }
+
+  refreshProfilePaths();
+  stepRedirect("photo", isEdit, "education");
 }
 
 export async function saveAboutStep(formData: FormData) {
-  const raw = formData.get("bio");
-  const bio = typeof raw === "string" ? raw.trim().slice(0, 500) || null : null;
-  const { client, volunteerId } = await getVolunteerContext(
-    "/profile/setup?step=about",
-  );
+  const isEdit = editMode(formData);
+  const bio = optionalText(formData.get("bio"), 500);
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=about");
 
   const result = await client
     .from("keluarga_volunteer_profiles")
@@ -200,19 +380,17 @@ export async function saveAboutStep(formData: FormData) {
     );
 
   if (result.error) {
-    redirect("/profile/setup?step=about&error=save");
+    redirect(`/profile/setup?step=about&error=save${isEdit ? "&mode=edit" : ""}`);
   }
 
-  revalidatePath("/dashboard");
-  redirect("/profile/setup?step=review");
+  refreshProfilePaths();
+  stepRedirect("review", isEdit, "about");
 }
 
 export async function completeProfileSetup() {
-  const { client, volunteerId } = await getVolunteerContext(
-    "/profile/setup?step=review",
-  );
+  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=review");
 
-  const [volunteerResult, profileResult] = await Promise.all([
+  const [volunteerResult, profileResult, privateResult] = await Promise.all([
     client
       .schema("core")
       .from("volunteers")
@@ -221,26 +399,43 @@ export async function completeProfileSetup() {
       .single(),
     client
       .from("keluarga_volunteer_profiles")
+      .select("avatar_path, interests, skills, availability_slots, preferred_commitment")
+      .eq("volunteer_id", volunteerId)
+      .maybeSingle(),
+    client
+      .from("volunteer_private_details")
       .select(
-        "avatar_path, interests, skills, availability_slots, preferred_commitment",
+        "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification",
       )
       .eq("volunteer_id", volunteerId)
       .maybeSingle(),
   ]);
 
-  if (volunteerResult.error || profileResult.error || !profileResult.data) {
+  if (
+    volunteerResult.error ||
+    profileResult.error ||
+    privateResult.error ||
+    !profileResult.data ||
+    !privateResult.data
+  ) {
     redirect("/profile/setup?step=review&error=incomplete");
   }
 
-  const profile = profileResult.data;
+  const privateDetails = privateResult.data;
   const complete =
     Boolean(volunteerResult.data.display_name?.trim()) &&
     Boolean(volunteerResult.data.mobile?.trim()) &&
-    Boolean(profile.avatar_path) &&
-    (profile.interests?.length ?? 0) > 0 &&
-    (profile.skills?.length ?? 0) > 0 &&
-    (profile.availability_slots?.length ?? 0) > 0 &&
-    Boolean(profile.preferred_commitment);
+    Boolean(profileResult.data.avatar_path) &&
+    (profileResult.data.interests?.length ?? 0) > 0 &&
+    (profileResult.data.skills?.length ?? 0) > 0 &&
+    (profileResult.data.availability_slots?.length ?? 0) > 0 &&
+    Boolean(profileResult.data.preferred_commitment) &&
+    Boolean(privateDetails.date_of_birth) &&
+    Boolean(privateDetails.postal_code) &&
+    Boolean(privateDetails.address_line) &&
+    Boolean(privateDetails.tshirt_size) &&
+    (privateDetails.no_known_food_allergies || Boolean(privateDetails.food_allergies?.trim())) &&
+    Boolean(privateDetails.highest_qualification);
 
   if (!complete) {
     redirect("/profile/setup?step=review&error=incomplete");
@@ -255,6 +450,6 @@ export async function completeProfileSetup() {
     redirect("/profile/setup?step=review&error=save");
   }
 
-  revalidatePath("/dashboard");
+  refreshProfilePaths();
   redirect("/dashboard?success=profile_updated");
 }
