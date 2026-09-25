@@ -63,8 +63,8 @@ values (
   'landing-page-images',
   'landing-page-images',
   true,
-  1048576,
-  array['image/webp']::text[]
+  20971520,
+  array['image/jpeg', 'image/png', 'image/webp']::text[]
 )
 on conflict (id) do update
 set
