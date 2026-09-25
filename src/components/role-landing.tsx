@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
@@ -28,7 +27,7 @@ export function RoleLanding({
   title: string;
   description: string;
   inlineCta?: RoleCta;
-  heroImage?: string;
+  heroImage: string;
   heroPosition?: string;
   items: readonly RoleItem[];
   ctas: readonly RoleCta[];
@@ -38,19 +37,14 @@ export function RoleLanding({
       <PortalHeader status="Community volunteers" lite />
       <main className={styles.frame}>
         <section className={styles.hero} aria-labelledby="role-title">
-          <div className={styles.heroMedia} aria-hidden="true">
-            <Image
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              src={heroImage ?? "/home/keluarga-volunteers-hero.jpeg"}
-              style={{
-                objectFit: "cover",
-                objectPosition: heroPosition ?? "center 46%",
-              }}
-            />
-          </div>
+          <div
+            className={styles.heroMedia}
+            aria-hidden="true"
+            style={{
+              backgroundImage: `url("${heroImage}")`,
+              backgroundPosition: heroPosition ?? "center 46%",
+            }}
+          />
           <div className={styles.heroShade} aria-hidden="true" />
           <div className={styles.heroInner}>
             <Link className={styles.backLink} href="/">
