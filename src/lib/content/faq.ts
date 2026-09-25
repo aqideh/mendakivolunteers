@@ -49,7 +49,7 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
       {
         question: "What should I do if I can no longer attend an activity?",
         answer:
-          "Please cancel your registration or inform the activity organiser as early as possible. This allows the slot to be offered to another volunteer and helps the organising team plan accordingly.",
+          "If you can no longer attend, please withdraw from the activity by contacting the Volunteer Management team as early as possible via email at volunteer@mendaki.org.sg or WhatsApp. This allows us to release your slot to another volunteer and helps the organising team plan accordingly.",
       },
     ],
   },
