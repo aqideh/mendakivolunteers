@@ -17,8 +17,7 @@ export async function PortalHeader({
   const userId = data?.claims?.sub;
   const isSignedIn = !error && Boolean(userId);
   let canManageEvents = false;
-  let canManagePoints = false;
-  let canManageVolunteers = false;
+  let canAccessAdmin = false;
 
   if (isSignedIn && userId) {
     const { data: roleRows, error: rolesError } = await supabase
@@ -38,10 +37,7 @@ export async function PortalHeader({
         roles.has("volteam") ||
         roles.has("staff") ||
         roles.has("volunteer_leader");
-      canManageVolunteers =
-        roles.has("admin") || roles.has("volteam");
-      canManagePoints =
-        roles.has("admin") || roles.has("volteam");
+      canAccessAdmin = roles.has("admin") || roles.has("volteam");
     }
   }
 
@@ -78,8 +74,7 @@ export async function PortalHeader({
         </Link>
         <PortalNav
           canManageEvents={canManageEvents}
-          canManagePoints={canManagePoints}
-          canManageVolunteers={canManageVolunteers}
+          canAccessAdmin={canAccessAdmin}
           isSignedIn={isSignedIn}
         />
       </div>
