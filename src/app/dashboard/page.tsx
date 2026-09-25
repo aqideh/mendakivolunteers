@@ -609,7 +609,7 @@ export default async function DashboardPage({
                   <div>
                     <h2 id="approved-contributions-title">Approved contribution history</h2>
                     <p>
-                      These records have completed Volunteer Management review in MakLom.
+                      These records have completed review and are included in your volunteer history.
                     </p>
                   </div>
                 </div>
