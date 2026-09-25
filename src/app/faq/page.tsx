@@ -18,33 +18,56 @@ export default function FaqPage() {
     <div className="site-shell">
       <PortalHeader status="Frequently asked questions" />
       <main className="page-frame narrow-frame">
-        <section className="page-intro">
-          <p className="eyebrow">Help and information</p>
-          <h1>Frequently asked questions.</h1>
+        <section className={styles.hero}>
+          <p className="eyebrow">Help and support</p>
+          <h1>How can we help?</h1>
           <p className="lede">
-            Answers to common questions about volunteering with KELUARGA MENDAKI
-            will be published here.
+            Quick answers about volunteering, attendance records, VolunteerSG
+            and testimonials.
           </p>
         </section>
 
         {hasFaqContent ? (
-          <div className={styles.sections}>
-            {FAQ_SECTIONS.map((section) =>
-              section.items.length > 0 ? (
-                <section className={styles.section} key={section.title}>
-                  <h2>{section.title}</h2>
-                  <div className={styles.questions}>
-                    {section.items.map((item) => (
-                      <details className={styles.item} key={item.question}>
-                        <summary>{item.question}</summary>
-                        <p>{item.answer}</p>
-                      </details>
-                    ))}
-                  </div>
-                </section>
-              ) : null,
-            )}
-          </div>
+          <>
+            <div className={styles.sections}>
+              {FAQ_SECTIONS.map((section) =>
+                section.items.length > 0 ? (
+                  <section className={styles.section} key={section.title}>
+                    <div className={styles.sectionHeading}>
+                      <p>{section.eyebrow}</p>
+                      <h2>{section.title}</h2>
+                    </div>
+                    <div className={styles.questions}>
+                      {section.items.map((item) => (
+                        <details className={styles.item} key={item.question}>
+                          <summary>{item.question}</summary>
+                          <p>{item.answer}</p>
+                        </details>
+                      ))}
+                    </div>
+                  </section>
+                ) : null,
+              )}
+            </div>
+
+            <section className={styles.supportCard} aria-labelledby="faq-support">
+              <div>
+                <p className={styles.supportEyebrow}>Still need help?</p>
+                <h2 id="faq-support">We’re here to help.</h2>
+                <p>
+                  For any volunteering queries, account issues or other support,
+                  reach out to the MENDAKI Volunteer Management team.
+                </p>
+              </div>
+              <a
+                className={styles.supportLink}
+                href="mailto:volunteer@mendaki.org.sg"
+              >
+                volunteer@mendaki.org.sg
+                <span aria-hidden="true">→</span>
+              </a>
+            </section>
+          </>
         ) : (
           <section className="panel empty-state" aria-labelledby="faq-coming-soon">
             <h2 id="faq-coming-soon">FAQ content is being prepared.</h2>
