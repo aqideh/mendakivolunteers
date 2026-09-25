@@ -115,6 +115,23 @@
   min-height: 3.25rem;
 }
 
+.phaseone-opportunity-consent-note {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.85rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.phaseone-opportunity-consent-note p {
+  margin: 0;
+}
+
+.phaseone-opportunity-consent-note p + p {
+  margin-top: 0.55rem;
+}
+
 .phaseone-empty-state {
   margin-top: 2rem;
 }
