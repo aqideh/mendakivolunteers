@@ -69,6 +69,8 @@ Staff access changes are server-side, confirmed and audited.
 Implemented:
 
 - programme/event creation and editing;
+- server-backed autosave/recovery for in-progress new programme forms;
+- automatic public journey slug generation from the event title, with optional manual override;
 - public opportunity presentation fields;
 - publication controls;
 - Event Guide publication controls;
