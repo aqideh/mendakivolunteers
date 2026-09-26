@@ -34,7 +34,7 @@ type PathwaySnapshot = {
   positions: PositionRow[];
 };
 
-export async function VolunteerJourneySummary() {
+export async function VolunteerJourneySummary({ approvedMinutes }: { approvedMinutes: number }) {
   const supabase = await createClient();
 
   const [pointsResult, badgesResult, positionsResult] = await Promise.all([
@@ -57,6 +57,9 @@ export async function VolunteerJourneySummary() {
   const pathwaySnapshot = positionsResult.data as PathwaySnapshot | null;
   const positions = pathwaySnapshot?.positions ?? [];
   const badgeRows = badges?.badges ?? [];
+
+  const hours = approvedMinutes / 60;
+  const nextMilestone = [15, 30, 60].find((target) => hours < target);
 
   return (
     <section className="section" aria-labelledby="journey-summary-title">
@@ -82,6 +85,14 @@ export async function VolunteerJourneySummary() {
       <div className="card-grid">
         <article className="card">
           <h3>Badges</h3>
+          {nextMilestone ? (
+            <div>
+              <p className="muted">{hours.toFixed(1)} of {nextMilestone} approved hours towards your next badge</p>
+              <progress value={Math.min(hours, nextMilestone)} max={nextMilestone} aria-label={`Progress towards ${nextMilestone} approved hours`} />
+            </div>
+          ) : (
+            <p className="muted">60-hour milestone achieved. Thank you for your contribution.</p>
+          )}
           {badgeRows.length ? (
             <ul className="phaseone-compact-list">
               {badgeRows.map((badge) => (
@@ -93,8 +104,7 @@ export async function VolunteerJourneySummary() {
             </ul>
           ) : (
             <p className="muted">
-              No badges have been awarded yet. Badges are added through reviewed
-              staff recognition, not automatically.
+              No badges earned yet. Your first badge appears when your first contribution is approved.
             </p>
           )}
           <Link className="text-link" href="/points">

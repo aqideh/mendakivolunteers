@@ -56,6 +56,20 @@ Before activating attendance-derived rules, Volunteer Management must define:
 - appeals;
 - anti-abuse controls.
 
+## Recognition policy v1 (27 September 2026)
+
+The version 1 rules activate when the migration is applied in each environment. Older approved contributions count towards badge thresholds, but do not generate retroactive points. New MakLom approvals earn 10 points per approved hour, calculated from cumulative approved minutes and rounded to two decimal places. The first newly approved contribution earns a 20-point bonus. A volunteer newly crossing 15, 30 and 60 cumulative approved hours earns 50, 100 and 200 bonus points respectively.
+
+A signed-in volunteer who opens a published opportunity earns 2 points at most once per ISO week in Singapore. Explicit confirmation that profile details are current earns 2 points at most once per Singapore calendar month. Completion of all nine profile milestones earns 20 points once; the database checks the underlying fields. Browsing, reviewing and completion have separate source identifiers and cannot be multiplied by refreshing.
+
+Automatic profile badges are First Step, Helping Hand (15 hours), Community Builder (30 hours) and Community Champion (60 hours). These use the entire cumulative approved contribution history. MENDAKI Appreciation remains staff awarded. Existing staff awards are separate from automatic milestone awards.
+
+Corrections to approved contributions reconcile hour points and add reversal entries where needed. Corrections below a milestone reverse its bonus and revoke its automatically awarded badge. Returning above a threshold may award the bonus again only after reversal; a badge is re-awarded with its history retained. Staff awarded badges remain independent. Withdrawals, inactivity and private answers cause no negative points. Registrations and raw check-in/out do not award volunteering points. No public leaderboard is planned.
+
+## Operational activation
+
+The migration installs a trigger on MakLom contribution review, three activated rule versions and five badge definitions. Staff should confirm a real first approval, a partial hour, a milestone crossing and an adjustment/reversal in staging before production promotion. The volunteer profile reads badges from the existing scoped snapshot.
+
 ## Point ledger
 
 `gamification.point_ledger_entries` is append-only.
@@ -86,7 +100,7 @@ Badge definitions and award/revocation history remain separate from points.
 
 Volunteer-facing reads expose only safe badge information. Internal reasons, staff actors and administrative metadata remain restricted.
 
-Automatic badge/milestone earning is not active until objective criteria and correction rules are approved.
+Automatic First Step and 15/30/60 hour badges use MakLom-approved contributions. Other badges continue to require staff review.
 
 ## Pathways
 

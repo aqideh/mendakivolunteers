@@ -12,6 +12,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { submitOpportunityRegistration } from "./actions";
 import { OpportunityAuthOverlay } from "./auth-overlay";
+import { OpportunityExploration } from "./opportunity-exploration";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -225,6 +226,7 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Volunteer opportunity" lite />
+      {userId ? <OpportunityExploration slug={event.slug} /> : null}
       <main className="page-frame phaseone-opportunity-detail-frame">
         <Link className="back-link" href="/opportunities">
           ← All opportunities
