@@ -21,7 +21,7 @@ import type { AccountStatus } from "@/types/database";
 export const metadata: Metadata = {
   title: "Points",
   description:
-    "View KELUARGA points from verified attendance and staff recognition.",
+    "View points earned from approved volunteering, milestones and engagement.",
   robots: { index: false, follow: false },
 };
 
@@ -131,8 +131,8 @@ export default async function PointsPage() {
             <p className="eyebrow">KELUARGA recognition</p>
             <h1>Your points</h1>
             <p className="muted">
-              Points currently come from explicit, audited staff-recognition
-              awards. Operational attendance does not award points automatically.
+              Earn points for MakLom-approved volunteering, milestones and small
+              actions that help you stay connected. Check-in alone earns no points.
             </p>
           </div>
           <div className="actions">
@@ -174,21 +174,22 @@ export default async function PointsPage() {
               </p>
             </section>
 
-            <div className="notice" role="status">
-              <h2>Attendance-based points are paused</h2>
-              <p>
-                Automatic attendance awards will only be reactivated after an
-                approved rule is defined against MakLom-approved contribution
-                records. Staff-recognition awards remain available and audited.
-              </p>
-            </div>
+            <section className="panel" aria-labelledby="points-how-title">
+              <h2 id="points-how-title">How you earn points</h2>
+              <p>10 points per approved volunteer hour, including partial hours; 20 bonus
+                for your first approved contribution; 50, 100 and 200 bonus points
+                when you first reach 15, 30 and 60 approved hours.</p>
+              <p>Exploring an opportunity earns 2 points once per week. Confirming
+                your profile details earns 2 points once per month, and completing
+                all profile milestones earns 20 points once.</p>
+            </section>
 
             {!activeRule ? (
               <div className="notice" role="status">
                 <h2>The points programme is being configured</h2>
                 <p>
-                  No attendance-derived rule is active in the current operating
-                  model. A future rule must use MakLom-approved contribution records.
+                  Recognition rules are being configured. Approved contributions remain
+                  recorded in MakLom.
                 </p>
               </div>
             ) : (
@@ -248,7 +249,7 @@ export default async function PointsPage() {
       </main>
 
       <footer className="site-footer">
-        <span>Keluarga MENDAKI retains the append-only point ledger. Attendance-derived automation remains paused until rules are approved against MakLom-reviewed contribution records.</span>
+        <span>Keluarga MENDAKI records point awards and corrections in an audited history. Volunteering points follow MakLom-approved contributions.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">
