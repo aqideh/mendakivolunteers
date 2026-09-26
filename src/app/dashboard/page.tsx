@@ -699,7 +699,7 @@ export default async function DashboardPage({
           data-active={activeTab === "recognition" ? "true" : "false"}
           hidden={activeTab !== "recognition"}
         >
-            {volunteer ? <VolunteerJourneySummary /> : null}
+            {volunteer ? <VolunteerJourneySummary approvedMinutes={approvedMinutes} /> : null}
             <section aria-labelledby="recognition-links-title">
               <div className="profile-passport-section-heading">
                 <div>
