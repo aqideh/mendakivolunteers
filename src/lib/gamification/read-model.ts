@@ -1,5 +1,5 @@
 export type PointEntryKind = "award" | "adjustment" | "reversal";
-export type PointSourceKind = "ymhub_verified_attendance" | "manual_recognition";
+export type PointSourceKind = "ymhub_verified_attendance" | "manual_recognition" | "maklom_approved_contribution" | "volunteer_engagement" | "approved_hour_milestone";
 export type PointCalculationMethod = "flat" | "per_verified_hour";
 
 export function formatPoints(value: number): string {
@@ -41,6 +41,12 @@ export function formatPointSourceKind(kind: PointSourceKind): string {
       return "Verified attendance";
     case "manual_recognition":
       return "Staff recognition";
+    case "maklom_approved_contribution":
+      return "Approved volunteering";
+    case "volunteer_engagement":
+      return "Volunteer engagement";
+    case "approved_hour_milestone":
+      return "Hours milestone";
   }
 }
 
