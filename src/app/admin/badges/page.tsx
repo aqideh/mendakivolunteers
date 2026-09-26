@@ -129,9 +129,9 @@ export default async function BadgeAdminPage({ searchParams }: PageProps) {
             <p className="eyebrow">KELUARGA recognition</p>
             <h1>Badge management</h1>
             <p className="muted">
-              Define recognition badges and award them through explicit staff
-              review. Badges are never inferred automatically from attendance,
-              points or registrations.
+              First Step and 15/30/60-hour badges follow MakLom-approved
+              contributions automatically. Other recognition badges are awarded
+              through explicit staff review.
             </p>
           </div>
           <div className="actions">
