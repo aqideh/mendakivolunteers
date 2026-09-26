@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { signOut } from "@/app/dashboard/actions";
+import { confirmProfileReview, signOut } from "@/app/dashboard/actions";
 import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-summary";
 import { PortalHeader } from "@/components/portal-header";
 import { ProfilePassportTabs } from "@/components/profile-passport-tabs";
@@ -55,6 +55,7 @@ type BadgeSnapshot = {
 };
 
 const dashboardErrors: Record<string, string> = {
+  profile_review_failed: "Your profile review could not be recorded. Please try again.",
   cms_access_denied: "Your account does not have permission to manage content.",
   cms_authorization_unavailable:
     "Content-management permissions could not be checked. No content was changed.",
@@ -363,6 +364,11 @@ export default async function DashboardPage({
             {errorMessage}
           </div>
         ) : null}
+        {successCode === "profile_reviewed" ? (
+          <div className="notice notice-success profile-passport-notice" role="status">
+            Thanks for checking your details. Eligible points have been added to your history.
+          </div>
+        ) : null}
         {successCode === "profile_updated" ? (
           <div className="notice notice-success profile-passport-notice" role="status">
             Your profile has been updated.
@@ -517,6 +523,20 @@ export default async function DashboardPage({
                   </Link>
                 ))}
               </div>
+            </section>
+
+            <section className="panel" aria-labelledby="profile-review-title">
+              <h2 id="profile-review-title">Keep your details current</h2>
+              <p className="muted">
+                Check your contact, availability and event details above, then confirm
+                once a month. This earns 2 points; completing all nine profile
+                milestones earns a one-time 20 points.
+              </p>
+              <form action={confirmProfileReview}>
+                <button className="button button-secondary" type="submit">
+                  My details are up to date
+                </button>
+              </form>
             </section>
 
             <section className="profile-passport-story" aria-labelledby="profile-story-title">
