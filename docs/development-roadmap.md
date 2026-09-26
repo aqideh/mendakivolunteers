@@ -25,7 +25,7 @@ Work through these in order unless a production defect takes priority.
 - [ ] **Run full Event Operations UAT.** Single shifts, adjacent/overlapping shifts, gaps, early/missing checkout, walk-ins, manual rosters, cancellations, corrections, QR, mobile event-day use and first-shirt issuance.
 - [ ] **Run end-to-end shared-platform UAT.** FormSG lead -> MakLom conversion -> KELUARGA registration -> roster -> attendance -> contribution review -> approved hours on dashboard.
 - [ ] **Clean stale repository state.** Close/reconcile obsolete PRs/issues and remove stale runtime/document references to superseded YM Hub, Volunteer.gov.sg and KELUARGA recruitment architecture.
-- [ ] **Define recognition policy.** Approved contribution eligibility, points values, effective dates, reversals/appeals, badge milestones and referral-success criteria.
+- [x] **Define and implement recognition policy v1.** Approved contributions, engagement caps, 15/30/60-hour bonuses, automatic badges and correction reversals. Referral-success criteria remain to be defined separately.
 - [ ] **Build cross-event Volunteer Management intelligence.** Volunteer history, accepted insights/reviews, repeat engagement, contribution trends, retention and impact reporting with explicit denominator/deduplication rules.
 
 ## Current platform priorities
@@ -48,11 +48,12 @@ Work through these in order unless a production defect takes priority.
 
 ### P2 — volunteer experience and recognition
 
-- activate attendance-derived points only from MakLom-approved contributions;
-- define automatic badge/milestone criteria before implementation;
+- [x] activate attendance-derived points only from MakLom-approved contributions;
+- [x] define and implement first-contribution and 15/30/60-hour milestone criteria;
 - preserve manual staff recognition as a separate provenance source;
 - keep pathway advancement staff-confirmed until explicit automation rules exist;
 - implement referrals only after an authoritative success condition is defined.
+- verify a real first approval and correction in staging, then promote the reviewed code and migrations to production.
 
 ### P3 — management intelligence
 
