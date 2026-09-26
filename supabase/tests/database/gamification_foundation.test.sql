@@ -606,8 +606,8 @@ select throws_ok(
 set local role authenticated;
 select is(
   core.get_current_points_snapshot() -> 'active_rule' ->> 'name',
-  'Verified attendance',
-  'the protected point snapshot exposes the active rule but not a draft rule'
+  'Approved volunteering',
+  'the protected point snapshot exposes the current MakLom-approved rule rather than a draft rule'
 );
 
 reset role;
