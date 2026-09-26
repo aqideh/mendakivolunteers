@@ -30,19 +30,13 @@ values ('93300000-0000-4000-8000-000000000006',
 'id:93300000-0000-4000-8000-000000000002',
 '93300000-0000-4000-8000-000000000005',now()-interval '15 hours',now());
 
-insert into public.volunteer_contributions
-(id,volunteer_id,event_id,attendance_session_id,occurred_at,operational_minutes,status)
-values ('93300000-0000-4000-8000-000000000007',
-'93300000-0000-4000-8000-000000000002',
-'93300000-0000-4000-8000-000000000003',
-'93300000-0000-4000-8000-000000000006',now(),900,'pending');
 select is((select count(*)::integer from gamification.point_ledger_entries
 where volunteer_id='93300000-0000-4000-8000-000000000002'),0,
 'pending attendance awards no points');
 
 update public.volunteer_contributions
 set status='approved',approved_minutes=900
-where id='93300000-0000-4000-8000-000000000007';
+where attendance_session_id='93300000-0000-4000-8000-000000000006';
 select is((select sum(points_delta) from gamification.point_ledger_entries
 where volunteer_id='93300000-0000-4000-8000-000000000002'),220::numeric,
 'first 15 approved hours award 150 + 20 + 50');
@@ -53,7 +47,7 @@ and b.revoked_at is null and d.stable_key in ('first-step','helping-hand-15')),2
 'first contribution and 15-hour badges show on profile');
 
 update public.volunteer_contributions set approved_minutes=600
-where id='93300000-0000-4000-8000-000000000007';
+where attendance_session_id='93300000-0000-4000-8000-000000000006';
 select is((select sum(points_delta) from gamification.point_ledger_entries
 where volunteer_id='93300000-0000-4000-8000-000000000002'),120::numeric,
 'correction below 15 hours reverses hours and milestone points');
