@@ -174,6 +174,10 @@ Implemented:
 - append-only points ledger;
 - manual audited staff-recognition points;
 - versioned point-rule foundation;
+- 10 points per MakLom-approved hour after policy activation, with audited corrections;
+- one-time first-contribution and 15/30/60-hour milestone bonuses;
+- capped weekly opportunity exploration, monthly profile review and one-time profile completion points;
+- automatic First Step and 15/30/60-hour profile badges based on approved hours;
 - staff-defined badge catalogue;
 - audited badge awards/revocations;
 - versioned pathway maps;
@@ -183,12 +187,10 @@ Implemented:
 
 Not active yet:
 
-- automatic attendance-derived points;
-- automatic badge/milestone earning;
 - automatic pathway advancement;
 - referral rewards.
 
-Attendance-derived automation must use MakLom-approved contribution records when policy is approved.
+Volunteering rewards use MakLom-approved contribution records; raw check-in/out never grants points.
 
 ## 7. Volunteer Management intelligence
 
