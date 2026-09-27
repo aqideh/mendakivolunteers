@@ -59,7 +59,7 @@ Event reviews and insights describe a specific role/event context. They must ret
 |---|---|
 | Recruitment ownership | KELUARGA recruitment UI is retired; public volunteer CTAs use FormSG and MakLom owns lead review/conversion. |
 | Canonical volunteer identity | Staging MakLom profiles now have a mandatory one-to-one `core_volunteer_id` and retained legacy alias. |
-| New MakLom profile creation | Database triggers create/link the canonical UUID and legacy alias automatically. |
+| New MakLom profile creation | MakLom-origin creation and KELUARGA account/manual-roster creation now all enforce one idempotent `public.volunteers` profile extension per canonical UUID; the production orphan discovered during intelligence verification is backfilled by migration. |
 | Event ownership | MakLom legacy events can reference canonical KELUARGA events; KELUARGA owns new operational event records. |
 | Contribution approval boundary | KELUARGA can generate/refresh candidates but cannot approve attendance-derived hours. |
 | YM Hub dashboard dependency | Volunteer dashboard and Points page no longer require YM Hub projection state on staging. |
