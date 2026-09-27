@@ -151,6 +151,7 @@ Implemented on the current staging architecture:
 - one canonical `core.volunteers.id`;
 - immutable `KELxxxxx` human identifier;
 - MakLom `public.volunteers.core_volunteer_id` profile linkage;
+- idempotent MakLom profile-extension provisioning for KELUARGA account creation and integrated manual-roster volunteer creation;
 - retained legacy aliases;
 - FormSG/MakLom volunteer-lead model;
 - deliberate lead conversion with duplicate/match safeguards;
