@@ -1,6 +1,6 @@
 # Current system architecture
 
-**Last reviewed:** 24 September 2026  
+**Last reviewed:** 27 September 2026  
 **Reference branch:** `staging`
 
 ## Mission and system boundary
@@ -134,6 +134,24 @@ KELUARGA self-service fields remain deliberately narrow.
 - mobile changes may be used in KELUARGA and also enter a MakLom review inbox;
 - sensitive/managed longitudinal fields belong to MakLom;
 - event insights/reviews retain event context and do not directly become permanent profile facts.
+
+## Cross-event Volunteer Management intelligence
+
+MakLom derives reporting from one canonical volunteer identity while preserving source semantics.
+
+Counting rules:
+
+- one participation = one canonical volunteer + one deduplicated attended event;
+- legacy MakLom attendance and KELUARGA attendance merge only when an explicit KELUARGA event link identifies the same event;
+- repeat engagement = at least two distinct attended events across available history;
+- 30/60/90-day retention = a later distinct event within the window after the volunteer's first recorded event;
+- retention denominators include only first-event cohorts old enough to have fully matured through the requested window;
+- historical credited attendance minutes remain separate from MakLom-approved KELUARGA contribution minutes;
+- raw KELUARGA attendance never appears as approved hours;
+- reviewed observation metrics count only MakLom-accepted inbox records;
+- impact metrics aggregate only when both label and unit match.
+
+The Volunteer Intelligence surface uses security-invoker read models and grants MakLom members only the KELUARGA event/roster/session columns needed for reporting.
 
 ## Authorization
 
