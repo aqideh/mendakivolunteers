@@ -21,6 +21,7 @@ This register reflects the approved KELUARGA + MakLom operating model. See `docs
 | Legacy KELUARGA contribution-credit table | Historical only | `keluarga_contribution_credits` predates the reviewed MakLom contribution ledger. | New attendance-derived hours use `volunteer_contributions`; legacy refresh RPC is retired on staging. | Migrate/retain historical rows as required, then remove the legacy write path permanently. |
 | Legacy MakLom event/attendance tables | Historical | MakLom has its own older `events`, `event_shifts` and `attendance_log`. | KELUARGA `phaseone_events` is canonical for new operations; MakLom events can link by `keluarga_event_id`. | Define archival/read-model treatment before any table deletion. |
 | Event Guide sensitive links | Access-policy decision | Guides may contain briefing or WhatsApp links and other operational information. | Existing database-backed access controls remain. | Confirm which guide sections may be public versus assignment/code/signed-link gated. |
+| Intelligence impact coverage | Data completeness | Cross-event impact aggregation is implemented, but current impact reporting depends on consistent event-level metric entry. | MakLom aggregates only identical label + unit pairs and never combines incompatible measures. | Standardise a small impact-metric vocabulary and require it in event close-out where relevant. |
 | `phaseone` naming | Technical debt, not a bug | Historic identifiers remain in routes/modules/tables. | Kept stable to avoid breaking deployed contracts. | Rename only through a deliberate API/database migration. |
 
 ## Identity watch-points
@@ -65,6 +66,7 @@ Event reviews and insights describe a specific role/event context. They must ret
 | Continuous shifts | Attendance supports continuity across adjacent shifts and final checkout. |
 | Walk-in corrections | Corrections propagate across matching event shift rows while retaining event identity continuity. |
 | Insight/review longitudinal UI | MakLom now provides a reviewed cross-event inbox with source/event provenance, staff-edited interpretation, accept/dismiss controls, unmatched-record safeguards and longitudinal volunteer history. |
+| Cross-event Volunteer Management intelligence | MakLom now deduplicates linked volunteer/event participation, separates historical credited time from approved KELUARGA contribution time, calculates mature-cohort retention, reports repeat engagement/monthly trends, aggregates compatible impact measures and supports filtered CSV export. |
 
 ## Recording new defects
 
