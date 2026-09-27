@@ -1,17 +1,25 @@
 import type { Metadata } from "next";
 
 import { RoleLanding } from "@/components/role-landing";
+import { getLandingPageImage } from "@/lib/content/landing-page-media";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Volunteer as a Coach",
-  description: "Explore MENDAKI Achievement Programme Coach roles.",
+  description:
+    "Guide primary and secondary students in their learning journey by providing quality academic support, building their confidence and equipping them to succeed in school and beyond.",
 };
 
-export default function CoachPage() {
+export default async function CoachPage() {
+  const heroImage = await getLandingPageImage("coach");
+
   return (
     <RoleLanding
-      title="Coach with the MENDAKI Achievement Programme."
-      description="Coach roles are for volunteers who want to help participants strengthen skills, confidence, habits, and performance through structured engagement."
+      title="Coaching Every Learner Forward."
+      description="Guide primary and secondary students in their learning journey by providing quality academic support, building their confidence and equipping them to succeed in school and beyond."
+      heroImage={heroImage}
+      heroPosition="67% center"
       items={[
         {
           title: "MENDAKI Achievement Programme Coach",
@@ -29,12 +37,7 @@ export default function CoachPage() {
             "Work within the programme structure and help participants stay engaged over time.",
         },
       ]}
-      ctas={[
-        {
-          href: "/volunteer/interest?area=coach",
-          label: "Volunteer",
-        },
-      ]}
+      ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
     />
   );
 }

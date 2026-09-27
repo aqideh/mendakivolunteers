@@ -16,13 +16,12 @@ import {
   type PointSourceKind,
 } from "@/lib/gamification/read-model";
 import { createClient } from "@/lib/supabase/server";
-import { getYmHubSyncOutcome } from "@/lib/ymhub/read-model";
-import type { AccountStatus, Database } from "@/types/database";
+import type { AccountStatus } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Points",
   description:
-    "View KELUARGA points from verified attendance and staff recognition.",
+    "View points earned from approved volunteering, milestones and engagement.",
   robots: { index: false, follow: false },
 };
 
@@ -56,9 +55,6 @@ type PointsSnapshot = Readonly<{
   active_rule: PointRule | null;
   entries: PointLedgerEntry[];
 }>;
-
-type YmHubSyncStatus =
-  Database["ymhub"]["Tables"]["volunteer_sync_status"]["Row"];
 
 function accountIsInactive(status: AccountStatus): boolean {
   return status === "suspended" || status === "closed";
@@ -103,38 +99,26 @@ export default async function PointsPage() {
 
   const volunteer = volunteerResult.data;
   let pointsSnapshot: PointsSnapshot | null = null;
-  let syncStatus: YmHubSyncStatus | null = null;
 
   if (volunteer) {
     const accountClient = supabase as unknown as SupabaseClient;
-    const [pointsResult, syncResult] = await Promise.all([
-      accountClient.schema("core").rpc("get_current_points_snapshot"),
-      supabase
-        .schema("ymhub")
-        .from("volunteer_sync_status")
-        .select(
-          "volunteer_id, registrations_synced_at, attendance_synced_at, last_attempted_at, last_successful_at, last_failed_at, created_at, updated_at",
-        )
-        .eq("volunteer_id", volunteer.id)
-        .maybeSingle(),
-    ]);
+    const pointsResult = await accountClient
+      .schema("core")
+      .rpc("get_current_points_snapshot");
 
-    if (pointsResult.error || syncResult.error) {
+    if (pointsResult.error) {
       console.error("Unable to load volunteer points", {
-        pointsCode: pointsResult.error?.code,
-        syncCode: syncResult.error?.code,
+        pointsCode: pointsResult.error.code,
         userId,
       });
       throw new Error("Volunteer points could not be loaded");
     }
 
     pointsSnapshot = (pointsResult.data as PointsSnapshot | null) ?? null;
-    syncStatus = syncResult.data;
   }
 
   const activeRule = pointsSnapshot?.active_rule ?? null;
   const entries = pointsSnapshot?.entries ?? [];
-  const syncOutcome = getYmHubSyncOutcome(syncStatus);
   const pointsBalance = Number(pointsSnapshot?.balance ?? 0);
 
   return (
@@ -147,9 +131,8 @@ export default async function PointsPage() {
             <p className="eyebrow">KELUARGA recognition</p>
             <h1>Your points</h1>
             <p className="muted">
-              Points can come from eligible attendance verified in YM Hub or an
-              explicit staff-recognition award. Event-day roster check-in alone
-              does not award points.
+              Earn points for MakLom-approved volunteering, milestones and small
+              actions that help you stay connected. Check-in alone earns no points.
             </p>
           </div>
           <div className="actions">
@@ -191,34 +174,22 @@ export default async function PointsPage() {
               </p>
             </section>
 
-            {syncOutcome === "not_synced" ? (
-              <div className="notice" role="status">
-                <h2>Official attendance has not been imported yet</h2>
-                <p>
-                  Attendance-based points will not change until the first successful
-                  YM Hub attendance update and point reconciliation are completed.
-                  Staff-recognition awards remain separate from this sync.
-                </p>
-              </div>
-            ) : null}
-
-            {syncOutcome === "failed" ? (
-              <div className="notice notice-error" role="alert">
-                <h2>The latest YM Hub update did not complete</h2>
-                <p>
-                  Attendance-based entries shown are based on the latest successful
-                  authoritative data. Staff-recognition awards remain independent,
-                  and no points are inferred from the staff roster as a fallback.
-                </p>
-              </div>
-            ) : null}
+            <section className="panel" aria-labelledby="points-how-title">
+              <h2 id="points-how-title">How you earn points</h2>
+              <p>10 points per approved volunteer hour, including partial hours; 20 bonus
+                for your first approved contribution; 50, 100 and 200 bonus points
+                when you first reach 15, 30 and 60 approved hours.</p>
+              <p>Exploring an opportunity earns 2 points once per week. Confirming
+                your profile details earns 2 points once per month, and completing
+                all profile milestones earns 20 points once.</p>
+            </section>
 
             {!activeRule ? (
               <div className="notice" role="status">
                 <h2>The points programme is being configured</h2>
                 <p>
-                  No attendance rule is active yet, so verified records will not
-                  generate points until MENDAKI approves and activates a rule.
+                  Recognition rules are being configured. Approved contributions remain
+                  recorded in MakLom.
                 </p>
               </div>
             ) : (
@@ -278,7 +249,7 @@ export default async function PointsPage() {
       </main>
 
       <footer className="site-footer">
-        <span>YM Hub remains the source of truth for verified attendance and hours. Keluarga MENDAKI retains the append-only point ledger, including separately identified staff-recognition awards.</span>
+        <span>Keluarga MENDAKI records point awards and corrections in an audited history. Volunteering points follow MakLom-approved contributions.</span>
         <span className="site-footer-copyright">
           © 2026{" "}
           <a href="https://www.mendaki.org.sg/" target="_blank" rel="noreferrer">

@@ -1,17 +1,28 @@
 import type { Metadata } from "next";
 
 import { RoleLanding } from "@/components/role-landing";
+import { getLandingPageImage } from "@/lib/content/landing-page-media";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Volunteer as a Specialist",
-  description: "Contribute professional or specialist expertise with MENDAKI.",
+  description:
+    "Connecting professionals across industries to share knowledge, grow together, and build meaningful networks. Be part of a community that empowers your career.",
 };
 
-export default function SpecialistPage() {
+export default async function SpecialistPage() {
+  const heroImage = await getLandingPageImage("specialist");
+
   return (
     <RoleLanding
-      title="Put your expertise to work for the community."
-      description="Specialist volunteering is for people who want to contribute professional, technical, industry, or subject-matter expertise in ways that complement MENDAKI's programmes and community work."
+      title="Connect Professionals & Grow Possibilities."
+      description="Connecting professionals across industries to share knowledge, grow together, and build meaningful networks. Be part of a community that empowers your career."
+      heroImage={heroImage}
+      inlineCta={{
+        href: "https://professionalnetworksuat.mendaki.org.sg/",
+        label: "Discover Professional Networks",
+      }}
       items={[
         {
           title: "Professional Networks",
@@ -29,12 +40,7 @@ export default function SpecialistPage() {
             "Support work that benefits from specific professional, technical, or specialist capabilities.",
         },
       ]}
-      ctas={[
-        {
-          href: "https://mendaki-pn-connect.base44.app/Home",
-          label: "Explore Professional Networks",
-        },
-      ]}
+      ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
     />
   );
 }

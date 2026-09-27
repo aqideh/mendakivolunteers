@@ -40,7 +40,7 @@ export async function requestVolunteerSignInLink(
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        shouldCreateUser: true,
+        shouldCreateUser: false,
         emailRedirectTo: callbackUrl.toString(),
       },
     });

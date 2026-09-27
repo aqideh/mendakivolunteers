@@ -18,19 +18,34 @@ type RoleCta = Readonly<{
 export function RoleLanding({
   title,
   description,
+  inlineCta,
+  heroImage,
+  heroPosition,
   items,
   ctas,
 }: Readonly<{
   title: string;
   description: string;
+  inlineCta?: RoleCta;
+  heroImage: string;
+  heroPosition?: string;
   items: readonly RoleItem[];
   ctas: readonly RoleCta[];
 }>) {
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Community volunteers" lite />
+      <PortalHeader status="Volunteers" lite />
       <main className={styles.frame}>
         <section className={styles.hero} aria-labelledby="role-title">
+          <div
+            className={styles.heroMedia}
+            aria-hidden="true"
+            style={{
+              backgroundImage: `url("${heroImage}")`,
+              backgroundPosition: heroPosition ?? "center 46%",
+            }}
+          />
+          <div className={styles.heroShade} aria-hidden="true" />
           <div className={styles.heroInner}>
             <Link className={styles.backLink} href="/">
               <span aria-hidden="true">←</span>
@@ -41,6 +56,12 @@ export function RoleLanding({
               <div className={styles.heroCopy}>
                 <h1 id="role-title">{title}</h1>
                 <p className={styles.lede}>{description}</p>
+                {inlineCta ? (
+                  <Link className={styles.inlineAction} href={inlineCta.href}>
+                    <span>{inlineCta.label}</span>
+                    <span aria-hidden="true">↗</span>
+                  </Link>
+                ) : null}
               </div>
 
               <div className={styles.heroActions}>

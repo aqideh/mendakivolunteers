@@ -110,6 +110,9 @@ export default async function ContentAdminPage({ searchParams }: ContentAdminPag
             </p>
           </div>
           <div className={`actions ${styles.actions}`}>
+            <Link className="button button-secondary" href="/admin/content/landing-pages">
+              Landing page photos
+            </Link>
             {canManageProgrammes ? (
               <Link className="button button-primary" href="/admin/events/new">
                 New programme

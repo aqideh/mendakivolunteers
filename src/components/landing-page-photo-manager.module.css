@@ -1,0 +1,164 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.preview {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 0;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  background: var(--surface-subtle);
+  cursor: pointer;
+  transition:
+    outline-color 140ms ease,
+    filter 140ms ease;
+}
+
+.preview:focus-visible {
+  outline-color: var(--focus);
+}
+
+.preview[aria-disabled="true"] {
+  cursor: progress;
+}
+
+.preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition:
+    filter 140ms ease,
+    transform 180ms ease;
+}
+
+.preview:hover img {
+  transform: scale(1.01);
+}
+
+.previewShade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0) 45%,
+      rgba(0, 0, 0, 0.46) 100%
+    );
+  pointer-events: none;
+}
+
+.previewDragging {
+  outline-color: var(--primary);
+}
+
+.previewDragging img {
+  filter: brightness(0.72);
+  transform: scale(1.015);
+}
+
+.statusBadge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.62);
+  font-size: 0.72rem;
+  font-weight: 800;
+  backdrop-filter: blur(8px);
+}
+
+.dropPrompt {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.8rem;
+  left: 0.85rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.08rem;
+  color: #ffffff;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.52);
+  pointer-events: none;
+}
+
+.dropPrompt strong {
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.dropPrompt span {
+  font-size: 0.76rem;
+  opacity: 0.88;
+}
+
+.previewDragging .dropPrompt strong {
+  font-size: 0.95rem;
+}
+
+.cardBody {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.cardBody h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1.15rem;
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview,
+  .preview img {
+    transition: none;
+  }
+
+  .preview:hover img,
+  .previewDragging img {
+    transform: none;
+  }
+}

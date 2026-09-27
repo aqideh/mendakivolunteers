@@ -34,6 +34,7 @@ function safeSearch(value: string): string {
 
 const errorMessages: Record<string, string> = {
   invalid_badge: "Enter a valid badge key, name and description.",
+  automatic_badge: "Hour milestone badges follow approved contributions and cannot be changed here.",
   badge_exists: "A badge with that key already exists.",
   badge_create_failed: "The badge definition could not be created.",
   invalid_award: "Select a badge and provide a recognition reason.",
@@ -109,6 +110,8 @@ export default async function BadgeAdminPage({ searchParams }: PageProps) {
   }
 
   const definitions = definitionsResult.data ?? [];
+  const automaticKeys = new Set(["first-step", "helping-hand-15", "community-builder-30", "community-champion-60"]);
+  const manualDefinitions = definitions.filter((definition) => !automaticKeys.has(definition.stable_key));
   const definitionById = new Map(
     definitions.map((definition) => [definition.id, definition]),
   );
@@ -129,9 +132,9 @@ export default async function BadgeAdminPage({ searchParams }: PageProps) {
             <p className="eyebrow">KELUARGA recognition</p>
             <h1>Badge management</h1>
             <p className="muted">
-              Define recognition badges and award them through explicit staff
-              review. Badges are never inferred automatically from attendance,
-              points or registrations.
+              First Step and 15/30/60-hour badges follow MakLom-approved
+              contributions automatically. Other recognition badges are awarded
+              through explicit staff review.
             </p>
           </div>
           <div className="actions">
@@ -265,7 +268,7 @@ export default async function BadgeAdminPage({ searchParams }: PageProps) {
                             <h3>{definition?.name ?? "Badge"}</h3>
                             <p className="record-meta">{award.reason}</p>
                           </div>
-                          <details className="phaseone-disclosure">
+                          {!award.reason.startsWith("Automatic:") ? <details className="phaseone-disclosure">
                             <summary>Remove</summary>
                             <form action={revokeBadge} className="phaseone-admin-form">
                               <input name="awardId" type="hidden" value={award.id} />
@@ -285,14 +288,14 @@ export default async function BadgeAdminPage({ searchParams }: PageProps) {
                                 Remove active badge
                               </button>
                             </form>
-                          </details>
+                          </details> : null}
                         </article>
                       );
                     })}
                   </div>
                 ) : null}
 
-                {definitions.length ? (
+                {manualDefinitions.length ? (
                   <form action={awardBadge} className="phaseone-admin-form">
                     <input name="volunteerId" type="hidden" value={volunteer.id} />
                     <input name="requestId" type="hidden" value={randomUUID()} />
@@ -305,7 +308,7 @@ export default async function BadgeAdminPage({ searchParams }: PageProps) {
                         defaultValue=""
                       >
                         <option value="" disabled>Select badge</option>
-                        {definitions.map((definition) => (
+                        {manualDefinitions.map((definition) => (
                           <option key={definition.id} value={definition.id}>
                             {definition.name}
                           </option>

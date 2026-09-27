@@ -40,8 +40,8 @@ where id in (
 insert into core.user_roles (user_id, role, reason)
 values (
   '94000000-0000-4000-8000-000000000002',
-  'pathway_manager',
-  'Slice 6 hardening regression test'
+  'volteam',
+  'Slice 6 VolTeam hardening regression test'
 )
 on conflict (user_id, role) do nothing;
 

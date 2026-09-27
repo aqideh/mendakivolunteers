@@ -14,7 +14,7 @@ select ok(
   'authenticated users can provision their KELUARGA identity'
 );
 select ok(
-  has_function_privilege('authenticated', 'core.submit_keluarga_registration(uuid,uuid[],text,text)', 'EXECUTE'),
+  has_function_privilege('authenticated', 'core.submit_keluarga_registration(uuid,uuid[])', 'EXECUTE'),
   'authenticated volunteers can submit registrations through the controlled RPC'
 );
 select ok(
@@ -39,9 +39,9 @@ where id = '81000000-0000-4000-8000-000000000001';
 insert into core.user_roles(user_id, role, granted_by, reason)
 values (
   '81000000-0000-4000-8000-000000000001',
-  'attendance_manager',
+  'staff',
   '81000000-0000-4000-8000-000000000001',
-  'Slice 3 test'
+  'Slice 3 staff regression test'
 );
 
 insert into public.phaseone_events(
@@ -108,9 +108,7 @@ select lives_ok(
   $$
     select core.submit_keluarga_registration(
       '81000000-0000-4000-8000-000000000010',
-      array['81000000-0000-4000-8000-000000000011']::uuid[],
-      'Slice Three Volunteer',
-      '91234567'
+      array['81000000-0000-4000-8000-000000000011']::uuid[]
     )
   $$,
   'volunteer can submit a programme registration'
@@ -187,9 +185,7 @@ select lives_ok(
   $$
     select core.submit_keluarga_registration(
       '81000000-0000-4000-8000-000000000010',
-      array['81000000-0000-4000-8000-000000000011']::uuid[],
-      'Second Slice Three Volunteer',
-      null
+      array['81000000-0000-4000-8000-000000000011']::uuid[]
     )
   $$,
   'second volunteer can submit while capacity is reviewed at confirmation'

@@ -139,6 +139,18 @@ export const eventFormSchema = z
 
 export type EventFormInput = z.infer<typeof eventFormSchema>;
 
+function programmeSlug(value: FormDataEntryValue | null, title: FormDataEntryValue | null) {
+  const explicit = typeof value === "string" ? value.trim() : "";
+  if (explicit) return explicit;
+  const source = typeof title === "string" ? title : "";
+  return source
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
 export function parseEventForm(formData: FormData) {
   let timeslots: unknown = null;
   try {
@@ -158,7 +170,7 @@ export function parseEventForm(formData: FormData) {
     registrationDeadline: formData.get("registrationDeadline"),
     opportunitySortOrder: formData.get("opportunitySortOrder"),
     isOpportunityPublished: formData.get("isOpportunityPublished") === "on",
-    slug: formData.get("slug"),
+    slug: programmeSlug(formData.get("slug"), formData.get("title")),
     timeslots,
     venue: formData.get("venue"),
     navigationDestination: formData.get("navigationDestination"),

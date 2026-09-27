@@ -3,13 +3,13 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database";
 
-const volunteerManagerRoles = new Set<AppRole>(["support_officer", "admin"]);
+const volunteerManagerRoles = new Set<AppRole>(["volteam", "admin"]);
 
 export function hasVolunteerManagerRole(roles: readonly AppRole[]): boolean {
   return roles.some((role) => volunteerManagerRoles.has(role));
 }
 
-export async function requireVolunteerManager(next = "/admin/recruitment") {
+export async function requireVolunteerManager(next = "/dashboard") {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;

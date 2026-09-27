@@ -637,3 +637,88 @@ h3 {
     border-radius: 1rem;
   }
 }
+
+
+/* Community volunteer authentication */
+.volunteer-auth-panel {
+  min-width: 0;
+}
+
+.auth-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin-bottom: 1.5rem;
+  border-radius: 0.8rem;
+  padding: 0.3rem;
+  background: var(--surface-subtle);
+}
+
+.auth-mode-button {
+  min-height: 2.65rem;
+  border: 0;
+  border-radius: 0.62rem;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+}
+
+.auth-mode-button[aria-selected="true"] {
+  color: var(--brand);
+  background: var(--surface);
+  box-shadow: 0 3px 12px rgba(55, 58, 54, 0.1);
+}
+
+
+/* Volunteer email verification recovery */
+.auth-verification-state,
+.auth-verification-recovery {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-verification-state .form-message,
+.auth-verification-recovery .form-message {
+  margin-top: 0;
+}
+
+.auth-verification-email {
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.auth-resend-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.auth-resend-form .form-field {
+  margin-bottom: 0;
+}
+
+.auth-resend-form .button {
+  width: 100%;
+}
+
+.auth-resend-form .form-message:empty {
+  display: none;
+}
+
+.auth-resend-form-compact {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.auth-change-email {
+  justify-self: center;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+}

@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { EventForm } from "@/components/phaseone/event-form";
 import { PortalHeader } from "@/components/portal-header";
 import { SectionIndex } from "@/components/section-index";
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireProgrammeManager } from "@/lib/auth/event-access";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 export const metadata: Metadata = { title: "New programme" };
 export const dynamic = "force-dynamic";
@@ -18,8 +19,24 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 }
 
 export default async function NewEventPage({ searchParams }: PageProps) {
-  await requireEventManager("/admin/events/new");
+  const { userId } = await requireProgrammeManager("/admin/events/new");
   const parameters = await searchParams;
+  const admin = getPhaseOneAdminClient();
+  const draftResult = await admin
+    .from("phaseone_event_form_drafts")
+    .select("payload, updated_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (draftResult.error) {
+    console.error("Unable to load programme recovery draft", {
+      code: draftResult.error.code,
+      userId,
+    });
+  }
+  const draft = draftResult.data
+    ? { payload: draftResult.data.payload as Record<string, unknown>, updatedAt: draftResult.data.updated_at }
+    : undefined;
   const errorMessage = parameter(parameters, "error");
 
   return (
@@ -49,7 +66,7 @@ export default async function NewEventPage({ searchParams }: PageProps) {
         />
 
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
-        <EventForm />
+        {draft ? <EventForm draft={draft} /> : <EventForm />}
       </main>
     </div>
   );

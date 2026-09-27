@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { PortalHeader } from "@/components/portal-header";
 import { AttendanceQrPresenter } from "@/components/phaseone/attendance-qr-presenter";
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireAttendanceOperator } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 export const metadata: Metadata = { title: "Attendance QR" };
@@ -30,7 +30,7 @@ function label(slot: { label: string | null; starts_at: string; ends_at: string 
 
 export default async function AttendanceQrPage({ params, searchParams }: Props) {
   const { id } = await params;
-  await requireEventManager(`/admin/events/${id}/attendance/qr`);
+  await requireAttendanceOperator(`/admin/events/${id}/attendance/qr`);
   const query = await searchParams;
   const requestedTimeslot = param(query.timeslot);
   const action = param(query.action) === "check_out" ? "check_out" : "check_in";

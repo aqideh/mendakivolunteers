@@ -1,18 +1,25 @@
 import type { Metadata } from "next";
 
 import { RoleLanding } from "@/components/role-landing";
+import { getLandingPageImage } from "@/lib/content/landing-page-media";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Volunteer as a Facilitator",
   description:
-    "Explore ReadySetLearn Language Explorer, Math Explorer, and Befriender roles.",
+    "Empower parents of children to support learning at home through practical play based tips, interactive workshops, hands on activities and resources that build their confidence.",
 };
 
-export default function FacilitatorPage() {
+export default async function FacilitatorPage() {
+  const heroImage = await getLandingPageImage("facilitator");
+
   return (
     <RoleLanding
-      title="Create engaging experiences for participants."
-      description="Facilitator roles are for volunteers who enjoy working directly with groups, guiding activities, and helping participants feel engaged and supported."
+      title="Inspire Learning. Build Confidence."
+      description="Empower parents of children to support learning at home through practical play based tips, interactive workshops, hands on activities and resources that build their confidence."
+      heroImage={heroImage}
+      heroPosition="72% center"
       items={[
         {
           title: "ReadySetLearn Language Explorer",
@@ -30,12 +37,7 @@ export default function FacilitatorPage() {
             "Build rapport with participants and help create a welcoming, supportive experience.",
         },
       ]}
-      ctas={[
-        {
-          href: "/volunteer/interest?area=facilitator",
-          label: "Volunteer",
-        },
-      ]}
+      ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
     />
   );
 }

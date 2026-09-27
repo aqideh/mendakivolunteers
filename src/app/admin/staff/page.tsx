@@ -2,13 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { StaffInviteForm } from "@/app/admin/staff/staff-invite-form";
+import { StaffRoleEditor } from "@/app/admin/staff/staff-role-editor";
 import { StaffSetupLinkForm } from "@/app/admin/staff/staff-setup-link-form";
 import { PortalHeader } from "@/components/portal-header";
 import { requireAdmin } from "@/lib/auth/staff-access";
-import { staffInviteRoleValues } from "@/lib/auth/staff-roles";
+import {
+  staffInviteRoleOptions,
+  staffInviteRoleValues,
+  type StaffInviteRole,
+} from "@/lib/auth/staff-roles";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
-import type { AccountStatus, AppRole } from "@/types/database";
+import type { AccountStatus } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Manage staff access",
@@ -20,7 +25,7 @@ type StaffAccount = Readonly<{
   id: string;
   email: string;
   status: AccountStatus;
-  roles: AppRole[];
+  role: StaffInviteRole;
   lastSignInAt: string | null;
 }>;
 
@@ -51,27 +56,25 @@ async function loadStaffAccounts(): Promise<StaffAccount[]> {
   const accountsById = new Map(
     (accountsResult.data ?? []).map((account) => [account.id, account.status]),
   );
-  const rolesByUserId = new Map<string, AppRole[]>();
+  const roleByUserId = new Map<string, StaffInviteRole>();
 
   for (const record of rolesResult.data ?? []) {
-    const existing = rolesByUserId.get(record.user_id) ?? [];
-    existing.push(record.role as AppRole);
-    rolesByUserId.set(record.user_id, existing);
+    roleByUserId.set(record.user_id, record.role as StaffInviteRole);
   }
 
   return usersResult.data.users
     .flatMap((user) => {
-      const roles = rolesByUserId.get(user.id);
+      const role = roleByUserId.get(user.id);
       const status = accountsById.get(user.id);
 
-      if (!user.email || !roles || !status) return [];
+      if (!user.email || !role || !status) return [];
 
       return [
         {
           id: user.id,
           email: user.email,
           status: status as AccountStatus,
-          roles: roles.sort(),
+          role,
           lastSignInAt: user.last_sign_in_at ?? null,
         },
       ];
@@ -89,13 +92,10 @@ export default async function StaffAccessPage() {
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
-            <p className="eyebrow">Administration</p>
             <h1>Manage staff access</h1>
             <p className="muted">
-              Invite new staff directly from KELUARGA. Invitations create the
-              account, assign the selected role and email the staff member a secure
-              link to choose their password. Existing staff can be sent a fresh
-              setup email when needed.
+              Assign one KELUARGA access level to each staff account. Admin includes
+              MakLom administrator access; the other levels do not grant MakLom access.
             </p>
           </div>
           <div className="actions">
@@ -107,6 +107,26 @@ export default async function StaffAccessPage() {
             </Link>
           </div>
         </div>
+
+        <section className="panel" aria-labelledby="role-reference-title">
+          <div className="section-header">
+            <div>
+              <h2 id="role-reference-title">KELUARGA roles &amp; permissions</h2>
+              <p className="muted">
+                Access levels are hierarchical. Admin is the only level that manages
+                staff access and receives MakLom access.
+              </p>
+            </div>
+          </div>
+          <dl className="data-list">
+            {staffInviteRoleOptions.map((option) => (
+              <div className="data-row" key={option.value}>
+                <dt>{option.label}</dt>
+                <dd>{option.description}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
 
         <StaffInviteForm />
 
@@ -121,7 +141,7 @@ export default async function StaffAccessPage() {
             <thead>
               <tr>
                 <th>Staff account</th>
-                <th>Role</th>
+                <th>Roles &amp; permissions</th>
                 <th>Status</th>
                 <th>Last sign-in</th>
                 <th>Setup access</th>
@@ -134,7 +154,13 @@ export default async function StaffAccessPage() {
                     <strong>{account.email}</strong>
                     <span className="table-subtext">{account.id}</span>
                   </td>
-                  <td>{account.roles.join(", ")}</td>
+                  <td>
+                    <StaffRoleEditor
+                      email={account.email}
+                      role={account.role}
+                      userId={account.id}
+                    />
+                  </td>
                   <td>
                     <span className="status-pill">{account.status}</span>
                   </td>

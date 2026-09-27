@@ -29,8 +29,7 @@
 
 .hero::before {
   z-index: -2;
-  background:
-    url("/home/keluarga-volunteers-hero.jpeg") center 46% / cover no-repeat;
+  background: var(--home-hero-image) center 46% / cover no-repeat;
   opacity: 0.48;
 }
 

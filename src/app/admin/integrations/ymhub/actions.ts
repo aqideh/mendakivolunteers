@@ -3,7 +3,7 @@
 import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   parseYmHubImportFiles,
@@ -89,7 +89,7 @@ export async function commitYmHubImportBatch(
     );
   }
 
-  const { userId } = await requireEventManager("/admin/integrations/ymhub");
+  const { userId } = await requireProgrammeManager("/admin/integrations/ymhub");
   const admin = getPhaseOneAdminClient();
   const fileMetadata = parsed.datasets.map((dataset) => ({
     dataset: dataset.dataset,

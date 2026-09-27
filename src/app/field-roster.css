@@ -531,3 +531,35 @@
     font-size: 0.92rem;
   }
 }
+
+
+.phaseone-shirt-status {
+  margin-top: 0.8rem;
+}
+
+.phaseone-shirt-status details {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface-subtle);
+}
+
+.phaseone-shirt-status summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.phaseone-shirt-issue-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.phaseone-shirt-issue-form .form-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.phaseone-shirt-issue-form select {
+  width: 100%;
+}

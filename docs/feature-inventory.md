@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Snapshot date:** 24 September 2026  
+**Snapshot date:** 25 September 2026  
 **Reference branch:** `staging`
 
 This inventory records implemented capability in the current KELUARGA + MakLom architecture. It is not a backlog.
@@ -34,6 +34,10 @@ Implemented:
 - registration notifications;
 - Event Guides with venue, directions, briefing and programme information;
 - volunteer dashboard;
+- guided first-time profile onboarding with resumable completion milestones;
+- direct section-by-section profile editing after onboarding, including single-purpose photo changes;
+- private volunteer operational profile data for date of birth, home address/postal code, dietary requirements, food allergies, T-shirt size, education, languages and emergency contact;
+- profile-completeness milestones covering contact, home area, personal details, interests, skills, availability, event readiness, education and photo;
 - approved contribution-hours display from MakLom-approved contribution records;
 - audited self-service display-name/mobile editing;
 - points balance/history;
@@ -65,6 +69,8 @@ Staff access changes are server-side, confirmed and audited.
 Implemented:
 
 - programme/event creation and editing;
+- server-backed autosave/recovery for in-progress new programme forms;
+- automatic public journey slug generation from the event title, with optional manual override;
 - public opportunity presentation fields;
 - publication controls;
 - Event Guide publication controls;
@@ -72,7 +78,27 @@ Implemented:
 - programme rundowns;
 - multi-day/multi-shift configuration;
 - optional per-shift registration capacity;
+- XLSX bulk programme/opportunity ingestion using the standard Opportunities + Shifts workbook;
+- preview-first workbook validation with duplicate slug and duplicate-file protection;
+- atomic import of programmes and shifts as unpublished drafts for staff review;
 - retained revision/history foundations.
+
+### Volunteer data and inventory
+
+Implemented:
+
+- private volunteer-details domain keyed by the canonical volunteer UUID;
+- VolTeam/Admin volunteer directory with search and filtering by available planning area, electoral division, T-shirt size and highest qualification;
+- GE2025 electoral boundary reference dataset, PostGIS boundary storage and coordinate-to-GRC/SMC resolver;
+- server-side OneMap postal-code verification that derives normalized address, coordinates and planning area before GE2025 electoral lookup;
+- filtered volunteer CSV export;
+- volunteer-shirt catalogue for round-neck and collared shirts in S, M, L, XL, 2XL, 3XL, 5XL and 7XL;
+- append-only stock movements for opening stock, receipts, adjustments, returns and issues;
+- transactional stock decrement on shirt issue;
+- one-shirt-per-volunteer database constraint;
+- legacy shirt-issue recording for volunteers who received a shirt before KELUARGA inventory tracking.
+
+Planning-area and electoral-division fields are stored separately from volunteer input and are populated only through verified geographic enrichment. OneMap credentials must be configured in the deployment environment before live postal-code verification can run.
 
 ### Registration review
 
@@ -112,7 +138,9 @@ Implemented:
 - event report export;
 - contextual volunteer insights;
 - contextual volunteer reviews;
-- event feedback.
+- event feedback;
+- first-shirt status and issuance from Event Operations for linked volunteers;
+- transactional shirt issue enforcement so each volunteer has at most one recorded volunteer shirt.
 
 Operational attendance remains evidence until contribution review.
 
@@ -146,6 +174,10 @@ Implemented:
 - append-only points ledger;
 - manual audited staff-recognition points;
 - versioned point-rule foundation;
+- 10 points per MakLom-approved hour after policy activation, with audited corrections;
+- one-time first-contribution and 15/30/60-hour milestone bonuses;
+- capped weekly opportunity exploration, monthly profile review and one-time profile completion points;
+- automatic First Step and 15/30/60-hour profile badges based on approved hours;
 - staff-defined badge catalogue;
 - audited badge awards/revocations;
 - versioned pathway maps;
@@ -155,12 +187,10 @@ Implemented:
 
 Not active yet:
 
-- automatic attendance-derived points;
-- automatic badge/milestone earning;
 - automatic pathway advancement;
 - referral rewards.
 
-Attendance-derived automation must use MakLom-approved contribution records when policy is approved.
+Volunteering rewards use MakLom-approved contribution records; raw check-in/out never grants points.
 
 ## 7. Volunteer Management intelligence
 
@@ -178,10 +208,13 @@ Shared-platform foundation implemented:
 - longitudinal insight/review inbox;
 - contribution-review data model.
 
-Still to complete in MakLom:
+Implemented in MakLom:
 
 - contribution review UI;
-- profile-change review UI;
+- profile-change review UI for the current mobile-change inbox contract.
+
+Still to complete in MakLom:
+
 - insight/review longitudinal inbox;
 - cross-event volunteer intelligence/reporting.
 
@@ -222,4 +255,4 @@ Implemented:
 
 ## 10. Current limitations
 
-See [Known issues](known-issues.md) and [Development roadmap](development-roadmap.md) for remaining work. The largest active gaps are MakLom review UIs, production reconciliation/promotion, end-to-end UAT and policy-dependent recognition automation.
+See [Known issues](known-issues.md) and [Development roadmap](development-roadmap.md) for remaining work. The largest active gaps are the MakLom insight/review inbox, production reconciliation/promotion, end-to-end UAT and policy-dependent recognition automation.

@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireGamificationManager } from "@/lib/auth/gamification-access";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+
+const automaticBadges = new Set(["first-step", "helping-hand-15", "community-builder-30", "community-champion-60"]);
 
 const definitionSchema = z.object({
   stableKey: z
@@ -67,6 +70,11 @@ export async function awardBadge(formData: FormData) {
   if (!parsed.success) redirectError("invalid_award");
 
   const { supabase } = await requireGamificationManager("/admin/badges");
+  const badge = await getPhaseOneAdminClient().schema("gamification").from("badge_definitions")
+    .select("stable_key").eq("id", parsed.data.badgeId).maybeSingle();
+  if (badge.error || !badge.data || automaticBadges.has(badge.data.stable_key)) {
+    redirectError("automatic_badge");
+  }
   const { error } = await supabase.schema("core").rpc("award_badge", {
     p_volunteer_id: parsed.data.volunteerId,
     p_badge_id: parsed.data.badgeId,
@@ -96,6 +104,11 @@ export async function revokeBadge(formData: FormData) {
   if (!parsed.success) redirectError("invalid_revocation");
 
   const { supabase } = await requireGamificationManager("/admin/badges");
+  const award = await getPhaseOneAdminClient().schema("gamification").from("volunteer_badges")
+    .select("reason").eq("id", parsed.data.awardId).maybeSingle();
+  if (award.error || !award.data || award.data.reason.startsWith("Automatic:")) {
+    redirectError("automatic_badge");
+  }
   const { error } = await supabase.schema("core").rpc("revoke_badge", {
     p_award_id: parsed.data.awardId,
     p_reason: parsed.data.reason,

@@ -41,7 +41,7 @@
 
 .hero::before {
   z-index: -2;
-  background: url("/volunteer/mentor/mendaki-ampowered.png") center / cover no-repeat;
+  background: var(--mentor-hero-image) center / cover no-repeat;
   opacity: 0.5;
 }
 

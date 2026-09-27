@@ -7,6 +7,7 @@ import {
   addWalkInVolunteer,
   applyAttendanceChange,
 } from "@/app/admin/events/[id]/attendance/actions";
+import { issueVolunteerShirt } from "@/app/admin/events/[id]/attendance/shirt-actions";
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
 import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
@@ -19,7 +20,10 @@ import {
   WalkInSubmitButtons,
 } from "@/components/phaseone/attendance-quick-action";
 import { PortalHeader } from "@/components/portal-header";
-import { requireEventManager } from "@/lib/auth/event-access";
+import {
+  hasEventManagerRole,
+  requireAttendanceOperator,
+} from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
@@ -220,7 +224,8 @@ async function AttendanceAudit({
 
 export default async function AttendancePage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  await requireEventManager(`/admin/events/${id}/attendance`);
+  const { roles } = await requireAttendanceOperator(`/admin/events/${id}/attendance`);
+  const canManageEvent = hasEventManagerRole(roles);
   const admin = getPhaseOneAdminClient();
   const [
     eventResult,
@@ -239,7 +244,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key, volunteer_id")
+      .select("id, timeslot_id, volunteer_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(2000),
@@ -268,6 +273,55 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   ) {
     throw new Error("Attendance operations data could not be loaded");
   }
+
+  const canonicalVolunteerIds = Array.from(
+    new Set(
+      rosterResult.data
+        .map((item) => item.volunteer_id)
+        .filter((value): value is string => Boolean(value)),
+    ),
+  );
+
+  const [privateDetailsResult, shirtIssuanceResult, shirtStockResult] =
+    await Promise.all([
+      canonicalVolunteerIds.length
+        ? admin
+            .from("volunteer_private_details")
+            .select("volunteer_id, tshirt_size, dietary_requirements, food_allergies, no_known_food_allergies")
+            .in("volunteer_id", canonicalVolunteerIds)
+        : Promise.resolve({ data: [], error: null }),
+      canonicalVolunteerIds.length
+        ? admin
+            .from("volunteer_shirt_issuances")
+            .select("volunteer_id, issued_at, issuance_source, volunteer_shirt_skus(shirt_type,size)")
+            .in("volunteer_id", canonicalVolunteerIds)
+        : Promise.resolve({ data: [], error: null }),
+      admin
+        .from("volunteer_shirt_stock")
+        .select("shirt_type, size, quantity_on_hand")
+        .eq("active", true),
+    ]);
+
+  if (
+    privateDetailsResult.error ||
+    shirtIssuanceResult.error ||
+    shirtStockResult.error
+  ) {
+    throw new Error("Volunteer readiness data could not be loaded");
+  }
+
+  const privateDetailsByVolunteer = new Map(
+    (privateDetailsResult.data ?? []).map((item) => [item.volunteer_id, item]),
+  );
+  const shirtIssueByVolunteer = new Map(
+    (shirtIssuanceResult.data ?? []).map((item) => [item.volunteer_id, item]),
+  );
+  const shirtStock = shirtStockResult.data ?? [];
+
+  const stockFor = (shirtType: string, size: string) =>
+    shirtStock.find(
+      (item) => item.shirt_type === shirtType && item.size === size,
+    )?.quantity_on_hand ?? 0;
 
   const timeslots = timeslotsResult.data as Timeslot[];
   const activeTimeslots = timeslots.filter((timeslot) => timeslot.status !== "cancelled");
@@ -375,8 +429,18 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               ? "Volunteer review saved."
               : successCode === "walk_in_updated"
                 ? "Walk-in volunteer details updated."
-                : undefined;
-  const errorMessage = parameter(parameters, "error");
+                : successCode === "shirt_issued"
+                  ? "Volunteer shirt issued and inventory updated."
+                  : undefined;
+  const errorCode = parameter(parameters, "error");
+  const errorMessage =
+    errorCode === "shirt_already_issued"
+      ? "This volunteer already has a recorded shirt issue."
+      : errorCode === "shirt_out_of_stock"
+        ? "The selected shirt is out of stock."
+        : errorCode === "shirt_issue_failed"
+          ? "The shirt could not be issued."
+          : errorCode;
   const event = eventResult.data;
 
   const dayGroups = new Map<string, Timeslot[]>();
@@ -398,16 +462,22 @@ export default async function AttendancePage({ params, searchParams }: PageProps
             <p className="muted">{event.venue ?? "Venue not set"}</p>
           </div>
           <div className="actions">
-            <Link className="button button-secondary" href={`/admin/events/${id}/edit`}>Event settings / upload roster</Link>
-            <Link className="button button-secondary" href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
-            <Link className="button button-secondary" href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
+            {canManageEvent ? (
+              <>
+                <Link className="button button-secondary" href={`/admin/events/${id}/edit#roster`}>Roster setup</Link>
+                <Link className="button button-secondary" href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
+                <Link className="button button-secondary" href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
+              </>
+            ) : null}
             {selectedTimeslot ? (
               <>
                 <Link className="button button-primary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_in`}>Show check-in QR</Link>
                 <Link className="button button-secondary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_out`}>Show check-out QR</Link>
               </>
             ) : null}
-            <a className="button button-secondary" href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
+            {canManageEvent ? (
+              <a className="button button-secondary" href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
+            ) : null}
           </div>
         </div>
 
@@ -483,14 +553,17 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
                 <div className="actions">
                   <span className="status-pill">{visible.length} shown{activeFilterLabel ? ` · ${activeFilterLabel}` : ""}</span>
-                  <BulkCheckoutButton
-                    checkedInCount={counts.signed_in}
-                    eventId={id}
-                    timeslotId={selectedTimeslot.id}
-                  />
+                  {canManageEvent ? (
+                    <BulkCheckoutButton
+                      checkedInCount={counts.signed_in}
+                      eventId={id}
+                      timeslotId={selectedTimeslot.id}
+                    />
+                  ) : null}
                 </div>
               </div>
 
+              {canManageEvent ? (
               <details className="phaseone-walk-in">
                 <summary className="phaseone-walk-in-summary">
                   <span>+ Walk-in volunteer</span>
@@ -548,6 +621,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   </form>
                 </div>
               </details>
+              ) : null}
 
               <form className="phaseone-attendance-filters phaseone-desktop-filters" method="get">
                 <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
@@ -602,7 +676,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
               </details>
 
-              <p className="muted phaseone-roster-swipe-hint">Swipe a volunteer card right for Review or Insight.</p>
+              {canManageEvent ? (
+                <p className="muted phaseone-roster-swipe-hint">Swipe a volunteer card right for Review or Insight.</p>
+              ) : null}
               <div className="phaseone-attendance-list">
                 {visible.map(({ volunteer, attendance, effectiveAttendance, status }) => {
                   const linkedNextShift = nextShiftLink(effectiveAttendance?.session_id);
@@ -614,6 +690,22 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                     && effectiveAttendance.session_checked_in_at
                     && !attendance?.signed_in_at,
                   );
+                  const canonicalVolunteerId = volunteer.volunteer_id as string | null;
+                  const privateDetails = canonicalVolunteerId
+                    ? privateDetailsByVolunteer.get(canonicalVolunteerId)
+                    : undefined;
+                  const shirtIssue = canonicalVolunteerId
+                    ? shirtIssueByVolunteer.get(canonicalVolunteerId)
+                    : undefined;
+                  const preferredShirtSize =
+                    privateDetails?.tshirt_size ?? volunteer.tshirt_size ?? null;
+                  const dietaryRequirements =
+                    privateDetails?.dietary_requirements ??
+                    volunteer.dietary_requirements ??
+                    null;
+                  const allergySummary = privateDetails?.no_known_food_allergies
+                    ? "No known food allergies"
+                    : privateDetails?.food_allergies ?? null;
 
                   return (
                     <article
@@ -624,7 +716,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       id={`roster-${volunteer.id}`}
                       key={volunteer.id}
                     >
-                      <RosterSwipeActions />
+                      {canManageEvent ? <RosterSwipeActions /> : null}
                       <div className="phaseone-attendance-summary">
                         <div>
                           <div className="phaseone-roster-meta">
@@ -638,11 +730,52 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             ) : null}
                           </div>
                           <h3>{volunteer.volunteer_name}</h3>
-                          <p className="muted">{volunteer.mobile ?? "No contact number"} · Age: {volunteer.age ?? "—"} · T-shirt: {volunteer.tshirt_size ?? "—"}</p>
-                          <p className="muted"><strong>Meal / dietary:</strong> {volunteer.dietary_requirements ?? "—"}</p>
+                          <p className="muted">{volunteer.mobile ?? "No contact number"} · Age: {volunteer.age ?? "—"} · T-shirt: {preferredShirtSize ?? "—"}</p>
+                          <p className="muted"><strong>Meal / dietary:</strong> {dietaryRequirements ?? "—"}</p>
+                          {allergySummary ? <p className="muted"><strong>Food allergies:</strong> {allergySummary}</p> : null}
                         </div>
                         <span className="status-pill" data-state={status}>{statusLabel(status)}</span>
                       </div>
+
+                      {canonicalVolunteerId ? (
+                        <div className="phaseone-shirt-status">
+                          {shirtIssue ? (
+                            <span className="status-pill" data-state="verified">
+                              Shirt issued
+                            </span>
+                          ) : preferredShirtSize && canManageEvent ? (
+                            <details>
+                              <summary>
+                                Shirt due · {preferredShirtSize}
+                              </summary>
+                              <form action={issueVolunteerShirt} className="phaseone-shirt-issue-form">
+                                <input type="hidden" name="eventId" value={id} />
+                                <input type="hidden" name="volunteerId" value={canonicalVolunteerId} />
+                                <input type="hidden" name="timeslotId" value={selectedTimeslot.id} />
+                                <div className="form-field">
+                                  <label htmlFor={`shirt-type-${volunteer.id}`}>Shirt type</label>
+                                  <select id={`shirt-type-${volunteer.id}`} name="shirtType" required>
+                                    <option value="round_neck">
+                                      Round-neck · {stockFor("round_neck", preferredShirtSize)} in stock
+                                    </option>
+                                    <option value="collared">
+                                      Collared · {stockFor("collared", preferredShirtSize)} in stock
+                                    </option>
+                                  </select>
+                                </div>
+                                <input type="hidden" name="size" value={preferredShirtSize} />
+                                <button className="button button-secondary" type="submit">
+                                  Confirm shirt issue
+                                </button>
+                              </form>
+                            </details>
+                          ) : preferredShirtSize ? (
+                            <span className="status-pill">Shirt due · {preferredShirtSize}</span>
+                          ) : (
+                            <span className="status-pill">Shirt size needed</span>
+                          )}
+                        </div>
+                      ) : null}
 
                       {effectiveAttendance?.signed_in_at || effectiveAttendance?.signed_out_at || status === "withdrawn" || status === "absent" ? (
                         <dl className="phaseone-attendance-times">
@@ -707,13 +840,15 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         />
                       ) : null}
 
+                      {canManageEvent ? (
+                        <>
                       <VolunteerReviewForm
                         eventId={id}
                         rosterId={volunteer.id}
                         timeslotId={selectedTimeslot.id}
                       />
 
-                      {volunteer.volunteer_id ? (
+                      {canManageEvent && volunteer.volunteer_id ? (
                         <RosterProfileDetailsEditor
                           dietaryRequirements={volunteer.dietary_requirements}
                           eventId={id}
@@ -796,9 +931,13 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         </form>
                       </details>
 
+                        </>
+                      ) : null}
+
                       {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
 
-                      {usesInheritedSession ? (
+                      {canManageEvent ? (
+                        usesInheritedSession ? (
                         <p className="muted phaseone-inherited-note">
                           This shift inherits the volunteer&apos;s event-day check-in. Attendance corrections should be made on the shift where they originally checked in.
                         </p>
@@ -830,7 +969,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             <button className="button button-secondary" type="submit">Save correction</button>
                           </form>
                         </details>
-                      )}
+                      )
+                      ) : null}
                     </article>
                   );
                 })}
@@ -840,9 +980,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           </>
         ) : null}
 
-        <Suspense fallback={<section className="section"><p className="muted">Loading recent attendance changes…</p></section>}>
-          <AttendanceAudit eventId={id} rosterNames={rosterNames} />
-        </Suspense>
+        {canManageEvent ? (
+          <Suspense fallback={<section className="section"><p className="muted">Loading recent attendance changes…</p></section>}>
+            <AttendanceAudit eventId={id} rosterNames={rosterNames} />
+          </Suspense>
+        ) : null}
       </main>
     </div>
   );

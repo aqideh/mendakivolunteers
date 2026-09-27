@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireProgrammeManager } from "@/lib/auth/event-access";
 import {
   isValidSingaporeDateTimeLocal,
   singaporeDateTimeLocalToIso,
@@ -76,7 +76,7 @@ export async function createQuickEvent(formData: FormData) {
     );
   }
 
-  const { userId } = await requireEventManager("/admin/events/quick");
+  const { userId } = await requireProgrammeManager("/admin/events/quick");
   const admin = getPhaseOneAdminClient();
   const startsAt = singaporeDateTimeLocalToIso(parsed.data.startsAt);
   const endsAt = singaporeDateTimeLocalToIso(parsed.data.endsAt);

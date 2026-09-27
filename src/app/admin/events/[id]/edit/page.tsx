@@ -3,14 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
-import { creditManualEventHours } from "@/app/admin/events/manual-actions";
-import { DatabaseVolunteerRosterPicker } from "@/components/phaseone/database-volunteer-roster-picker";
+import { submitManualEventHoursForReview } from "@/app/admin/events/manual-actions";
 import { ManualRosterVolunteerForm } from "@/components/phaseone/manual-roster-volunteer-form";
+import { DatabaseVolunteerRosterPicker } from "@/components/phaseone/database-volunteer-roster-picker";
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
 import { PortalHeader } from "@/components/portal-header";
-import { requireEventManager } from "@/lib/auth/event-access";
+import { hasProgrammeManagerRole, requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { programmeRundownBucket } from "@/lib/phaseone/programme-rundown";
@@ -38,7 +38,8 @@ const successMessages: Record<string, string> = {
 
 export default async function EditEventPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  await requireEventManager(`/admin/events/${id}/edit`);
+  const { roles } = await requireEventManager(`/admin/events/${id}/edit`);
+  const canManageProgramme = hasProgrammeManagerRole(roles);
   const admin = getPhaseOneAdminClient();
 
   const [eventResult, timeslotsResult, rosterCountResult, importsResult, rundownImagesResult] = await Promise.all([
@@ -97,8 +98,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const errorMessage = parameter(parameters, "error");
   const successCode = parameter(parameters, "success");
   const successMessage =
-    successCode === "manual_hours_credited"
-      ? `${parameter(parameters, "credited") ?? "0"} completed attendance session(s) credited for ${parameter(parameters, "hours") ?? "0"} KELUARGA contribution hours.${Number(parameter(parameters, "skipped") ?? "0") > 0 ? ` ${parameter(parameters, "skipped")} session(s) were skipped because they were not linked to exactly one KELUARGA volunteer.` : ""}`
+    successCode === "manual_hours_submitted"
+      ? `${parameter(parameters, "candidates") ?? "0"} completed attendance session(s) refreshed for MakLom review. ${parameter(parameters, "review") ?? "0"} session(s) currently need review (${parameter(parameters, "minutes") ?? "0"} operational minutes scanned).${Number(parameter(parameters, "skipped") ?? "0") > 0 ? ` ${parameter(parameters, "skipped")} session(s) were skipped because no canonical KELUARGA volunteer was linked.` : ""}`
       : successCode
         ? successMessages[successCode]
         : undefined;
@@ -141,8 +142,12 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         </div>
 
         <nav className="phaseone-task-nav" aria-label="Event editor sections">
-          <a href="#guide">Guide · {event.is_published ? "Published" : "Draft"}</a>
-          <a href="#programme">Programme · {rundownImages.length}</a>
+          {canManageProgramme ? (
+            <>
+              <a href="#guide">Guide · {event.is_published ? "Published" : "Draft"}</a>
+              <a href="#programme">Programme · {rundownImages.length}</a>
+            </>
+          ) : null}
           <a href="#roster">Roster · {rosterCountResult.count ?? 0}</a>
           <Link href={`/admin/registrations?event=${id}`}>Registrations</Link>
           <Link href={`/admin/events/${id}/insights`}>Insights</Link>
@@ -154,6 +159,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         {successMessage ? <div className="notice notice-success" role="status">{successMessage}</div> : null}
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
+        {canManageProgramme ? (
+          <>
         <section className="panel phaseone-admin-section" id="guide" aria-labelledby="event-details-title">
           <div className="section-header">
             <div>
@@ -180,6 +187,13 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           />
         </section>
 
+          </>
+        ) : (
+          <div className="notice">
+            Event Operations access is active. Programme, opportunity and Event Guide settings are read-only for this account.
+          </div>
+        )}
+
         <section className="section panel phaseone-admin-section" id="roster" aria-labelledby="roster-title">
           <div className="section-header">
             <div>
@@ -198,8 +212,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
               <p>
                 {operationsScope === "manual_integrated"
                   ? creditContributionHours
-                    ? "Volunteers added from the shared database or through integrated roster imports are linked to canonical KELUARGA records. Completed attendance can be credited as KELUARGA contribution hours below."
-                    : "Volunteers added from the shared database or through integrated roster imports are linked to canonical KELUARGA records. Contribution-hour crediting is disabled for this event."
+                    ? "Volunteers added from the shared database or through integrated roster imports are linked to canonical KELUARGA records. Completed attendance is submitted to MakLom for review before hours become approved."
+                    : "Volunteers added from the shared database or through integrated roster imports are linked to canonical KELUARGA records. Contribution-hour submission is disabled for this event."
                   : "Roster, attendance, insights and reporting stay inside this event. No main volunteer records or contribution hours are created."}
               </p>
             </div>
@@ -207,10 +221,10 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
 
           {operationsScope !== "manual_isolated" ? (
             <>
-              <DatabaseVolunteerRosterPicker
-                eventId={event.id}
-                timeslots={timeslotsResult.data}
-              />
+            <DatabaseVolunteerRosterPicker
+              eventId={event.id}
+              timeslots={timeslotsResult.data}
+            />
               <ManualRosterVolunteerForm
                 eventId={event.id}
                 timeslots={timeslotsResult.data}
@@ -227,16 +241,16 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           {operationsScope === "manual_integrated" && creditContributionHours ? (
             <div className="panel">
               <p className="eyebrow">Contribution hours</p>
-              <h3>Credit completed attendance to KELUARGA</h3>
+              <h3>Submit completed attendance to MakLom</h3>
               <p className="muted">
-                Run this after check-out or attendance corrections. It creates or
-                refreshes app-owned KELUARGA contribution-hour credits from completed
-                attendance sessions. These remain separate from YM Hub verified hours.
+                Run this after check-out or attendance corrections. It refreshes
+                operational attendance candidates for MakLom review. Hours are only
+                approved after Volunteer Management reviews the contribution record.
               </p>
-              <form action={creditManualEventHours}>
+              <form action={submitManualEventHoursForReview}>
                 <input name="eventId" type="hidden" value={event.id} />
                 <button className="button button-primary" type="submit">
-                  Credit completed hours
+                  Submit hours for review
                 </button>
               </form>
             </div>
@@ -269,15 +283,17 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </details>
         </section>
 
-        <details className="phaseone-disclosure phaseone-page-tools">
-          <summary>More event actions</summary>
-          <div className="phaseone-disclosure-body">
-            <form action={duplicateEvent}>
-              <input type="hidden" name="eventId" value={event.id} />
-              <button className="button button-secondary" type="submit">Duplicate event guide</button>
-            </form>
-          </div>
-        </details>
+        {canManageProgramme ? (
+          <details className="phaseone-disclosure phaseone-page-tools">
+            <summary>More event actions</summary>
+            <div className="phaseone-disclosure-body">
+              <form action={duplicateEvent}>
+                <input type="hidden" name="eventId" value={event.id} />
+                <button className="button button-secondary" type="submit">Duplicate event guide</button>
+              </form>
+            </div>
+          </details>
+        ) : null}
       </main>
     </div>
   );

@@ -10,14 +10,6 @@ import { createClient } from "@/lib/supabase/server";
 const registrationSchema = z.object({
   eventId: z.string().uuid(),
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  displayName: z.string().trim().min(1).max(120),
-  mobile: z.preprocess(
-    (value) => {
-      const text = typeof value === "string" ? value.trim() : "";
-      return text || null;
-    },
-    z.string().max(40).nullable(),
-  ),
   timeslotIds: z.array(z.string().uuid()).min(1).max(100),
 });
 
@@ -29,8 +21,6 @@ export async function submitOpportunityRegistration(formData: FormData) {
   const parsed = registrationSchema.safeParse({
     eventId: formData.get("eventId"),
     slug: formData.get("slug"),
-    displayName: formData.get("displayName"),
-    mobile: formData.get("mobile"),
     timeslotIds: formData.getAll("timeslotId"),
   });
 
@@ -43,7 +33,7 @@ export async function submitOpportunityRegistration(formData: FormData) {
   if (!parsed.success) {
     redirect(
       safeSlug
-        ? target(safeSlug, "error", "Check your name and select at least one available shift.")
+        ? target(safeSlug, "error", "Select at least one available shift.")
         : "/opportunities",
     );
   }
@@ -58,8 +48,6 @@ export async function submitOpportunityRegistration(formData: FormData) {
   const { error } = await rpcClient.schema("core").rpc("submit_keluarga_registration", {
     p_event_id: parsed.data.eventId,
     p_timeslot_ids: parsed.data.timeslotIds,
-    p_display_name: parsed.data.displayName,
-    p_mobile: parsed.data.mobile,
   });
 
   if (error) {

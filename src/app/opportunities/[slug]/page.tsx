@@ -11,6 +11,8 @@ import {
 } from "@/lib/phaseone/packages";
 import { createClient } from "@/lib/supabase/server";
 import { submitOpportunityRegistration } from "./actions";
+import { OpportunityAuthOverlay } from "./auth-overlay";
+import { OpportunityExploration } from "./opportunity-exploration";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -25,6 +27,46 @@ function parameter(
 ): string | undefined {
   const value = values[key];
   return Array.isArray(value) ? value[0] : value;
+}
+
+function parameters(
+  values: Record<string, string | string[] | undefined>,
+  key: string,
+): string[] {
+  const value = values[key];
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function singaporeDateParts(value: string) {
+  const parts = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).formatToParts(new Date(value));
+
+  return {
+    day: parts.find((part) => part.type === "day")?.value ?? "",
+    month: parts.find((part) => part.type === "month")?.value ?? "",
+    year: parts.find((part) => part.type === "year")?.value ?? "",
+  };
+}
+
+function formatOpportunityDateRange(startsAt: string, endsAt: string | null) {
+  const start = singaporeDateParts(startsAt);
+  const end = singaporeDateParts(endsAt ?? startsAt);
+
+  if (start.year === end.year && start.month === end.month && start.day === end.day) {
+    return `${start.day} ${start.month} ${start.year}`;
+  }
+  if (start.year === end.year && start.month === end.month) {
+    return `${start.day} – ${end.day} ${start.month} ${start.year}`;
+  }
+  if (start.year === end.year) {
+    return `${start.day} ${start.month} – ${end.day} ${end.month} ${start.year}`;
+  }
+  return `${start.day} ${start.month} ${start.year} – ${end.day} ${end.month} ${end.year}`;
 }
 
 function statusLabel(status: string): string {
@@ -97,53 +139,40 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
   if (!programme) notFound();
 
   const { event, timeslots } = programme;
-  const parameters = await searchParams;
-  const success = parameter(parameters, "success");
-  const error = parameter(parameters, "error");
+  const requestParameters = await searchParams;
+  const success = parameter(requestParameters, "success");
+  const error = parameter(requestParameters, "error");
+  const requestedShiftIds = new Set(parameters(requestParameters, "timeslot"));
+  const validShiftIds = new Set(timeslots.map((timeslot) => timeslot.id));
+
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub ?? null;
 
-  let account: { display_name: string | null } | null = null;
-  let volunteer: {
-    id: string;
-    volunteer_code: string;
-    display_name: string | null;
-    mobile: string | null;
-  } | null = null;
   let registration: {
     id: string;
     status: string;
     review_note: string | null;
     submitted_at: string;
   } | null = null;
-  let selectedIds = new Set<string>();
+  let selectedIds = new Set(
+    [...requestedShiftIds].filter((timeslotId) => validShiftIds.has(timeslotId)),
+  );
 
   if (userId) {
-    const [accountResult, volunteerResult] = await Promise.all([
-      supabase
-        .schema("core")
-        .from("user_accounts")
-        .select("display_name")
-        .eq("id", userId)
-        .maybeSingle(),
-      supabase
-        .schema("core")
-        .from("volunteers")
-        .select("id, volunteer_code, display_name, mobile")
-        .eq("auth_user_id", userId)
-        .maybeSingle(),
-    ]);
+    const volunteerResult = await supabase
+      .schema("core")
+      .from("volunteers")
+      .select("id")
+      .eq("auth_user_id", userId)
+      .maybeSingle();
 
-    account = accountResult.data;
-    volunteer = volunteerResult.data;
-
-    if (volunteer) {
+    if (volunteerResult.data) {
       const admin = getPhaseOneAdminClient();
       const registrationResult = await admin
         .from("keluarga_registrations")
         .select("id, status, review_note, submitted_at")
-        .eq("volunteer_id", volunteer.id)
+        .eq("volunteer_id", volunteerResult.data.id)
         .eq("event_id", event.id)
         .maybeSingle();
 
@@ -155,6 +184,7 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
         });
         throw new Error("Registration status could not be loaded");
       }
+
       registration = registrationResult.data;
 
       if (registration) {
@@ -162,9 +192,11 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
           .from("keluarga_registration_shifts")
           .select("timeslot_id")
           .eq("registration_id", registration.id);
+
         if (selectedResult.error) {
           throw new Error("Registration shifts could not be loaded");
         }
+
         selectedIds = new Set(
           (selectedResult.data ?? []).map(({ timeslot_id }) => String(timeslot_id)),
         );
@@ -173,6 +205,15 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
   }
 
   const editable = !registration || registration.status === "pending";
+  const firstTimeslot = timeslots[0] ?? null;
+  const lastTimeslot = timeslots.at(-1) ?? null;
+  const opportunityDateRange =
+    firstTimeslot && lastTimeslot
+      ? formatOpportunityDateRange(
+          firstTimeslot.starts_at,
+          lastTimeslot.ends_at ?? lastTimeslot.starts_at,
+        )
+      : null;
   const descriptionParagraphs: string[] = (
     typeof event.opportunity_description === "string"
       ? event.opportunity_description
@@ -185,180 +226,275 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Volunteer opportunity" lite />
-      <main className="page-frame narrow-frame">
+      {userId ? <OpportunityExploration slug={event.slug} /> : null}
+      <main className="page-frame phaseone-opportunity-detail-frame">
         <Link className="back-link" href="/opportunities">
           ← All opportunities
         </Link>
 
-        <article className="content-detail">
-          <div className="content-card-meta">
-            {event.opportunity_category ? (
-              <span className="tag">{event.opportunity_category}</span>
-            ) : null}
-            <span className="tag tag-accent">KELUARGA registration</span>
+        <article className="content-detail phaseone-opportunity-detail">
+          <div
+            className="phaseone-opportunity-detail-image"
+            style={
+              event.opportunity_image_url
+                ? {
+                    backgroundImage: `url("${event.opportunity_image_url.replace(/"/g, "%22")}")`,
+                  }
+                : undefined
+            }
+            aria-hidden="true"
+          >
+            {!event.opportunity_image_url ? <span>MENDAKI</span> : null}
           </div>
-          <h1>{event.title}</h1>
-          {event.opportunity_summary ? (
-            <p className="lede">{event.opportunity_summary}</p>
-          ) : null}
 
-          <dl className="detail-list">
-            <div>
-              <dt>Venue</dt>
-              <dd>{event.venue ?? "Details to be confirmed"}</dd>
+          <div className="phaseone-opportunity-detail-content">
+            <div className="phaseone-opportunity-pills" aria-label="Opportunity details">
+              {event.opportunity_category ? (
+                <span className="phaseone-opportunity-category">
+                  {event.opportunity_category}
+                </span>
+              ) : null}
+              {opportunityDateRange ? <span>{opportunityDateRange}</span> : null}
+              <span>
+                {timeslots.length} {timeslots.length === 1 ? "shift" : "shifts"}
+              </span>
             </div>
-            <div>
-              <dt>Registration deadline</dt>
-              <dd>
-                {event.registration_deadline
-                  ? formatSingaporeDateTime(event.registration_deadline)
-                  : "No deadline set"}
-              </dd>
-            </div>
-            <div>
-              <dt>Available shifts</dt>
-              <dd>{timeslots.length}</dd>
-            </div>
-          </dl>
 
-          {descriptionParagraphs.length > 0 ? (
-            <div className="prose-block">
-              {descriptionParagraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </div>
-          ) : null}
-
-          {event.opportunity_eligibility ? (
-            <section className="panel">
-              <p className="eyebrow">Eligibility & requirements</p>
-              <p>{event.opportunity_eligibility}</p>
-            </section>
-          ) : null}
-
-          <section className="section panel" aria-labelledby="register-title">
-            <p className="eyebrow">Registration</p>
-            <h2 id="register-title">Register with KELUARGA</h2>
-
-            {success === "registration_submitted" ? (
-              <div className="notice notice-success" role="status">
-                Registration submitted. Volunteer Management will review it in KELUARGA.
-              </div>
-            ) : null}
-            {error ? (
-              <div className="notice notice-error" role="alert">
-                {error}
-              </div>
-            ) : null}
-
-            {registration ? (
-              <div className="notice" role="status">
-                <strong>Status: {statusLabel(registration.status)}</strong>
-                <p>
-                  Submitted {formatSingaporeDateTime(registration.submitted_at)}.
-                  {registration.review_note
-                    ? ` Staff note: ${registration.review_note}`
-                    : ""}
-                </p>
-              </div>
-            ) : null}
-
-            {!userId ? (
-              <>
-                <p>
-                  Sign in or create a KELUARGA account with your email address. You
-                  will return here to select your shift and submit your registration.
-                </p>
-                <Link
-                  className="button button-primary"
-                  href={`/login?next=${encodeURIComponent(`/opportunities/${slug}`)}`}
-                >
-                  Sign in or sign up to register
-                </Link>
-              </>
-            ) : editable ? (
-              <form action={submitOpportunityRegistration} className="phaseone-admin-form">
-                <input name="eventId" type="hidden" value={event.id} />
-                <input name="slug" type="hidden" value={event.slug} />
-
-                <div className="form-field">
-                  <label htmlFor="displayName">Full name</label>
-                  <input
-                    defaultValue={
-                      volunteer?.display_name ?? account?.display_name ?? ""
-                    }
-                    id="displayName"
-                    maxLength={120}
-                    name="displayName"
-                    required
-                  />
-                </div>
-                <div className="form-field">
-                  <label htmlFor="mobile">Mobile number</label>
-                  <input
-                    defaultValue={volunteer?.mobile ?? ""}
-                    id="mobile"
-                    inputMode="tel"
-                    maxLength={40}
-                    name="mobile"
-                  />
-                </div>
-
-                <fieldset className="phaseone-admin-fieldset">
-                  <legend>Select shift(s)</legend>
-                  <div className="record-list">
-                    {timeslots.map((timeslot) => (
-                      <label className="record-card checkbox-row" key={timeslot.id}>
-                        <input
-                          defaultChecked={selectedIds.has(timeslot.id)}
-                          name="timeslotId"
-                          type="checkbox"
-                          value={timeslot.id}
-                        />
-                        <span>
-                          <strong>
-                            {timeslot.label?.trim() ||
-                              formatTimeslotDate(timeslot.starts_at)}
-                          </strong>
-                          <span className="table-subtext">
-                            {formatTimeslotDate(timeslot.starts_at)} ·{" "}
-                            {formatTimeslotTimeRange(timeslot)}
-                            {timeslot.registration_capacity
-                              ? ` · up to ${timeslot.registration_capacity} volunteers`
-                              : ""}
-                          </span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-
-                <button className="button button-primary" type="submit">
-                  {registration ? "Update registration" : "Submit registration"}
-                </button>
-              </form>
-            ) : registration?.status === "confirmed" ? (
-              <div className="actions">
-                {event.is_published ? (
-                  <Link
-                    className="button button-primary"
-                    href={`/journey/${event.slug}`}
-                  >
-                    Open Event Guide
-                  </Link>
-                ) : (
-                  <p className="muted">
-                    Your Event Guide will appear when it is published.
+            <div className="phaseone-opportunity-detail-grid">
+              <div className="phaseone-opportunity-about-column">
+                <h1>{event.title}</h1>
+                {event.opportunity_summary ? (
+                  <p className="phaseone-opportunity-detail-summary">
+                    {event.opportunity_summary}
                   </p>
-                )}
+                ) : null}
+
+                <div className="phaseone-opportunity-facts">
+                  <div>
+                    <span>Venue</span>
+                    <strong>{event.venue ?? "Details to be confirmed"}</strong>
+                    {event.navigation_destination ? (
+                      <small>{event.navigation_destination}</small>
+                    ) : null}
+                  </div>
+                  <div>
+                    <span>Registration closes</span>
+                    <strong>
+                      {event.registration_deadline
+                        ? formatSingaporeDateTime(event.registration_deadline)
+                        : "No deadline set"}
+                    </strong>
+                  </div>
+                </div>
+
+                {descriptionParagraphs.length > 0 ? (
+                  <section
+                    className="phaseone-opportunity-copy"
+                    aria-labelledby="about-opportunity-title"
+                  >
+                    <h2 id="about-opportunity-title">About this opportunity</h2>
+                    <div className="prose-block">
+                      {descriptionParagraphs.map((paragraph) => (
+                        <p key={paragraph}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                {event.opportunity_eligibility ? (
+                  <section
+                    className="phaseone-opportunity-requirements"
+                    aria-labelledby="opportunity-requirements-title"
+                  >
+                    <h2 id="opportunity-requirements-title">
+                      Eligibility &amp; requirements
+                    </h2>
+                    <p>{event.opportunity_eligibility}</p>
+                  </section>
+                ) : null}
               </div>
-            ) : (
-              <p className="muted">
-                This registration has been reviewed. Changes now need to be handled
-                by Volunteer Management.
-              </p>
-            )}
-          </section>
+
+              <aside className="phaseone-opportunity-signup-column">
+                <section
+                  className="phaseone-opportunity-registration"
+                  aria-labelledby="register-title"
+                >
+                  <div className="phaseone-opportunity-registration-heading">
+                    <div>
+                      <h2 id="register-title">
+                        {registration
+                          ? "Your registration"
+                          : "Volunteer for this activity"}
+                      </h2>
+                      <p>
+                        {registration
+                          ? "Review your status or update your shift selection while registration is still pending."
+                          : "Choose the shift or shifts that work for you."}
+                      </p>
+                    </div>
+                    {registration ? (
+                      <span className="status-pill" data-state={registration.status}>
+                        {statusLabel(registration.status)}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {success === "registration_submitted" ? (
+                    <div className="notice notice-success" role="status">
+                      Registration submitted. Volunteer Management will review it in
+                      KELUARGA.
+                    </div>
+                  ) : null}
+
+                  {error ? (
+                    <div className="notice notice-error" role="alert">
+                      {error}
+                    </div>
+                  ) : null}
+
+                  {registration ? (
+                    <p className="phaseone-opportunity-registration-meta">
+                      Submitted {formatSingaporeDateTime(registration.submitted_at)}.
+                      {registration.review_note
+                        ? ` Staff note: ${registration.review_note}`
+                        : ""}
+                    </p>
+                  ) : null}
+
+                  {!userId ? (
+                    <div className="phaseone-opportunity-registration-form">
+                      <fieldset
+                        className="phaseone-opportunity-shifts"
+                        id="opportunity-guest-shifts"
+                      >
+                        <legend>Select shift(s)</legend>
+                        <div className="phaseone-opportunity-shift-grid">
+                          {timeslots.map((timeslot) => (
+                            <label
+                              className="phaseone-opportunity-shift"
+                              key={timeslot.id}
+                            >
+                              <input
+                                defaultChecked={selectedIds.has(timeslot.id)}
+                                name="timeslotId"
+                                type="checkbox"
+                                value={timeslot.id}
+                              />
+                              <span>
+                                <strong>
+                                  {timeslot.label?.trim() ||
+                                    formatTimeslotDate(timeslot.starts_at)}
+                                </strong>
+                                <small>
+                                  {formatTimeslotDate(timeslot.starts_at)} ·{" "}
+                                  {formatTimeslotTimeRange(timeslot)}
+                                </small>
+                                {timeslot.registration_capacity ? (
+                                  <small>
+                                    Up to {timeslot.registration_capacity} volunteers
+                                  </small>
+                                ) : null}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+
+                      <OpportunityAuthOverlay
+                        slug={event.slug}
+                        shiftSelectorId="opportunity-guest-shifts"
+                      />
+                    </div>
+                  ) : editable ? (
+                    <form
+                      action={submitOpportunityRegistration}
+                      className="phaseone-admin-form phaseone-opportunity-registration-form"
+                    >
+                      <input name="eventId" type="hidden" value={event.id} />
+                      <input name="slug" type="hidden" value={event.slug} />
+
+                      <fieldset className="phaseone-opportunity-shifts">
+                        <legend>Select shift(s)</legend>
+                        <div className="phaseone-opportunity-shift-grid">
+                          {timeslots.map((timeslot) => (
+                            <label
+                              className="phaseone-opportunity-shift"
+                              key={timeslot.id}
+                            >
+                              <input
+                                defaultChecked={selectedIds.has(timeslot.id)}
+                                name="timeslotId"
+                                type="checkbox"
+                                value={timeslot.id}
+                              />
+                              <span>
+                                <strong>
+                                  {timeslot.label?.trim() ||
+                                    formatTimeslotDate(timeslot.starts_at)}
+                                </strong>
+                                <small>
+                                  {formatTimeslotDate(timeslot.starts_at)} ·{" "}
+                                  {formatTimeslotTimeRange(timeslot)}
+                                </small>
+                                {timeslot.registration_capacity ? (
+                                  <small>
+                                    Up to {timeslot.registration_capacity} volunteers
+                                  </small>
+                                ) : null}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+
+                      <div className="phaseone-opportunity-registration-action">
+                        <button className="button button-primary" type="submit">
+                          {registration
+                            ? "Update registration"
+                            : "Submit registration"}
+                        </button>
+                      </div>
+                    </form>
+                  ) : registration?.status === "confirmed" ? (
+                    <div className="phaseone-opportunity-confirmed-action">
+                      {event.is_published ? (
+                        <Link
+                          className="button button-primary"
+                          href={`/journey/${event.slug}`}
+                        >
+                          Open Event Guide
+                        </Link>
+                      ) : (
+                        <p className="muted">
+                          Your Event Guide will appear when it is published.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="muted">
+                      This registration has been reviewed. Changes now need to be
+                      handled by Volunteer Management.
+                    </p>
+                  )}
+                </section>
+
+                <div className="phaseone-opportunity-consent-note">
+                  <p>
+                    By volunteering for this activity, you consent to the sharing of
+                    your personal information with MENDAKI and agree to be registered
+                    as a MENDAKI volunteer. MENDAKI may contact you with updates on
+                    future volunteer opportunities.
+                  </p>
+                  <p>
+                    Please also note that photos, videos, and/or interviews may be
+                    captured during events and used by Yayasan MENDAKI and/or the
+                    organiser for marketing and publicity purposes. Volunteers will be
+                    notified in advance should there be any changes to the programme.
+                  </p>
+                </div>
+              </aside>
+            </div>
+          </div>
         </article>
       </main>
     </div>

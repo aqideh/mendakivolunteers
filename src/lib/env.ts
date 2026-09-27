@@ -31,7 +31,7 @@ function inferVercelAppUrl(environment: Environment): string | undefined {
   const hostname =
     environment.VERCEL_ENV === "production"
       ? environment.VERCEL_PROJECT_PRODUCTION_URL ?? environment.VERCEL_URL
-      : environment.VERCEL_URL;
+      : environment.VERCEL_BRANCH_URL ?? environment.VERCEL_URL;
 
   return hostname ? `https://${hostname}` : undefined;
 }

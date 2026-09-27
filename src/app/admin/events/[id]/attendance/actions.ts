@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { requireEventManager } from "@/lib/auth/event-access";
+import {
+  requireAttendanceOperator,
+  requireEventManager,
+} from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const attendanceActionSchema = z.object({
@@ -288,7 +291,7 @@ export async function recordAttendanceQuickAction(input: {
   }
 
   const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
-  const { userId } = await requireEventManager(returnPath);
+  const { userId } = await requireAttendanceOperator(returnPath);
   const admin = getPhaseOneAdminClient();
   const { data, error } = await admin.rpc("phaseone_apply_attendance_transition", {
     p_event_id: parsed.data.eventId,
@@ -338,7 +341,7 @@ export async function extendAttendanceToShift(input: {
   }
 
   const returnPath = attendancePath(parsed.data.eventId, parsed.data.currentTimeslotId);
-  const { userId } = await requireEventManager(returnPath);
+  const { userId } = await requireAttendanceOperator(returnPath);
   const admin = getPhaseOneAdminClient();
   const { data, error } = await admin.rpc("phaseone_extend_attendance_session", {
     p_event_id: parsed.data.eventId,

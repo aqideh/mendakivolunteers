@@ -1,22 +1,33 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { PortalHeader } from "@/components/portal-header";
+import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 import styles from "./mentor.module.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Volunteer as a Mentor",
-  description: "Helping potential bloom through meaningful mentoring with MENDAKI.",
+  description:
+    "#amPowered is a structured mentoring programme that helps Malay/Muslim youth aged 13 to 18 discover their strengths and maximise their potential.",
 };
 
-export default function MentorPage() {
+export default async function MentorPage() {
+  const heroImage = await getLandingPageImage("mentor");
+
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader status="Community volunteers" lite />
+      <PortalHeader status="Volunteers" lite />
       <main className={styles.frame}>
-        <section className={styles.hero} aria-labelledby="mentor-title">
+        <section
+          className={styles.hero}
+          aria-labelledby="mentor-title"
+          style={{ "--mentor-hero-image": `url("${heroImage}")` } as CSSProperties}
+        >
           <div className={styles.heroInner}>
             <Link className={styles.backLink} href="/">
               <span aria-hidden="true">←</span>
@@ -25,17 +36,20 @@ export default function MentorPage() {
 
             <div className={styles.heroContent}>
               <div className={styles.heroCopy}>
-                <h1 id="mentor-title">
-                  Helping Potential Bloom Through Meaningful Mentoring
-                </h1>
+                <h1 id="mentor-title">Bloom Through Meaningful Mentoring.</h1>
                 <p className={styles.lede}>
-                  The right mentor. The right stage. For the right outcome.
+                  #amPowered is a structured mentoring programme that helps
+                  Malay/Muslim youth aged 13 to 18 discover their strengths and
+                  maximise their potential. Through guidance and meaningful
+                  connections, youth are supported to remain in school, set goals,
+                  explore education and career pathways, and build strong networks
+                  for their future.
                 </p>
               </div>
 
               <Link
                 className={styles.primaryAction}
-                href="/volunteer/interest?area=mentor"
+                href="https://form.gov.sg/6ab08df24e9cff0f3ac1af45"
               >
                 <span>Volunteer</span>
                 <span aria-hidden="true">↗</span>
@@ -64,7 +78,6 @@ export default function MentorPage() {
             />
           </div>
         </section>
-
       </main>
     </div>
   );

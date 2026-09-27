@@ -33,9 +33,21 @@ Configure the **Preview** environment in the KELUARGA Vercel project with:
 - `APP_ENV=staging`.
 - `AUTH_ALLOW_SIGN_UP=true`.
 
-`NEXT_PUBLIC_APP_URL` may be omitted for Vercel Preview deployments because the application infers the deployment URL from Vercel.
+`NEXT_PUBLIC_APP_URL` may be omitted for Vercel Preview deployments. The application uses Vercel's stable branch URL for authentication callbacks and only falls back to the individual deployment URL.
 
 Keep **Production** environment variables pointed at production.
+
+## Hosted Supabase Auth configuration
+
+Repository `supabase/config.toml` configures local Supabase development only. It does not change the hosted staging project's Authentication settings.
+
+For **Keluarga Staging** (`nbnglontqrxywppmmhfm`), configure Authentication → URL Configuration as follows:
+
+- **Site URL:** `https://keluargastaging.vercel.app`
+- **Redirect URLs:** allow `https://*-mendakivolunteers.vercel.app/**` so the stable Vercel branch URL used by preview deployments can return to `/auth/confirm`.
+- Keep localhost redirect URLs only for deliberate local-development use; localhost must never be the hosted staging Site URL.
+
+The hosted email template must also mirror `supabase/templates/magic_link.html`. In particular, the link must route to `{{ .RedirectTo }}` with `token_hash={{ .TokenHash }}` and `type=email`, so KELUARGA's `/auth/confirm` page verifies the token and completes account provisioning. Do not use the default direct Supabase `/verify` confirmation link for this flow.
 
 ## Build-time safety gate
 
@@ -76,4 +88,4 @@ Normal development should target `staging`. Production releases are explicit.
 
 ## Initial configuration checkpoint
 
-The initial Vercel Preview environment was configured on 2026-09-24. This commit exists to trigger and verify the first staging deployment against the isolated staging Supabase project.
+The initial Vercel Preview environment was configured on 2026-09-24. Authentication URL and email-template configuration is a separate hosted Supabase setting and must be verified whenever a new Supabase environment is introduced.

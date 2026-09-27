@@ -119,7 +119,7 @@ values
   ),
   (
     '60000000-0000-4000-8000-000000000002',
-    'attendance_manager',
+    'staff',
     'Staff password setup database test'
   );
 

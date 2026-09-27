@@ -11,21 +11,18 @@ const states = [
     title: "Serve with a Heart, One Keluarga.",
     description:
       "Join upcoming community activities and events that match your interests and availability. Contribute your time through practical volunteer roles that support programme delivery.",
-    background: "/home/keluarga-volunteers-hero.jpeg",
   },
   {
     key: "contribute",
     title: "Transform Ideas into Community Impact",
     description:
       "Have an idea that benefits MENDAKI volunteers? Individuals, community groups, and organisations are welcome to propose projects that enhance volunteers' skills, well-being, recognition, or overall volunteering experience.",
-    background: "/home/keluarga-volunteers-hero.jpeg",
   },
   {
     key: "donate",
     title: "Every Gift Creates Impact",
     description:
       "Your contribution supports MENDAKI's efforts to uplift individuals and families through education and community programmes. Every donation helps create opportunities, empower aspirations and build brighter futures for the Malay/Muslim community.",
-    background: "/volunteer/mentor/mendaki-ampowered.png",
   },
 ] as const;
 
@@ -47,13 +44,11 @@ const ctas = [
   },
 ] as const;
 
-export function ContributorHero() {
+export function ContributorHero({ heroImage }: { heroImage: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const timer = window.setInterval(() => {
       setActiveIndex((index) => (index + 1) % states.length);
@@ -73,7 +68,7 @@ export function ContributorHero() {
                 : styles.heroBackground
             }
             key={state.key}
-            style={{ "--state-image": `url("${state.background}")` } as CSSProperties}
+            style={{ "--state-image": `url("${heroImage}")` } as CSSProperties}
           />
         ))}
       </div>
@@ -115,35 +110,17 @@ export function ContributorHero() {
                 ? styles.primaryAction
                 : styles.secondaryAction;
 
-              if (cta.href.startsWith("#")) {
-                return (
-                  <a className={className} href={cta.href} key={cta.key}>
-                    <span>{cta.label}</span>
-                    <span aria-hidden="true">↓</span>
-                  </a>
-                );
-              }
-
-              if (cta.href.startsWith("http")) {
-                return (
-                  <a
-                    className={className}
-                    href={cta.href}
-                    key={cta.key}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span>{cta.label}</span>
-                    <span aria-hidden="true">↗</span>
-                  </a>
-                );
-              }
-
               return (
-                <Link className={className} href={cta.href} key={cta.key}>
+                <a
+                  className={className}
+                  href={cta.href}
+                  key={cta.key}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   <span>{cta.label}</span>
-                  <span aria-hidden="true">→</span>
-                </Link>
+                  <span aria-hidden="true">↗</span>
+                </a>
               );
             })}
           </div>
