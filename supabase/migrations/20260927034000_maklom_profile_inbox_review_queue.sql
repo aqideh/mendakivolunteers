@@ -7,7 +7,6 @@ select
   i.id,
   i.volunteer_id,
   v.id as maklom_volunteer_id,
-  v.volunteer_code,
   v.name as volunteer_name,
   v.email as volunteer_email,
   v.phone as volunteer_phone,
@@ -29,7 +28,7 @@ select
   i.created_at,
   i.updated_at
 from public.maklom_profile_inbox i
-left join public.maklom_volunteer_search_directory v
+left join public.volunteers v
   on v.core_volunteer_id = i.volunteer_id
 left join public.phaseone_events e
   on e.id = i.event_id;
