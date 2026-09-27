@@ -1,6 +1,6 @@
 # Known issues, limitations and technical debt
 
-**Last reviewed:** 24 September 2026  
+**Last reviewed:** 27 September 2026  
 **Reference branch:** `staging`
 
 This register reflects the approved KELUARGA + MakLom operating model. See `docs/architecture/keluarga-maklom-domain-architecture.md`.
@@ -15,7 +15,6 @@ This register reflects the approved KELUARGA + MakLom operating model. See `docs
 | Lead schema coordination | Resolved on staging | KELUARGA staging and MakLom briefly had two incompatible `volunteer_leads` proposals. | Staging now follows MakLom's text-ID/richer lifecycle contract and maps conversion to the canonical UUID. | Keep one shared contract and migrate production only from this reconciled design. |
 | Approved contribution workflow UI | Database foundation live on staging | KELUARGA operational sessions create review candidates, but MakLom still needs a complete staff UI to approve/adjust/reject them. | Records remain pending/needs-review until MakLom acts; KELUARGA cannot self-approve hours. | Build MakLom contribution review queue before production launch of approved-hours display. |
 | Profile-change review coverage | Mobile workflow live in MakLom production | The current inbox contract covers KELUARGA mobile-number changes; newer private-profile fields are not yet routed through this review queue. | MakLom now provides searchable approve/reject/apply review with reviewer notes and stale-value conflict protection for mobile changes. | Decide which newer private-profile fields require MakLom approval versus direct volunteer ownership, then extend the inbox contract deliberately. |
-| Insight/review longitudinal UI | Database foundation live on staging | Accepted insights/reviews enter a MakLom inbox but there is no finished cross-event review surface yet. | Event/source provenance is preserved and no permanent profile mutation occurs automatically. | Build MakLom inbox and longitudinal staff view. |
 | Attendance-derived points | Intentionally paused | Previous reconciliation depended on YM Hub verified attendance, which is no longer the current operating model. | Manual audited staff-recognition points remain available. | Define an approved points rule based on MakLom-approved contribution records before reactivating automatic awards. |
 | Dormant YM Hub objects | Technical debt / future infrastructure | `ymhub` and `integration.ymhub_*` schemas still exist and old code/docs may reference them. | Volunteer dashboard and Points no longer require YM Hub on staging. | Continue removing stale runtime references; retain schemas only as dormant future infrastructure until cleanup is approved. |
 | Legacy KELUARGA recruitment tables | Historical only | `keluarga_recruitment_applications` remains in the database. | Public and admin routes are retired; write RPC privileges are revoked on staging. | Keep for provenance until retention requirements permit archival/removal. |
@@ -65,6 +64,7 @@ Event reviews and insights describe a specific role/event context. They must ret
 | YM Hub dashboard dependency | Volunteer dashboard and Points page no longer require YM Hub projection state on staging. |
 | Continuous shifts | Attendance supports continuity across adjacent shifts and final checkout. |
 | Walk-in corrections | Corrections propagate across matching event shift rows while retaining event identity continuity. |
+| Insight/review longitudinal UI | MakLom now provides a reviewed cross-event inbox with source/event provenance, staff-edited interpretation, accept/dismiss controls, unmatched-record safeguards and longitudinal volunteer history. |
 
 ## Recording new defects
 

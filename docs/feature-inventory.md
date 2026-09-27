@@ -1,6 +1,6 @@
 # Feature inventory
 
-**Snapshot date:** 25 September 2026  
+**Snapshot date:** 27 September 2026  
 **Reference branch:** `staging`
 
 This inventory records implemented capability in the current KELUARGA + MakLom architecture. It is not a backlog.
@@ -211,12 +211,12 @@ Shared-platform foundation implemented:
 Implemented in MakLom:
 
 - contribution review UI;
-- profile-change review UI for the current mobile-change inbox contract.
+- profile-change review UI for the current mobile-change inbox contract;
+- Insights & Reviews inbox with event/source provenance, reviewed interpretation, accept/dismiss workflow, unmatched-record safeguards and longitudinal volunteer history.
 
 Still to complete in MakLom:
 
-- insight/review longitudinal inbox;
-- cross-event volunteer intelligence/reporting.
+- broader cross-event volunteer intelligence/reporting beyond the reviewed insight/review history surface.
 
 ## 8. Integrations
 
@@ -255,4 +255,4 @@ Implemented:
 
 ## 10. Current limitations
 
-See [Known issues](known-issues.md) and [Development roadmap](development-roadmap.md) for remaining work. The largest active gaps are the MakLom insight/review inbox, production reconciliation/promotion, end-to-end UAT and policy-dependent recognition automation.
+See [Known issues](known-issues.md) and [Development roadmap](development-roadmap.md) for remaining work. The largest active gaps are end-to-end UAT, OneMap staging activation, opening shirt-stock reconciliation and broader cross-event Volunteer Management intelligence.
