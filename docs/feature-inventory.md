@@ -151,6 +151,7 @@ Implemented on the current staging architecture:
 - one canonical `core.volunteers.id`;
 - immutable `KELxxxxx` human identifier;
 - MakLom `public.volunteers.core_volunteer_id` profile linkage;
+- idempotent MakLom profile-extension provisioning for KELUARGA account creation and integrated manual-roster volunteer creation;
 - retained legacy aliases;
 - FormSG/MakLom volunteer-lead model;
 - deliberate lead conversion with duplicate/match safeguards;
@@ -212,11 +213,12 @@ Implemented in MakLom:
 
 - contribution review UI;
 - profile-change review UI for the current mobile-change inbox contract;
-- Insights & Reviews inbox with event/source provenance, reviewed interpretation, accept/dismiss workflow, unmatched-record safeguards and longitudinal volunteer history.
+- Insights & Reviews inbox with event/source provenance, reviewed interpretation, accept/dismiss workflow, unmatched-record safeguards and longitudinal volunteer history;
+- Volunteer Intelligence dashboard with cross-event volunteer history, repeat engagement, mature-cohort 30/60/90-day retention, monthly participation, separately reported historical credited time and MakLom-approved KELUARGA contribution time, reviewed observation counts, event impact aggregation, population filters and CSV export.
 
-Still to complete in MakLom:
+Current intelligence limitation:
 
-- broader cross-event volunteer intelligence/reporting beyond the reviewed insight/review history surface.
+- event impact reporting only becomes substantive once staff record impact metrics consistently; matching label + unit pairs aggregate while incompatible measures remain separate.
 
 ## 8. Integrations
 
@@ -255,4 +257,4 @@ Implemented:
 
 ## 10. Current limitations
 
-See [Known issues](known-issues.md) and [Development roadmap](development-roadmap.md) for remaining work. The largest active gaps are end-to-end UAT, OneMap staging activation, opening shirt-stock reconciliation and broader cross-event Volunteer Management intelligence.
+See [Known issues](known-issues.md) and [Development roadmap](development-roadmap.md) for remaining work. The largest active gaps are end-to-end UAT, OneMap staging activation, opening shirt-stock reconciliation and legacy cleanup.

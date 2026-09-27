@@ -1,6 +1,6 @@
 # Current system architecture
 
-**Last reviewed:** 24 September 2026  
+**Last reviewed:** 27 September 2026  
 **Reference branch:** `staging`
 
 ## Mission and system boundary
@@ -59,6 +59,8 @@ Rules:
 - email/mobile may assist matching but are not permanent identity keys;
 - ambiguous matches require staff review;
 - legacy MakLom IDs are aliases, not a second person identity;
+- any canonical volunteer created through KELUARGA account provisioning or an integrated manual roster receives exactly one MakLom `public.volunteers` profile extension;
+- MakLom profile provisioning is idempotent and never creates a second canonical person;
 - a volunteer may exist without a YM Hub/Salesforce record.
 
 ## Domain ownership
@@ -135,6 +137,24 @@ KELUARGA self-service fields remain deliberately narrow.
 - sensitive/managed longitudinal fields belong to MakLom;
 - event insights/reviews retain event context and do not directly become permanent profile facts.
 
+## Cross-event Volunteer Management intelligence
+
+MakLom derives reporting from one canonical volunteer identity while preserving source semantics.
+
+Counting rules:
+
+- one participation = one canonical volunteer + one deduplicated attended event;
+- legacy MakLom attendance and KELUARGA attendance merge only when an explicit KELUARGA event link identifies the same event;
+- repeat engagement = at least two distinct attended events across available history;
+- 30/60/90-day retention = a later distinct event within the window after the volunteer's first recorded event;
+- retention denominators include only first-event cohorts old enough to have fully matured through the requested window;
+- historical credited attendance minutes remain separate from MakLom-approved KELUARGA contribution minutes;
+- raw KELUARGA attendance never appears as approved hours;
+- reviewed observation metrics count only MakLom-accepted inbox records;
+- impact metrics aggregate only when both label and unit match.
+
+The Volunteer Intelligence surface uses security-invoker read models and grants MakLom members only the KELUARGA event/roster/session columns needed for reporting.
+
 ## Authorization
 
 Shared database does not mean shared permissions.
@@ -178,7 +198,7 @@ Their presence does not make them active sources of truth.
 
 ## Architecture invariants
 
-1. One person, one canonical `core.volunteers.id`.
+1. One person, one canonical `core.volunteers.id`; KELUARGA account/manual-roster creation must also maintain exactly one MakLom profile extension for that UUID.
 2. Email/mobile are matching evidence, not permanent joins.
 3. A FormSG respondent is a lead until deliberate conversion.
 4. KELUARGA owns new registrations, rosters and operational attendance.

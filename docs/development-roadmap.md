@@ -26,7 +26,7 @@ Work through these in order unless a production defect takes priority.
 - [ ] **Run end-to-end shared-platform UAT.** FormSG lead -> MakLom conversion -> KELUARGA registration -> roster -> attendance -> contribution review -> approved hours on dashboard.
 - [ ] **Clean stale repository state.** Close/reconcile obsolete PRs/issues and remove stale runtime/document references to superseded YM Hub, Volunteer.gov.sg and KELUARGA recruitment architecture.
 - [x] **Define and implement recognition policy v1.** Approved contributions, engagement caps, 15/30/60-hour bonuses, automatic badges and correction reversals. Referral-success criteria remain to be defined separately.
-- [ ] **Build cross-event Volunteer Management intelligence.** Volunteer history, accepted insights/reviews, repeat engagement, contribution trends, retention and impact reporting with explicit denominator/deduplication rules.
+- [x] **Build cross-event Volunteer Management intelligence.** MakLom now provides deduplicated volunteer/event history, repeat engagement, 30/60/90-day mature-cohort retention, monthly participation, separated historical vs approved KELUARGA hours, reviewed observation counts, impact aggregation and filtered CSV export.
 
 ## Current platform priorities
 
@@ -63,11 +63,11 @@ Work through these in order unless a production defect takes priority.
 
 
 
-- cross-event volunteer history;
-- approved contribution reporting;
-- retention/repeat engagement;
-- participation and hours metrics with explicit counting rules;
-- reviewed skill/interest development evidence.
+- [x] cross-event volunteer history;
+- [x] approved contribution reporting with provenance separated from historical credited time;
+- [x] retention/repeat engagement;
+- [x] participation and hours metrics with explicit counting rules;
+- [x] reviewed observation evidence and event impact aggregation.
 
 ### P4 — legacy retirement
 
