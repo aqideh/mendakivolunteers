@@ -59,6 +59,8 @@ Rules:
 - email/mobile may assist matching but are not permanent identity keys;
 - ambiguous matches require staff review;
 - legacy MakLom IDs are aliases, not a second person identity;
+- any canonical volunteer created through KELUARGA account provisioning or an integrated manual roster receives exactly one MakLom `public.volunteers` profile extension;
+- MakLom profile provisioning is idempotent and never creates a second canonical person;
 - a volunteer may exist without a YM Hub/Salesforce record.
 
 ## Domain ownership
@@ -196,7 +198,7 @@ Their presence does not make them active sources of truth.
 
 ## Architecture invariants
 
-1. One person, one canonical `core.volunteers.id`.
+1. One person, one canonical `core.volunteers.id`; KELUARGA account/manual-roster creation must also maintain exactly one MakLom profile extension for that UUID.
 2. Email/mobile are matching evidence, not permanent joins.
 3. A FormSG respondent is a lead until deliberate conversion.
 4. KELUARGA owns new registrations, rosters and operational attendance.
