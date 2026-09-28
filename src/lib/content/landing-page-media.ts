@@ -55,7 +55,7 @@ export const landingPageDefinitions: readonly LandingPageDefinition[] = [
   },
   {
     key: "specialist",
-    label: "Professional",
+    label: "Specialist",
     href: "/professionals",
     defaultImageUrl: "/home/keluarga-volunteers-hero.jpeg",
   },
