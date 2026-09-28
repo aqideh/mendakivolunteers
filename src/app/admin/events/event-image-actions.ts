@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireProgrammeManager } from "@/lib/auth/event-access";
 import {
   eventImageBucket,
   eventImageMaxBytes,
@@ -61,7 +61,7 @@ export async function requestEventImageUpload(input: {
     throw new Error("Opportunity images must be 1 MB or smaller.");
   }
 
-  await requireEventManager(`/admin/events/${eventId}/edit`);
+  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
   await getEvent(eventId);
 
   const storagePath = `${eventId}/${randomUUID()}.webp`;
@@ -89,7 +89,7 @@ export async function attachEventImage(input: {
     throw new Error("Invalid opportunity image path.");
   }
 
-  await requireEventManager(`/admin/events/${eventId}/edit`);
+  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
   const event = await getEvent(eventId);
   const admin = getPhaseOneAdminClient();
   const publicUrl = admin.storage
@@ -125,7 +125,7 @@ export async function attachEventImage(input: {
 
 export async function removeEventImage(eventIdValue: string) {
   const eventId = eventIdSchema.parse(eventIdValue);
-  await requireEventManager(`/admin/events/${eventId}/edit`);
+  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
   const event = await getEvent(eventId);
   const admin = getPhaseOneAdminClient();
 
