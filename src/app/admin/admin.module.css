@@ -6,12 +6,12 @@
 .workspace {
   display: grid;
   grid-template-columns: 4.75rem minmax(0, 1fr);
-  min-height: calc(100vh - 7rem);
+  min-height: 100vh;
   overflow: hidden;
-  border: 1px solid rgba(55, 58, 54, 0.12);
-  border-radius: 1.6rem;
+  border: 0;
+  border-radius: 0;
   background: #121311;
-  box-shadow: 0 24px 70px rgba(35, 37, 33, 0.14);
+  box-shadow: none;
 }
 
 .rail {
@@ -402,14 +402,10 @@
 }
 
 @media (max-width: 720px) {
-  .page {
-    width: min(100% - 0.75rem, 86rem);
-    padding-top: 0.55rem;
-  }
-
   .workspace {
     grid-template-columns: 1fr;
-    border-radius: 1.15rem;
+    min-height: 100vh;
+    border-radius: 0;
   }
 
   .rail {
