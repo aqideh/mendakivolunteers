@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Volunteer as a Mentor",
   description:
-    "#amPowered is a structured mentoring programme that helps Malay/Muslim youth aged 13 to 18 discover their strengths and maximise their potential.",
+    "Share your experience and build supportive relationships with youths. Help young people recognise their strengths, explore opportunities and set meaningful goals. Through ongoing conversations and activities, encourage them to take confident steps towards their future.",
 };
 
 export default async function MentorPage() {
@@ -38,12 +38,10 @@ export default async function MentorPage() {
               <div className={styles.heroCopy}>
                 <h1 id="mentor-title">Bloom Through Meaningful Mentoring.</h1>
                 <p className={styles.lede}>
-                  #amPowered is a structured mentoring programme that helps
-                  Malay/Muslim youth aged 13 to 18 discover their strengths and
-                  maximise their potential. Through guidance and meaningful
-                  connections, youth are supported to remain in school, set goals,
-                  explore education and career pathways, and build strong networks
-                  for their future.
+                  Share your experience and build supportive relationships with youths.
+                  Help young people recognise their strengths, explore opportunities and
+                  set meaningful goals. Through ongoing conversations and activities,
+                  encourage them to take confident steps towards their future.
                 </p>
               </div>
 
