@@ -14,7 +14,10 @@ import {
   sortTimeslots,
   type VolunteerTimeslot,
 } from "@/lib/phaseone/packages";
-import { programmeRundownBucket } from "@/lib/phaseone/programme-rundown";
+import {
+  programmeRundownBucket,
+  programmeRundownSignedUrlTtlSeconds,
+} from "@/lib/phaseone/programme-rundown";
 
 import styles from "./journey-detail.module.css";
 
@@ -130,10 +133,33 @@ export default async function EventGuidePage({ params }: EventGuidePageProps) {
   }
 
   const timeslots = sortTimeslots(timeslotResult.data as VolunteerTimeslot[]);
-  const rundownImages = (rundownResult.data ?? []).map((image) => ({
-    id: String(image.id),
-    url: supabase.storage.from(programmeRundownBucket).getPublicUrl(String(image.storage_path)).data.publicUrl,
-  }));
+  const rundownRows = rundownResult.data ?? [];
+  const rundownSignedUrls = await Promise.all(
+    rundownRows.map((image) =>
+      supabase.storage
+        .from(programmeRundownBucket)
+        .createSignedUrl(
+          String(image.storage_path),
+          programmeRundownSignedUrlTtlSeconds,
+        ),
+    ),
+  );
+  const rundownImages = rundownRows.map((image, index) => {
+    const signed = rundownSignedUrls[index];
+    if (signed?.error || !signed?.data?.signedUrl) {
+      console.error("Unable to sign programme rundown image", {
+        eventId: volunteerEvent.id,
+        imageId: image.id,
+        message: signed?.error?.message,
+      });
+      throw new Error("Programme rundown image could not be loaded");
+    }
+
+    return {
+      id: String(image.id),
+      url: signed.data.signedUrl,
+    };
+  });
   const briefing = evaluateBriefingAccess({
     isPublished: true,
     briefingUrl: volunteerEvent.briefing_url,
