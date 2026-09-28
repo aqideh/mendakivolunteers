@@ -32,6 +32,11 @@ const tools: readonly AdminTool[] = [
     description: "Upload and set hero photos for Home and the five volunteer landing pages.",
   },
   {
+    href: "/admin/content/professional-events",
+    title: "Professional events",
+    description: "Manage Professional Network event cards separately from volunteer opportunities.",
+  },
+  {
     href: "/admin/events",
     title: "Event Operations",
     description: "Manage events, rosters, attendance, QR check-in and event-day operations.",
