@@ -1,6 +1,6 @@
 # Development roadmap
 
-**Last reviewed:** 27 September 2026  
+**Last reviewed:** 28 September 2026  
 **Reference branch:** `staging`
 
 ## Current mission
@@ -23,7 +23,7 @@ Work through these in order unless a production defect takes priority.
 - [ ] **Activate OneMap address enrichment in staging.** The server-side integration is implemented: postal code -> verified address/coordinates -> planning area -> GE2025 GRC/SMC. Add the staging OneMap credentials in Vercel, then run live postal-code UAT and confirm derived geography before marking complete.
 - [ ] **Load and reconcile opening volunteer-shirt stock.** Enter the physical stocktake by type/size and record known historical shirt recipients before using first-event issuance operationally.
 - [ ] **Run full Event Operations UAT.** Single shifts, adjacent/overlapping shifts, gaps, early/missing checkout, walk-ins, manual rosters, cancellations, corrections, QR, mobile event-day use and first-shirt issuance.
-- [ ] **Run end-to-end shared-platform UAT.** FormSG lead -> MakLom conversion -> KELUARGA registration -> roster -> attendance -> contribution review -> approved hours on dashboard.
+- [x] **Run end-to-end shared-platform UAT.** Passed on staging on 28 September 2026 with rollback-only data and permanent regression coverage: FormSG lead -> MakLom conversion -> canonical KELUARGA account -> registration -> roster -> attendance -> automatic contribution candidate -> MakLom approval/audit -> approved hours visible through volunteer RLS/dashboard data.
 - [ ] **Clean stale repository state.** Close/reconcile obsolete PRs/issues and remove stale runtime/document references to superseded YM Hub, Volunteer.gov.sg and KELUARGA recruitment architecture.
 - [x] **Define and implement recognition policy v1.** Approved contributions, engagement caps, 15/30/60-hour bonuses, automatic badges and correction reversals. Referral-success criteria remain to be defined separately.
 - [x] **Build cross-event Volunteer Management intelligence.** MakLom now provides deduplicated volunteer/event history, repeat engagement, 30/60/90-day mature-cohort retention, monthly participation, separated historical vs approved KELUARGA hours, reviewed observation counts, impact aggregation and filtered CSV export.
