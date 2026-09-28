@@ -119,8 +119,8 @@ export async function resolveAuthenticatedAttendancePerson(
     data.map((row) => String(row.attendance_person_key)),
   );
 
-  if (personKeys.size !== 1) {
-    console.error("Ambiguous attendance person mapping for authenticated volunteer", {
+  if (data.length !== 1 || personKeys.size !== 1) {
+    console.error("Ambiguous attendance roster mapping for authenticated volunteer", {
       eventId,
       timeslotId,
       userId: identity.userId,
