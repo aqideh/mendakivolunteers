@@ -60,7 +60,7 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
             </p>
           </div>
           <div className="actions">
-            <Link className="button button-secondary" href="/volunteer/professionals">
+            <Link className="button button-secondary" href="/professionals">
               View public page
             </Link>
             <Link className="button button-secondary" href="/admin">
