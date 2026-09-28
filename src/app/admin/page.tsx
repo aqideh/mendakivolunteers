@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { PortalHeader } from "@/components/portal-header";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database";
 
@@ -187,146 +186,142 @@ export default async function AdminPage() {
   const volunteerTool = visibleGroups[1]?.tools.find((tool) => tool.href === "/admin/volunteers");
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Admin" />
-      <main className={`page-frame ${styles.page}`}>
-        <div className={styles.workspace}>
-          <aside className={styles.rail} aria-label="Admin sections">
-            <Link href="/admin" className={styles.railMark} aria-label="Admin home">
-              KM
-            </Link>
+    <main className={styles.viewport}>
+      <div className={styles.workspace}>
+        <aside className={styles.rail} aria-label="Admin sections">
+          <Link href="/admin" className={styles.railMark} aria-label="Admin home">
+            KM
+          </Link>
 
-            <nav className={styles.railNav}>
-              {visibleGroups.map((group, index) => (
-                <a
-                  key={group.id}
-                  className={`${styles.railLink} ${index === 0 ? styles.railLinkActive : ""}`}
-                  href={`#${group.id}`}
-                  aria-label={group.title}
-                  title={group.title}
-                >
-                  {group.title.slice(0, 2).toUpperCase()}
-                </a>
-              ))}
-            </nav>
+          <nav className={styles.railNav}>
+            {visibleGroups.map((group, index) => (
+              <a
+                key={group.id}
+                className={`${styles.railLink} ${index === 0 ? styles.railLinkActive : ""}`}
+                href={`#${group.id}`}
+                aria-label={group.title}
+                title={group.title}
+              >
+                {group.title.slice(0, 2).toUpperCase()}
+              </a>
+            ))}
+          </nav>
 
-            <div className={styles.railSpacer} />
+          <div className={styles.railSpacer} />
 
-            <Link href="/" className={styles.railHome} aria-label="Back to Keluarga MENDAKI">
-              ↗
-            </Link>
-          </aside>
+          <Link href="/" className={styles.railHome} aria-label="Back to Keluarga MENDAKI">
+            ↗
+          </Link>
+        </aside>
 
-          <section className={styles.surface}>
-            <header className={styles.topbar}>
-              <div>
-                <span className={styles.kicker}>Keluarga workspace</span>
-                <h1>Admin</h1>
-                <p>
-                  Manage operations, volunteers, public content and recognition from one workspace.
-                </p>
-              </div>
-              <div className={styles.rolePill}>
-                <span className={styles.roleDot} aria-hidden="true" />
-                {isAdmin ? "Administrator" : "Volunteer Team"}
-              </div>
-            </header>
+        <section className={styles.surface}>
+          <header className={styles.topbar}>
+            <div>
+              <h1>Admin</h1>
+              <p>
+                Manage operations, volunteers, public content and recognition from one workspace.
+              </p>
+            </div>
+            <div className={styles.rolePill}>
+              <span className={styles.roleDot} aria-hidden="true" />
+              {isAdmin ? "Administrator" : "Volunteer Team"}
+            </div>
+          </header>
 
-            <section className={styles.priorityGrid} aria-label="Priority tools">
-              {eventTool ? (
-                <Link href={eventTool.href} className={styles.featureCard}>
-                  <div className={styles.featureIcon}>
-                    <ToolIcon label={eventTool.icon} />
+          <section className={styles.priorityGrid} aria-label="Priority tools">
+            {eventTool ? (
+              <Link href={eventTool.href} className={styles.featureCard}>
+                <div className={styles.featureIcon}>
+                  <ToolIcon label={eventTool.icon} />
+                </div>
+                <h2>{eventTool.title}</h2>
+                <p>{eventTool.description}</p>
+                <span className={styles.featureAction}>
+                  Open workspace <span aria-hidden="true">→</span>
+                </span>
+              </Link>
+            ) : null}
+
+            <div className={styles.quickStack}>
+              {registrationTool ? (
+                <Link href={registrationTool.href} className={styles.quickCard}>
+                  <div className={styles.quickIcon}>
+                    <ToolIcon label={registrationTool.icon} />
                   </div>
-                  <h2>{eventTool.title}</h2>
-                  <p>{eventTool.description}</p>
-                  <span className={styles.featureAction}>
-                    Open workspace <span aria-hidden="true">→</span>
+                  <div className={styles.quickCopy}>
+                    <strong>{registrationTool.title}</strong>
+                    <span>Review active registrations and waitlists.</span>
+                  </div>
+                  <span className={styles.arrow} aria-hidden="true">
+                    →
                   </span>
                 </Link>
               ) : null}
 
-              <div className={styles.quickStack}>
-                {registrationTool ? (
-                  <Link href={registrationTool.href} className={styles.quickCard}>
-                    <div className={styles.quickIcon}>
-                      <ToolIcon label={registrationTool.icon} />
-                    </div>
-                    <div className={styles.quickCopy}>
-                      <strong>{registrationTool.title}</strong>
-                      <span>Review active registrations and waitlists.</span>
-                    </div>
-                    <span className={styles.arrow} aria-hidden="true">
-                      →
-                    </span>
-                  </Link>
-                ) : null}
-
-                {volunteerTool ? (
-                  <Link href={volunteerTool.href} className={styles.quickCard}>
-                    <div className={styles.quickIcon}>
-                      <ToolIcon label={volunteerTool.icon} />
-                    </div>
-                    <div className={styles.quickCopy}>
-                      <strong>{volunteerTool.title}</strong>
-                      <span>Find profiles and manage volunteer records.</span>
-                    </div>
-                    <span className={styles.arrow} aria-hidden="true">
-                      →
-                    </span>
-                  </Link>
-                ) : null}
-              </div>
-            </section>
-
-            <div className={styles.groupStack}>
-              {visibleGroups.map((group) => (
-                <section className={styles.group} id={group.id} key={group.id}>
-                  <div className={styles.groupHeader}>
-                    <h2>{group.title}</h2>
-                    <span>{group.note}</span>
+              {volunteerTool ? (
+                <Link href={volunteerTool.href} className={styles.quickCard}>
+                  <div className={styles.quickIcon}>
+                    <ToolIcon label={volunteerTool.icon} />
                   </div>
-
-                  <div className={styles.toolGrid}>
-                    {group.tools.map((tool) => {
-                      const body = (
-                        <>
-                          <div className={styles.toolIcon}>
-                            <ToolIcon label={tool.icon} />
-                          </div>
-                          <div className={styles.toolCopy}>
-                            <h3>{tool.title}</h3>
-                            <p>{tool.description}</p>
-                          </div>
-                          <span className={styles.toolArrow} aria-hidden="true">
-                            {tool.external ? "↗" : "→"}
-                          </span>
-                        </>
-                      );
-
-                      return tool.external ? (
-                        <a
-                          className={`${styles.toolCard} ${styles.externalCard}`}
-                          href={tool.href}
-                          key={tool.href}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          {body}
-                        </a>
-                      ) : (
-                        <Link className={styles.toolCard} href={tool.href} key={tool.href}>
-                          {body}
-                        </Link>
-                      );
-                    })}
+                  <div className={styles.quickCopy}>
+                    <strong>{volunteerTool.title}</strong>
+                    <span>Find profiles and manage volunteer records.</span>
                   </div>
-                </section>
-              ))}
+                  <span className={styles.arrow} aria-hidden="true">
+                    →
+                  </span>
+                </Link>
+              ) : null}
             </div>
           </section>
-        </div>
-      </main>
-    </div>
+
+          <div className={styles.groupStack}>
+            {visibleGroups.map((group) => (
+              <section className={styles.group} id={group.id} key={group.id}>
+                <div className={styles.groupHeader}>
+                  <h2>{group.title}</h2>
+                  <span>{group.note}</span>
+                </div>
+
+                <div className={styles.toolGrid}>
+                  {group.tools.map((tool) => {
+                    const body = (
+                      <>
+                        <div className={styles.toolIcon}>
+                          <ToolIcon label={tool.icon} />
+                        </div>
+                        <div className={styles.toolCopy}>
+                          <h3>{tool.title}</h3>
+                          <p>{tool.description}</p>
+                        </div>
+                        <span className={styles.toolArrow} aria-hidden="true">
+                          {tool.external ? "↗" : "→"}
+                        </span>
+                      </>
+                    );
+
+                    return tool.external ? (
+                      <a
+                        className={`${styles.toolCard} ${styles.externalCard}`}
+                        href={tool.href}
+                        key={tool.href}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {body}
+                      </a>
+                    ) : (
+                      <Link className={styles.toolCard} href={tool.href} key={tool.href}>
+                        {body}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
