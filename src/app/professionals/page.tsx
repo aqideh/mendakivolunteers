@@ -8,7 +8,7 @@ import { getPublishedProfessionalEvents } from "@/lib/content/professional-event
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Professionals | Keluarga MENDAKI",
+  title: "Specialist | Keluarga MENDAKI",
   description:
     "Join a community of professionals who connect, share knowledge and give back through MENDAKI's Professional Networks.",
 };
