@@ -1,10 +1,9 @@
 import "server-only";
 
 import { cache } from "react";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-import { getPublicConfig } from "@/lib/env";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const professionalEventSchema = z.object({
   id: z.string().uuid(),
@@ -20,14 +19,7 @@ const professionalEventSchema = z.object({
 export type ProfessionalEvent = z.infer<typeof professionalEventSchema>;
 
 export const getPublishedProfessionalEvents = cache(async (): Promise<ProfessionalEvent[]> => {
-  const { supabaseUrl, supabasePublishableKey } = getPublicConfig();
-  const supabase = createSupabaseClient(supabaseUrl, supabasePublishableKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  const supabase = getPhaseOneAdminClient();
 
   const { data, error } = await supabase
     .schema("content")
