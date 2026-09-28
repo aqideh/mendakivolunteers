@@ -113,7 +113,7 @@ export function ProfessionalEventForm({
             type="checkbox"
             defaultChecked={event?.is_published ?? false}
           />
-          <span>Publish this card on the Professionals page</span>
+          <span>Publish this card on the Specialist page</span>
         </label>
       </div>
 
