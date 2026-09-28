@@ -30,7 +30,7 @@
 .hero::before {
   z-index: -2;
   background: var(--home-hero-image) center 46% / cover no-repeat;
-  opacity: 0.48;
+  opacity: 0.53;
 }
 
 .hero::after {
@@ -270,7 +270,7 @@
 
   .hero::before {
     background-position: 52% center;
-    opacity: 0.4;
+    opacity: 0.45;
   }
 
   .hero::after {
