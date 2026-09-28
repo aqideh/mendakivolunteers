@@ -83,19 +83,21 @@ export function RoleLanding({
           </div>
         </section>
 
-        <section className={styles.roles} aria-label={title + " opportunities"}>
-          {items.map(({ title: itemTitle, description: itemDescription }, index) => (
-            <article className={styles.roleItem} key={itemTitle}>
-              <span className={styles.roleNumber}>
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <div>
-                <h2>{itemTitle}</h2>
-                <p>{itemDescription}</p>
-              </div>
-            </article>
-          ))}
-        </section>
+        {items.length > 0 ? (
+          <section className={styles.roles} aria-label={title + " opportunities"}>
+            {items.map(({ title: itemTitle, description: itemDescription }, index) => (
+              <article className={styles.roleItem} key={itemTitle}>
+                <span className={styles.roleNumber}>
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div>
+                  <h2>{itemTitle}</h2>
+                  <p>{itemDescription}</p>
+                </div>
+              </article>
+            ))}
+          </section>
+        ) : null}
         {afterContent}
       </main>
     </div>
