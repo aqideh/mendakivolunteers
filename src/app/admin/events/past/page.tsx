@@ -12,7 +12,6 @@ import {
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   formatTimeslotDate,
-  getPackageListingStatus,
   singaporeDateKey,
   sortTimeslots,
   type VolunteerTimeslot,
