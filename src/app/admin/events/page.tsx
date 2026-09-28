@@ -97,6 +97,56 @@ function MobileEventActions({
   );
 }
 
+
+function DesktopEventActions({
+  event,
+  canManageEvent,
+  canManageProgramme,
+}: Readonly<{
+  event: AdminEventSummary;
+  canManageEvent: boolean;
+  canManageProgramme: boolean;
+}>) {
+  return (
+    <div className="phaseone-events-row-actions">
+      <Link
+        className="phaseone-events-row-primary"
+        href={`/admin/events/${event.id}/attendance`}
+      >
+        Roster
+      </Link>
+      <details className="phaseone-events-row-more">
+        <summary aria-label={`More actions for ${event.title}`}>•••</summary>
+        <div className="phaseone-events-row-menu">
+          {canManageEvent ? (
+            <>
+              <Link className="text-link" href={`/admin/events/${event.id}/edit#roster`}>
+                {canManageProgramme ? "Edit event / roster" : "Roster setup"}
+              </Link>
+              <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
+                Download report
+              </a>
+            </>
+          ) : null}
+          {canManageProgramme ? (
+            <form action={duplicateEvent}>
+              <input type="hidden" name="eventId" value={event.id} />
+              <button className="text-link button-reset" type="submit">
+                Duplicate event
+              </button>
+            </form>
+          ) : null}
+          {event.is_published ? (
+            <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">
+              View event guide ↗
+            </Link>
+          ) : null}
+        </div>
+      </details>
+    </div>
+  );
+}
+
 export default async function EventsAdminPage({ searchParams }: PageProps) {
   const { roles } = await requireAttendanceOperator();
   const canManageEvent = hasEventManagerRole(roles);
@@ -154,27 +204,37 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
           </div>
 
           <div className="actions phaseone-events-admin-top-actions">
-            {canManageEvent ? (
-              <Link className="button button-secondary" href="/admin/registrations">
-                Registrations
+            {canManageProgramme ? (
+              <Link className="button button-secondary" href="/admin/events/past">
+                Past ({past.length})
               </Link>
             ) : null}
-
             {canManageProgramme ? (
-              <>
-                <Link className="button button-secondary" href="/admin/events/past">
-                  Past ({past.length})
-                </Link>
-                <Link className="button button-secondary" href="/admin/events/quick">
-                  Quick manual event
-                </Link>
-                <Link className="button button-secondary" href="/admin/events/import">
-                  Import events
-                </Link>
-                <Link className="button button-primary" href="/admin/events/new">
-                  + New programme
-                </Link>
-              </>
+              <Link className="button button-primary" href="/admin/events/new">
+                + New programme
+              </Link>
+            ) : null}
+            {(canManageEvent || canManageProgramme) ? (
+              <details className="phaseone-events-header-more">
+                <summary>More</summary>
+                <div className="phaseone-events-header-menu">
+                  {canManageEvent ? (
+                    <Link className="text-link" href="/admin/registrations">
+                      Registrations
+                    </Link>
+                  ) : null}
+                  {canManageProgramme ? (
+                    <>
+                      <Link className="text-link" href="/admin/events/quick">
+                        Quick manual event
+                      </Link>
+                      <Link className="text-link" href="/admin/events/import">
+                        Import events
+                      </Link>
+                    </>
+                  ) : null}
+                </div>
+              </details>
             ) : null}
           </div>
         </div>
@@ -257,37 +317,11 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                       </span>
                     </td>
                     <td>
-                      <div className="actions">
-                        <Link className="text-link" href={`/admin/events/${event.id}/attendance`}>
-                          Roster / check-in
-                        </Link>
-
-                        {canManageEvent ? (
-                          <>
-                            <Link className="text-link" href={`/admin/events/${event.id}/edit#roster`}>
-                              {canManageProgramme ? "Edit / roster" : "Roster setup"}
-                            </Link>
-                            <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
-                              Download event report
-                            </a>
-                          </>
-                        ) : null}
-
-                        {canManageProgramme ? (
-                          <form action={duplicateEvent}>
-                            <input type="hidden" name="eventId" value={event.id} />
-                            <button className="text-link button-reset" type="submit">
-                              Duplicate journey
-                            </button>
-                          </form>
-                        ) : null}
-
-                        {event.is_published ? (
-                          <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">
-                            View event guide
-                          </Link>
-                        ) : null}
-                      </div>
+                      <DesktopEventActions
+                        event={event}
+                        canManageEvent={canManageEvent}
+                        canManageProgramme={canManageProgramme}
+                      />
                     </td>
                   </tr>
                 );
