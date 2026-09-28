@@ -239,7 +239,9 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
         ? "Complete all required profile milestones before finishing setup."
         : error === "location_lookup"
           ? "We could not verify that postal code. Check the 6-digit postal code and try again."
-          : error
+          : error === "location_service_unavailable"
+            ? "Postal-code verification is temporarily unavailable. Please try again after the service is restored."
+            : error
             ? "That change could not be saved. Try again."
             : null;
 
