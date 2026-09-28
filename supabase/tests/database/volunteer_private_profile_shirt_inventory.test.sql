@@ -112,16 +112,16 @@ select has_view(
 
 select has_function(
   'public',
-  'issue_volunteer_shirt',
-  array['uuid','text','text','uuid','text'],
-  'transactional shirt issuance RPC exists'
+  'server_issue_volunteer_shirt',
+  array['uuid','uuid','text','text','uuid','text'],
+  'server-only transactional shirt issuance RPC exists'
 );
 
 select has_function(
   'public',
-  'record_volunteer_shirt_stock',
-  array['text','text','integer','text','text'],
-  'shirt stock movement RPC exists'
+  'server_record_volunteer_shirt_stock',
+  array['uuid','text','text','integer','text','text'],
+  'server-only shirt stock movement RPC exists'
 );
 
 select ok(
