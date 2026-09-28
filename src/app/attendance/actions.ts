@@ -19,12 +19,11 @@ const tokenSchema = z.string().min(20).max(200);
 const identifierSchema = z.string().trim().min(3).max(320);
 const feedbackSchema = z.object({
   eventId: z.string().uuid(),
-  roleClarity: z.coerce.number().int().min(1).max(5),
+  briefingThorough: z.coerce.number().int().min(1).max(5),
+  onboardingRoleUnderstanding: z.coerce.number().int().min(1).max(5),
   roleSatisfaction: z.coerce.number().int().min(1).max(5),
   staffSupport: z.coerce.number().int().min(1).max(5),
-  recommend: z.coerce.number().int().min(1).max(5),
   suggestions: z.string().trim().max(1500).optional(),
-  followUpRequested: z.boolean(),
 });
 
 function scanPath(token: string, params?: Record<string, string>) {
@@ -150,12 +149,11 @@ export async function confirmQrAttendance(formData: FormData) {
 export async function submitEventFeedback(formData: FormData) {
   const parsed = feedbackSchema.safeParse({
     eventId: formData.get("eventId"),
-    roleClarity: formData.get("roleClarity"),
+    briefingThorough: formData.get("briefingThorough"),
+    onboardingRoleUnderstanding: formData.get("onboardingRoleUnderstanding"),
     roleSatisfaction: formData.get("roleSatisfaction"),
     staffSupport: formData.get("staffSupport"),
-    recommend: formData.get("recommend"),
     suggestions: String(formData.get("suggestions") ?? ""),
-    followUpRequested: formData.get("followUpRequested") === "on",
   });
   if (!parsed.success) redirect(`/attendance/feedback?event=${encodeURIComponent(String(formData.get("eventId") ?? ""))}&error=invalid_feedback`);
 
@@ -176,12 +174,12 @@ export async function submitEventFeedback(formData: FormData) {
     event_id: parsed.data.eventId,
     roster_id: roster?.id ?? null,
     volunteer_person_key: device.personKey,
-    role_clarity: parsed.data.roleClarity,
+    briefing_thorough: parsed.data.briefingThorough,
+    onboarding_role_understanding: parsed.data.onboardingRoleUnderstanding,
     role_satisfaction: parsed.data.roleSatisfaction,
     staff_support: parsed.data.staffSupport,
-    recommend: parsed.data.recommend,
     suggestions: parsed.data.suggestions || null,
-    follow_up_requested: parsed.data.followUpRequested,
+    follow_up_requested: false,
     submitted_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }, { onConflict: "event_id,volunteer_person_key" });
