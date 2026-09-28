@@ -7,16 +7,15 @@ import { z } from "zod";
 import {
   attendanceDeviceCookieName,
   attendanceDeviceMaxAge,
-  canonicalMobile,
   createAttendanceDeviceToken,
   readAttendanceDeviceToken,
   resolveAttendanceQrToken,
 } from "@/lib/phaseone/attendance-qr";
+import { resolveAuthenticatedAttendancePerson } from "@/lib/phaseone/attendance-identity";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const tokenSchema = z.string().min(20).max(200);
-const identifierSchema = z.string().trim().min(3).max(320);
 const feedbackSchema = z.object({
   eventId: z.string().uuid(),
   briefingThorough: z.coerce.number().int().min(1).max(5),
@@ -42,79 +41,36 @@ async function setDeviceIdentity(eventId: string, personKey: string) {
   });
 }
 
-async function authenticatedEmail(): Promise<string | null> {
-  const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  if (claimsError || !claimsData?.claims?.sub) return null;
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user?.email || !(data.user.email_confirmed_at ?? data.user.confirmed_at)) return null;
-  return data.user.email.trim().toLowerCase();
-}
-
-async function rosterForQr(token: string) {
+async function attendanceContext(token: string) {
   const qr = await resolveAttendanceQrToken(token);
   if (!qr) return null;
-  const admin = getPhaseOneAdminClient();
-  const { data, error } = await admin
-    .from("phaseone_roster")
-    .select("id, volunteer_name, email_normalized, mobile, attendance_person_key")
-    .eq("event_id", qr.event_id)
-    .eq("timeslot_id", qr.timeslot_id)
-    .limit(2000);
-  if (error || !data) return null;
-  return { qr, roster: data };
-}
 
-function uniquePersonMatch<T extends { attendance_person_key: string }>(matches: T[]): T | null {
-  const keys = new Set(matches.map((row) => row.attendance_person_key));
-  return keys.size === 1 ? matches[0] ?? null : null;
+  const identity = await resolveAuthenticatedAttendancePerson(
+    qr.event_id,
+    qr.timeslot_id,
+  );
+
+  const matched =
+    identity.state === "matched"
+      ? {
+          id: identity.rosterId,
+          volunteer_name: identity.volunteerName,
+          attendance_person_key: identity.personKey,
+        }
+      : null;
+
+  return { qr, identity, matched };
 }
 
 export async function resolveAttendancePersonForToken(token: string) {
-  const context = await rosterForQr(token);
+  const context = await attendanceContext(token);
   if (!context) return null;
 
-  const store = await cookies();
-  const device = readAttendanceDeviceToken(store.get(attendanceDeviceCookieName)?.value);
-  if (device?.eventId === context.qr.event_id) {
-    const matched = uniquePersonMatch(
-      context.roster.filter((row) => row.attendance_person_key === device.personKey),
-    );
-    if (matched) return { context, matched, source: "device" as const };
-  }
-
-  const email = await authenticatedEmail();
-  if (email) {
-    const matched = uniquePersonMatch(
-      context.roster.filter((row) => row.email_normalized === email),
-    );
-    if (matched) return { context, matched, source: "account" as const };
-  }
-
-  return { context, matched: null, source: "none" as const };
-}
-
-export async function identifyAttendanceVolunteer(formData: FormData) {
-  const tokenResult = tokenSchema.safeParse(formData.get("token"));
-  const identifierResult = identifierSchema.safeParse(formData.get("identifier"));
-  if (!tokenResult.success || !identifierResult.success) {
-    redirect("/attendance/scan?error=invalid_details");
-  }
-  const token = tokenResult.data;
-  const context = await rosterForQr(token);
-  if (!context) redirect(scanPath(token, { error: "expired" }));
-
-  const identifier = identifierResult.data;
-  const email = identifier.includes("@") ? identifier.toLowerCase() : null;
-  const mobile = email ? null : canonicalMobile(identifier);
-  const matches = context.roster.filter((row) =>
-    email ? row.email_normalized === email : Boolean(mobile) && canonicalMobile(row.mobile ?? "") === mobile,
-  );
-  const matched = uniquePersonMatch(matches);
-  if (!matched) redirect(scanPath(token, { error: "not_found" }));
-
-  await setDeviceIdentity(context.qr.event_id, matched.attendance_person_key);
-  redirect(scanPath(token, { matched: "1" }));
+  return {
+    context: { qr: context.qr },
+    matched: context.matched,
+    identityState: context.identity.state,
+  };
 }
 
 export async function confirmQrAttendance(formData: FormData) {
@@ -122,7 +78,13 @@ export async function confirmQrAttendance(formData: FormData) {
   if (!tokenResult.success) redirect("/attendance/scan?error=expired");
   const token = tokenResult.data;
   const resolved = await resolveAttendancePersonForToken(token);
-  if (!resolved?.context || !resolved.matched) redirect(scanPath(token, { error: "identify_first" }));
+  if (!resolved?.context) redirect(scanPath(token, { error: "expired" }));
+  if (!resolved.matched) {
+    if (resolved.identityState === "signed_out") {
+      redirect(`/login?next=${encodeURIComponent(scanPath(token))}`);
+    }
+    redirect(scanPath(token, { error: resolved.identityState }));
+  }
 
   const { qr } = resolved.context;
   const admin = getPhaseOneAdminClient();
