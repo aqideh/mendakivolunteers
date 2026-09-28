@@ -1,0 +1,392 @@
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 17.25rem minmax(0, 1fr);
+  background: #f4f5f3;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100vh;
+  min-width: 0;
+  flex-direction: column;
+  border-right: 1px solid #d7dad6;
+  padding: 1.2rem 1rem 1rem;
+  background: #e9edeb;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: -1.2rem -1rem 1.15rem;
+  border-bottom: 1px solid #d7dad6;
+  padding: 1.15rem 1rem;
+  color: #171815;
+  text-decoration: none;
+}
+
+.brandMark {
+  display: grid;
+  width: 2.45rem;
+  height: 2.45rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.65rem;
+  color: #171815;
+  background: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.brandCopy {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+  line-height: 1.15;
+}
+
+.brandCopy strong {
+  font-size: 0.92rem;
+  letter-spacing: -0.02em;
+}
+
+.brandCopy span {
+  color: #747872;
+  font-size: 0.7rem;
+}
+
+.navigation {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+  scrollbar-width: thin;
+}
+
+.navGroup + .navGroup {
+  margin-top: 1.15rem;
+  border-top: 1px solid #d4d8d4;
+  padding-top: 1.05rem;
+}
+
+.navGroup h2 {
+  margin: 0 0 0.45rem 0.7rem;
+  color: #747872;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.navGroup nav {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.navItem {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  min-height: 2.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.42rem 0.72rem 0.42rem 0.55rem;
+  color: #2c2f2a;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 650;
+  transition:
+    border-color 130ms ease,
+    background-color 130ms ease,
+    box-shadow 130ms ease;
+}
+
+.navItem:hover,
+.navItem:focus-visible {
+  border-color: #cdd1cc;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.navItemActive {
+  border-color: #c9cdc8;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(45, 49, 43, 0.06);
+}
+
+.navItemActive .navIcon {
+  color: #171815;
+  background: var(--primary);
+}
+
+.navIcon {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  color: #4a4e48;
+  transition: background-color 130ms ease;
+}
+
+.externalMark {
+  color: #83877f;
+  font-size: 0.78rem;
+}
+
+.sidebarBottom {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: auto;
+  border-top: 1px solid #d4d8d4;
+  padding-top: 0.85rem;
+}
+
+.utilityLink {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.5rem;
+  padding: 0 0.55rem;
+  color: #555a53;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.utilityLink:hover {
+  color: #171815;
+}
+
+.account {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  border-radius: 0.75rem;
+  padding: 0.6rem;
+  color: #1c1e1a;
+  text-decoration: none;
+}
+
+.account:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.avatar {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid #ced2cc;
+  border-radius: 0.55rem;
+  background: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.accountCopy {
+  display: grid;
+  min-width: 0;
+  gap: 0.07rem;
+}
+
+.accountCopy strong,
+.accountCopy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountCopy strong {
+  font-size: 0.78rem;
+}
+
+.accountCopy span {
+  color: #777b74;
+  font-size: 0.68rem;
+}
+
+.account > svg {
+  width: 1rem;
+  height: 1rem;
+  color: #767a73;
+}
+
+.main {
+  min-width: 0;
+  min-height: 100vh;
+  background: #f5f6f4;
+}
+
+.backRow {
+  width: min(74rem, calc(100% - 3rem));
+  margin: 0 auto;
+  padding-top: 1.8rem;
+}
+
+.backRow a {
+  color: #2c2f2a;
+  text-decoration: none;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.backRow a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.content {
+  min-width: 0;
+}
+
+/* Existing admin pages become the content area of this shell. */
+.content :global(.portal-header) {
+  display: none !important;
+}
+
+.content :global(.site-shell) {
+  min-height: 0;
+  display: block;
+  background: transparent;
+}
+
+.content :global(.page-frame) {
+  width: min(74rem, calc(100% - 3rem));
+  margin-inline: auto;
+  padding-top: 1.8rem;
+  padding-bottom: 3rem;
+}
+
+.backRow + .content :global(.page-frame) {
+  padding-top: 1rem;
+}
+
+.content :global(.dashboard-header) {
+  margin-bottom: 1.3rem;
+}
+
+.content :global(.dashboard-header h1) {
+  font-size: clamp(1.75rem, 3vw, 2.65rem);
+}
+
+.content :global(.eyebrow),
+.content :global([class*="eyebrow"]) {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 14.5rem minmax(0, 1fr);
+  }
+
+  .sidebar {
+    padding-inline: 0.7rem;
+  }
+
+  .brand {
+    margin-inline: -0.7rem;
+    padding-inline: 0.7rem;
+  }
+
+  .brandCopy strong {
+    font-size: 0.82rem;
+  }
+
+  .navItem {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    display: block;
+  }
+
+  .sidebar {
+    position: sticky;
+    z-index: 50;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid #d7dad6;
+    padding: 0.55rem;
+  }
+
+  .brand {
+    margin: 0;
+    border: 0;
+    padding: 0.15rem 0.2rem 0.55rem;
+  }
+
+  .brandMark {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+
+  .brandCopy span {
+    display: none;
+  }
+
+  .navigation {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+    scrollbar-width: none;
+  }
+
+  .navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navGroup,
+  .navGroup + .navGroup {
+    margin: 0;
+    border: 0;
+    padding: 0;
+  }
+
+  .navGroup h2,
+  .sidebarBottom {
+    display: none;
+  }
+
+  .navGroup nav {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .navItem {
+    grid-template-columns: auto auto;
+    min-height: 2.25rem;
+    border-radius: 999px;
+    padding: 0.3rem 0.65rem 0.3rem 0.35rem;
+    white-space: nowrap;
+  }
+
+  .navIcon {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .externalMark {
+    display: none;
+  }
+
+  .backRow,
+  .content :global(.page-frame) {
+    width: min(100% - 1.25rem, 74rem);
+  }
+
+  .backRow {
+    padding-top: 1rem;
+  }
+
+  .content :global(.page-frame) {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+}
