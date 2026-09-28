@@ -73,7 +73,7 @@ export default async function SpecialistPage() {
         {
           title: "Professional Networks",
           description:
-            "Explore communities that bring professionals together across industries to connect, learn and contribute.",
+            "Explore communities that bring specialists together across industries to connect, learn and contribute.",
         },
         {
           title: "Share your experience",
