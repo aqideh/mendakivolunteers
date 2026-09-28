@@ -5,8 +5,6 @@ import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 import { getPublishedProfessionalEvents } from "@/lib/content/professional-events";
 
-import styles from "./professionals.module.css";
-
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -27,38 +25,50 @@ export default async function ProfessionalsPage() {
     getPublishedProfessionalEvents(),
   ]);
 
-  const eventsSection = (
-    <section className={styles.eventsSection} aria-labelledby="professional-events-title">
-      <div className={styles.eventsHeader}>
-        <h2 id="professional-events-title">Professional Network events</h2>
-        <p>
-          Explore upcoming networking, learning and community events. Registration links will be
-          enabled here when the event registration flow is ready.
-        </p>
-      </div>
+  const eventsSection =
+    events.length > 0 ? (
+      <section
+        className="phaseone-opportunity-list phaseone-opportunities-grid phaseone-opportunities-peek"
+        aria-label="Professional Network events"
+      >
+        {events.map((event) => (
+          <article className="phaseone-opportunity-card" key={event.id}>
+            <div className="phaseone-opportunity-image" aria-hidden="true">
+              <span>MENDAKI</span>
+            </div>
 
-      {events.length > 0 ? (
-        <div className={styles.eventGrid}>
-          {events.map((event) => (
-            <article className={styles.eventCard} key={event.id}>
-              <div className={styles.eventMeta}>
+            <div className="phaseone-opportunity-body">
+              <div className="phaseone-opportunity-pills" aria-label="Event details">
                 <span>{eventDateLabel(event.starts_at, event.ends_at)}</span>
                 {event.venue ? <span>{event.venue}</span> : null}
               </div>
-              <h3>{event.title}</h3>
-              <p>{event.summary}</p>
-              <button className={styles.deadCta} type="button" disabled aria-disabled="true">
-                <span>{event.cta_label}</span>
-                <span aria-hidden="true">↗</span>
-              </button>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.emptyState}>New Professional Network events will appear here.</div>
-      )}
-    </section>
-  );
+
+              <div className="phaseone-opportunity-heading">
+                <h2>{event.title}</h2>
+              </div>
+
+              <p className="phaseone-opportunity-summary">{event.summary}</p>
+
+              <div className="phaseone-opportunity-card-footer">
+                <span className="phaseone-opportunity-social-empty">
+                  Professional Network event
+                </span>
+
+                <button
+                  className="button button-primary phaseone-opportunity-cta"
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                >
+                  {event.cta_label}
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </section>
+    ) : null;
 
   return (
     <RoleLanding
@@ -69,23 +79,7 @@ export default async function ProfessionalsPage() {
         href: "https://professionalnetworksuat.mendaki.org.sg/",
         label: "Discover Professional Networks",
       }}
-      items={[
-        {
-          title: "Professional Networks",
-          description:
-            "Explore communities that bring professionals together across industries to connect, learn and contribute.",
-        },
-        {
-          title: "Share your experience",
-          description:
-            "Support events, initiatives and conversations where your professional experience can help others.",
-        },
-        {
-          title: "Build connections",
-          description:
-            "Meet others in your industry, exchange knowledge and find meaningful ways to stay involved.",
-        },
-      ]}
+      items={[]}
       ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
       afterContent={eventsSection}
     />
