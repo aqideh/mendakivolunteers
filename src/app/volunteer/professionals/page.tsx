@@ -1,5 +1,5 @@
 import { permanentRedirect } from "next/navigation";
 
-export default function SpecialistRedirectPage() {
+export default function VolunteerProfessionalsRedirectPage() {
   permanentRedirect("/professionals");
 }
