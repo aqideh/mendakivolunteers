@@ -22,7 +22,7 @@ export type VolunteerVerificationResendState = Readonly<{
 }>;
 
 const genericSuccessMessage =
-  "If the email can receive messages, a KELUARGA account link has been sent. Open it to verify your email and finish creating your account.";
+  "Thanks! Please check your inbox for a verification email from Keluarga MENDAKI. Follow the link to verify your email and complete your account setup.";
 
 const genericResendSuccessMessage =
   "If this email has a pending KELUARGA account, a new verification link has been sent.";
