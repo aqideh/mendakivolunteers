@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Volunteer as a Specialist",
   description:
-    "Connecting professionals across industries to share knowledge, grow together, and build meaningful networks. Be part of a community that empowers your career.",
+    "Join a community of professionals who connect, share knowledge and give back. Support events and initiatives, share your experience, or simply get involved and build connections with others in your industry.",
 };
 
 export default async function SpecialistPage() {
@@ -16,7 +16,7 @@ export default async function SpecialistPage() {
 
   return (
     <RoleLanding
-      title="Connect Professionals & Grow Possibilities."
+      title="Your Experience Can Open Doors"
       description="Connecting professionals across industries to share knowledge, grow together, and build meaningful networks. Be part of a community that empowers your career."
       heroImage={heroImage}
       inlineCta={{
