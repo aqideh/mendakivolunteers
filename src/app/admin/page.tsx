@@ -33,7 +33,7 @@ const tools: readonly AdminTool[] = [
   },
   {
     href: "/admin/content/professional-events",
-    title: "Professional events",
+    title: "Specialist events",
     description: "Manage Professional Network event cards separately from volunteer opportunities.",
   },
   {
