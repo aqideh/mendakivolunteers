@@ -26,7 +26,7 @@
 }
 
 .heroBackgroundActive {
-  opacity: 0.48;
+  opacity: 0.53;
 }
 
 .hero::after {
@@ -222,7 +222,7 @@
   }
 
   .heroBackgroundActive {
-    opacity: 0.4;
+    opacity: 0.45;
   }
 
   .hero::after {
