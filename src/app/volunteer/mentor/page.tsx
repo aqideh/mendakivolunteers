@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
@@ -53,27 +52,6 @@ export default async function MentorPage() {
                 <span aria-hidden="true">↗</span>
               </Link>
             </div>
-          </div>
-        </section>
-
-        <section className={styles.mekar} aria-labelledby="mekar-title">
-          <div className={styles.mekarHeader}>
-            <h2 id="mekar-title">MEKAR: MENDAKI Mentoring Framework</h2>
-            <p className={styles.mekarIntro}>
-              A mentoring journey designed to support growth at every stage — from
-              self-discovery and aspiration-building to leadership and contribution.
-            </p>
-          </div>
-
-          <div className={styles.mekarImageWrap}>
-            <Image
-              alt="MEKAR: MENDAKI Mentoring Framework"
-              className={styles.mekarImage}
-              height={554}
-              src="/volunteer/mentor/mekar-framework.png"
-              unoptimized
-              width={821}
-            />
           </div>
         </section>
       </main>
