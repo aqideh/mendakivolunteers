@@ -22,7 +22,7 @@ import {
 import { PortalHeader } from "@/components/portal-header";
 import {
   hasEventManagerRole,
-  requireAttendanceOperator,
+  requireAttendanceOperatorForEvent,
 } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -224,7 +224,7 @@ async function AttendanceAudit({
 
 export default async function AttendancePage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { roles } = await requireAttendanceOperator(`/admin/events/${id}/attendance`);
+  const { roles } = await requireAttendanceOperatorForEvent(id, `/admin/events/${id}/attendance`);
   const canManageEvent = hasEventManagerRole(roles);
   const admin = getPhaseOneAdminClient();
   const [
