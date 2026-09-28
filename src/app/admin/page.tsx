@@ -20,8 +20,6 @@ type EventRow = Readonly<{
   title: string;
   slug: string;
   venue: string | null;
-  has_sign_in_pin: boolean;
-  has_sign_out_pin: boolean;
   is_published: boolean;
   is_opportunity_published: boolean;
 }>;
@@ -177,7 +175,7 @@ export default async function AdminPage() {
     admin
       .from("phaseone_events")
       .select(
-        "id, title, slug, venue, has_sign_in_pin, has_sign_out_pin, is_published, is_opportunity_published",
+        "id, title, slug, venue, is_published, is_opportunity_published",
       )
       .limit(2000),
     admin
@@ -378,11 +376,11 @@ export default async function AdminPage() {
     return total + (signedOut - signedIn) / 3_600_000;
   }, 0);
 
-  const missingPinEvents = sevenDayEventIds
+  const emptyRosterEvents = sevenDayEventIds
     .map((eventId) => eventById.get(eventId))
     .filter(
       (event): event is EventRow =>
-        Boolean(event && (!event.has_sign_in_pin || !event.has_sign_out_pin)),
+        Boolean(event && (rosterCountByEvent.get(event.id) ?? 0) === 0),
     );
   const unpublishedGuides = sevenDayEventIds
     .map((eventId) => eventById.get(eventId))
@@ -417,7 +415,7 @@ export default async function AdminPage() {
   const attentionCount =
     (pendingCountResult.count ?? 0) +
     (waitlistedCountResult.count ?? 0) +
-    missingPinEvents.length +
+    emptyRosterEvents.length +
     unpublishedGuides.length;
 
   return (
@@ -516,8 +514,8 @@ export default async function AdminPage() {
               <strong>{waitlistedCountResult.count ?? 0}</strong>
             </Link>
             <Link href="/admin/events">
-              <span>Events in next 7 days missing PINs</span>
-              <strong>{missingPinEvents.length}</strong>
+              <span>Events in next 7 days with no roster</span>
+              <strong>{emptyRosterEvents.length}</strong>
             </Link>
             <Link href="/admin/events">
               <span>Event guides not published</span>
