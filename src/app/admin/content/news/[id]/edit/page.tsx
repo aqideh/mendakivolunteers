@@ -6,6 +6,7 @@ import { NewsForm } from "@/app/admin/content/news-form";
 import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
 import { isUuid } from "@/lib/content/identifiers";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import type { ContentStatus } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -33,10 +34,11 @@ export default async function EditNewsPage({
     notFound();
   }
 
-  const { supabase, access } = await requireContentManager({
+  const { access } = await requireContentManager({
     next: `/admin/content/news/${id}/edit`,
   });
-  const { data: post, error: loadError } = await supabase
+  const admin = getPhaseOneAdminClient();
+  const { data: post, error: loadError } = await admin
     .schema("content")
     .from("news_posts")
     .select("*")
