@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { PortalHeader } from "@/components/portal-header";
 
@@ -23,6 +24,7 @@ export function RoleLanding({
   heroPosition,
   items,
   ctas,
+  afterContent,
 }: Readonly<{
   title: string;
   description: string;
@@ -31,6 +33,7 @@ export function RoleLanding({
   heroPosition?: string;
   items: readonly RoleItem[];
   ctas: readonly RoleCta[];
+  afterContent?: ReactNode;
 }>) {
   return (
     <div className="site-shell phaseone-shell">
@@ -93,6 +96,7 @@ export function RoleLanding({
             </article>
           ))}
         </section>
+        {afterContent}
       </main>
     </div>
   );
