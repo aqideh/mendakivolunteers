@@ -19,7 +19,7 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
       {
         question: "Do I need to be Malay/Muslim to volunteer with MENDAKI?",
         answer:
-          "No. Our volunteering opportunities are open to anyone who would like to contribute their time, skills and energy to support our community.",
+          "Our volunteering opportunities are open to anyone who would like to contribute their time, skills, and energy to support the Malay/Muslim community. While all are welcome to contribute, an understanding of the Malay language and culture would be an advantage in connecting with and supporting the communities we serve.",
       },
       {
         question: "Do I need previous volunteering experience?",
