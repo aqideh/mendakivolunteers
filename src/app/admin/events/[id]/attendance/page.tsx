@@ -11,6 +11,7 @@ import { issueVolunteerShirt } from "@/app/admin/events/[id]/attendance/shirt-ac
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
 import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
+import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
 import {
   BulkCheckoutButton,
@@ -846,6 +847,16 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         rosterId={volunteer.id}
                         timeslotId={selectedTimeslot.id}
                       />
+
+                      {canManageEvent && volunteer.volunteer_id ? (
+                        <RosterProfileDetailsEditor
+                          dietaryRequirements={volunteer.dietary_requirements}
+                          eventId={id}
+                          tshirtSize={volunteer.tshirt_size}
+                          volunteerId={volunteer.volunteer_id}
+                          volunteerName={volunteer.volunteer_name}
+                        />
+                      ) : null}
 
                       {volunteer.entry_method === "walk_in" ? (
                         <WalkInEditForm
