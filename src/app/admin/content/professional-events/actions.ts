@@ -54,7 +54,7 @@ function adminRedirect(message: string, kind: "success" | "error") {
 }
 
 function revalidateProfessionalEvents() {
-  revalidatePath("/volunteer/professionals");
+  revalidatePath("/professionals");
   revalidatePath("/admin/content/professional-events");
 }
 
