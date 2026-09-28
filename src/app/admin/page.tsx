@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { formatSingaporeDateTime } from "@/lib/content/dates";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database";
 
@@ -13,122 +15,111 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-type AdminTool = Readonly<{
+type EventRow = Readonly<{
+  id: string;
+  title: string;
+  slug: string;
+  venue: string | null;
+  has_sign_in_pin: boolean;
+  has_sign_out_pin: boolean;
+  is_published: boolean;
+  is_opportunity_published: boolean;
+}>;
+
+type TimeslotRow = Readonly<{
+  id: string;
+  event_id: string;
+  label: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  status: string;
+  registration_capacity: number | null;
+}>;
+
+type RosterRow = Readonly<{
+  id: string;
+  event_id: string;
+  timeslot_id: string | null;
+  volunteer_name: string;
+}>;
+
+type RegistrationRow = Readonly<{
+  id: string;
+  volunteer_id: string;
+  event_id: string;
+  status: string;
+  submitted_at: string;
+}>;
+
+type AttendanceAuditRow = Readonly<{
+  id: string;
+  roster_id: string;
+  event_id: string;
+  action: string;
+  changed_at: string;
+}>;
+
+type AttendanceRow = Readonly<{
+  signed_in_at: string | null;
+  signed_out_at: string | null;
+}>;
+
+type ActivityItem = Readonly<{
+  id: string;
+  at: string;
+  text: string;
   href: string;
-  title: string;
-  description: string;
-  icon: string;
-  external?: boolean;
-  adminOnly?: boolean;
 }>;
 
-type AdminGroup = Readonly<{
-  title: string;
-  description: string;
-  tools: readonly AdminTool[];
-}>;
+function singaporeDateKey(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
 
-const groups: readonly AdminGroup[] = [
-  {
-    title: "Operations",
-    description: "Run programmes, manage registrations and support event-day delivery.",
-    tools: [
-      {
-        href: "/admin/events",
-        title: "Event Operations",
-        description: "Programmes, rosters, attendance, QR check-in and event-day operations.",
-        icon: "EV",
-      },
-      {
-        href: "/admin/registrations",
-        title: "Volunteer registrations",
-        description: "Review registrations, allocations and waitlist states.",
-        icon: "RG",
-      },
-      {
-        href: "/admin/inventory/shirts",
-        title: "Shirt inventory",
-        description: "Track shirt stock and volunteer issuances.",
-        icon: "SH",
-      },
-    ],
-  },
-  {
-    title: "People",
-    description: "Work with volunteer records, pathways and staff access.",
-    tools: [
-      {
-        href: "/admin/volunteers",
-        title: "Volunteer directory",
-        description: "Search, filter and export volunteer profile data.",
-        icon: "VD",
-      },
-      {
-        href: "/admin/pathways",
-        title: "Volunteer pathways",
-        description: "Manage pathway maps and reviewed volunteer positions.",
-        icon: "VP",
-      },
-      {
-        href: "/admin/staff",
-        title: "Staff access",
-        description: "Invite staff and manage KELUARGA roles and permissions.",
-        icon: "SA",
-        adminOnly: true,
-      },
-    ],
-  },
-  {
-    title: "Content",
-    description: "Manage public-facing opportunities, landing pages and specialist events.",
-    tools: [
-      {
-        href: "/admin/content",
-        title: "Content & opportunities",
-        description: "Manage opportunities, programme content and volunteer updates.",
-        icon: "CO",
-      },
-      {
-        href: "/admin/content/landing-pages",
-        title: "Landing page photos",
-        description: "Upload and set hero photos across Keluarga landing pages.",
-        icon: "LP",
-      },
-      {
-        href: "/admin/content/professional-events",
-        title: "Specialist events",
-        description: "Manage Professional Network event cards separately from volunteering.",
-        icon: "SE",
-      },
-    ],
-  },
-  {
-    title: "Recognition & data",
-    description: "Manage recognition systems and access longitudinal volunteer records.",
-    tools: [
-      {
-        href: "/admin/points",
-        title: "Points management",
-        description: "Manage audited volunteer recognition points.",
-        icon: "PT",
-      },
-      {
-        href: "/admin/badges",
-        title: "Badge management",
-        description: "Manage badge definitions, awards and revocations.",
-        icon: "BD",
-      },
-      {
-        href: "https://voldatabasetool.vercel.app/",
-        title: "MakLom",
-        description: "Open the Volunteer Management workspace and longitudinal records.",
-        icon: "ML",
-        external: true,
-        adminOnly: true,
-      },
-    ],
-  },
-];
+function singaporeMonthStartIso(now: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(now);
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return new Date(`${get("year")}-${get("month")}-01T00:00:00+08:00`).toISOString();
+}
+
+function eventDate(value: string): string {
+  return new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(value));
+}
+
+function eventTime(value: string): string {
+  return new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(value));
+}
+
+function actionLabel(action: string): string {
+  if (action === "mark_sign_in") return "checked in";
+  if (action === "mark_sign_out") return "checked out";
+  if (action === "clear_sign_in") return "had a sign-in corrected";
+  if (action === "clear_sign_out") return "had a sign-out corrected";
+  return action.replaceAll("_", " ");
+}
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -165,95 +156,504 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const visibleGroups = groups.map((group) => ({
-    ...group,
-    tools: group.tools.filter((tool) => !tool.adminOnly || isAdmin),
-  }));
+  const admin = getPhaseOneAdminClient();
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const todayKey = singaporeDateKey(now);
+  const monthStartIso = singaporeMonthStartIso(now);
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const [
+    eventsResult,
+    timeslotsResult,
+    volunteerCountResult,
+    registrationMonthCountResult,
+    pendingCountResult,
+    waitlistedCountResult,
+    recentRegistrationsResult,
+    attendanceMonthResult,
+    attendanceAuditResult,
+  ] = await Promise.all([
+    admin
+      .from("phaseone_events")
+      .select(
+        "id, title, slug, venue, has_sign_in_pin, has_sign_out_pin, is_published, is_opportunity_published",
+      )
+      .limit(2000),
+    admin
+      .from("phaseone_event_timeslots")
+      .select(
+        "id, event_id, label, starts_at, ends_at, status, registration_capacity",
+      )
+      .eq("status", "scheduled")
+      .order("starts_at", { ascending: true })
+      .limit(20000),
+    admin
+      .schema("core")
+      .from("volunteers")
+      .select("id", { count: "exact", head: true }),
+    admin
+      .from("keluarga_registrations")
+      .select("id", { count: "exact", head: true })
+      .gte("submitted_at", monthStartIso),
+    admin
+      .from("keluarga_registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    admin
+      .from("keluarga_registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "waitlisted"),
+    admin
+      .from("keluarga_registrations")
+      .select("id, volunteer_id, event_id, status, submitted_at")
+      .order("submitted_at", { ascending: false })
+      .limit(10),
+    admin
+      .from("phaseone_attendance_effective")
+      .select("signed_in_at, signed_out_at")
+      .not("signed_in_at", "is", null)
+      .not("signed_out_at", "is", null)
+      .gte("signed_out_at", monthStartIso)
+      .limit(10000),
+    admin
+      .from("phaseone_attendance_audit")
+      .select("id, roster_id, event_id, action, changed_at")
+      .order("changed_at", { ascending: false })
+      .limit(10),
+  ]);
+
+  const criticalResults = [
+    eventsResult,
+    timeslotsResult,
+    volunteerCountResult,
+    registrationMonthCountResult,
+    pendingCountResult,
+    waitlistedCountResult,
+    recentRegistrationsResult,
+    attendanceMonthResult,
+    attendanceAuditResult,
+  ];
+  if (criticalResults.some((result) => result.error)) {
+    console.error("Unable to load admin dashboard", {
+      events: eventsResult.error?.code,
+      timeslots: timeslotsResult.error?.code,
+      volunteers: volunteerCountResult.error?.code,
+      registrationsMonth: registrationMonthCountResult.error?.code,
+      pending: pendingCountResult.error?.code,
+      waitlisted: waitlistedCountResult.error?.code,
+      recentRegistrations: recentRegistrationsResult.error?.code,
+      attendanceMonth: attendanceMonthResult.error?.code,
+      attendanceAudit: attendanceAuditResult.error?.code,
+    });
+    throw new Error("Admin dashboard could not be loaded");
+  }
+
+  const events = (eventsResult.data ?? []) as EventRow[];
+  const timeslots = (timeslotsResult.data ?? []) as TimeslotRow[];
+  const recentRegistrations = (recentRegistrationsResult.data ?? []) as RegistrationRow[];
+  const attendanceMonth = (attendanceMonthResult.data ?? []) as AttendanceRow[];
+  const attendanceAudit = (attendanceAuditResult.data ?? []) as AttendanceAuditRow[];
+
+  const eventById = new Map(events.map((event) => [event.id, event]));
+  const todayTimeslots = timeslots.filter(
+    (timeslot) => singaporeDateKey(timeslot.starts_at) === todayKey,
+  );
+  const todayEventIds = Array.from(new Set(todayTimeslots.map((timeslot) => timeslot.event_id)));
+
+  const futureTimeslots = timeslots.filter((timeslot) => timeslot.starts_at >= nowIso);
+  const upcomingFirstTimeslotByEvent = new Map<string, TimeslotRow>();
+  for (const timeslot of futureTimeslots) {
+    if (!upcomingFirstTimeslotByEvent.has(timeslot.event_id)) {
+      upcomingFirstTimeslotByEvent.set(timeslot.event_id, timeslot);
+    }
+  }
+
+  const upcomingEvents = Array.from(upcomingFirstTimeslotByEvent.entries())
+    .map(([eventId, firstTimeslot]) => ({
+      event: eventById.get(eventId),
+      firstTimeslot,
+    }))
+    .filter(
+      (
+        item,
+      ): item is Readonly<{ event: EventRow; firstTimeslot: TimeslotRow }> =>
+        Boolean(item.event),
+    )
+    .sort((left, right) =>
+      left.firstTimeslot.starts_at.localeCompare(right.firstTimeslot.starts_at),
+    );
+
+  const upcomingEventIds = upcomingEvents.slice(0, 5).map(({ event }) => event.id);
+  const sevenDayEventIds = upcomingEvents
+    .filter(({ firstTimeslot }) => new Date(firstTimeslot.starts_at) <= sevenDaysFromNow)
+    .map(({ event }) => event.id);
+
+  const rosterEventIds = Array.from(new Set([...todayEventIds, ...upcomingEventIds]));
+  const recentVolunteerIds = Array.from(
+    new Set(recentRegistrations.map((registration) => registration.volunteer_id)),
+  );
+  const auditRosterIds = Array.from(
+    new Set(attendanceAudit.map((audit) => audit.roster_id)),
+  );
+
+  const [rosterResult, recentVolunteersResult, auditRosterResult] = await Promise.all([
+    rosterEventIds.length
+      ? admin
+          .from("phaseone_roster")
+          .select("id, event_id, timeslot_id, volunteer_name")
+          .in("event_id", rosterEventIds)
+          .limit(20000)
+      : Promise.resolve({ data: [] as RosterRow[], error: null }),
+    recentVolunteerIds.length
+      ? admin
+          .schema("core")
+          .from("volunteers")
+          .select("id, display_name")
+          .in("id", recentVolunteerIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; display_name: string | null }>, error: null }),
+    auditRosterIds.length
+      ? admin
+          .from("phaseone_roster")
+          .select("id, event_id, timeslot_id, volunteer_name")
+          .in("id", auditRosterIds)
+      : Promise.resolve({ data: [] as RosterRow[], error: null }),
+  ]);
+
+  if (rosterResult.error || recentVolunteersResult.error || auditRosterResult.error) {
+    throw new Error("Admin dashboard supporting data could not be loaded");
+  }
+
+  const rosterRows = (rosterResult.data ?? []) as RosterRow[];
+  const auditRosterRows = (auditRosterResult.data ?? []) as RosterRow[];
+  const volunteerNameById = new Map(
+    (recentVolunteersResult.data ?? []).map((volunteer) => [
+      volunteer.id,
+      volunteer.display_name ?? "Volunteer",
+    ]),
+  );
+  const rosterNameById = new Map(
+    auditRosterRows.map((roster) => [roster.id, roster.volunteer_name]),
+  );
+
+  const rosterCountByEvent = new Map<string, number>();
+  const rosterCountByTimeslot = new Map<string, number>();
+  for (const roster of rosterRows) {
+    rosterCountByEvent.set(
+      roster.event_id,
+      (rosterCountByEvent.get(roster.event_id) ?? 0) + 1,
+    );
+    if (roster.timeslot_id) {
+      rosterCountByTimeslot.set(
+        roster.timeslot_id,
+        (rosterCountByTimeslot.get(roster.timeslot_id) ?? 0) + 1,
+      );
+    }
+  }
+
+  const capacityByEvent = new Map<string, number>();
+  for (const timeslot of timeslots) {
+    if (timeslot.registration_capacity === null) continue;
+    capacityByEvent.set(
+      timeslot.event_id,
+      (capacityByEvent.get(timeslot.event_id) ?? 0) + timeslot.registration_capacity,
+    );
+  }
+
+  const todayRosterCount = todayTimeslots.reduce(
+    (sum, timeslot) => sum + (rosterCountByTimeslot.get(timeslot.id) ?? 0),
+    0,
+  );
+
+  const recordedHoursThisMonth = attendanceMonth.reduce((total, attendance) => {
+    if (!attendance.signed_in_at || !attendance.signed_out_at) return total;
+    const signedIn = Math.max(
+      new Date(attendance.signed_in_at).getTime(),
+      new Date(monthStartIso).getTime(),
+    );
+    const signedOut = new Date(attendance.signed_out_at).getTime();
+    if (!Number.isFinite(signedIn) || !Number.isFinite(signedOut) || signedOut <= signedIn) {
+      return total;
+    }
+    return total + (signedOut - signedIn) / 3_600_000;
+  }, 0);
+
+  const missingPinEvents = sevenDayEventIds
+    .map((eventId) => eventById.get(eventId))
+    .filter(
+      (event): event is EventRow =>
+        Boolean(event && (!event.has_sign_in_pin || !event.has_sign_out_pin)),
+    );
+  const unpublishedGuides = sevenDayEventIds
+    .map((eventId) => eventById.get(eventId))
+    .filter((event): event is EventRow => Boolean(event && !event.is_published));
+
+  const activities: ActivityItem[] = [
+    ...recentRegistrations.map((registration) => {
+      const volunteerName =
+        volunteerNameById.get(registration.volunteer_id) ?? "Volunteer";
+      const eventName = eventById.get(registration.event_id)?.title ?? "an activity";
+      return {
+        id: `registration-${registration.id}`,
+        at: registration.submitted_at,
+        text: `${volunteerName} registered for ${eventName}`,
+        href: `/admin/registrations?event=${registration.event_id}`,
+      };
+    }),
+    ...attendanceAudit.map((audit) => {
+      const volunteerName = rosterNameById.get(audit.roster_id) ?? "Volunteer";
+      const eventName = eventById.get(audit.event_id)?.title ?? "an event";
+      return {
+        id: `attendance-${audit.id}`,
+        at: audit.changed_at,
+        text: `${volunteerName} ${actionLabel(audit.action)} at ${eventName}`,
+        href: `/admin/events/${audit.event_id}/attendance`,
+      };
+    }),
+  ]
+    .sort((left, right) => right.at.localeCompare(left.at))
+    .slice(0, 8);
+
+  const attentionCount =
+    (pendingCountResult.count ?? 0) +
+    (waitlistedCountResult.count ?? 0) +
+    missingPinEvents.length +
+    unpublishedGuides.length;
 
   return (
     <main className={`page-frame ${styles.page}`}>
       <header className={styles.header}>
         <div>
           <h1>Admin dashboard</h1>
-          <p>
-            Manage Keluarga operations, volunteers, content and recognition from one workspace.
-          </p>
+          <p>What is happening, what needs attention and what to do next.</p>
+        </div>
+        <div className={styles.headerActions}>
+          <Link className={styles.primaryAction} href="/admin/events/new">
+            + New programme
+          </Link>
+          <Link className={styles.secondaryAction} href="/admin/events/quick">
+            Quick manual event
+          </Link>
         </div>
       </header>
 
-      <section className={styles.primarySection} aria-labelledby="primary-title">
-        <div className={styles.sectionHeading}>
-          <div>
-            <h2 id="primary-title">Start here</h2>
-            <p>Your most common operational workflows.</p>
+      <section className={styles.heroGrid} aria-label="Today and needs attention">
+        <div className={styles.todayCard}>
+          <div className={styles.cardHeading}>
+            <div>
+              <h2>Today</h2>
+              <p>{todayEventIds.length ? `${todayEventIds.length} active event${todayEventIds.length === 1 ? "" : "s"}` : "No events scheduled today"}</p>
+            </div>
+            <span className={styles.todayDate}>{eventDate(now.toISOString())}</span>
           </div>
-        </div>
 
-        <div className={styles.primaryGrid}>
-          <Link href="/admin/events" className={styles.primaryCard}>
-            <div className={styles.cardIcon}>EV</div>
+          <div className={styles.todayMetrics}>
             <div>
-              <h3>Event Operations</h3>
-              <p>Run programmes, rosters, attendance and event-day operations.</p>
+              <strong>{todayEventIds.length}</strong>
+              <span>events</span>
             </div>
-            <span aria-hidden="true">→</span>
-          </Link>
-
-          <Link href="/admin/registrations" className={styles.primaryCard}>
-            <div className={styles.cardIcon}>RG</div>
             <div>
-              <h3>Volunteer registrations</h3>
-              <p>Review registrations, allocations and waitlists.</p>
+              <strong>{todayRosterCount}</strong>
+              <span>rostered</span>
             </div>
-            <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-      </section>
+          </div>
 
-      <div className={styles.groupStack}>
-        {visibleGroups.map((group) => (
-          <section className={styles.group} key={group.title}>
-            <div className={styles.sectionHeading}>
-              <div>
-                <h2>{group.title}</h2>
-                <p>{group.description}</p>
-              </div>
-            </div>
-
-            <div className={styles.toolGrid}>
-              {group.tools.map((tool) => {
-                const body = (
-                  <>
-                    <div className={styles.cardIcon}>{tool.icon}</div>
-                    <div className={styles.toolCopy}>
-                      <h3>{tool.title}</h3>
-                      <p>{tool.description}</p>
-                    </div>
-                    <span className={styles.arrow} aria-hidden="true">
-                      {tool.external ? "↗" : "→"}
-                    </span>
-                  </>
+          {todayEventIds.length ? (
+            <div className={styles.todayList}>
+              {todayEventIds.slice(0, 3).map((eventId) => {
+                const event = eventById.get(eventId);
+                const firstTodaySlot = todayTimeslots.find(
+                  (timeslot) => timeslot.event_id === eventId,
                 );
-
-                return tool.external ? (
-                  <a
-                    className={styles.toolCard}
-                    href={tool.href}
-                    key={tool.href}
-                    rel="noreferrer"
-                    target="_blank"
+                if (!event || !firstTodaySlot) return null;
+                return (
+                  <Link
+                    className={styles.todayEvent}
+                    href={`/admin/events/${event.id}/attendance`}
+                    key={event.id}
                   >
-                    {body}
-                  </a>
-                ) : (
-                  <Link className={styles.toolCard} href={tool.href} key={tool.href}>
-                    {body}
+                    <span>
+                      <strong>{event.title}</strong>
+                      <small>
+                        {eventTime(firstTodaySlot.starts_at)}
+                        {event.venue ? ` · ${event.venue}` : ""}
+                      </small>
+                    </span>
+                    <span aria-hidden="true">→</span>
                   </Link>
                 );
               })}
             </div>
-          </section>
-        ))}
+          ) : (
+            <p className={styles.emptyCopy}>
+              The next scheduled event appears below under Upcoming events.
+            </p>
+          )}
+
+          <Link className={styles.cardLink} href="/admin/events">
+            Open Event Operations →
+          </Link>
+        </div>
+
+        <div className={styles.attentionCard}>
+          <div className={styles.cardHeading}>
+            <div>
+              <h2>Needs attention</h2>
+              <p>{attentionCount ? `${attentionCount} items to review` : "Nothing urgent right now"}</p>
+            </div>
+            <span className={`${styles.attentionBadge} ${attentionCount === 0 ? styles.attentionClear : ""}`}>
+              {attentionCount}
+            </span>
+          </div>
+
+          <div className={styles.attentionList}>
+            <Link href="/admin/registrations">
+              <span>Pending registrations</span>
+              <strong>{pendingCountResult.count ?? 0}</strong>
+            </Link>
+            <Link href="/admin/registrations">
+              <span>Waitlisted registrations</span>
+              <strong>{waitlistedCountResult.count ?? 0}</strong>
+            </Link>
+            <Link href="/admin/events">
+              <span>Events in next 7 days missing PINs</span>
+              <strong>{missingPinEvents.length}</strong>
+            </Link>
+            <Link href="/admin/events">
+              <span>Event guides not published</span>
+              <strong>{unpublishedGuides.length}</strong>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section} aria-labelledby="glance-title">
+        <div className={styles.sectionHeading}>
+          <div>
+            <h2 id="glance-title">At a glance</h2>
+            <p>Current Keluarga activity.</p>
+          </div>
+        </div>
+        <div className={styles.metricGrid}>
+          <div className={styles.metric}>
+            <strong>{volunteerCountResult.count ?? 0}</strong>
+            <span>Volunteers</span>
+          </div>
+          <div className={styles.metric}>
+            <strong>{registrationMonthCountResult.count ?? 0}</strong>
+            <span>Registrations this month</span>
+          </div>
+          <div className={styles.metric}>
+            <strong>{Math.round(recordedHoursThisMonth * 10) / 10}h</strong>
+            <span>Recorded hours this month</span>
+          </div>
+          <div className={styles.metric}>
+            <strong>{upcomingEvents.length}</strong>
+            <span>Upcoming events</span>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section} aria-labelledby="upcoming-title">
+        <div className={styles.sectionHeading}>
+          <div>
+            <h2 id="upcoming-title">Upcoming events</h2>
+            <p>Next scheduled activities and roster readiness.</p>
+          </div>
+          <Link href="/admin/events">View all</Link>
+        </div>
+
+        <div className={styles.eventTable}>
+          {upcomingEvents.slice(0, 5).map(({ event, firstTimeslot }) => {
+            const rosterCount = rosterCountByEvent.get(event.id) ?? 0;
+            const capacity = capacityByEvent.get(event.id);
+            return (
+              <Link
+                className={styles.eventRow}
+                href={`/admin/events/${event.id}/attendance`}
+                key={event.id}
+              >
+                <span className={styles.eventDate}>
+                  <strong>{eventDate(firstTimeslot.starts_at)}</strong>
+                  <small>{eventTime(firstTimeslot.starts_at)}</small>
+                </span>
+                <span className={styles.eventName}>
+                  <strong>{event.title}</strong>
+                  <small>{event.venue ?? "Venue not set"}</small>
+                </span>
+                <span className={styles.rosterStatus}>
+                  <strong>
+                    {capacity !== undefined ? `${rosterCount} / ${capacity}` : rosterCount}
+                  </strong>
+                  <small>{capacity !== undefined ? "roster / capacity" : "rostered"}</small>
+                </span>
+                <span className={styles.eventArrow} aria-hidden="true">→</span>
+              </Link>
+            );
+          })}
+          {upcomingEvents.length === 0 ? (
+            <div className={styles.emptyRow}>No upcoming events are scheduled.</div>
+          ) : null}
+        </div>
+      </section>
+
+      <div className={styles.lowerGrid}>
+        <section className={styles.section} aria-labelledby="activity-title">
+          <div className={styles.sectionHeading}>
+            <div>
+              <h2 id="activity-title">Recent activity</h2>
+              <p>Latest registrations and attendance actions.</p>
+            </div>
+          </div>
+          <div className={styles.activityList}>
+            {activities.map((activity) => (
+              <Link href={activity.href} key={activity.id}>
+                <span className={styles.activityDot} aria-hidden="true" />
+                <span className={styles.activityCopy}>
+                  <strong>{activity.text}</strong>
+                  <small>{formatSingaporeDateTime(activity.at)}</small>
+                </span>
+              </Link>
+            ))}
+            {activities.length === 0 ? (
+              <div className={styles.emptyRow}>No recent admin activity.</div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className={styles.section} aria-labelledby="quick-title">
+          <div className={styles.sectionHeading}>
+            <div>
+              <h2 id="quick-title">Quick actions</h2>
+              <p>Start common workflows.</p>
+            </div>
+          </div>
+          <div className={styles.quickActions}>
+            <Link href="/admin/events/new">
+              <strong>New programme</strong>
+              <span>Create an activity and its shifts.</span>
+            </Link>
+            <Link href="/admin/events/quick">
+              <strong>Quick manual event</strong>
+              <span>Set up a simple operational event.</span>
+            </Link>
+            <Link href="/admin/events/import">
+              <strong>Import events</strong>
+              <span>Bring in event records in bulk.</span>
+            </Link>
+            {isAdmin ? (
+              <Link href="/admin/staff">
+                <strong>Invite staff</strong>
+                <span>Manage Keluarga access.</span>
+              </Link>
+            ) : (
+              <Link href="/admin/volunteers">
+                <strong>Volunteer directory</strong>
+                <span>Find and review volunteer records.</span>
+              </Link>
+            )}
+          </div>
+        </section>
       </div>
     </main>
   );
