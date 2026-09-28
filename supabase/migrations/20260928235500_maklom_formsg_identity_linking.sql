@@ -1,5 +1,11 @@
 begin;
 
+alter table public.volunteers
+  add column if not exists profile_origin text not null default 'legacy';
+
+comment on column public.volunteers.profile_origin is
+  'Provenance for the MakLom profile extension. Legacy rows default to legacy; new managed creation paths set an explicit origin.';
+
 create or replace function maklom_private.match_or_create_volunteer(
   p_name text,
   p_email text default null,
