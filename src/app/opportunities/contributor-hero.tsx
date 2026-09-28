@@ -8,7 +8,7 @@ import styles from "./contributor-hero.module.css";
 const states = [
   {
     key: "volunteer",
-    title: "Serve with a Heart, One Keluarga.",
+    title: "Serve with Heart as One Keluarga",
     description:
       "Join upcoming community activities and events that match your interests and availability. Contribute your time through practical volunteer roles that support programme delivery.",
   },
