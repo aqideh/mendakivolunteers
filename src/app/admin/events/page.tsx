@@ -4,6 +4,7 @@ import Link from "next/link";
 import { duplicateEvent } from "@/app/admin/events/actions";
 import { PortalHeader } from "@/components/portal-header";
 import {
+  getAttendanceOperatorEventIds,
   hasEventManagerRole,
   hasProgrammeManagerRole,
   requireAttendanceOperator,
@@ -148,9 +149,10 @@ function DesktopEventActions({
 }
 
 export default async function EventsAdminPage({ searchParams }: PageProps) {
-  const { roles } = await requireAttendanceOperator();
+  const { userId, roles } = await requireAttendanceOperator();
   const canManageEvent = hasEventManagerRole(roles);
   const canManageProgramme = hasProgrammeManagerRole(roles);
+  const permittedEventIds = await getAttendanceOperatorEventIds(userId, roles);
   const admin = getPhaseOneAdminClient();
 
   const [eventsResult, timeslotsResult] = await Promise.all([
@@ -182,7 +184,10 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
     timeslotsByEvent.set(timeslot.event_id, current);
   });
 
-  const allEvents = eventsResult.data.map((event) => ({
+  const visibleEvents = permittedEventIds
+    ? eventsResult.data.filter((event) => permittedEventIds.has(event.id))
+    : eventsResult.data;
+  const allEvents = visibleEvents.map((event) => ({
     ...event,
     timeslots: sortTimeslots(timeslotsByEvent.get(event.id) ?? []),
   })) as AdminEventSummary[];
@@ -240,7 +245,11 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
         </div>
 
         {errorMessage ? (
-          <div className="notice notice-error" role="alert">{errorMessage}</div>
+          <div className="notice notice-error" role="alert">
+            {errorMessage === "event_assignment_required"
+              ? "You are not assigned to that event."
+              : errorMessage}
+          </div>
         ) : null}
 
         <section className="phaseone-events-mobile-list" aria-label="Current programmes and events">
