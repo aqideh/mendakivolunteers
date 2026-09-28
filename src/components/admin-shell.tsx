@@ -8,7 +8,7 @@ import styles from "./admin-shell.module.css";
 type AdminShellProps = Readonly<{
   children: React.ReactNode;
   roles: readonly string[];
-  email?: string;
+  email: string | undefined;
 }>;
 
 type NavItem = Readonly<{
