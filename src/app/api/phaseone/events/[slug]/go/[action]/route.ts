@@ -81,5 +81,5 @@ export async function GET(
     );
   }
 
-  return redirect(destination);
+  return redirect(destination as string);
 }
