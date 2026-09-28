@@ -421,58 +421,20 @@ export function EventForm({
       <details
         className="phaseone-disclosure event-form-anchor"
         id="event-attendance-settings"
-        open={Boolean(event?.has_sign_in_pin || event?.has_sign_out_pin || event?.sign_in_url || event?.sign_out_url)}
+        open={Boolean(event?.sign_in_url || event?.sign_out_url)}
       >
         <summary>Attendance settings</summary>
         <div className="phaseone-disclosure-body">
-          <p className="muted">Only configure these controls when volunteers need in-app check-in or check-out.</p>
+          <p className="muted">Optional links for volunteer check-in and check-out. PINs are no longer used.</p>
           <div className="phaseone-admin-grid">
             <div className="form-field">
-              <label htmlFor="signInUrl">Sign-in URL</label>
+              <label htmlFor="signInUrl">Check-in URL</label>
               <input defaultValue={event?.sign_in_url ?? ""} id="signInUrl" name="signInUrl" type="url" />
             </div>
             <div className="form-field">
-              <label htmlFor="signOutUrl">Sign-out URL</label>
+              <label htmlFor="signOutUrl">Check-out URL</label>
               <input defaultValue={event?.sign_out_url ?? ""} id="signOutUrl" name="signOutUrl" type="url" />
             </div>
-          </div>
-          <div className="phaseone-admin-grid">
-            <fieldset className="phaseone-admin-fieldset">
-              <legend>Check-in PIN</legend>
-              <div className="form-field">
-                <label htmlFor="signInPin">{event?.has_sign_in_pin ? "Change PIN" : "Set PIN"}</label>
-                <input
-                  autoComplete="new-password"
-                  id="signInPin"
-                  inputMode="numeric"
-                  name="signInPin"
-                  pattern="[0-9]{4,8}"
-                  placeholder={event?.has_sign_in_pin ? "Leave blank to keep current PIN" : "Optional — 4 to 8 digits"}
-                  type="password"
-                />
-              </div>
-              {event?.has_sign_in_pin ? (
-                <label className="checkbox-row"><input name="clearSignInPin" type="checkbox" /> Remove check-in PIN</label>
-              ) : null}
-            </fieldset>
-            <fieldset className="phaseone-admin-fieldset">
-              <legend>Check-out PIN</legend>
-              <div className="form-field">
-                <label htmlFor="signOutPin">{event?.has_sign_out_pin ? "Change PIN" : "Set PIN"}</label>
-                <input
-                  autoComplete="new-password"
-                  id="signOutPin"
-                  inputMode="numeric"
-                  name="signOutPin"
-                  pattern="[0-9]{4,8}"
-                  placeholder={event?.has_sign_out_pin ? "Leave blank to keep current PIN" : "Optional — 4 to 8 digits"}
-                  type="password"
-                />
-              </div>
-              {event?.has_sign_out_pin ? (
-                <label className="checkbox-row"><input name="clearSignOutPin" type="checkbox" /> Remove check-out PIN</label>
-              ) : null}
-            </fieldset>
           </div>
         </div>
       </details>
