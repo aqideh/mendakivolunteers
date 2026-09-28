@@ -23,22 +23,20 @@ type AdminTool = Readonly<{
 }>;
 
 type AdminGroup = Readonly<{
-  id: string;
   title: string;
-  note: string;
+  description: string;
   tools: readonly AdminTool[];
 }>;
 
 const groups: readonly AdminGroup[] = [
   {
-    id: "operations",
     title: "Operations",
-    note: "Run activities and registrations",
+    description: "Run programmes, manage registrations and support event-day delivery.",
     tools: [
       {
         href: "/admin/events",
         title: "Event Operations",
-        description: "Manage events, rosters, attendance, QR check-in and event-day operations.",
+        description: "Programmes, rosters, attendance, QR check-in and event-day operations.",
         icon: "EV",
       },
       {
@@ -50,15 +48,14 @@ const groups: readonly AdminGroup[] = [
       {
         href: "/admin/inventory/shirts",
         title: "Shirt inventory",
-        description: "Track round-neck and collared shirt stock and volunteer issuances.",
+        description: "Track shirt stock and volunteer issuances.",
         icon: "SH",
       },
     ],
   },
   {
-    id: "people",
     title: "People",
-    note: "Manage volunteers and access",
+    description: "Work with volunteer records, pathways and staff access.",
     tools: [
       {
         href: "/admin/volunteers",
@@ -69,7 +66,7 @@ const groups: readonly AdminGroup[] = [
       {
         href: "/admin/pathways",
         title: "Volunteer pathways",
-        description: "Manage pathway maps, versions and reviewed volunteer positions.",
+        description: "Manage pathway maps and reviewed volunteer positions.",
         icon: "VP",
       },
       {
@@ -82,9 +79,8 @@ const groups: readonly AdminGroup[] = [
     ],
   },
   {
-    id: "content",
     title: "Content",
-    note: "Manage public-facing content",
+    description: "Manage public-facing opportunities, landing pages and specialist events.",
     tools: [
       {
         href: "/admin/content",
@@ -95,21 +91,20 @@ const groups: readonly AdminGroup[] = [
       {
         href: "/admin/content/landing-pages",
         title: "Landing page photos",
-        description: "Upload and set hero photos for Home and the five volunteer landing pages.",
+        description: "Upload and set hero photos across Keluarga landing pages.",
         icon: "LP",
       },
       {
         href: "/admin/content/professional-events",
         title: "Specialist events",
-        description: "Manage Professional Network event cards separately from volunteer opportunities.",
+        description: "Manage Professional Network event cards separately from volunteering.",
         icon: "SE",
       },
     ],
   },
   {
-    id: "recognition",
-    title: "Recognition",
-    note: "Shape and recognise volunteer contribution",
+    title: "Recognition & data",
+    description: "Manage recognition systems and access longitudinal volunteer records.",
     tools: [
       {
         href: "/admin/points",
@@ -126,7 +121,7 @@ const groups: readonly AdminGroup[] = [
       {
         href: "https://voldatabasetool.vercel.app/",
         title: "MakLom",
-        description: "Open the Volunteer Management workspace and longitudinal volunteer records.",
+        description: "Open the Volunteer Management workspace and longitudinal records.",
         icon: "ML",
         external: true,
         adminOnly: true,
@@ -134,10 +129,6 @@ const groups: readonly AdminGroup[] = [
     ],
   },
 ];
-
-function ToolIcon({ label }: { label: string }) {
-  return <span aria-hidden="true">{label}</span>;
-}
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -179,148 +170,90 @@ export default async function AdminPage() {
     tools: group.tools.filter((tool) => !tool.adminOnly || isAdmin),
   }));
 
-  const eventTool = visibleGroups[0]?.tools.find((tool) => tool.href === "/admin/events");
-  const registrationTool = visibleGroups[0]?.tools.find(
-    (tool) => tool.href === "/admin/registrations",
-  );
-  const volunteerTool = visibleGroups[1]?.tools.find((tool) => tool.href === "/admin/volunteers");
-
   return (
-    <main className={styles.viewport}>
-      <div className={styles.workspace}>
-        <aside className={styles.rail} aria-label="Admin sections">
-          <Link href="/admin" className={styles.railMark} aria-label="Admin home">
-            KM
-          </Link>
+    <main className={`page-frame ${styles.page}`}>
+      <header className={styles.header}>
+        <div>
+          <h1>Admin dashboard</h1>
+          <p>
+            Manage Keluarga operations, volunteers, content and recognition from one workspace.
+          </p>
+        </div>
+      </header>
 
-          <nav className={styles.railNav}>
-            {visibleGroups.map((group, index) => (
-              <a
-                key={group.id}
-                className={`${styles.railLink} ${index === 0 ? styles.railLinkActive : ""}`}
-                href={`#${group.id}`}
-                aria-label={group.title}
-                title={group.title}
-              >
-                {group.title.slice(0, 2).toUpperCase()}
-              </a>
-            ))}
-          </nav>
+      <section className={styles.primarySection} aria-labelledby="primary-title">
+        <div className={styles.sectionHeading}>
+          <div>
+            <h2 id="primary-title">Start here</h2>
+            <p>Your most common operational workflows.</p>
+          </div>
+        </div>
 
-          <div className={styles.railSpacer} />
-
-          <Link href="/" className={styles.railHome} aria-label="Back to Keluarga MENDAKI">
-            ↗
-          </Link>
-        </aside>
-
-        <section className={styles.surface}>
-          <header className={styles.topbar}>
+        <div className={styles.primaryGrid}>
+          <Link href="/admin/events" className={styles.primaryCard}>
+            <div className={styles.cardIcon}>EV</div>
             <div>
-              <h1>Admin</h1>
-              <p>
-                Manage operations, volunteers, public content and recognition from one workspace.
-              </p>
+              <h3>Event Operations</h3>
+              <p>Run programmes, rosters, attendance and event-day operations.</p>
             </div>
-            <div className={styles.rolePill}>
-              <span className={styles.roleDot} aria-hidden="true" />
-              {isAdmin ? "Administrator" : "Volunteer Team"}
+            <span aria-hidden="true">→</span>
+          </Link>
+
+          <Link href="/admin/registrations" className={styles.primaryCard}>
+            <div className={styles.cardIcon}>RG</div>
+            <div>
+              <h3>Volunteer registrations</h3>
+              <p>Review registrations, allocations and waitlists.</p>
             </div>
-          </header>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      </section>
 
-          <section className={styles.priorityGrid} aria-label="Priority tools">
-            {eventTool ? (
-              <Link href={eventTool.href} className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <ToolIcon label={eventTool.icon} />
-                </div>
-                <h2>{eventTool.title}</h2>
-                <p>{eventTool.description}</p>
-                <span className={styles.featureAction}>
-                  Open workspace <span aria-hidden="true">→</span>
-                </span>
-              </Link>
-            ) : null}
+      <div className={styles.groupStack}>
+        {visibleGroups.map((group) => (
+          <section className={styles.group} key={group.title}>
+            <div className={styles.sectionHeading}>
+              <div>
+                <h2>{group.title}</h2>
+                <p>{group.description}</p>
+              </div>
+            </div>
 
-            <div className={styles.quickStack}>
-              {registrationTool ? (
-                <Link href={registrationTool.href} className={styles.quickCard}>
-                  <div className={styles.quickIcon}>
-                    <ToolIcon label={registrationTool.icon} />
-                  </div>
-                  <div className={styles.quickCopy}>
-                    <strong>{registrationTool.title}</strong>
-                    <span>Review active registrations and waitlists.</span>
-                  </div>
-                  <span className={styles.arrow} aria-hidden="true">
-                    →
-                  </span>
-                </Link>
-              ) : null}
+            <div className={styles.toolGrid}>
+              {group.tools.map((tool) => {
+                const body = (
+                  <>
+                    <div className={styles.cardIcon}>{tool.icon}</div>
+                    <div className={styles.toolCopy}>
+                      <h3>{tool.title}</h3>
+                      <p>{tool.description}</p>
+                    </div>
+                    <span className={styles.arrow} aria-hidden="true">
+                      {tool.external ? "↗" : "→"}
+                    </span>
+                  </>
+                );
 
-              {volunteerTool ? (
-                <Link href={volunteerTool.href} className={styles.quickCard}>
-                  <div className={styles.quickIcon}>
-                    <ToolIcon label={volunteerTool.icon} />
-                  </div>
-                  <div className={styles.quickCopy}>
-                    <strong>{volunteerTool.title}</strong>
-                    <span>Find profiles and manage volunteer records.</span>
-                  </div>
-                  <span className={styles.arrow} aria-hidden="true">
-                    →
-                  </span>
-                </Link>
-              ) : null}
+                return tool.external ? (
+                  <a
+                    className={styles.toolCard}
+                    href={tool.href}
+                    key={tool.href}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {body}
+                  </a>
+                ) : (
+                  <Link className={styles.toolCard} href={tool.href} key={tool.href}>
+                    {body}
+                  </Link>
+                );
+              })}
             </div>
           </section>
-
-          <div className={styles.groupStack}>
-            {visibleGroups.map((group) => (
-              <section className={styles.group} id={group.id} key={group.id}>
-                <div className={styles.groupHeader}>
-                  <h2>{group.title}</h2>
-                  <span>{group.note}</span>
-                </div>
-
-                <div className={styles.toolGrid}>
-                  {group.tools.map((tool) => {
-                    const body = (
-                      <>
-                        <div className={styles.toolIcon}>
-                          <ToolIcon label={tool.icon} />
-                        </div>
-                        <div className={styles.toolCopy}>
-                          <h3>{tool.title}</h3>
-                          <p>{tool.description}</p>
-                        </div>
-                        <span className={styles.toolArrow} aria-hidden="true">
-                          {tool.external ? "↗" : "→"}
-                        </span>
-                      </>
-                    );
-
-                    return tool.external ? (
-                      <a
-                        className={`${styles.toolCard} ${styles.externalCard}`}
-                        href={tool.href}
-                        key={tool.href}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        {body}
-                      </a>
-                    ) : (
-                      <Link className={styles.toolCard} href={tool.href} key={tool.href}>
-                        {body}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
-        </section>
+        ))}
       </div>
     </main>
   );
