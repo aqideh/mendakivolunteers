@@ -69,8 +69,8 @@ select is(
 );
 
 select ok(
-  has_table_privilege('anon', 'content.opportunities', 'SELECT'),
-  'anonymous users can read visible opportunities'
+  not has_table_privilege('anon', 'content.opportunities', 'SELECT'),
+  'retired legacy opportunities are not browser-readable'
 );
 
 select ok(
@@ -79,18 +79,18 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('anon', 'content.news_posts', 'SELECT'),
-  'anonymous users can read visible news posts'
+  not has_table_privilege('anon', 'content.news_posts', 'SELECT'),
+  'retired legacy news posts are not browser-readable'
 );
 
 select ok(
-  has_table_privilege('authenticated', 'content.opportunities', 'INSERT'),
-  'authenticated content managers can insert through RLS'
+  not has_table_privilege('authenticated', 'content.opportunities', 'INSERT'),
+  'browser users cannot insert into retired legacy opportunities'
 );
 
 select ok(
-  has_table_privilege('authenticated', 'content.opportunities', 'UPDATE'),
-  'authenticated content managers can update through RLS'
+  not has_table_privilege('authenticated', 'content.opportunities', 'UPDATE'),
+  'browser users cannot update retired legacy opportunities'
 );
 
 select ok(
@@ -99,8 +99,8 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('authenticated', 'content.revisions', 'SELECT'),
-  'authenticated content managers can read revisions through RLS'
+  not has_table_privilege('authenticated', 'content.revisions', 'SELECT'),
+  'legacy content revisions are server-only'
 );
 
 select ok(
