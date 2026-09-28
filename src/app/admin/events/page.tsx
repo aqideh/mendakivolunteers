@@ -246,7 +246,6 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
         <section className="phaseone-events-mobile-list" aria-label="Current programmes and events">
           {events.map((event) => {
             const listingStatus = getPackageListingStatus(event.timeslots, event.is_published);
-            const pinReady = event.has_sign_in_pin && event.has_sign_out_pin;
 
             return (
               <article className="phaseone-events-mobile-card" key={event.id}>
@@ -261,7 +260,6 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                 <div className="phaseone-events-mobile-meta">
                   {event.timeslots.length > 1 ? <span>{event.timeslots.length} shifts</span> : null}
                   <span>{event.is_opportunity_published ? "Opportunity live" : "Opportunity draft"}</span>
-                  <span data-ready={pinReady}>{pinReady ? "PINs ready" : "PIN setup needed"}</span>
                 </div>
 
                 <MobileEventActions
@@ -284,7 +282,6 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
               <tr>
                 <th>Event</th>
                 <th>Schedule</th>
-                <th>Access</th>
                 <th>Visibility</th>
                 <th>Actions</th>
               </tr>
@@ -307,11 +304,6 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
                       ) : null}
                     </td>
                     <td>
-                      {event.has_sign_in_pin && event.has_sign_out_pin
-                        ? "Both PINs configured"
-                        : "Configuration incomplete"}
-                    </td>
-                    <td>
                       <span className="status-pill">
                         {getPackageListingStatus(event.timeslots, event.is_published)}
                       </span>
@@ -328,7 +320,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
               })}
 
               {events.length === 0 ? (
-                <tr><td colSpan={5}>No current or recent event guides.</td></tr>
+                <tr><td colSpan={4}>No current or recent event guides.</td></tr>
               ) : null}
             </tbody>
           </table>
