@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { submitEventFeedback } from "@/app/attendance/actions";
@@ -60,31 +59,31 @@ export default async function AttendanceFeedbackPage({ searchParams }: Props) {
       <PortalHeader status="Feedback" lite />
       <main className="attendance-self-page page-frame">
         <section className="attendance-self-card attendance-feedback-card">
-          <p className="eyebrow">Checked out</p>
           <h1>Before you go</h1>
-          <p>Your checkout has already been recorded for <strong>{event.title}</strong>. This short feedback is optional and does not affect your attendance.</p>
+          <p>Your checkout has been recorded for <strong>{event.title}</strong>. Complete this short feedback to finish checking out.</p>
 
           {param(query.error) ? <div className="notice notice-error">Feedback could not be saved. Please check your responses and try again.</div> : null}
 
           <form action={submitEventFeedback} className="attendance-feedback-form">
             <input name="eventId" type="hidden" value={eventId} />
-            <Rating name="roleClarity" label="I knew what I was expected to do today." />
-            <Rating name="roleSatisfaction" label="I was satisfied with my volunteering role." />
-            <Rating name="staffSupport" label="I received the support I needed from MENDAKI staff." />
-            <Rating name="recommend" label="I would recommend this volunteering opportunity to family or friends." />
+            <section>
+              <h2>Training / Briefing Before Deployment</h2>
+              <Rating name="briefingThorough" label="9. The staff did a thorough briefing with the volunteers" />
+              <Rating name="onboardingRoleUnderstanding" label="10. The onboarding process helped me understand my volunteer role." />
+            </section>
+
+            <section>
+              <h2>During the Event or Deployment</h2>
+              <Rating name="roleSatisfaction" label="11. I am satisfied with the assigned role" />
+              <Rating name="staffSupport" label="12. MENDAKI staff are approachable and supportive" />
+            </section>
 
             <div className="form-field">
-              <label htmlFor="feedback-suggestions">Anything we could improve? <span className="muted">optional</span></label>
-              <textarea id="feedback-suggestions" maxLength={1500} name="suggestions" rows={4} placeholder="Tell us what would make the volunteering experience better." />
+              <label htmlFor="feedback-suggestions">13. What can MENDAKI do to improve your volunteer experience?</label>
+              <textarea id="feedback-suggestions" maxLength={1500} name="suggestions" rows={4} />
             </div>
 
-            <label className="attendance-feedback-followup">
-              <input name="followUpRequested" type="checkbox" />
-              <span>I would like a MENDAKI staff member to follow up with me about something from today.</span>
-            </label>
-
-            <button className="button button-primary attendance-self-primary" type="submit">Submit feedback</button>
-            <Link className="button button-secondary attendance-self-primary" href={`/attendance/complete?event=${encodeURIComponent(eventId)}&action=check_out&status=checked_out`}>Skip feedback</Link>
+            <button className="button button-primary attendance-self-primary" type="submit">Submit feedback &amp; complete checkout</button>
           </form>
         </section>
       </main>
