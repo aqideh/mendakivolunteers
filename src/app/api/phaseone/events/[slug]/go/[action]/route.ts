@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { authorizeEventGuideSlug } from "@/lib/phaseone/event-guide-access";
-import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
-  evaluatePackageActionRedirect,
   getPackageActionDestination,
   isPackageAction,
-  packageActionCookieName,
-  readPackageActionAccessToken,
+  isSafePackageActionDestination,
 } from "@/lib/phaseone/package-action-access";
 import { packagePrivateResponseHeaders } from "@/lib/phaseone/package-route-security";
 
@@ -65,41 +63,23 @@ export async function GET(
   const supabase = getPhaseOneAdminClient();
   const { data: event, error } = await supabase
     .from("phaseone_events")
-    .select(
-      "id, sign_in_url, sign_out_url, sign_in_pin_updated_at, sign_out_pin_updated_at",
-    )
+    .select("id, sign_in_url, sign_out_url")
     .eq("id", authorization.event.id)
     .eq("is_published", true)
     .maybeSingle();
 
-  const pinUpdatedAt = event
-    ? rawAction === "sign-in"
-      ? event.sign_in_pin_updated_at
-      : event.sign_out_pin_updated_at
-    : null;
-  if (error || !event || !pinUpdatedAt) {
+  if (error || !event) {
     return redirect(
       new URL(`/journey/${slug}?access=unavailable&action=${rawAction}`, request.url),
     );
   }
 
-  const claims = readPackageActionAccessToken(
-    request.cookies.get(packageActionCookieName(event.id, rawAction))?.value,
-    getPhaseOneServerSecret(),
-  );
-  const decision = evaluatePackageActionRedirect({
-    claims,
-    eventId: event.id,
-    action: rawAction,
-    pinUpdatedAt,
-    destination: getPackageActionDestination(event, rawAction),
-  });
-
-  if (decision.status !== "allowed") {
+  const destination = getPackageActionDestination(event, rawAction);
+  if (!isSafePackageActionDestination(destination)) {
     return redirect(
-      new URL(`/journey/${slug}?access=${decision.status}&action=${rawAction}`, request.url),
+      new URL(`/journey/${slug}?access=unavailable&action=${rawAction}`, request.url),
     );
   }
 
-  return redirect(decision.destination);
+  return redirect(destination);
 }
