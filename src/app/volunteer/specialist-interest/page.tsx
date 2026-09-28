@@ -14,8 +14,8 @@ export default function SpecialistInterestPage() {
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Volunteers" lite />
       <main className={styles.frame}>
-        <Link className={styles.backLink} href="/volunteer/specialist">
-          ← Back to Specialist
+        <Link className={styles.backLink} href="/volunteer/professionals">
+          ← Back to Professionals
         </Link>
         <section className={styles.hero}>
           <p className={styles.eyebrow}>Specialist volunteering</p>
