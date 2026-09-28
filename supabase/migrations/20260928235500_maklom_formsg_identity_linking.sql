@@ -152,7 +152,11 @@ $$;
 
 revoke all on function maklom_private.match_or_create_volunteer(
   text,text,text,smallint,text,text[],text,text
-) from public, anon, authenticated;
+) from public, anon;
+grant usage on schema maklom_private to authenticated;
+grant execute on function maklom_private.match_or_create_volunteer(
+  text,text,text,smallint,text,text[],text,text
+) to authenticated;
 
 create or replace function public.maklom_match_or_create_volunteer(
   p_name text,
