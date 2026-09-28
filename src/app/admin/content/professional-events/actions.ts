@@ -54,7 +54,7 @@ function adminRedirect(message: string, kind: "success" | "error") {
 }
 
 function revalidateProfessionalEvents() {
-  revalidatePath("/professionals");
+  revalidatePath("/specialist");
   revalidatePath("/admin/content/professional-events");
 }
 
@@ -83,7 +83,7 @@ export async function createProfessionalEvent(formData: FormData) {
   }
 
   revalidateProfessionalEvents();
-  adminRedirect("Professional event created.", "success");
+  adminRedirect("Specialist event created.", "success");
 }
 
 export async function updateProfessionalEvent(formData: FormData) {
@@ -118,7 +118,7 @@ export async function updateProfessionalEvent(formData: FormData) {
   }
 
   revalidateProfessionalEvents();
-  adminRedirect("Professional event updated.", "success");
+  adminRedirect("Specialist event updated.", "success");
 }
 
 export async function deleteProfessionalEvent(formData: FormData) {
@@ -138,5 +138,5 @@ export async function deleteProfessionalEvent(formData: FormData) {
   }
 
   revalidateProfessionalEvents();
-  adminRedirect("Professional event deleted.", "success");
+  adminRedirect("Specialist event deleted.", "success");
 }
