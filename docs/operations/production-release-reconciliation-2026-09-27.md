@@ -59,3 +59,8 @@ The hosted staging site currently redirects an unauthenticated fetch to Vercel S
 ## Go/no-go evidence
 
 Promotion is ready only after the current production migration rehearsal, hosted staging journey above, reviewed `main` release diff, CI/RLS gates and safe database-first deploy sequence all pass. Record actual commit, migration versions, reviewer UAT evidence and post-deployment counts here when complete.
+
+
+## 2026-09-28 staging configuration refresh
+
+Triggered a fresh staging deployment after configuring the server-side OneMap environment variables used for volunteer postal-code verification.
