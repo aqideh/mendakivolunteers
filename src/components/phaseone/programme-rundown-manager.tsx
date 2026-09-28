@@ -156,6 +156,7 @@ export function ProgrammeRundownManager({
                   fill
                   sizes="(max-width: 720px) 45vw, 220px"
                   src={image.url}
+                  unoptimized
                 />
               </div>
               <div className={styles.meta}>
