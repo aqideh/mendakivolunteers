@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { ProgrammeRundownGallery } from "@/components/phaseone/programme-rundown-gallery";
 import { PortalHeader } from "@/components/portal-header";
+import { authorizeEventGuideSlug } from "@/lib/phaseone/event-guide-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { evaluateBriefingAccess } from "@/lib/phaseone/package-briefing";
 import { buildDirectionsLinks } from "@/lib/phaseone/directions";
@@ -70,13 +71,31 @@ function Schedule({ timeslots }: { timeslots: VolunteerTimeslot[] }) {
 
 export default async function EventGuidePage({ params }: EventGuidePageProps) {
   const { slug } = await params;
+  const authorization = await authorizeEventGuideSlug(slug);
+
+  if (authorization.state === "signed_out") {
+    redirect(`/login?next=${encodeURIComponent(`/journey/${slug}`)}`);
+  }
+  if (authorization.state === "inactive") {
+    redirect("/login?error=account_inactive");
+  }
+  if (authorization.state === "unavailable") {
+    throw new Error("Event Guide access could not be verified");
+  }
+  if (authorization.state === "not_found") {
+    notFound();
+  }
+  if (authorization.state === "not_registered") {
+    redirect("/journey?error=not_registered");
+  }
+
   const supabase = getPhaseOneAdminClient();
   const { data: volunteerEvent, error } = await supabase
     .from("phaseone_events")
     .select(
       "id, title, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url",
     )
-    .eq("slug", slug)
+    .eq("id", authorization.event.id)
     .eq("is_published", true)
     .maybeSingle();
 
