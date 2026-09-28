@@ -1,0 +1,488 @@
+.page {
+  width: min(86rem, calc(100% - 2rem));
+  padding-top: clamp(1rem, 2vw, 1.5rem);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+  min-height: calc(100vh - 7rem);
+  overflow: hidden;
+  border: 1px solid rgba(55, 58, 54, 0.12);
+  border-radius: 1.6rem;
+  background: #121311;
+  box-shadow: 0 24px 70px rgba(35, 37, 33, 0.14);
+}
+
+.rail {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.15rem 0.7rem;
+  color: #f8f8f4;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(255, 215, 0, 0.12), transparent 8rem),
+    #121311;
+}
+
+.railMark {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border-radius: 0.8rem;
+  color: #121311;
+  background: var(--primary);
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.railNav {
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+  margin-top: 0.6rem;
+}
+
+.railLink,
+.railHome {
+  display: grid;
+  width: 3rem;
+  min-height: 3rem;
+  place-items: center;
+  margin-inline: auto;
+  border-radius: 0.85rem;
+  color: rgba(248, 248, 244, 0.6);
+  text-decoration: none;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+.railLink:hover,
+.railLink:focus-visible,
+.railHome:hover,
+.railHome:focus-visible {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateY(-1px);
+}
+
+.railLinkActive {
+  color: #121311;
+  background: var(--primary);
+}
+
+.railSpacer {
+  flex: 1;
+}
+
+.railHome {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.surface {
+  min-width: 0;
+  padding: clamp(1.15rem, 2.6vw, 2.2rem);
+  background:
+    radial-gradient(circle at 92% 2%, rgba(255, 215, 0, 0.16), transparent 17rem),
+    #f5f5f1;
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.kicker {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  color: #74766f;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.topbar h1 {
+  max-width: none;
+  margin: 0 0 0.4rem;
+  color: #171815;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.topbar p {
+  max-width: 42rem;
+  margin: 0;
+  color: #70736b;
+  font-size: 0.94rem;
+}
+
+.rolePill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.35rem;
+  border: 1px solid rgba(55, 58, 54, 0.12);
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  color: #33352f;
+  background: rgba(255, 255, 255, 0.74);
+  font-size: 0.76rem;
+  font-weight: 800;
+  box-shadow: 0 8px 25px rgba(55, 58, 54, 0.06);
+}
+
+.roleDot {
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 50%;
+  background: #19a36d;
+  box-shadow: 0 0 0 4px rgba(25, 163, 109, 0.12);
+}
+
+.priorityGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(16rem, 0.75fr);
+  gap: 0.9rem;
+  margin-bottom: 1.75rem;
+}
+
+.featureCard,
+.quickCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  text-decoration: none;
+}
+
+.featureCard {
+  min-height: 15.5rem;
+  padding: clamp(1.3rem, 3vw, 2rem);
+  color: #f8f8f4;
+  background:
+    radial-gradient(circle at 84% 14%, rgba(255, 215, 0, 0.28), transparent 10rem),
+    linear-gradient(135deg, #171815, #24251f);
+}
+
+.featureCard::after {
+  position: absolute;
+  right: -3.5rem;
+  bottom: -5rem;
+  width: 15rem;
+  height: 15rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 50%;
+  content: "";
+}
+
+.featureIcon {
+  display: grid;
+  width: 3.15rem;
+  height: 3.15rem;
+  place-items: center;
+  margin-bottom: 2.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.95rem;
+  color: #171815;
+  background: var(--primary);
+}
+
+.featureCard h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 12ch;
+  margin-bottom: 0.45rem;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  letter-spacing: -0.045em;
+}
+
+.featureCard p {
+  position: relative;
+  z-index: 1;
+  max-width: 34rem;
+  margin: 0;
+  color: rgba(248, 248, 244, 0.68);
+  font-size: 0.9rem;
+}
+
+.featureAction {
+  position: absolute;
+  right: 1.3rem;
+  bottom: 1.3rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.quickStack {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.quickCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  min-height: 7.3rem;
+  border: 1px solid rgba(55, 58, 54, 0.1);
+  padding: 1.1rem;
+  color: #1c1d1a;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 30px rgba(55, 58, 54, 0.055);
+}
+
+.quickIcon,
+.toolIcon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #171815;
+  background: var(--primary);
+}
+
+.quickIcon {
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 0.82rem;
+}
+
+.quickCopy {
+  flex: 1;
+  min-width: 0;
+}
+
+.quickCopy strong {
+  display: block;
+  margin-bottom: 0.18rem;
+  font-size: 0.93rem;
+}
+
+.quickCopy span {
+  display: block;
+  color: #777a72;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.arrow {
+  flex: 0 0 auto;
+  color: #676a63;
+  font-size: 1.2rem;
+}
+
+.groupStack {
+  display: grid;
+  gap: 1.55rem;
+}
+
+.group {
+  scroll-margin-top: 5rem;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.groupHeader h2 {
+  margin: 0;
+  color: #1d1f1a;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.groupHeader span {
+  color: #858880;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.toolCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: start;
+  min-height: 9.4rem;
+  border: 1px solid rgba(55, 58, 54, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  color: #242620;
+  background: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  box-shadow: 0 7px 24px rgba(55, 58, 54, 0.04);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease,
+    background-color 140ms ease;
+}
+
+.toolCard:hover,
+.toolCard:focus-visible {
+  border-color: rgba(55, 58, 54, 0.22);
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(55, 58, 54, 0.08);
+  transform: translateY(-2px);
+}
+
+.toolIcon {
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 0.72rem;
+}
+
+.toolCopy {
+  min-width: 0;
+}
+
+.toolCopy h3 {
+  margin: 0.05rem 0 0.28rem;
+  color: #1d1f1a;
+  font-size: 0.92rem;
+}
+
+.toolCopy p {
+  margin: 0;
+  color: #777a72;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.toolArrow {
+  color: #93968e;
+  font-size: 1rem;
+  transition: transform 140ms ease;
+}
+
+.toolCard:hover .toolArrow {
+  transform: translate(2px, -2px);
+}
+
+.externalCard .toolIcon {
+  color: var(--primary);
+  background: #171815;
+}
+
+@media (max-width: 980px) {
+  .priorityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .quickStack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    width: min(100% - 0.75rem, 86rem);
+    padding-top: 0.55rem;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+    border-radius: 1.15rem;
+  }
+
+  .rail {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0.65rem;
+  }
+
+  .railMark {
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.7rem;
+  }
+
+  .railNav {
+    display: flex;
+    gap: 0.25rem;
+    width: auto;
+    margin: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .railNav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .railLink,
+  .railHome {
+    width: 2.35rem;
+    min-height: 2.35rem;
+    border-radius: 0.68rem;
+  }
+
+  .railSpacer {
+    display: none;
+  }
+
+  .surface {
+    padding: 1rem;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .topbar h1 {
+    font-size: 2rem;
+  }
+
+  .rolePill {
+    min-height: 2.1rem;
+  }
+
+  .featureCard {
+    min-height: 13.5rem;
+  }
+
+  .quickStack,
+  .toolGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolCard {
+    min-height: auto;
+  }
+
+  .groupHeader {
+    align-items: baseline;
+  }
+}
