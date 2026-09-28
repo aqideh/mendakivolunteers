@@ -13,7 +13,10 @@ import { PortalHeader } from "@/components/portal-header";
 import { hasProgrammeManagerRole, requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
-import { programmeRundownBucket } from "@/lib/phaseone/programme-rundown";
+import {
+  programmeRundownBucket,
+  programmeRundownSignedUrlTtlSeconds,
+} from "@/lib/phaseone/programme-rundown";
 
 export const metadata: Metadata = { title: "Edit programme" };
 export const dynamic = "force-dynamic";
@@ -114,13 +117,34 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
     ...eventResult.data,
     timeslots: timeslotsResult.data,
   } as EventFormValue;
-  const rundownImages = (rundownImagesResult.data ?? []).map((image) => ({
-    id: String(image.id),
-    fileName: image.original_file_name ? String(image.original_file_name) : null,
-    url: admin.storage
-      .from(programmeRundownBucket)
-      .getPublicUrl(String(image.storage_path)).data.publicUrl,
-  }));
+  const rundownRows = rundownImagesResult.data ?? [];
+  const rundownSignedUrls = await Promise.all(
+    rundownRows.map((image) =>
+      admin.storage
+        .from(programmeRundownBucket)
+        .createSignedUrl(
+          String(image.storage_path),
+          programmeRundownSignedUrlTtlSeconds,
+        ),
+    ),
+  );
+  const rundownImages = rundownRows.map((image, index) => {
+    const signed = rundownSignedUrls[index];
+    if (signed?.error || !signed?.data?.signedUrl) {
+      console.error("Unable to sign programme rundown image", {
+        eventId: id,
+        imageId: image.id,
+        message: signed?.error?.message,
+      });
+      throw new Error("Programme rundown image could not be loaded");
+    }
+
+    return {
+      id: String(image.id),
+      fileName: image.original_file_name ? String(image.original_file_name) : null,
+      url: signed.data.signedUrl,
+    };
+  });
 
   return (
     <div className="site-shell">
