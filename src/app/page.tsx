@@ -19,7 +19,7 @@ const volunteerPaths = [
   { number: "01", title: "Coach", href: "/volunteer/coach" },
   { number: "02", title: "Facilitator", href: "/volunteer/facilitator" },
   { number: "03", title: "Mentor", href: "/volunteer/mentor" },
-  { number: "04", title: "Specialist", href: "/professionals" },
+  { number: "04", title: "Specialist", href: "/specialist" },
   { number: "05", title: "Contributor", href: "/opportunities" },
 ];
 
