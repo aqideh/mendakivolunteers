@@ -3,9 +3,9 @@
 import type { AuthError } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import { createEmailLinkClient } from "@/lib/supabase/email-link";
 import { getPublicConfig } from "@/lib/env";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
-import { createClient } from "@/lib/supabase/server";
 
 const emailSchema = z.string().trim().email().max(254);
 
@@ -58,7 +58,7 @@ export async function requestVolunteerSignUpLink(
   );
 
   try {
-    const supabase = await createClient();
+    const supabase = createEmailLinkClient();
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -109,7 +109,7 @@ export async function resendVolunteerVerificationLink(
   );
 
   try {
-    const supabase = await createClient();
+    const supabase = createEmailLinkClient();
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
