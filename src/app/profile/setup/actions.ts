@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireActiveAccount } from "@/lib/auth/account-access";
-import { resolveSingaporePostalCode } from "@/lib/onemap/server";
+import { OneMapConfigurationError, resolveSingaporePostalCode } from "@/lib/onemap/server";
 
 const contactSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
@@ -166,8 +166,15 @@ export async function saveHomeStep(formData: FormData) {
   } catch (error) {
     console.error("Unable to verify volunteer home location with OneMap", {
       message: error instanceof Error ? error.message : "Unknown OneMap error",
+      kind: error instanceof OneMapConfigurationError ? "configuration" : "lookup",
     });
-    redirect(`/profile/setup?step=home&error=location_lookup${isEdit ? "&mode=edit" : ""}`);
+
+    const code =
+      error instanceof OneMapConfigurationError
+        ? "location_service_unavailable"
+        : "location_lookup";
+
+    redirect(`/profile/setup?step=home&error=${code}${isEdit ? "&mode=edit" : ""}`);
   }
 
   const result = await client.rpc("update_current_volunteer_home_location", {
