@@ -297,3 +297,32 @@
     display: none;
   }
 }
+
+
+.phaseone-past-attendance-summary {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  white-space: nowrap;
+}
+
+.phaseone-past-attendance-summary strong {
+  font-size: 0.84rem;
+}
+
+.phaseone-past-attendance-summary span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.phaseone-past-attendance-divider {
+  margin-inline: 0.1rem;
+  color: var(--border) !important;
+}
+
+@media (max-width: 759px) {
+  .phaseone-past-attendance-summary {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
