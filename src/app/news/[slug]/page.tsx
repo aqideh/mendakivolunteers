@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDate } from "@/lib/content/dates";
-import { createClient } from "@/lib/supabase/server";
+import { getPublicNewsPostBySlug } from "@/lib/content/public-news";
 
 type NewsPageProps = {
   params: Promise<{ slug: string }>;
@@ -16,18 +16,7 @@ export async function generateMetadata({
   params,
 }: NewsPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .schema("content")
-    .from("news_posts")
-    .select("title, summary")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Unable to load news metadata", { code: error.code, slug });
-    throw new Error("News metadata could not be loaded");
-  }
+  const data = await getPublicNewsPostBySlug(slug);
 
   return data
     ? { title: data.title, description: data.summary }
@@ -36,18 +25,7 @@ export async function generateMetadata({
 
 export default async function NewsPostPage({ params }: NewsPageProps) {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data: post, error } = await supabase
-    .schema("content")
-    .from("news_posts")
-    .select("id, title, summary, body, featured, published_at, publish_at")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Unable to load news post", { code: error.code, slug });
-    throw new Error("News post could not be loaded");
-  }
+  const post = await getPublicNewsPostBySlug(slug);
 
   if (!post) {
     notFound();
