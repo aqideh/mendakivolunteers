@@ -326,3 +326,11 @@
     white-space: normal;
   }
 }
+
+
+/* Action popovers must not create an internal table scrollbar. */
+@media (min-width: 760px) {
+  .phaseone-events-desktop-table {
+    overflow: visible;
+  }
+}
