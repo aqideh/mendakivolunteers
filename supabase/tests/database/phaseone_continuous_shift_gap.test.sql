@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(9);
 
 insert into auth.users (id, email)
 values ('99000000-0000-4000-8000-000000000001', 'gap-uat-staff@example.test');
@@ -77,7 +77,6 @@ insert into public.phaseone_roster (
     '99000000-0000-4000-8000-000000000001'
   );
 
-set local role service_role;
 
 select lives_ok(
   $$
@@ -93,7 +92,6 @@ select lives_ok(
   'first shift can be checked in'
 );
 
-reset role;
 
 select is(
   (
@@ -123,7 +121,6 @@ select ok(
   'gapped shift is not auto-linked'
 );
 
-set local role service_role;
 
 select throws_ok(
   $$
@@ -183,7 +180,6 @@ select lives_ok(
   'gapped shift can start a new session after checkout'
 );
 
-reset role;
 
 select is(
   (
