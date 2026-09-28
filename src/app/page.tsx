@@ -12,14 +12,14 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Keluarga MENDAKI — Volunteer with MENDAKI",
   description:
-    "Find your place to contribute with MENDAKI through coaching, facilitation, mentoring, professional support, and community volunteering.",
+    "Find your place to contribute with MENDAKI through coaching, facilitation, mentoring, specialist support, and community volunteering.",
 };
 
 const volunteerPaths = [
   { number: "01", title: "Coach", href: "/volunteer/coach" },
   { number: "02", title: "Facilitator", href: "/volunteer/facilitator" },
   { number: "03", title: "Mentor", href: "/volunteer/mentor" },
-  { number: "04", title: "Professional", href: "/professionals" },
+  { number: "04", title: "Specialist", href: "/specialist" },
   { number: "05", title: "Contributor", href: "/opportunities" },
 ];
 

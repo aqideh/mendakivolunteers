@@ -10,7 +10,7 @@ import {
   type ProfessionalEventAdminValue,
 } from "./professional-event-form";
 
-export const metadata: Metadata = { title: "Professional events" };
+export const metadata: Metadata = { title: "Specialist events" };
 export const dynamic = "force-dynamic";
 
 type PageProps = {
@@ -49,13 +49,13 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
 
   return (
     <div className="site-shell">
-      <PortalHeader status="Professional events" dashboard />
+      <PortalHeader status="Specialist events" dashboard />
       <main className="page-frame">
         <div className="dashboard-header">
           <div>
-            <h1>Professional events</h1>
+            <h1>Specialist events</h1>
             <p className="muted">
-              Manage event cards shown below the fold on the Professionals landing page. This is a
+              Manage event cards shown below the fold on the Specialist landing page. This is a
               separate content stream from volunteer opportunities and Event Operations.
             </p>
           </div>
