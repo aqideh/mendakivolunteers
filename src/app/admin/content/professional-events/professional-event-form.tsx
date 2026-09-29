@@ -1,10 +1,8 @@
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
-import {
-  createProfessionalEvent,
-  deleteProfessionalEvent,
-  updateProfessionalEvent,
-} from "./actions";
+import { createProfessionalEvent, updateProfessionalEvent } from "./actions";
+import { DeleteProfessionalEventButton } from "./delete-professional-event-button";
+import styles from "./professional-events-admin.module.css";
 
 export type ProfessionalEventAdminValue = Readonly<{
   id: string;
@@ -26,10 +24,10 @@ export function ProfessionalEventForm({
   const action = event ? updateProfessionalEvent : createProfessionalEvent;
 
   return (
-    <form action={action} className="cms-form">
+    <form action={action} className={`cms-form ${styles.form} ${event ? styles.editForm : ""}`}>
       {event ? <input type="hidden" name="id" value={event.id} /> : null}
 
-      <div className="form-grid two-column">
+      <div className={styles.formGrid}>
         <label className="form-field">
           <span>Event title</span>
           <input
@@ -63,7 +61,7 @@ export function ProfessionalEventForm({
         />
       </label>
 
-      <div className="form-grid two-column">
+      <div className={styles.formGrid}>
         <label className="form-field">
           <span>Starts (Singapore time)</span>
           <input
@@ -82,7 +80,7 @@ export function ProfessionalEventForm({
         </label>
       </div>
 
-      <div className="form-grid two-column">
+      <div className={styles.formGrid}>
         <label className="form-field">
           <span>CTA label</span>
           <input
@@ -117,30 +115,19 @@ export function ProfessionalEventForm({
         </label>
       </div>
 
-      <p className="form-help">
+      <p className={styles.formHelp}>
         The public CTA is intentionally inactive. These records are not volunteer opportunities and
         do not create volunteer registrations.
       </p>
 
-      <div className="form-actions">
+      <div className={styles.formFooter}>
         <button className="button button-primary" type="submit">
-          {event ? "Save event" : "Add event"}
+          {event ? "Save changes" : "Add event"}
         </button>
+        {event ? (
+          <DeleteProfessionalEventButton eventId={event.id} eventTitle={event.title} />
+        ) : null}
       </div>
-
-      {event ? (
-        <div className="form-actions">
-          <button
-            className="button button-secondary"
-            formAction={deleteProfessionalEvent}
-            name="id"
-            value={event.id}
-            type="submit"
-          >
-            Delete event
-          </button>
-        </div>
-      ) : null}
     </form>
   );
 }
