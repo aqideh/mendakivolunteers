@@ -1,6 +1,6 @@
 begin;
 
-select plan(36);
+select plan(37);
 
 select has_table('gamification', 'badge_definitions', 'badge definitions table exists');
 select has_table('gamification', 'volunteer_badges', 'volunteer badge awards table exists');
@@ -266,6 +266,17 @@ select ok(
       ? 'reason'
   ),
   'volunteer badge snapshot does not expose the internal award reason'
+);
+
+select ok(
+  jsonb_array_length(core.get_current_badges_snapshot() -> 'catalogue') > 0
+    and not (
+      core.get_current_badges_snapshot()
+        -> 'catalogue'
+        -> 0
+        ? 'created_by'
+    ),
+  'volunteer badge snapshot exposes the safe badge catalogue without staff metadata'
 );
 
 select throws_ok(
