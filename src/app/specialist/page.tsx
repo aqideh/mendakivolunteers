@@ -73,7 +73,7 @@ export default async function SpecialistPage() {
       description="Join a community of specialists who connect, share knowledge and give back. Support events and initiatives, share your experience, or simply get involved and build connections with others in your industry."
       heroImage={heroImage}
       inlineCta={{
-        href: "https://professionalnetworksuat.mendaki.org.sg/",
+        href: "https://mendaki-pn-connect.base44.app/Home",
         label: "Discover Professional Networks",
       }}
       items={[]}
