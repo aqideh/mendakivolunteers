@@ -9,6 +9,7 @@ import {
   getValidationMessage,
   parseNewsForm,
 } from "@/lib/content/validation";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import type { ContentStatus } from "@/types/database";
 
 function encode(value: string): string {
@@ -47,12 +48,13 @@ export async function createNewsPost(formData: FormData) {
     );
   }
 
-  const { supabase, access } = await requireContentManager({
+  const { access } = await requireContentManager({
     publish: requiresPublisher(parsed.data.status),
     next: "/admin/content/news/new",
   });
+  const admin = getPhaseOneAdminClient();
 
-  const { error } = await supabase.schema("content").from("news_posts").insert({
+  const { error } = await admin.schema("content").from("news_posts").insert({
     slug: parsed.data.slug,
     title: parsed.data.title,
     summary: parsed.data.summary,
@@ -86,12 +88,13 @@ export async function updateNewsPost(formData: FormData) {
     );
   }
 
-  const { supabase, access } = await requireContentManager({
+  const { access } = await requireContentManager({
     publish: requiresPublisher(parsed.data.status),
     next: `/admin/content/news/${id}/edit`,
   });
+  const admin = getPhaseOneAdminClient();
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await admin
     .schema("content")
     .from("news_posts")
     .update({
