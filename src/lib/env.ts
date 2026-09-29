@@ -15,6 +15,7 @@ const appEnvironmentSchema = z.enum([
 
 const vercelEnvironmentSchema = z.enum(["development", "preview", "production"]);
 const booleanSettingSchema = z.enum(["true", "false"]);
+const STAGING_APP_URL = "https://keluargastaging.vercel.app";
 const hostnameSchema = z
   .string()
   .trim()
@@ -28,6 +29,13 @@ export type AppEnvironment = z.infer<typeof appEnvironmentSchema>;
 export type Environment = Readonly<Record<string, string | undefined>>;
 
 function inferVercelAppUrl(environment: Environment): string | undefined {
+  if (
+    environment.VERCEL_ENV === "preview" &&
+    environment.VERCEL_GIT_COMMIT_REF === "staging"
+  ) {
+    return STAGING_APP_URL;
+  }
+
   const hostname =
     environment.VERCEL_ENV === "production"
       ? environment.VERCEL_PROJECT_PRODUCTION_URL ?? environment.VERCEL_URL
