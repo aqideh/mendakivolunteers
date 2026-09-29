@@ -12,6 +12,7 @@ export type ProfessionalEventAdminValue = Readonly<{
   ends_at: string | null;
   venue: string | null;
   cta_label: string;
+  cta_url: string | null;
   is_published: boolean;
   sort_order: number;
 }>;
@@ -104,6 +105,21 @@ export function ProfessionalEventForm({
         </label>
       </div>
 
+      <label className="form-field">
+        <span>CTA link</span>
+        <input
+          name="ctaUrl"
+          type="url"
+          inputMode="url"
+          maxLength={2048}
+          placeholder="https://..."
+          defaultValue={event?.cta_url ?? ""}
+        />
+        <small className={styles.fieldHint}>
+          Paste the HTTPS registration or information link. The public CTA stays disabled until a link is saved.
+        </small>
+      </label>
+
       <div className="checkbox-row">
         <label>
           <input
@@ -116,8 +132,8 @@ export function ProfessionalEventForm({
       </div>
 
       <p className={styles.formHelp}>
-        The public CTA is intentionally inactive. These records are not volunteer opportunities and
-        do not create volunteer registrations.
+        Professional Network event CTAs open the link you provide above. These records remain separate
+        from volunteer opportunities and do not create volunteer registrations in Keluarga.
       </p>
 
       <div className={styles.formFooter}>
