@@ -42,12 +42,8 @@ export default async function SpecialistPage() {
       title="Your Experience Can Open Doors"
       description="Join a community of specialists who connect, share knowledge and give back. Support events and initiatives, share your experience, or simply get involved and build connections with others in your industry."
       heroImage={heroImage}
-      inlineCta={{
-        href: "https://mendaki-pn-connect.base44.app/Home",
-        label: "Discover Professional Networks",
-      }}
       items={[]}
-      ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
+      ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Join MENDAKI PN" }]}
       afterContent={<ProfessionalNetworkTabs events={eventCards} />}
     />
   );
