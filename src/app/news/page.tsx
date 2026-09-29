@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDate } from "@/lib/content/dates";
-import { createClient } from "@/lib/supabase/server";
+import { getPublicNewsPosts } from "@/lib/content/public-news";
 
 export const metadata: Metadata = {
   title: "Volunteer news",
@@ -13,19 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
-  const supabase = await createClient();
-  const { data: posts, error } = await supabase
-    .schema("content")
-    .from("news_posts")
-    .select("id, slug, title, summary, featured, published_at, publish_at")
-    .order("featured", { ascending: false })
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .limit(100);
-
-  if (error) {
-    console.error("Unable to load public news", { code: error.code });
-    throw new Error("Public news could not be loaded");
-  }
+  const posts = await getPublicNewsPosts();
 
   return (
     <div className="site-shell">

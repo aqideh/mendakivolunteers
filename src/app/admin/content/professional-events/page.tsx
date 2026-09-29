@@ -9,6 +9,7 @@ import {
   ProfessionalEventForm,
   type ProfessionalEventAdminValue,
 } from "./professional-event-form";
+import styles from "./professional-events-admin.module.css";
 
 export const metadata: Metadata = { title: "Specialist events" };
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
   const { data, error: loadError } = await admin
     .schema("content")
     .from("professional_events")
-    .select("id, title, summary, starts_at, ends_at, venue, cta_label, is_published, sort_order")
+    .select("id, title, summary, starts_at, ends_at, venue, cta_label, cta_url, is_published, sort_order")
     .order("sort_order", { ascending: true })
     .order("starts_at", { ascending: true, nullsFirst: false })
     .order("title", { ascending: true });
@@ -79,7 +80,18 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
               <p className="muted">Create a standalone public event card.</p>
             </div>
           </div>
-          <ProfessionalEventForm />
+          <details className={styles.createDisclosure}>
+            <summary className={styles.createSummary}>
+              <div className={styles.createSummaryCopy}>
+                <strong>Create a new event card</strong>
+                <span>Use this when adding a new Specialist event to the public page.</span>
+              </div>
+              <span className={styles.createSummaryAction}>Add event</span>
+            </summary>
+            <div className={styles.createPanel}>
+              <ProfessionalEventForm />
+            </div>
+          </details>
         </section>
 
         <section className="section">
@@ -90,17 +102,30 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
             </div>
           </div>
 
-          <div className="card-grid">
+          <div className={styles.eventList}>
             {events.map((event) => (
-              <article className="card" key={event.id}>
-                <div className="section-header">
-                  <div>
-                    <h3>{event.title}</h3>
-                    <p className="muted">{event.is_published ? "Published" : "Draft"}</p>
+              <details className={styles.eventDisclosure} key={event.id}>
+                <summary className={styles.eventSummary}>
+                  <div className={styles.eventSummaryCopy}>
+                    <span className={styles.eventTitle}>{event.title}</span>
+                    <span className={styles.eventMeta}>
+                      <span>{event.starts_at ? new Intl.DateTimeFormat("en-SG", { timeZone: "Asia/Singapore", day: "numeric", month: "short", year: "numeric" }).format(new Date(event.starts_at)) : "Date not set"}</span>
+                      {event.venue ? <span>{event.venue}</span> : null}
+                      <span>{event.cta_url ? "CTA linked" : "CTA link not set"}</span>
+                    </span>
                   </div>
+                  <span className={styles.eventSummaryActions}>
+                    <span className="status-pill" data-state={event.is_published ? "verified" : "pending"}>
+                      {event.is_published ? "Published" : "Draft"}
+                    </span>
+                    <span className={styles.editLabel}>Edit</span>
+                    <span className={styles.chevron} aria-hidden="true">⌄</span>
+                  </span>
+                </summary>
+                <div className={styles.eventFormPanel}>
+                  <ProfessionalEventForm event={event} />
                 </div>
-                <ProfessionalEventForm event={event} />
-              </article>
+              </details>
             ))}
           </div>
 

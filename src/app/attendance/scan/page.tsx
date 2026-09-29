@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import {
   confirmQrAttendance,
-  identifyAttendanceVolunteer,
   resolveAttendancePersonForToken,
 } from "@/app/attendance/actions";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -16,10 +16,12 @@ function param(value: string | string[] | undefined) { return Array.isArray(valu
 
 function errorText(code: string | undefined) {
   if (code === "expired") return "This QR code has expired. Please scan the current QR shown by staff.";
-  if (code === "not_found") return "We could not find one unique roster entry with those details. Please approach a MENDAKI staff member.";
-  if (code === "identify_first") return "Please identify yourself before confirming attendance.";
+  if (code === "inactive") return "This Keluarga MENDAKI account is not active. Please approach a MENDAKI staff member.";
+  if (code === "unlinked") return "Your account is not linked to a volunteer profile. Please approach a MENDAKI staff member.";
+  if (code === "not_rostered") return "Your volunteer profile is not on this shift roster. Please approach a MENDAKI staff member.";
+  if (code === "ambiguous_roster") return "Your roster identity could not be resolved safely. Please approach a MENDAKI staff member.";
+  if (code === "unavailable") return "Your attendance identity could not be verified. Please approach a MENDAKI staff member.";
   if (code === "attendance_failed") return "Attendance could not be recorded. Please approach a MENDAKI staff member.";
-  if (code === "invalid_details") return "Enter the email address or contact number used for this event.";
   return null;
 }
 
@@ -77,21 +79,31 @@ export default async function AttendanceScanPage({ searchParams }: Props) {
               <p className="muted attendance-self-help">Wrong person? Use another browser/device or ask staff to record attendance manually.</p>
             </div>
           ) : (
-            <form action={identifyAttendanceVolunteer} className="attendance-self-identify">
-              <input name="token" type="hidden" value={token} />
-              <div className="form-field">
-                <label htmlFor="attendance-identifier">Find your roster entry</label>
-                <input
-                  autoComplete="email"
-                  id="attendance-identifier"
-                  name="identifier"
-                  placeholder="Email or contact number"
-                  required
-                />
-                <p className="muted">Use the email address or contact number provided when you registered.</p>
-              </div>
-              <button className="button button-primary attendance-self-primary" type="submit">Continue</button>
-            </form>
+            <div className="attendance-self-confirm">
+              {resolved.identityState === "signed_out" ? (
+                <>
+                  <h2>Sign in to continue</h2>
+                  <p className="muted">
+                    Attendance is matched to your Keluarga MENDAKI volunteer account.
+                    You will return to this QR after signing in.
+                  </p>
+                  <Link
+                    className="button button-primary attendance-self-primary"
+                    href={`/login?next=${encodeURIComponent(`/attendance/scan?t=${encodeURIComponent(token)}`)}`}
+                  >
+                    Sign in
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <h2>Staff assistance needed</h2>
+                  <p className="muted">
+                    {errorText(resolved.identityState) ??
+                      "Your attendance identity could not be matched safely. Please ask staff to record your attendance."}
+                  </p>
+                </>
+              )}
+            </div>
           )}
         </section>
       </main>

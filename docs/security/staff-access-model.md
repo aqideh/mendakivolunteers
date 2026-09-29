@@ -20,9 +20,9 @@ Changing a staff access level replaces the previous staff level. Staff levels ar
 
 ## Volunteer Leader
 
-Volunteer Leaders are intended for trusted on-site volunteer leads who need only the minimum tools required to operate attendance.
+Volunteer Leaders are intended for trusted on-site volunteer leads who need only the minimum tools required to operate attendance. Their access is event-scoped: a Volunteer Leader can only open Event Operations, rosters, attendance actions and QR controls for events explicitly assigned to their account by VolTeam or Admin.
 
-Allowed:
+Allowed, for assigned events only:
 
 - view event and shift rosters;
 - search and filter volunteers;

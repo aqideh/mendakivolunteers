@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { getPublicConfig } from "@/lib/env";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
-import { createClient } from "@/lib/supabase/server";
+import { createEmailLinkClient } from "@/lib/supabase/email-link";
 
 const emailSchema = z.string().trim().email().max(254);
 
@@ -32,7 +32,7 @@ export async function requestVolunteerSignInLink(
   );
 
   try {
-    const supabase = await createClient();
+    const supabase = createEmailLinkClient();
     const { appUrl } = getPublicConfig();
     const callbackUrl = new URL("/auth/confirm", appUrl);
     callbackUrl.searchParams.set("next", nextPath);

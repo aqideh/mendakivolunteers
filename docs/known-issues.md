@@ -1,6 +1,6 @@
 # Known issues, limitations and technical debt
 
-**Last reviewed:** 24 September 2026  
+**Last reviewed:** 27 September 2026  
 **Reference branch:** `staging`
 
 This register reflects the approved KELUARGA + MakLom operating model. See `docs/architecture/keluarga-maklom-domain-architecture.md`.
@@ -15,13 +15,13 @@ This register reflects the approved KELUARGA + MakLom operating model. See `docs
 | Lead schema coordination | Resolved on staging | KELUARGA staging and MakLom briefly had two incompatible `volunteer_leads` proposals. | Staging now follows MakLom's text-ID/richer lifecycle contract and maps conversion to the canonical UUID. | Keep one shared contract and migrate production only from this reconciled design. |
 | Approved contribution workflow UI | Database foundation live on staging | KELUARGA operational sessions create review candidates, but MakLom still needs a complete staff UI to approve/adjust/reject them. | Records remain pending/needs-review until MakLom acts; KELUARGA cannot self-approve hours. | Build MakLom contribution review queue before production launch of approved-hours display. |
 | Profile-change review coverage | Mobile workflow live in MakLom production | The current inbox contract covers KELUARGA mobile-number changes; newer private-profile fields are not yet routed through this review queue. | MakLom now provides searchable approve/reject/apply review with reviewer notes and stale-value conflict protection for mobile changes. | Decide which newer private-profile fields require MakLom approval versus direct volunteer ownership, then extend the inbox contract deliberately. |
-| Insight/review longitudinal UI | Database foundation live on staging | Accepted insights/reviews enter a MakLom inbox but there is no finished cross-event review surface yet. | Event/source provenance is preserved and no permanent profile mutation occurs automatically. | Build MakLom inbox and longitudinal staff view. |
 | Attendance-derived points | Intentionally paused | Previous reconciliation depended on YM Hub verified attendance, which is no longer the current operating model. | Manual audited staff-recognition points remain available. | Define an approved points rule based on MakLom-approved contribution records before reactivating automatic awards. |
 | Dormant YM Hub objects | Technical debt / future infrastructure | `ymhub` and `integration.ymhub_*` schemas still exist and old code/docs may reference them. | Volunteer dashboard and Points no longer require YM Hub on staging. | Continue removing stale runtime references; retain schemas only as dormant future infrastructure until cleanup is approved. |
 | Legacy KELUARGA recruitment tables | Historical only | `keluarga_recruitment_applications` remains in the database. | Public and admin routes are retired; write RPC privileges are revoked on staging. | Keep for provenance until retention requirements permit archival/removal. |
 | Legacy KELUARGA contribution-credit table | Historical only | `keluarga_contribution_credits` predates the reviewed MakLom contribution ledger. | New attendance-derived hours use `volunteer_contributions`; legacy refresh RPC is retired on staging. | Migrate/retain historical rows as required, then remove the legacy write path permanently. |
 | Legacy MakLom event/attendance tables | Historical | MakLom has its own older `events`, `event_shifts` and `attendance_log`. | KELUARGA `phaseone_events` is canonical for new operations; MakLom events can link by `keluarga_event_id`. | Define archival/read-model treatment before any table deletion. |
 | Event Guide sensitive links | Access-policy decision | Guides may contain briefing or WhatsApp links and other operational information. | Existing database-backed access controls remain. | Confirm which guide sections may be public versus assignment/code/signed-link gated. |
+| Intelligence impact coverage | Data completeness | Cross-event impact aggregation is implemented, but current impact reporting depends on consistent event-level metric entry. | MakLom aggregates only identical label + unit pairs and never combines incompatible measures. | Standardise a small impact-metric vocabulary and require it in event close-out where relevant. |
 | `phaseone` naming | Technical debt, not a bug | Historic identifiers remain in routes/modules/tables. | Kept stable to avoid breaking deployed contracts. | Rename only through a deliberate API/database migration. |
 
 ## Identity watch-points
@@ -59,12 +59,14 @@ Event reviews and insights describe a specific role/event context. They must ret
 |---|---|
 | Recruitment ownership | KELUARGA recruitment UI is retired; public volunteer CTAs use FormSG and MakLom owns lead review/conversion. |
 | Canonical volunteer identity | Staging MakLom profiles now have a mandatory one-to-one `core_volunteer_id` and retained legacy alias. |
-| New MakLom profile creation | Database triggers create/link the canonical UUID and legacy alias automatically. |
+| New MakLom profile creation | MakLom-origin creation and KELUARGA account/manual-roster creation now all enforce one idempotent `public.volunteers` profile extension per canonical UUID; the production orphan discovered during intelligence verification is backfilled by migration. |
 | Event ownership | MakLom legacy events can reference canonical KELUARGA events; KELUARGA owns new operational event records. |
 | Contribution approval boundary | KELUARGA can generate/refresh candidates but cannot approve attendance-derived hours. |
 | YM Hub dashboard dependency | Volunteer dashboard and Points page no longer require YM Hub projection state on staging. |
 | Continuous shifts | Attendance supports continuity across adjacent shifts and final checkout. |
 | Walk-in corrections | Corrections propagate across matching event shift rows while retaining event identity continuity. |
+| Insight/review longitudinal UI | MakLom now provides a reviewed cross-event inbox with source/event provenance, staff-edited interpretation, accept/dismiss controls, unmatched-record safeguards and longitudinal volunteer history. |
+| Cross-event Volunteer Management intelligence | MakLom now deduplicates linked volunteer/event participation, separates historical credited time from approved KELUARGA contribution time, calculates mature-cohort retention, reports repeat engagement/monthly trends, aggregates compatible impact measures and supports filtered CSV export. |
 
 ## Recording new defects
 

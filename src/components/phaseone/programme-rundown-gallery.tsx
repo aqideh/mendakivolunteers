@@ -52,6 +52,7 @@ export function ProgrammeRundownGallery({ images }: { images: readonly RundownIm
             priority={page === 0}
             sizes="(max-width: 900px) 94vw, 900px"
             src={current.url}
+            unoptimized
           />
         </div>
         {images.length > 1 ? (

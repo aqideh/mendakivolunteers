@@ -5,7 +5,7 @@ import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 import { getPublishedProfessionalEvents } from "@/lib/content/professional-events";
 
-import styles from "../professionals/professionals.module.css";
+import { ProfessionalNetworkTabs } from "./professional-network-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -27,67 +27,44 @@ export default async function SpecialistPage() {
     getPublishedProfessionalEvents(),
   ]);
 
-  const eventsSection = (
-    <section className={styles.eventsSection} aria-labelledby="professional-events-title">
-      <div className={styles.eventsHeader}>
-        <h2 id="professional-events-title">Professional Network events</h2>
-        <p>
-          Explore upcoming networking, learning and community events. Registration links will be
-          enabled here when the event registration flow is ready.
-        </p>
-      </div>
+  const now = new Date();
+  const eventCards = events.map((event) => ({
+    id: event.id,
+    title: event.title,
+    summary: event.summary,
+    dateLabel: eventDateLabel(event.starts_at, event.ends_at),
+    startsAt: event.starts_at,
+    endsAt: event.ends_at,
+    venue: event.venue,
+    ctaLabel: event.cta_label,
+    ctaUrl: event.cta_url,
+  }));
 
-      {events.length > 0 ? (
-        <div className={styles.eventGrid}>
-          {events.map((event) => (
-            <article className={styles.eventCard} key={event.id}>
-              <div className={styles.eventMeta}>
-                <span>{eventDateLabel(event.starts_at, event.ends_at)}</span>
-                {event.venue ? <span>{event.venue}</span> : null}
-              </div>
-              <h3>{event.title}</h3>
-              <p>{event.summary}</p>
-              <button className={styles.deadCta} type="button" disabled aria-disabled="true">
-                <span>{event.cta_label}</span>
-                <span aria-hidden="true">↗</span>
-              </button>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.emptyState}>New Professional Network events will appear here.</div>
-      )}
-    </section>
-  );
+  const upcomingEvents = eventCards.filter((event) => {
+    const comparisonDate = event.endsAt ?? event.startsAt;
+    return comparisonDate ? new Date(comparisonDate) >= now : true;
+  });
+
+  const pastEvents = eventCards
+    .filter((event) => {
+      const comparisonDate = event.endsAt ?? event.startsAt;
+      return comparisonDate ? new Date(comparisonDate) < now : false;
+    })
+    .reverse();
 
   return (
     <RoleLanding
       title="Your Experience Can Open Doors"
       description="Join a community of specialists who connect, share knowledge and give back. Support events and initiatives, share your experience, or simply get involved and build connections with others in your industry."
       heroImage={heroImage}
-      inlineCta={{
-        href: "https://professionalnetworksuat.mendaki.org.sg/",
-        label: "Discover Professional Networks",
-      }}
-      items={[
-        {
-          title: "Professional Networks",
-          description:
-            "Explore communities that bring specialists together across industries to connect, learn and contribute.",
-        },
-        {
-          title: "Share your experience",
-          description:
-            "Support events, initiatives and conversations where your specialist experience can help others.",
-        },
-        {
-          title: "Build connections",
-          description:
-            "Meet others in your industry, exchange knowledge and find meaningful ways to stay involved.",
-        },
-      ]}
-      ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
-      afterContent={eventsSection}
+      items={[]}
+      ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Join MENDAKI PN" }]}
+      afterContent={
+        <ProfessionalNetworkTabs
+          upcomingEvents={upcomingEvents}
+          pastEvents={pastEvents}
+        />
+      }
     />
   );
 }

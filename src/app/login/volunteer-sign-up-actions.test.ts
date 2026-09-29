@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  createClientMock,
+  createEmailLinkClientMock,
   getPublicConfigMock,
   resendMock,
   signInWithOtpMock,
 } = vi.hoisted(() => ({
-  createClientMock: vi.fn(),
+  createEmailLinkClientMock: vi.fn(),
   getPublicConfigMock: vi.fn(),
   resendMock: vi.fn(),
   signInWithOtpMock: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: createClientMock,
+vi.mock("@/lib/supabase/email-link", () => ({
+  createEmailLinkClient: createEmailLinkClientMock,
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -32,7 +32,7 @@ function formData(email: string, next = "/dashboard") {
 describe("volunteer email sign-up", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    createClientMock.mockResolvedValue({
+    createEmailLinkClientMock.mockReturnValue({
       auth: {
         resend: resendMock,
         signInWithOtp: signInWithOtpMock,

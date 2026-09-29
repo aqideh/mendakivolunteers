@@ -33,7 +33,11 @@ Configure the **Preview** environment in the KELUARGA Vercel project with:
 - `APP_ENV=staging`.
 - `AUTH_ALLOW_SIGN_UP=true`.
 
-`NEXT_PUBLIC_APP_URL` may be omitted for Vercel Preview deployments. The application uses Vercel's stable branch URL for authentication callbacks and only falls back to the individual deployment URL.
+`NEXT_PUBLIC_APP_URL` may be omitted for Vercel Preview deployments. The `staging` branch is canonicalised in application code to `https://keluargastaging.vercel.app`, including authentication callbacks. Other feature/PR previews continue to use their stable Vercel branch URL and fall back to the individual deployment URL when needed.
+
+The legacy staging branch alias (`https://mendakivolunteers-git-staging-mendakivolunteers.vercel.app`) is compatibility-only. Browser requests to it receive a `307` redirect to the canonical staging hostname. The redirect preserves application query parameters such as `next`, `token_hash`, `type`, filters and dates, while removing Vercel's `_vercel_share` parameter before crossing to the canonical origin.
+
+Cookies are origin-scoped and cannot be migrated between these two hostnames. A tester who previously authenticated on the legacy branch alias must sign in once on `keluargastaging.vercel.app`; subsequent sessions should remain on the canonical hostname.
 
 Keep **Production** environment variables pointed at production.
 
@@ -44,10 +48,12 @@ Repository `supabase/config.toml` configures local Supabase development only. It
 For **Keluarga Staging** (`nbnglontqrxywppmmhfm`), configure Authentication → URL Configuration as follows:
 
 - **Site URL:** `https://keluargastaging.vercel.app`
-- **Redirect URLs:** allow `https://*-mendakivolunteers.vercel.app/**` so the stable Vercel branch URL used by preview deployments can return to `/auth/confirm`.
+- **Redirect URLs:** explicitly allow `https://keluargastaging.vercel.app/**`. Keep `https://*-mendakivolunteers.vercel.app/**` only for deliberate feature/PR preview authentication; the `staging` branch itself must return to the canonical staging hostname.
 - Keep localhost redirect URLs only for deliberate local-development use; localhost must never be the hosted staging Site URL.
 
 The hosted email template must also mirror `supabase/templates/magic_link.html`. In particular, the link must route to `{{ .RedirectTo }}` with `token_hash={{ .TokenHash }}` and `type=email`, so KELUARGA's `/auth/confirm` page verifies the token and completes account provisioning. Do not use the default direct Supabase `/verify` confirmation link for this flow.
+
+External systems, callbacks and webhooks must use their intended canonical endpoint directly. Do not configure integrations against the legacy Vercel staging branch alias and rely on its `307` browser redirect; some non-browser clients do not follow redirects consistently. FormSG ingestion remains outside this alias path and should continue using its configured Supabase/MakLom endpoint.
 
 ## Build-time safety gate
 

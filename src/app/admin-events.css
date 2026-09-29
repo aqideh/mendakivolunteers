@@ -189,3 +189,148 @@
     font-size: 0.76rem;
   }
 }
+
+
+/* Compact desktop event actions */
+.phaseone-events-row-actions {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.phaseone-events-row-primary {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.32rem 0.55rem;
+  color: var(--brand);
+  background: #ffffff;
+  text-decoration: none;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.phaseone-events-row-primary:hover,
+.phaseone-events-row-primary:focus-visible {
+  border-color: rgba(55, 58, 54, 0.3);
+  background: var(--surface-subtle);
+}
+
+.phaseone-events-row-more,
+.phaseone-events-header-more {
+  position: relative;
+}
+
+.phaseone-events-row-more > summary,
+.phaseone-events-header-more > summary {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.32rem 0.5rem;
+  cursor: pointer;
+  color: var(--brand);
+  background: #ffffff;
+  list-style: none;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.phaseone-events-row-more > summary::-webkit-details-marker,
+.phaseone-events-header-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.phaseone-events-row-menu,
+.phaseone-events-header-menu {
+  position: absolute;
+  right: 0;
+  z-index: 90;
+  display: grid;
+  min-width: 11.5rem;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding: 0.7rem;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgb(20 43 56 / 16%);
+}
+
+.phaseone-events-row-menu .text-link,
+.phaseone-events-header-menu .text-link {
+  width: 100%;
+  text-align: left;
+  font-size: 0.75rem;
+}
+
+.phaseone-events-admin-top-actions {
+  align-items: center;
+}
+
+.phaseone-events-admin-top-actions .button,
+.phaseone-events-header-more > summary {
+  min-height: 2.15rem;
+  padding: 0.4rem 0.58rem;
+  font-size: 0.76rem;
+}
+
+.phaseone-events-desktop-table .content-table th,
+.phaseone-events-desktop-table .content-table td {
+  padding-block: 0.62rem;
+}
+
+.phaseone-events-desktop-table .table-subtext {
+  margin-top: 0.12rem;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 759px) {
+  .phaseone-events-row-actions,
+  .phaseone-events-header-more {
+    display: none;
+  }
+}
+
+
+.phaseone-past-attendance-summary {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  white-space: nowrap;
+}
+
+.phaseone-past-attendance-summary strong {
+  font-size: 0.84rem;
+}
+
+.phaseone-past-attendance-summary span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.phaseone-past-attendance-divider {
+  margin-inline: 0.1rem;
+  color: var(--border) !important;
+}
+
+@media (max-width: 759px) {
+  .phaseone-past-attendance-summary {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
+
+
+/* Action popovers must not create an internal table scrollbar. */
+@media (min-width: 760px) {
+  .phaseone-events-desktop-table {
+    overflow: visible;
+  }
+}

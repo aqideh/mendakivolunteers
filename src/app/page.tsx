@@ -16,11 +16,11 @@ export const metadata: Metadata = {
 };
 
 const volunteerPaths = [
-  { number: "01", title: "Coach", href: "/volunteer/coach" },
-  { number: "02", title: "Facilitator", href: "/volunteer/facilitator" },
-  { number: "03", title: "Mentor", href: "/volunteer/mentor" },
-  { number: "04", title: "Specialist", href: "/specialist" },
-  { number: "05", title: "Contributor", href: "/opportunities" },
+  { title: "Coach", href: "/volunteer/coach" },
+  { title: "Facilitator", href: "/volunteer/facilitator" },
+  { title: "Mentor", href: "/volunteer/mentor" },
+  { title: "Contributor", href: "/opportunities" },
+  { title: "Join Professional Networks", href: "/specialist" },
 ];
 
 export default async function Home() {
@@ -46,11 +46,10 @@ export default async function Home() {
           </div>
 
           <div className={styles.roleGrid} aria-label="Volunteering categories">
-            {volunteerPaths.map(({ number, title, href }) => (
+            {volunteerPaths.map(({ title, href }) => (
               <div className={styles.roleChoice} key={title}>
                 <Link className={styles.roleOption} href={href}>
                   <span className={styles.roleLabel}>
-                    <span className={styles.roleNumber}>{number}</span>
                     <strong>{title}</strong>
                   </span>
                   <span className={styles.roleArrow} aria-hidden="true">↗</span>

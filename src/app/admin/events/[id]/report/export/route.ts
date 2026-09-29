@@ -39,12 +39,11 @@ type Review = {
 
 type Feedback = {
   volunteer_person_key: string;
-  role_clarity: number;
+  briefing_thorough: number | null;
+  onboarding_role_understanding: number | null;
   role_satisfaction: number;
   staff_support: number;
-  recommend: number;
   suggestions: string | null;
-  follow_up_requested: boolean;
   submitted_at: string;
 };
 
@@ -174,7 +173,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
       .limit(10000),
     admin
       .from("phaseone_event_feedback")
-      .select("volunteer_person_key, role_clarity, role_satisfaction, staff_support, recommend, suggestions, follow_up_requested, submitted_at")
+      .select("volunteer_person_key, briefing_thorough, onboarding_role_understanding, role_satisfaction, staff_support, suggestions, submitted_at")
       .eq("event_id", id)
       .limit(10000),
   ]);
@@ -252,12 +251,11 @@ export async function GET(_request: Request, { params }: RouteProps) {
     "concern_behaviours",
     "review_comments",
     "follow_up_required",
-    "feedback_role_clarity",
+    "feedback_briefing_thorough",
+    "feedback_onboarding_role_understanding",
     "feedback_role_satisfaction",
     "feedback_staff_support",
-    "feedback_recommend",
-    "feedback_suggestions",
-    "feedback_follow_up_requested",
+    "feedback_improvement_suggestions",
     "feedback_submitted_at",
   ];
 
@@ -308,12 +306,11 @@ export async function GET(_request: Request, { params }: RouteProps) {
       uniqueSorted(reviews.flatMap((review) => review.concern_behaviors ?? [])),
       reviewComments(reviews),
       reviews.some((review) => review.follow_up_required) ? "yes" : "no",
-      feedback ? String(feedback.role_clarity) : "",
+      feedback?.briefing_thorough == null ? "" : String(feedback.briefing_thorough),
+      feedback?.onboarding_role_understanding == null ? "" : String(feedback.onboarding_role_understanding),
       feedback ? String(feedback.role_satisfaction) : "",
       feedback ? String(feedback.staff_support) : "",
-      feedback ? String(feedback.recommend) : "",
       feedback?.suggestions,
-      feedback ? (feedback.follow_up_requested ? "yes" : "no") : "",
       feedback?.submitted_at,
     ];
 

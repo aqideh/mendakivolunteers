@@ -1,19 +1,11 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { PackageActionPinForm } from "@/components/phaseone/package-action-pin-form";
 import { ProgrammeRundownGallery } from "@/components/phaseone/programme-rundown-gallery";
 import { PortalHeader } from "@/components/portal-header";
-import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
+import { authorizeEventGuideSlug } from "@/lib/phaseone/event-guide-access";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { evaluateBriefingAccess } from "@/lib/phaseone/package-briefing";
-import {
-  hasPackageActionAccess,
-  packageActionCookieName,
-  packageActionLabel,
-  readPackageActionAccessToken,
-  type PackageAction,
-} from "@/lib/phaseone/package-action-access";
 import { buildDirectionsLinks } from "@/lib/phaseone/directions";
 import {
   formatTimeslotDayHeading,
@@ -22,7 +14,10 @@ import {
   sortTimeslots,
   type VolunteerTimeslot,
 } from "@/lib/phaseone/packages";
-import { programmeRundownBucket } from "@/lib/phaseone/programme-rundown";
+import {
+  programmeRundownBucket,
+  programmeRundownSignedUrlTtlSeconds,
+} from "@/lib/phaseone/programme-rundown";
 
 import styles from "./journey-detail.module.css";
 
@@ -35,24 +30,7 @@ export const metadata = {
 
 type EventGuidePageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ access?: string; action?: string }>;
 };
-
-const actions: PackageAction[] = ["sign-in", "sign-out"];
-
-function actionConfiguration(
-  volunteerEvent: {
-    has_sign_in_pin: boolean;
-    has_sign_out_pin: boolean;
-    sign_in_pin_updated_at: string | null;
-    sign_out_pin_updated_at: string | null;
-  },
-  action: PackageAction,
-) {
-  return action === "sign-in"
-    ? { configured: volunteerEvent.has_sign_in_pin, updatedAt: volunteerEvent.sign_in_pin_updated_at }
-    : { configured: volunteerEvent.has_sign_out_pin, updatedAt: volunteerEvent.sign_out_pin_updated_at };
-}
 
 function Schedule({ timeslots }: { timeslots: VolunteerTimeslot[] }) {
   const groups = new Map<string, VolunteerTimeslot[]>();
@@ -94,16 +72,33 @@ function Schedule({ timeslots }: { timeslots: VolunteerTimeslot[] }) {
   );
 }
 
-export default async function EventGuidePage({ params, searchParams }: EventGuidePageProps) {
+export default async function EventGuidePage({ params }: EventGuidePageProps) {
   const { slug } = await params;
-  const { access, action: actionParam } = await searchParams;
+  const authorization = await authorizeEventGuideSlug(slug);
+
+  if (authorization.state === "signed_out") {
+    redirect(`/login?next=${encodeURIComponent(`/journey/${slug}`)}`);
+  }
+  if (authorization.state === "inactive") {
+    redirect("/login?error=account_inactive");
+  }
+  if (authorization.state === "unavailable") {
+    throw new Error("Event Guide access could not be verified");
+  }
+  if (authorization.state === "not_found") {
+    notFound();
+  }
+  if (authorization.state === "not_registered") {
+    redirect("/journey?error=not_registered");
+  }
+
   const supabase = getPhaseOneAdminClient();
   const { data: volunteerEvent, error } = await supabase
     .from("phaseone_events")
     .select(
-      "id, title, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, has_sign_in_pin, has_sign_out_pin, sign_in_pin_updated_at, sign_out_pin_updated_at",
+      "id, title, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url",
     )
-    .eq("slug", slug)
+    .eq("id", authorization.event.id)
     .eq("is_published", true)
     .maybeSingle();
 
@@ -138,10 +133,33 @@ export default async function EventGuidePage({ params, searchParams }: EventGuid
   }
 
   const timeslots = sortTimeslots(timeslotResult.data as VolunteerTimeslot[]);
-  const rundownImages = (rundownResult.data ?? []).map((image) => ({
-    id: String(image.id),
-    url: supabase.storage.from(programmeRundownBucket).getPublicUrl(String(image.storage_path)).data.publicUrl,
-  }));
+  const rundownRows = rundownResult.data ?? [];
+  const rundownSignedUrls = await Promise.all(
+    rundownRows.map((image) =>
+      supabase.storage
+        .from(programmeRundownBucket)
+        .createSignedUrl(
+          String(image.storage_path),
+          programmeRundownSignedUrlTtlSeconds,
+        ),
+    ),
+  );
+  const rundownImages = rundownRows.map((image, index) => {
+    const signed = rundownSignedUrls[index];
+    if (signed?.error || !signed?.data?.signedUrl) {
+      console.error("Unable to sign programme rundown image", {
+        eventId: volunteerEvent.id,
+        imageId: image.id,
+        message: signed?.error?.message,
+      });
+      throw new Error("Programme rundown image could not be loaded");
+    }
+
+    return {
+      id: String(image.id),
+      url: signed.data.signedUrl,
+    };
+  });
   const briefing = evaluateBriefingAccess({
     isPublished: true,
     briefingUrl: volunteerEvent.briefing_url,
@@ -149,39 +167,16 @@ export default async function EventGuidePage({ params, searchParams }: EventGuid
   });
   const directions = buildDirectionsLinks(volunteerEvent.navigation_destination);
 
-  const cookieStore = await cookies();
-  const secret = getPhaseOneServerSecret();
-  const actionStates = actions.map((action) => {
-    const configuration = actionConfiguration(volunteerEvent, action);
-    const claims = readPackageActionAccessToken(
-      cookieStore.get(packageActionCookieName(volunteerEvent.id, action))?.value,
-      secret,
-    );
-    return {
-      action,
-      configured: configuration.configured,
-      unlocked: hasPackageActionAccess(
-        claims,
-        volunteerEvent.id,
-        action,
-        configuration.updatedAt,
-      ),
-    };
-  });
-
-  const errorAction = actions.includes(actionParam as PackageAction)
-    ? (actionParam as PackageAction)
-    : null;
-  const signInState = actionStates.find(({ action }) => action === "sign-in");
-  const signOutState = actionStates.find(({ action }) => action === "sign-out");
+  const hasSignIn = Boolean(volunteerEvent.sign_in_url);
+  const hasSignOut = Boolean(volunteerEvent.sign_out_url);
   const hasWhatsapp = Boolean(volunteerEvent.whatsapp_url);
   const hasProgrammeRundown = rundownImages.length > 0 || Boolean(volunteerEvent.programme_rundown_url);
   const programmeRundownStep = 2 + Number(hasWhatsapp);
   const preparationStep = 2 + Number(hasWhatsapp) + Number(hasProgrammeRundown);
   const travelStep = preparationStep + 1;
   let nextStep = travelStep + 1;
-  const signInStep = signInState?.configured ? nextStep++ : null;
-  const signOutStep = signOutState?.configured ? nextStep : null;
+  const signInStep = hasSignIn ? nextStep++ : null;
+  const signOutStep = hasSignOut ? nextStep : null;
 
   return (
     <div className="site-shell phaseone-shell">
@@ -197,12 +192,6 @@ export default async function EventGuidePage({ params, searchParams }: EventGuid
           </dl>
 
           <Schedule timeslots={timeslots} />
-
-          {access === "expired" && errorAction ? (
-            <p className="phaseone-form-error" role="alert">
-              Your {packageActionLabel(errorAction).toLowerCase()} access expired. Enter that PIN again.
-            </p>
-          ) : null}
 
           <section className={styles.flowSection} aria-labelledby="volunteer-flow-title">
             <p className="eyebrow">What to do</p>
@@ -268,38 +257,28 @@ export default async function EventGuidePage({ params, searchParams }: EventGuid
                 </div>
               </li>
 
-              {signInState?.configured && signInStep ? (
+              {hasSignIn && signInStep ? (
                 <li className={styles.flowStep}>
                   <span className={styles.stepNumber} aria-hidden="true">{signInStep}</span>
                   <div className={styles.stepBody}>
                     <h3>Check in when you arrive</h3>
-                    <p className="phaseone-access-note">The sign-in PIN will be provided by staff when you arrive on-site.</p>
-                    {signInState.unlocked ? (
-                      <>
-                        <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/sign-in`} referrerPolicy="no-referrer">Open sign-in</a>
-                        <p className="phaseone-access-note">Access remains valid for five minutes or until this PIN changes.</p>
-                      </>
-                    ) : (
-                      <PackageActionPinForm slug={slug} action="sign-in" />
-                    )}
+                    <p className="phaseone-access-note">Open check-in when you are on-site. No PIN is required.</p>
+                    <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/sign-in`} referrerPolicy="no-referrer">
+                      Open check-in
+                    </a>
                   </div>
                 </li>
               ) : null}
 
-              {signOutState?.configured && signOutStep ? (
+              {hasSignOut && signOutStep ? (
                 <li className={styles.flowStep}>
                   <span className={styles.stepNumber} aria-hidden="true">{signOutStep}</span>
                   <div className={styles.stepBody}>
                     <h3>Check out before you leave</h3>
-                    <p className="phaseone-access-note">Get the sign-out PIN from staff and complete check-out before leaving the venue.</p>
-                    {signOutState.unlocked ? (
-                      <>
-                        <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/sign-out`} referrerPolicy="no-referrer">Open sign-out</a>
-                        <p className="phaseone-access-note">Access remains valid for five minutes or until this PIN changes.</p>
-                      </>
-                    ) : (
-                      <PackageActionPinForm slug={slug} action="sign-out" />
-                    )}
+                    <p className="phaseone-access-note">Complete check-out before leaving the venue. No PIN is required.</p>
+                    <a className="button button-primary" href={`/api/phaseone/events/${slug}/go/sign-out`} referrerPolicy="no-referrer">
+                      Open check-out
+                    </a>
                   </div>
                 </li>
               ) : null}

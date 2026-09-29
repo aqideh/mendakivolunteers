@@ -5,11 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireEventManager, requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
-import {
-  buildPackagePinUpdate,
-  getPackagePublishError,
-  packageWillHaveActionPins,
-} from "@/lib/phaseone/package-cms";
+import { getPackagePublishError } from "@/lib/phaseone/package-cms";
 import {
   getPhaseOneValidationMessage,
   parseEventForm,
@@ -241,7 +237,7 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
   const current = parsed.data.id
     ? await admin
         .from("phaseone_events")
-        .select("id, slug, is_published, sign_in_pin_hash, sign_out_pin_hash")
+        .select("id, slug, is_published")
         .eq("id", parsed.data.id)
         .maybeSingle()
     : { data: null, error: null };
@@ -257,13 +253,6 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
     );
   }
 
-  const pinInput = {
-    signInPin: parsed.data.signInPin,
-    clearSignInPin: parsed.data.clearSignInPin,
-    signOutPin: parsed.data.signOutPin,
-    clearSignOutPin: parsed.data.clearSignOutPin,
-  };
-  const pins = packageWillHaveActionPins(current.data, pinInput);
   const publishError = getPackagePublishError({
     isPublished: parsed.data.isPublished,
     timeslots: parsed.data.timeslots,
@@ -273,8 +262,8 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
     briefingAvailableAt: parsed.data.briefingAvailableAt,
     signInUrl: parsed.data.signInUrl,
     signOutUrl: parsed.data.signOutUrl,
-    hasSignInPin: pins.signIn,
-    hasSignOutPin: pins.signOut,
+    hasSignInPin: false,
+    hasSignOutPin: false,
   });
   if (publishError) {
     return eventSaveError(`${publishError} Your entries have been kept.`, parsed.data.id);
@@ -285,7 +274,6 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
     return eventSaveError("At least one timeslot is required. Your entries have been kept.", parsed.data.id);
   }
 
-  const pinUpdate = buildPackagePinUpdate(pinInput);
   const values = {
     title: parsed.data.title,
     opportunity_summary: parsed.data.opportunitySummary,
@@ -310,7 +298,6 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
     sign_out_url: parsed.data.signOutUrl,
     is_published: parsed.data.isPublished,
     updated_by: userId,
-    ...pinUpdate,
   };
   const schedule = timeslotPayload(parsed.data.timeslots);
 
@@ -424,7 +411,7 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
 
   const { error: configureError } = await admin
     .from("phaseone_events")
-    .update({ ...pinUpdate, is_published: parsed.data.isPublished })
+    .update({ is_published: parsed.data.isPublished })
     .eq("id", created.id);
 
   if (configureError) {

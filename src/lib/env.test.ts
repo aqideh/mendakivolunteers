@@ -20,18 +20,33 @@ describe("runtime environment configuration", () => {
     expect(isAuthSignUpAllowed({ AUTH_ALLOW_SIGN_UP: "false" })).toBe(false);
   });
 
-  it("uses the stable Vercel branch URL for preview auth callbacks", () => {
+  it("uses the canonical staging URL for staging auth callbacks", () => {
     expect(
       getPublicConfig({
         VERCEL_ENV: "preview",
+        VERCEL_GIT_COMMIT_REF: "staging",
         VERCEL_BRANCH_URL:
           "mendakivolunteers-git-staging-mendakivolunteers.vercel.app",
         VERCEL_URL: "mendakivolunteers-unique-deployment.vercel.app",
         NEXT_PUBLIC_SUPABASE_URL: "https://nbnglontqrxywppmmhfm.supabase.co",
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
       }).appUrl,
+    ).toBe("https://keluargastaging.vercel.app");
+  });
+
+  it("keeps feature previews on their stable Vercel branch URL", () => {
+    expect(
+      getPublicConfig({
+        VERCEL_ENV: "preview",
+        VERCEL_GIT_COMMIT_REF: "feat/mobile-auth-test",
+        VERCEL_BRANCH_URL:
+          "mendakivolunteers-git-feat-mobile-auth-test-mendakivolunteers.vercel.app",
+        VERCEL_URL: "mendakivolunteers-unique-deployment.vercel.app",
+        NEXT_PUBLIC_SUPABASE_URL: "https://nbnglontqrxywppmmhfm.supabase.co",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
+      }).appUrl,
     ).toBe(
-      "https://mendakivolunteers-git-staging-mendakivolunteers.vercel.app",
+      "https://mendakivolunteers-git-feat-mobile-auth-test-mendakivolunteers.vercel.app",
     );
   });
 

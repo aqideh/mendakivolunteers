@@ -12,7 +12,6 @@ import {
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   formatTimeslotDate,
-  getPackageListingStatus,
   singaporeDateKey,
   sortTimeslots,
   type VolunteerTimeslot,
@@ -119,6 +118,62 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
   const page = Math.min(currentPage, totalPages);
   const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
   const linkParameters = { q, from, to, sort };
+  const visibleEventIds = visible.map((event) => event.id);
+
+  const [registrationsResult, rosterResult, attendanceResult] = await Promise.all([
+    visibleEventIds.length
+      ? admin
+          .from("keluarga_registrations")
+          .select("event_id, volunteer_id, status")
+          .in("event_id", visibleEventIds)
+          .eq("status", "confirmed")
+      : Promise.resolve({ data: [], error: null }),
+    visibleEventIds.length
+      ? admin
+          .from("phaseone_roster")
+          .select("id, event_id, volunteer_id, attendance_person_key, volunteer_key")
+          .in("event_id", visibleEventIds)
+          .limit(50000)
+      : Promise.resolve({ data: [], error: null }),
+    visibleEventIds.length
+      ? admin
+          .from("phaseone_attendance_effective")
+          .select("event_id, roster_id, signed_in_at")
+          .in("event_id", visibleEventIds)
+          .not("signed_in_at", "is", null)
+          .limit(50000)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (registrationsResult.error || rosterResult.error || attendanceResult.error) {
+    throw new Error("Past event attendance summary could not be loaded");
+  }
+
+  const registeredByEvent = new Map<string, Set<string>>();
+  for (const registration of registrationsResult.data ?? []) {
+    const set = registeredByEvent.get(registration.event_id) ?? new Set<string>();
+    set.add(registration.volunteer_id);
+    registeredByEvent.set(registration.event_id, set);
+  }
+
+  const rosterIdentityById = new Map<string, string>();
+  for (const roster of rosterResult.data ?? []) {
+    const identity =
+      roster.volunteer_id ??
+      roster.attendance_person_key ??
+      roster.volunteer_key ??
+      roster.id;
+    rosterIdentityById.set(roster.id, identity);
+  }
+
+  const attendedByEvent = new Map<string, Set<string>>();
+  for (const attendance of attendanceResult.data ?? []) {
+    const identity = rosterIdentityById.get(attendance.roster_id);
+    if (!identity) continue;
+    const set = attendedByEvent.get(attendance.event_id) ?? new Set<string>();
+    set.add(identity);
+    attendedByEvent.set(attendance.event_id, set);
+  }
 
   return (
     <div className="site-shell">
@@ -173,7 +228,7 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
         <div className="table-wrap">
           <table className="content-table">
             <thead>
-              <tr><th>Event</th><th>Final date</th><th>Venue</th><th>Visibility</th><th>Actions</th></tr>
+              <tr><th>Event</th><th>Final date</th><th>Attendance</th><th>Venue</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {visible.map((event) => {
@@ -188,20 +243,46 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
                       {effectiveEnd ? formatTimeslotDate(effectiveEnd) : "Not set"}
                       {event.timeslots.length > 1 ? <span className="table-subtext">{event.timeslots.length} timeslots</span> : null}
                     </td>
-                    <td>{event.venue ?? "Not set"}</td>
-                    <td><span className="status-pill">{getPackageListingStatus(event.timeslots, event.is_published)}</span></td>
                     <td>
-                      <div className="actions">
-                        <Link className="text-link" href={`/admin/events/${event.id}/attendance`}>Roster / check-in</Link>
-                        <Link className="text-link" href={`/admin/events/${event.id}/edit`}>Edit</Link>
-                        <a className="text-link" href={`/admin/events/${event.id}/report/export`}>Download event report</a>
-                        <form action={duplicateEvent}>
-                          <input type="hidden" name="eventId" value={event.id} />
-                          <button className="text-link button-reset" type="submit">Duplicate journey</button>
-                        </form>
-                        {event.is_published ? (
-                          <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">View event guide</Link>
-                        ) : null}
+                      <div className="phaseone-past-attendance-summary">
+                        <strong>{attendedByEvent.get(event.id)?.size ?? 0}</strong>
+                        <span>attended</span>
+                        <span className="phaseone-past-attendance-divider">/</span>
+                        <strong>{registeredByEvent.get(event.id)?.size ?? 0}</strong>
+                        <span>registered</span>
+                      </div>
+                    </td>
+                    <td>{event.venue ?? "Not set"}</td>
+                    <td>
+                      <div className="phaseone-events-row-actions">
+                        <Link
+                          className="phaseone-events-row-primary"
+                          href={`/admin/events/${event.id}/attendance`}
+                        >
+                          Roster
+                        </Link>
+                        <details className="phaseone-events-row-more">
+                          <summary aria-label={`More actions for ${event.title}`}>•••</summary>
+                          <div className="phaseone-events-row-menu">
+                            <Link className="text-link" href={`/admin/events/${event.id}/edit`}>
+                              Edit event
+                            </Link>
+                            <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
+                              Download report
+                            </a>
+                            <form action={duplicateEvent}>
+                              <input type="hidden" name="eventId" value={event.id} />
+                              <button className="text-link button-reset" type="submit">
+                                Duplicate event
+                              </button>
+                            </form>
+                            {event.is_published ? (
+                              <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">
+                                View event guide ↗
+                              </Link>
+                            ) : null}
+                          </div>
+                        </details>
                       </div>
                     </td>
                   </tr>

@@ -1,0 +1,310 @@
+.page {
+  width: 100%;
+  background: #ffffff;
+}
+
+.hero {
+  position: relative;
+  min-height: min(70svh, 44rem);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.heroMedia,
+.heroShade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.heroMedia {
+  z-index: -2;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.heroShade {
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.2) 52%, #ffffff 100%),
+    linear-gradient(90deg, rgba(244, 245, 242, 0.82) 0%, rgba(244, 245, 242, 0.52) 48%, rgba(244, 245, 242, 0.16) 100%);
+}
+
+.heroInner {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: min(76rem, calc(100% - 2rem));
+  min-height: inherit;
+  margin: 0 auto;
+  padding: 1.25rem 0 5rem;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.heroCopy {
+  align-self: end;
+  max-width: 52rem;
+}
+
+.eyebrow,
+.sectionKicker {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heroCopy h1 {
+  max-width: 14ch;
+  margin: 0.55rem 0 0;
+  font-size: clamp(3rem, 7vw, 6rem);
+  line-height: 0.94;
+  letter-spacing: -0.055em;
+}
+
+.content {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  width: min(76rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1rem 0 clamp(4rem, 8vw, 7rem);
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(1.5rem, 5vw, 4rem);
+  align-items: start;
+}
+
+.intro h2,
+.sectionHeading h2,
+.connectSection h2 {
+  margin: 0.45rem 0 0;
+  font-size: clamp(1.9rem, 4vw, 3.2rem);
+  letter-spacing: -0.04em;
+}
+
+.intro p {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+  line-height: 1.65;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  min-height: 3.2rem;
+  min-width: 13rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.primaryAction {
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  background: #000000;
+}
+
+.primaryAction span:last-child {
+  color: #ffffff;
+}
+
+.secondaryAction {
+  border: 1px solid #cbd6dc;
+  color: #24465f;
+  background: #ffffff;
+}
+
+.teamSection {
+  display: grid;
+  gap: 1.8rem;
+  border-top: 1px solid var(--border);
+  padding-top: 2rem;
+}
+
+.teamGroup {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.groupTitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.leadershipGrid,
+.teamGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.leadershipGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.teamGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.teamCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 1rem;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(55, 58, 54, 0.04);
+}
+
+.leadershipCard {
+  min-height: 10rem;
+  border-color: #bfd8ec;
+  background: #f7fbff;
+}
+
+.avatar,
+.profilePhoto {
+  width: 3.2rem;
+  height: 3.2rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  color: #24465f;
+  background: #edf7ff;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.profilePhoto {
+  object-fit: cover;
+  background: #edf7ff;
+}
+
+.memberCopy {
+  min-width: 0;
+}
+
+.leadershipBadge,
+.memberBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.leadershipBadge {
+  color: #24465f;
+  background: #dcefff;
+}
+
+.memberBadge {
+  color: #555b58;
+  background: #f0f1ee;
+}
+
+.teamCard h3 {
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.teamCard p {
+  margin: 0.22rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.organisation {
+  font-weight: 700;
+}
+
+.memberLinkedIn {
+  display: inline-flex;
+  gap: 0.3rem;
+  margin-top: 0.55rem;
+  color: #246b93;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.connectSection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1.5rem;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: #edf7ff;
+}
+
+.connectSection p {
+  max-width: 48rem;
+  margin: 0.65rem 0 0;
+  color: #4f6470;
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .teamGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .hero {
+    min-height: 55svh;
+  }
+
+  .intro,
+  .connectSection {
+    grid-template-columns: 1fr;
+  }
+
+  .leadershipGrid,
+  .teamGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .secondaryAction {
+    width: 100%;
+  }
+}

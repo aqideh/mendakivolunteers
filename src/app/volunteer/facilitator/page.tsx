@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Volunteer as a Facilitator",
   description:
-    "Empower parents of children to support learning at home through practical play based tips, interactive workshops, hands on activities and resources that build their confidence.",
+    "Empower parents to support learning at home through practical play-based tips, interactive workshops, hands-on activities and resources that build their confidence.",
 };
 
 export default async function FacilitatorPage() {
