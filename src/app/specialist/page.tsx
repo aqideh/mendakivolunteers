@@ -34,7 +34,7 @@ export default async function SpecialistPage() {
     dateLabel: eventDateLabel(event.starts_at, event.ends_at),
     venue: event.venue,
     ctaLabel: event.cta_label,
-    ctaUrl: event.cta_url,
+    ctaUrl: null,
   }));
 
   return (
@@ -46,7 +46,23 @@ export default async function SpecialistPage() {
         href: "https://mendaki-pn-connect.base44.app/Home",
         label: "Discover Professional Networks",
       }}
-      items={[]}
+      items={[
+        {
+          title: "Professional Networks",
+          description:
+            "Explore communities that bring specialists together across industries to connect, learn and contribute.",
+        },
+        {
+          title: "Share your experience",
+          description:
+            "Support events, initiatives and conversations where your specialist experience can help others.",
+        },
+        {
+          title: "Build connections",
+          description:
+            "Meet others in your industry, exchange knowledge and find meaningful ways to stay involved.",
+        },
+      ]}
       ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
       afterContent={<ProfessionalNetworkTabs events={eventCards} />}
     />
