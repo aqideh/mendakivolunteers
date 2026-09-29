@@ -1,0 +1,235 @@
+.createDisclosure,
+.eventDisclosure {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface);
+}
+
+.createDisclosure[open],
+.eventDisclosure[open] {
+  border-color: #c4c9c6;
+  box-shadow: 0 12px 32px rgba(55, 58, 54, 0.08);
+}
+
+.createSummary,
+.eventSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1rem 1.15rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.createSummary::-webkit-details-marker,
+.eventSummary::-webkit-details-marker {
+  display: none;
+}
+
+.createSummary:hover,
+.eventSummary:hover {
+  background: var(--surface-subtle);
+}
+
+.createSummary:focus-visible,
+.eventSummary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.createSummaryCopy,
+.eventSummaryCopy {
+  min-width: 0;
+}
+
+.createSummaryCopy strong,
+.eventTitle {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.createSummaryCopy span,
+.eventMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.75rem;
+  margin-top: 0.32rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.createSummaryAction,
+.editLabel {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.createSummaryAction {
+  display: inline-flex;
+  min-height: 2.35rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.4rem 0.75rem;
+  background: #ffffff;
+}
+
+.eventSummaryActions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 0 0 auto;
+}
+
+.chevron {
+  display: inline-block;
+  color: var(--muted);
+  font-size: 1rem;
+  transition: transform 140ms ease;
+}
+
+.eventDisclosure[open] .chevron,
+.createDisclosure[open] .chevron {
+  transform: rotate(180deg);
+}
+
+.createPanel,
+.eventFormPanel {
+  min-width: 0;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.eventList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.form {
+  width: 100%;
+  min-width: 0;
+}
+
+.editForm {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-width: 0;
+}
+
+.formGrid > *,
+.form :global(.form-field) {
+  min-width: 0;
+}
+
+.form :global(.form-field) {
+  margin-bottom: 0;
+}
+
+.form :global(.form-field) input,
+.form :global(.form-field) textarea,
+.form :global(.form-field) select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.form :global(.form-field) textarea {
+  overflow-wrap: anywhere;
+}
+
+.fieldHint {
+  display: block;
+  margin-top: -0.15rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.formHelp {
+  margin: 0;
+  border-radius: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  color: var(--muted);
+  background: var(--surface-subtle);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.formFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.15rem;
+}
+
+.deleteButton {
+  border-color: rgba(164, 47, 47, 0.32) !important;
+  color: #922f2f !important;
+  background: #fffafa !important;
+}
+
+.deleteButton:hover {
+  border-color: rgba(164, 47, 47, 0.55) !important;
+  background: #fff1f1 !important;
+}
+
+@media (max-width: 760px) {
+  .createSummary,
+  .eventSummary {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0.95rem;
+  }
+
+  .eventSummaryActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .createSummaryAction {
+    justify-self: start;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .formFooter :global(.button) {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
