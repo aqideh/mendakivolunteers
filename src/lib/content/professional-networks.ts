@@ -38,7 +38,6 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "group": "PN Lead",
         "designation": "Co-Founder",
         "organisation": "Aeroviation",
-        "linkedinUrl": "https://www.linkedin.com",
         "displayOrder": 1
       },
       {
@@ -47,65 +46,70 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "group": "Assistant Lead",
         "designation": "Senior First Officer",
         "organisation": "Singapore Airlines",
-        "linkedinUrl": "https://www.linkedin.com",
         "displayOrder": 2
       },
       {
         "id": "a2X850000008VcvEAE",
         "name": "Hermizan Jumari",
         "group": "Core Team Member",
-        "designation": "Deputy Director (Plans), Next Generation Programme Civil Aviation Authority of Singapore",
-        "linkedinUrl": "https://www.linkedin.com/",
+        "designation": "Deputy Director (Plans), Next Generation Programme",
+        "organisation": "Civil Aviation Authority of Singapore",
         "displayOrder": 3
       },
       {
         "id": "a2X850000008VeXEAU",
         "name": "Nazri Neyat",
         "group": "Core Team Member",
-        "designation": "Vice President, Ground Experience Development Singapore Airlines",
-        "linkedinUrl": "https://www.linkedin.com",
+        "designation": "Vice President, Ground Experience Development",
+        "organisation": "Singapore Airlines",
         "displayOrder": 4
       },
       {
         "id": "a2X850000008VZiEAM",
         "name": "Syaifullah Sarip",
         "group": "Core Team Member",
-        "designation": "Managing Director, APAC Airport Dimensions",
+        "designation": "Managing Director, APAC",
+        "organisation": "Airport Dimensions",
         "displayOrder": 5
       },
       {
         "id": "a2X850000008Vg9EAE",
         "name": "Faizal Khan",
         "group": "Core Team Member",
-        "designation": "Director FBO Asia Jet Aviation",
+        "designation": "Director FBO Asia",
+        "organisation": "Jet Aviation",
         "displayOrder": 6
       },
       {
         "id": "a2X850000008VhlEAE",
         "name": "Este Ehara",
         "group": "Core Team Member",
-        "designation": "Head, Strategic and Ecosystem Partnerships AIR Lab, Thales",
+        "designation": "Head, Strategic and Ecosystem Partnerships",
+        "organisation": "AIR Lab, Thales",
         "displayOrder": 7
       },
       {
         "id": "a2X850000008VjNEAU",
         "name": "Masrina Abu Bakar",
         "group": "Core Team Member",
-        "designation": "Senior Air Traffic Controller Instructor Civil Aviation Authority of Singapore",
+        "designation": "Senior Air Traffic Controller Instructor",
+        "organisation": "Civil Aviation Authority of Singapore",
         "displayOrder": 8
       },
       {
         "id": "a2X850000008VkzEAE",
         "name": "Mohammad Haikal Zainal Abidin",
         "group": "Core Team Member",
-        "designation": "Principal Engineer (Infrastructure Software) ST Engineering Satellite System",
+        "designation": "Principal Engineer (Infrastructure Software)",
+        "organisation": "ST Engineering Satellite System",
         "displayOrder": 9
       },
       {
         "id": "a2X850000008VmbEAE",
         "name": "Imbran Marzuki",
         "group": "Core Team Member",
-        "designation": "Skills Trainer SIA Engineering Company",
+        "designation": "Skills Trainer",
+        "organisation": "SIA Engineering Company",
         "displayOrder": 10
       }
     ]
@@ -299,35 +303,40 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "id": "a2X850000008WCPEA2",
         "name": "Azuan Tan",
         "group": "Core Team Member",
-        "designation": "Vice Principal, North Vista Primary School",
+        "designation": "Vice Principal",
+        "organisation": "North Vista Primary School",
         "displayOrder": 3
       },
       {
         "id": "a2X850000008WCQEA2",
         "name": "Syed Imran Jamaluddin",
         "group": "Core Team Member",
-        "designation": "Director, Learning Design and Development, Yayasan MENDAKI",
+        "designation": "Director, Learning Design and Development",
+        "organisation": "Yayasan MENDAKI",
         "displayOrder": 4
       },
       {
         "id": "a2X850000008WCREA2",
         "name": "Dr Nor Hanisah Saphari",
         "group": "Core Team Member",
-        "designation": "Senior Teacher, MTL Dept, Catholic Junior College",
+        "designation": "Senior Teacher, MTL Dept",
+        "organisation": "Catholic Junior College",
         "displayOrder": 5
       },
       {
         "id": "a2X850000008WCSEA2",
         "name": "Nur Diana Kaswadi",
         "group": "Core Team Member",
-        "designation": "Subject Head (English) and Discipline Master, Northlight School",
+        "designation": "Subject Head (English) and Discipline Master",
+        "organisation": "Northlight School",
         "displayOrder": 6
       },
       {
         "id": "a2X850000008WCTEA2",
         "name": "Zakir Mokhtar",
         "group": "Core Team Member",
-        "designation": "Vice Principal, Jiemin Primary School",
+        "designation": "Vice Principal",
+        "organisation": "Jiemin Primary School",
         "displayOrder": 7
       },
       {
@@ -469,7 +478,7 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "id": "a2X850000007ebpEAA",
         "name": "Muhammad Shamir Abdul Rahim",
         "group": "PN Lead",
-        "organisation": "Tech Founder & Data Architect",
+        "designation": "Tech Founder & Data Architect",
         "displayOrder": 1
       },
       {
@@ -725,7 +734,8 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "id": "a2X850000008VGMEA2",
         "name": "Istyana Putri Ibrahim",
         "group": "Assistant Lead",
-        "designation": "Acting Director, Maintenance Enforcement Division Ministry of Law",
+        "designation": "Acting Director, Maintenance Enforcement Division",
+        "organisation": "Ministry of Law",
         "displayOrder": 2
       },
       {
@@ -1108,8 +1118,8 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "id": "a2X850000008kC9EAI",
         "name": "Abdul Rashid Aziz",
         "group": "Core Team Member",
-        "designation": "Singapore Sport Institute",
-        "organisation": "Senior Technical Staff for Physiology",
+        "designation": "Senior Technical Staff for Physiology",
+        "organisation": "Singapore Sport Institute",
         "displayOrder": 7
       },
       {
@@ -1166,8 +1176,8 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "id": "a2X850000007f01EAA",
         "name": "Luqman Akasyah",
         "group": "Core Team Member",
-        "designation": "Sembcorp Industries Ltd",
-        "organisation": "Strategic Projects, Group COO Office"
+        "designation": "Strategic Projects, Group COO Office",
+        "organisation": "Sembcorp Industries Ltd"
       },
       {
         "id": "a2X850000007eK6EAI",
@@ -1221,43 +1231,50 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "id": "a2X850000008WNhEAM",
         "name": "Muhammad Izhar Abdul Rahman",
         "group": "Core Team Member",
-        "designation": "Manager, Online Safety Commission"
+        "designation": "Manager",
+        "organisation": "Online Safety Commission"
       },
       {
         "id": "a2X850000008WNiEAM",
         "name": "Muhammad Zahari Abu Talib",
         "group": "Core Team Member",
-        "designation": "Assistant Director, Ministry of Digital Development and Information"
+        "designation": "Assistant Director",
+        "organisation": "Ministry of Digital Development and Information"
       },
       {
         "id": "a2X850000008WNjEAM",
         "name": "Izzat Noor",
         "group": "Core Team Member",
-        "designation": "Cyber Threat Intelligence Specialist, VP, BNY"
+        "designation": "Cyber Threat Intelligence Specialist, VP",
+        "organisation": "BNY"
       },
       {
         "id": "a2X850000008WNkEAM",
         "name": "Hayati Hamzah",
         "group": "Core Team Member",
-        "designation": "Senior Data Operation Engineer, MB Energy"
+        "designation": "Senior Data Operation Engineer",
+        "organisation": "MB Energy"
       },
       {
         "id": "a2X850000008WNlEAM",
         "name": "Muhammad Azfar Ramli",
         "group": "Core Team Member",
-        "designation": "Deputy Department Director, Systems Science, A*STAR - IAIC"
+        "designation": "Deputy Department Director, Systems Science",
+        "organisation": "A*STAR - IAIC"
       },
       {
         "id": "a2X850000008WNmEAM",
         "name": "Ridzwan Mustafah",
         "group": "Core Team Member",
-        "designation": "Head of Applications Engineering, APAC, Universal Robots"
+        "designation": "Head of Applications Engineering, APAC",
+        "organisation": "Universal Robots"
       },
       {
         "id": "a2X850000008WNnEAM",
         "name": "Marianah Kasmin",
         "group": "Core Team Member",
-        "designation": "Technology Business Partner, Boeing"
+        "designation": "Technology Business Partner",
+        "organisation": "Boeing"
       },
     ]
   }
