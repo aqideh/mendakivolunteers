@@ -338,6 +338,7 @@ export default async function DashboardPage({
   });
   const milestoneCount = Object.values(milestones).filter(Boolean).length;
   const completion = Math.round((milestoneCount / 9) * 100);
+  const profileSetupComplete = Boolean(presentationProfile?.onboarding_completed_at);
 
   let avatarUrl: string | null = null;
   if (avatarPath) {
@@ -402,7 +403,9 @@ export default async function DashboardPage({
                   )}
                 </span>
               </Link>
-              <span className="profile-passport-completion">{completion}% complete</span>
+              {!profileSetupComplete ? (
+                <span className="profile-passport-completion">{completion}% complete</span>
+              ) : null}
             </div>
 
             <Link
@@ -483,47 +486,46 @@ export default async function DashboardPage({
               </div>
             </section>
 
-            <section className="profile-passport-completeness" aria-labelledby="profile-completeness-title">
-              <div className="profile-passport-section-heading">
-                <div>
-                  <h2 id="profile-completeness-title">Profile completeness</h2>
-                  <p>
-                    Complete these essentials so we can match you with relevant opportunities
-                    and contact you when needed.
-                  </p>
-                </div>
-                <Link
-                  className="text-link"
-                  href={completion === 100 ? "/profile/edit" : "/profile/setup"}
-                >
-                  {completion === 100 ? "Edit profile" : "Complete profile"}
-                </Link>
-              </div>
-
-              <div className="profile-passport-milestones">
-                {[
-                  ["Contact details", milestones.contact, "contact"],
-                  ["Home area", milestones.home, "home"],
-                  ["Personal details", milestones.personal, "personal"],
-                  ["Interests", milestones.interests, "interests"],
-                  ["Skills", milestones.skills, "skills"],
-                  ["Availability", milestones.availability, "availability"],
-                  ["Event readiness", milestones.eventReadiness, "event-readiness"],
-                  ["Education", milestones.education, "education"],
-                  ["Profile photo", milestones.photo, "photo"],
-                ].map(([label, done, step]) => (
-                  <Link
-                    key={String(label)}
-                    href={done ? `/profile/setup?step=${step}&mode=edit` : `/profile/setup?step=${step}`}
-                  >
-                    <span className="profile-passport-milestone-check" data-complete={done ? "true" : "false"}>
-                      {done ? "✓" : "○"}
-                    </span>
-                    <span>{label}</span>
+            {!profileSetupComplete ? (
+              <section className="profile-passport-completeness" aria-labelledby="profile-completeness-title">
+                <div className="profile-passport-section-heading">
+                  <div>
+                    <h2 id="profile-completeness-title">Profile completeness</h2>
+                    <p>
+                      Complete these essentials so we can match you with relevant opportunities
+                      and contact you when needed.
+                    </p>
+                  </div>
+                  <Link className="text-link" href="/profile/setup">
+                    Complete profile
                   </Link>
-                ))}
-              </div>
-            </section>
+                </div>
+
+                <div className="profile-passport-milestones">
+                  {[
+                    ["Contact details", milestones.contact, "contact"],
+                    ["Home area", milestones.home, "home"],
+                    ["Personal details", milestones.personal, "personal"],
+                    ["Interests", milestones.interests, "interests"],
+                    ["Skills", milestones.skills, "skills"],
+                    ["Availability", milestones.availability, "availability"],
+                    ["Event readiness", milestones.eventReadiness, "event-readiness"],
+                    ["Education", milestones.education, "education"],
+                    ["Profile photo", milestones.photo, "photo"],
+                  ].map(([label, done, step]) => (
+                    <Link
+                      key={String(label)}
+                      href={done ? `/profile/setup?step=${step}&mode=edit` : `/profile/setup?step=${step}`}
+                    >
+                      <span className="profile-passport-milestone-check" data-complete={done ? "true" : "false"}>
+                        {done ? "✓" : "○"}
+                      </span>
+                      <span>{label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             <section className="panel" aria-labelledby="profile-review-title">
               <h2 id="profile-review-title">Keep your details current</h2>
