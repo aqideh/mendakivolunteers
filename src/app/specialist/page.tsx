@@ -28,15 +28,10 @@ export default async function SpecialistPage() {
   ]);
 
   const eventsSection = (
-    <section className={styles.eventsSection} aria-labelledby="professional-events-title">
-      <div className={styles.eventsHeader}>
-        <h2 id="professional-events-title">Professional Network events</h2>
-        <p>
-          Explore upcoming networking, learning and community events. Registration links will be
-          enabled here when the event registration flow is ready.
-        </p>
-      </div>
-
+    <section
+      className={`${styles.eventsSection} phaseone-opportunities-peek`}
+      aria-label="Upcoming Professional Network events"
+    >
       {events.length > 0 ? (
         <div className={styles.eventGrid}>
           {events.map((event) => (
@@ -69,23 +64,7 @@ export default async function SpecialistPage() {
         href: "https://professionalnetworksuat.mendaki.org.sg/",
         label: "Discover Professional Networks",
       }}
-      items={[
-        {
-          title: "Professional Networks",
-          description:
-            "Explore communities that bring specialists together across industries to connect, learn and contribute.",
-        },
-        {
-          title: "Share your experience",
-          description:
-            "Support events, initiatives and conversations where your specialist experience can help others.",
-        },
-        {
-          title: "Build connections",
-          description:
-            "Meet others in your industry, exchange knowledge and find meaningful ways to stay involved.",
-        },
-      ]}
+      items={[]}
       ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
       afterContent={eventsSection}
     />
