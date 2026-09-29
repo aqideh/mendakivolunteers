@@ -1,6 +1,6 @@
 begin;
 
-select plan(12);
+select plan(13);
 
 select has_function(
   'maklom_private',
