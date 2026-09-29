@@ -14,7 +14,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $maklom$
 declare
   v_actor uuid := auth.uid();
   v_name text := nullif(btrim(coalesce(p_name, '')), '');
@@ -148,7 +148,7 @@ begin
     'volunteer_code', v_code
   );
 end;
-$;
+$maklom$;
 
 create or replace function public.maklom_match_or_create_volunteer(
   p_name text,
