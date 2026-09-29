@@ -1,62 +1,75 @@
 import { NextResponse } from "next/server";
 
+const BASE = "https://professionalnetworksuat.mendaki.org.sg";
 const SOURCES = {
-  list: "https://professionalnetworksuat.mendaki.org.sg/pn-sector/PN_Sector__c/Portal_Dislay_Active_PN_Sectors",
-  aerospace:
-    "https://professionalnetworksuat.mendaki.org.sg/pn-sector/a2W85000000BdPREA0/aerospace-and-aviation",
+  list: `${BASE}/pn-sector/PN_Sector__c/Portal_Dislay_Active_PN_Sectors`,
+  aerospace: `${BASE}/pn-sector/a2W85000000BdPREA0/aerospace-and-aviation`,
 } as const;
 
 export const dynamic = "force-dynamic";
 
-function extract(html: string) {
-  const text = html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/\s+/g, " ")
-    .trim();
+async function fetchText(url: string) {
+  const response = await fetch(url, {
+    cache: "no-store",
+    redirect: "follow",
+    headers: {
+      "user-agent":
+        "Mozilla/5.0 (compatible; KeluargaMENDAKIStagingImporter/1.0; +https://keluargastaging.vercel.app)",
+      accept: "text/html,application/javascript,text/javascript,*/*",
+    },
+  });
+  return { response, body: await response.text() };
+}
 
-  const urls = Array.from(
-    new Set(
-      (html.match(/https?:\\?\/\\?\/[^"'<>\s)]+/g) ?? [])
-        .map((value) => value.replace(/\\\//g, "/"))
-        .filter((value) =>
-          /pn-sector|linkedin|file\.force|cms\/delivery|salesforce/i.test(value),
-        ),
-    ),
-  ).slice(0, 250);
+function importViews(html: string) {
+  const matches = Array.from(
+    html.matchAll(/\\?"@view\/([^"\\]+)\\?"\s*:\s*\\?"([^"\\]+)\\?"/g),
+  );
+  return Object.fromEntries(
+    matches.map((match) => [match[1], match[2].replace(/\\\//g, "/")]),
+  );
+}
 
-  const ids = Array.from(new Set(html.match(/a2W[A-Za-z0-9]{12,15}/g) ?? [])).slice(0, 100);
+function inspect(body: string) {
+  const decoded = body
+    .replace(/\\u0026/g, "&")
+    .replace(/\\u003c/g, "<")
+    .replace(/\\u003e/g, ">")
+    .replace(/\\\//g, "/");
+
   const keywords = [
     "A fraternity",
     "Core Team",
     "Aerospace",
     "Aviation",
-    "Banking",
-    "Finance",
-    "Early Childhood",
-    "Engineering",
-    "Technology",
-    "Tech",
+    "Description",
+    "linkedin",
+    "Image",
+    "PN_Sector",
   ];
+
   const snippets = keywords.flatMap((keyword) => {
-    const lowered = html.toLowerCase();
+    const lower = decoded.toLowerCase();
     const needle = keyword.toLowerCase();
-    const output: string[] = [];
+    const rows: string[] = [];
     let from = 0;
-    while (output.length < 8) {
-      const index = lowered.indexOf(needle, from);
+    while (rows.length < 20) {
+      const index = lower.indexOf(needle, from);
       if (index < 0) break;
-      output.push(html.slice(Math.max(0, index - 500), index + 1000));
+      rows.push(decoded.slice(Math.max(0, index - 800), index + 1800));
       from = index + needle.length;
     }
-    return output.map((snippet) => ({ keyword, snippet }));
+    return rows.map((snippet) => ({ keyword, snippet }));
   });
 
-  return { text: text.slice(0, 12000), urls, ids, snippets };
+  const media = Array.from(
+    new Set(
+      (decoded.match(/(?:https?:\/\/[^"'<>\s)]+|\/sfsites\/c\/cms\/delivery\/media\/[A-Za-z0-9?=&._-]+)/g) ?? [])
+        .filter((value) => /cms\/delivery|file\.force|image|media/i.test(value)),
+    ),
+  ).slice(0, 200);
+
+  return { snippets, media };
 }
 
 export async function GET(request: Request) {
@@ -66,20 +79,31 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unsupported source" }, { status: 400 });
   }
 
-  const response = await fetch(SOURCES[sourceKey], {
-    cache: "no-store",
-    redirect: "follow",
-    headers: {
-      "user-agent":
-        "Mozilla/5.0 (compatible; KeluargaMENDAKIStagingImporter/1.0; +https://keluargastaging.vercel.app)",
-      accept: "text/html,application/xhtml+xml",
-    },
-  });
+  const { response, body } = await fetchText(SOURCES[sourceKey]);
+  const views = importViews(body);
+  const viewName = url.searchParams.get("view");
 
-  const body = await response.text();
+  if (viewName) {
+    const viewPath = views[viewName];
+    if (!viewPath) {
+      return NextResponse.json({ error: "View not found", views }, { status: 404 });
+    }
+    const viewUrl = new URL(viewPath, BASE).toString();
+    const fetched = await fetchText(viewUrl);
+    return NextResponse.json({
+      source: SOURCES[sourceKey],
+      viewName,
+      viewUrl,
+      status: fetched.response.status,
+      ...inspect(fetched.body),
+      body: fetched.body.slice(0, 40000),
+    });
+  }
+
   return NextResponse.json({
     source: SOURCES[sourceKey],
     status: response.status,
-    ...extract(body),
+    views,
+    ...inspect(body),
   });
 }
