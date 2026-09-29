@@ -8,7 +8,7 @@ import styles from "./contributor-hero.module.css";
 const states = [
   {
     key: "volunteer",
-    title: "Serve with a Heart, One Keluarga.",
+    title: "Serve with Heart as One Keluarga",
     description:
       "Join upcoming community activities and events that match your interests and availability. Contribute your time through practical volunteer roles that support programme delivery.",
   },
@@ -16,7 +16,7 @@ const states = [
     key: "contribute",
     title: "Transform Ideas into Community Impact",
     description:
-      "Have an idea that benefits MENDAKI volunteers? Individuals, community groups, and organisations are welcome to propose projects that enhance volunteers' skills, well-being, recognition, or overall volunteering experience.",
+      "Have an idea that could make a difference in the community? Individuals, community groups and organisations are welcome to propose projects that support MENDAKI’s beneficiaries and the wider Malay/Muslim community.",
   },
   {
     key: "donate",
@@ -46,16 +46,22 @@ const ctas = [
 
 export function ContributorHero({ heroImage }: { heroImage: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isInteractionPaused, setIsInteractionPaused] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (
+      isInteractionPaused ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
 
     const timer = window.setInterval(() => {
       setActiveIndex((index) => (index + 1) % states.length);
     }, 8000);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [isInteractionPaused]);
 
   return (
     <section className={styles.hero} aria-labelledby="contributor-hero-title">
@@ -103,8 +109,12 @@ export function ContributorHero({ heroImage }: { heroImage: string }) {
             })}
           </div>
 
-          <div className={styles.heroActions} aria-label="Ways to contribute">
-            {ctas.map((cta) => {
+          <div
+            className={styles.heroActions}
+            aria-label="Ways to contribute"
+            onMouseLeave={() => setIsInteractionPaused(false)}
+          >
+            {ctas.map((cta, index) => {
               const highlighted = cta.key === states[activeIndex]?.key;
               const className = highlighted
                 ? styles.primaryAction
@@ -115,6 +125,15 @@ export function ContributorHero({ heroImage }: { heroImage: string }) {
                   className={className}
                   href={cta.href}
                   key={cta.key}
+                  onBlur={() => setIsInteractionPaused(false)}
+                  onFocus={() => {
+                    setActiveIndex(index);
+                    setIsInteractionPaused(true);
+                  }}
+                  onMouseEnter={() => {
+                    setActiveIndex(index);
+                    setIsInteractionPaused(true);
+                  }}
                   target="_blank"
                   rel="noreferrer"
                 >
