@@ -30,7 +30,7 @@
 .hero::before {
   z-index: -2;
   background: var(--home-hero-image) center 46% / cover no-repeat;
-  opacity: 0.48;
+  opacity: 0.53;
 }
 
 .hero::after {
@@ -137,7 +137,7 @@
 
 .roleGrid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
   width: min(74rem, calc(100% - 1.5rem));
   margin-inline: auto;
@@ -162,6 +162,9 @@
 }
 
 .roleChoice:nth-child(5) {
+  grid-column: 1 / -1;
+  width: calc((100% - 3rem) / 4);
+  justify-self: center;
   animation-delay: 180ms;
 }
 
@@ -207,14 +210,6 @@
   display: inline-flex;
   min-width: 0;
   align-items: baseline;
-  gap: 0.55rem;
-}
-
-.roleNumber {
-  color: var(--primary);
-  font-size: 0.68rem;
-  font-weight: 850;
-  letter-spacing: 0.08em;
 }
 
 .roleLabel strong {
@@ -255,6 +250,7 @@
 
   .roleChoice:last-child {
     grid-column: 1 / -1;
+    width: calc((100% - 1rem) / 2);
   }
 }
 
@@ -270,7 +266,7 @@
 
   .hero::before {
     background-position: 52% center;
-    opacity: 0.4;
+    opacity: 0.45;
   }
 
   .hero::after {
@@ -297,6 +293,7 @@
 
   .roleChoice:last-child {
     grid-column: auto;
+    width: 100%;
   }
 
   .roleOption {
