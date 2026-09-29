@@ -73,7 +73,29 @@ function inspect(body: string) {
     ),
   ).slice(0, 200);
 
-  return { snippets, media };
+  const apexModules = Array.from(
+    new Set(decoded.match(/@salesforce\/apex\/[A-Za-z0-9_.]+/g) ?? []),
+  );
+  const fieldNames = Array.from(
+    new Set(decoded.match(/[A-Za-z][A-Za-z0-9_]*__c/g) ?? []),
+  ).filter((value) =>
+    /PN|Sector|Description|Image|Photo|LinkedIn|Role|Designation|Organisation|Display|Email|Name/i.test(value),
+  );
+
+  const adapterSnippets = ["wiredCoreTeamMembers", "wiredPNSector", "getCoreTeam", "getPNSector"]
+    .flatMap((needle) => {
+      const rows: string[] = [];
+      let from = 0;
+      while (rows.length < 8) {
+        const index = decoded.indexOf(needle, from);
+        if (index < 0) break;
+        rows.push(decoded.slice(Math.max(0, index - 2500), index + 3000));
+        from = index + needle.length;
+      }
+      return rows.map((snippet) => ({ needle, snippet }));
+    });
+
+  return { snippets, media, apexModules, fieldNames, adapterSnippets };
 }
 
 export async function GET(request: Request) {
