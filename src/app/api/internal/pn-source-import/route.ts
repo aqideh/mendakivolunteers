@@ -95,6 +95,14 @@ function inspect(body: string) {
       return rows.map((snippet) => ({ needle, snippet }));
     });
 
+  const apexDefinitions = apexModules.map((moduleName) => {
+    const index = decoded.indexOf(`LWR.define("${moduleName}"`);
+    return {
+      moduleName,
+      snippet: index >= 0 ? decoded.slice(index, index + 1200) : "",
+    };
+  });
+
   const apexTransportStrings = Array.from(
     new Set(
       (decoded.match(/["'`]([^"'\`]{0,160}(?:apex|Apex)[^"'\`]{0,220})["'`]/g) ?? [])
@@ -103,7 +111,7 @@ function inspect(body: string) {
     ),
   ).slice(0, 200);
 
-  return { snippets, media, apexModules, fieldNames, adapterSnippets, apexTransportStrings };
+  return { snippets, media, apexModules, fieldNames, adapterSnippets, apexDefinitions, apexTransportStrings };
 }
 
 export async function GET(request: Request) {
