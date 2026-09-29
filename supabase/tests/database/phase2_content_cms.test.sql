@@ -69,8 +69,8 @@ select is(
 );
 
 select ok(
-  has_table_privilege('anon', 'content.opportunities', 'SELECT'),
-  'anonymous users can read visible opportunities'
+  not has_table_privilege('anon', 'content.opportunities', 'SELECT'),
+  'anonymous users cannot read opportunities directly; public pages are server-rendered'
 );
 
 select ok(
@@ -79,18 +79,18 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('anon', 'content.news_posts', 'SELECT'),
-  'anonymous users can read visible news posts'
+  not has_table_privilege('anon', 'content.news_posts', 'SELECT'),
+  'anonymous users cannot read news posts directly; public pages are server-rendered'
 );
 
 select ok(
-  has_table_privilege('authenticated', 'content.opportunities', 'INSERT'),
-  'authenticated content managers can insert through RLS'
+  not has_table_privilege('authenticated', 'content.opportunities', 'INSERT'),
+  'authenticated browser users cannot insert content directly'
 );
 
 select ok(
-  has_table_privilege('authenticated', 'content.opportunities', 'UPDATE'),
-  'authenticated content managers can update through RLS'
+  not has_table_privilege('authenticated', 'content.opportunities', 'UPDATE'),
+  'authenticated browser users cannot update content directly'
 );
 
 select ok(
@@ -99,8 +99,8 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('authenticated', 'content.revisions', 'SELECT'),
-  'authenticated content managers can read revisions through RLS'
+  not has_table_privilege('authenticated', 'content.revisions', 'SELECT'),
+  'authenticated browser users cannot read revision history directly'
 );
 
 select ok(
