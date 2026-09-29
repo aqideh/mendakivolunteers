@@ -2,17 +2,33 @@ import type { NextRequest } from "next/server";
 
 import { getAppEnvironment, getPublicConfig } from "@/lib/env";
 import { buildContentSecurityPolicy } from "@/lib/security/headers";
+import { buildCanonicalStagingRedirectUrl } from "@/lib/staging-canonical-url";
 import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
   const appEnvironment = getAppEnvironment();
-  const { supabaseUrl } = getPublicConfig();
+  const { appUrl, supabaseUrl } = getPublicConfig();
   const nonce = crypto.randomUUID().replaceAll("-", "");
   const contentSecurityPolicy = buildContentSecurityPolicy({
     appEnvironment,
     nonce,
     supabaseUrl,
   });
+  const isStagingBranch =
+    appEnvironment === "staging" &&
+    process.env.VERCEL_ENV === "preview" &&
+    process.env.VERCEL_GIT_COMMIT_REF === "staging";
+
+  if (isStagingBranch) {
+    const redirectUrl = buildCanonicalStagingRedirectUrl(
+      request.nextUrl.toString(),
+      appUrl,
+    );
+    if (redirectUrl) {
+      return Response.redirect(redirectUrl, 307);
+    }
+  }
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
   requestHeaders.set("x-nonce", nonce);
