@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireActiveAccount } from "@/lib/auth/account-access";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const shirtTypes = ["round_neck", "collared"] as const;
 const shirtSizes = ["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"] as const;
@@ -26,7 +26,7 @@ async function requireInventoryManager() {
     redirect("/dashboard?error=event_access_denied");
   }
 
-  return supabase as unknown as SupabaseClient;
+  return { userId };
 }
 
 export async function recordShirtStock(formData: FormData) {
@@ -48,8 +48,10 @@ export async function recordShirtStock(formData: FormData) {
     redirect("/admin/inventory/shirts?error=validation");
   }
 
-  const client = await requireInventoryManager();
-  const result = await client.rpc("record_volunteer_shirt_stock", {
+  const { userId } = await requireInventoryManager();
+  const admin = getPhaseOneAdminClient();
+  const result = await admin.rpc("server_record_volunteer_shirt_stock", {
+    p_actor_user_id: userId,
     p_shirt_type: parsed.data.shirtType,
     p_size: parsed.data.size,
     p_quantity_delta: parsed.data.quantityDelta,
@@ -87,8 +89,10 @@ export async function recordPreviousShirtIssue(formData: FormData) {
     redirect("/admin/inventory/shirts?error=legacy_validation");
   }
 
-  const client = await requireInventoryManager();
-  const result = await client.rpc("mark_previous_volunteer_shirt_issue", {
+  const { userId } = await requireInventoryManager();
+  const admin = getPhaseOneAdminClient();
+  const result = await admin.rpc("server_mark_previous_volunteer_shirt_issue", {
+    p_actor_user_id: userId,
     p_volunteer_id: parsed.data.volunteerId,
     p_shirt_type: parsed.data.shirtType,
     p_size: parsed.data.size,
