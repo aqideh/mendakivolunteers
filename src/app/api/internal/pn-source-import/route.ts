@@ -95,7 +95,15 @@ function inspect(body: string) {
       return rows.map((snippet) => ({ needle, snippet }));
     });
 
-  return { snippets, media, apexModules, fieldNames, adapterSnippets };
+  const apexTransportStrings = Array.from(
+    new Set(
+      (decoded.match(/["'`]([^"'\`]{0,160}(?:apex|Apex)[^"'\`]{0,220})["'`]/g) ?? [])
+        .map((value) => value.slice(1, -1))
+        .filter((value) => /api|execute|action|invoke|apex/i.test(value)),
+    ),
+  ).slice(0, 200);
+
+  return { snippets, media, apexModules, fieldNames, adapterSnippets, apexTransportStrings };
 }
 
 export async function GET(request: Request) {
