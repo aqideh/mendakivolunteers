@@ -21,12 +21,16 @@ async function fetchText(url: string) {
   return { response, body: await response.text() };
 }
 
-function importViews(html: string) {
+function importViews(html: string): Record<string, string> {
   const matches = Array.from(
     html.matchAll(/\\?"@view\/([^"\\]+)\\?"\s*:\s*\\?"([^"\\]+)\\?"/g),
   );
   return Object.fromEntries(
-    matches.map((match) => [match[1], match[2].replace(/\\\//g, "/")]),
+    matches.flatMap((match) => {
+      const name = match[1];
+      const path = match[2];
+      return name && path ? [[name, path.replace(/\\\//g, "/")] as const] : [];
+    }),
   );
 }
 
