@@ -42,10 +42,22 @@ export default async function SpecialistPage() {
               </div>
               <h3>{event.title}</h3>
               <p>{event.summary}</p>
-              <button className={styles.deadCta} type="button" disabled aria-disabled="true">
-                <span>{event.cta_label}</span>
-                <span aria-hidden="true">↗</span>
-              </button>
+              {event.cta_url ? (
+                <a
+                  className={styles.eventCta}
+                  href={event.cta_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span>{event.cta_label}</span>
+                  <span aria-hidden="true">↗</span>
+                </a>
+              ) : (
+                <button className={styles.deadCta} type="button" disabled aria-disabled="true">
+                  <span>{event.cta_label}</span>
+                  <span aria-hidden="true">↗</span>
+                </button>
+              )}
             </article>
           ))}
         </div>
