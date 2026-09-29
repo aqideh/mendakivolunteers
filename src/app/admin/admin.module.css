@@ -1,0 +1,488 @@
+.page {
+  padding-top: 2.1rem;
+}
+
+.header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+
+.header h1 {
+  max-width: none;
+  margin-bottom: 0.35rem;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.header p {
+  max-width: 42rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  min-height: 2.55rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.85rem;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.primaryAction {
+  color: #171815;
+  background: var(--primary);
+}
+
+.secondaryAction {
+  border: 1px solid #d4d7d2;
+  color: #2d302b;
+  background: #ffffff;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.75fr);
+  gap: 0.85rem;
+}
+
+.todayCard,
+.attentionCard,
+.metric,
+.eventTable,
+.activityList,
+.quickActions {
+  border: 1px solid #d9dcd7;
+  border-radius: 0.9rem;
+  background: #ffffff;
+}
+
+.todayCard,
+.attentionCard {
+  padding: 1rem;
+}
+
+.cardHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardHeading h2 {
+  margin: 0 0 0.18rem;
+  font-size: 1rem;
+}
+
+.cardHeading p {
+  margin: 0;
+  color: #757972;
+  font-size: 0.76rem;
+}
+
+.todayDate {
+  color: #747872;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.todayMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 1rem 0;
+}
+
+.todayMetrics > div {
+  border-radius: 0.7rem;
+  padding: 0.8rem;
+  background: #f5f6f3;
+}
+
+.todayMetrics strong,
+.metric strong {
+  display: block;
+  color: #1d1f1b;
+  font-size: 1.65rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.todayMetrics span,
+.metric span {
+  display: block;
+  margin-top: 0.25rem;
+  color: #7b7f78;
+  font-size: 0.72rem;
+}
+
+.todayList {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.todayEvent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border-top: 1px solid #eceeeb;
+  padding: 0.6rem 0;
+  color: #242621;
+  text-decoration: none;
+}
+
+.todayEvent:first-child {
+  border-top: 0;
+}
+
+.todayEvent > span:first-child {
+  min-width: 0;
+}
+
+.todayEvent strong,
+.todayEvent small {
+  display: block;
+}
+
+.todayEvent strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.83rem;
+}
+
+.todayEvent small {
+  margin-top: 0.12rem;
+  color: #7a7e77;
+  font-size: 0.7rem;
+}
+
+.cardLink {
+  display: inline-flex;
+  margin-top: 0.2rem;
+  color: #252722;
+  text-decoration: none;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.emptyCopy {
+  margin: 0.85rem 0;
+  color: #7a7e77;
+  font-size: 0.78rem;
+}
+
+.attentionBadge {
+  display: grid;
+  min-width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  color: #4d3600;
+  background: #fff1a6;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.attentionClear {
+  color: #27624f;
+  background: #e4f3eb;
+}
+
+.attentionList {
+  display: grid;
+  margin-top: 0.75rem;
+}
+
+.attentionList a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid #eceeeb;
+  padding: 0.72rem 0;
+  color: #30332e;
+  text-decoration: none;
+  font-size: 0.77rem;
+}
+
+.attentionList a:first-child {
+  border-top: 0;
+}
+
+.attentionList strong {
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+}
+
+.section {
+  margin-top: 1.6rem;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.sectionHeading h2 {
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
+}
+
+.sectionHeading p,
+.sectionHeading a {
+  margin: 0;
+  color: #7a7e77;
+  font-size: 0.74rem;
+}
+
+.sectionHeading a {
+  color: #242621;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.metric {
+  padding: 0.9rem;
+}
+
+.metric strong {
+  font-size: 1.5rem;
+}
+
+.eventTable {
+  overflow: hidden;
+}
+
+.eventRow {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr) 8rem auto;
+  gap: 0.9rem;
+  align-items: center;
+  border-top: 1px solid #eceeeb;
+  padding: 0.8rem 0.95rem;
+  color: #242621;
+  text-decoration: none;
+}
+
+.eventRow:first-child {
+  border-top: 0;
+}
+
+.eventDate,
+.eventName,
+.rosterStatus {
+  min-width: 0;
+}
+
+.eventDate strong,
+.eventDate small,
+.eventName strong,
+.eventName small,
+.rosterStatus strong,
+.rosterStatus small {
+  display: block;
+}
+
+.eventDate strong,
+.eventName strong,
+.rosterStatus strong {
+  font-size: 0.8rem;
+}
+
+.eventDate small,
+.eventName small,
+.rosterStatus small {
+  margin-top: 0.1rem;
+  color: #7b7f78;
+  font-size: 0.68rem;
+}
+
+.eventName strong,
+.eventName small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rosterStatus {
+  text-align: right;
+}
+
+.eventArrow {
+  color: #8c9089;
+}
+
+.lowerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.65fr);
+  gap: 0.85rem;
+}
+
+.activityList,
+.quickActions {
+  overflow: hidden;
+}
+
+.activityList a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+  border-top: 1px solid #eceeeb;
+  padding: 0.75rem 0.9rem;
+  color: #282a26;
+  text-decoration: none;
+}
+
+.activityList a:first-child {
+  border-top: 0;
+}
+
+.activityDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.activityCopy {
+  min-width: 0;
+}
+
+.activityCopy strong,
+.activityCopy small {
+  display: block;
+}
+
+.activityCopy strong {
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.activityCopy small {
+  margin-top: 0.15rem;
+  color: #82867f;
+  font-size: 0.66rem;
+}
+
+.quickActions {
+  display: grid;
+}
+
+.quickActions a {
+  display: block;
+  border-top: 1px solid #eceeeb;
+  padding: 0.82rem 0.9rem;
+  color: #272925;
+  text-decoration: none;
+}
+
+.quickActions a:first-child {
+  border-top: 0;
+}
+
+.quickActions strong,
+.quickActions span {
+  display: block;
+}
+
+.quickActions strong {
+  font-size: 0.78rem;
+}
+
+.quickActions span {
+  margin-top: 0.12rem;
+  color: #7e827b;
+  font-size: 0.68rem;
+}
+
+.emptyRow {
+  padding: 1rem;
+  color: #7b7f78;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 980px) {
+  .heroGrid,
+  .lowerGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .eventRow {
+    grid-template-columns: 7rem minmax(0, 1fr) 7rem auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding-top: 1rem !important;
+  }
+
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 1.15rem;
+  }
+
+  .header h1 {
+    font-size: 1.8rem;
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    flex: 1 1 auto;
+  }
+
+  .metricGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .eventRow {
+    grid-template-columns: 5.8rem minmax(0, 1fr) auto;
+  }
+
+  .rosterStatus {
+    display: none;
+  }
+
+  .eventName small {
+    white-space: normal;
+  }
+}
