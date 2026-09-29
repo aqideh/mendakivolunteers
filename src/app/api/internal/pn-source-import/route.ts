@@ -82,7 +82,7 @@ function inspect(body: string) {
     /PN|Sector|Description|Image|Photo|LinkedIn|Role|Designation|Organisation|Display|Email|Name/i.test(value),
   );
 
-  const adapterSnippets = ["wiredCoreTeamMembers", "wiredPNSector", "getCoreTeam", "getPNSector"]
+  const adapterSnippets = ["wiredCoreTeamMembers", "wiredPNSector", "getCoreTeam", "getPNSector", "getApexInvoker", "/apex", "ldsAdaptersApex"]
     .flatMap((needle) => {
       const rows: string[] = [];
       let from = 0;
