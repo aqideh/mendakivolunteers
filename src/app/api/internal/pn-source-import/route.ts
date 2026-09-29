@@ -149,6 +149,25 @@ function inspect(body: string) {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const action = url.searchParams.get("action");
+  if (action === "all") {
+    const sectorResponse = await fetchApex("sectors");
+    const sectorBody = JSON.parse(sectorResponse.body) as { returnValue?: { Data?: Array<{ Id: string }> } };
+    const sectorRows = sectorBody.returnValue?.Data ?? [];
+    const rows = [];
+    for (const sectorRow of sectorRows) {
+      const [sectorResult, teamResult] = await Promise.all([
+        fetchApex("sector", { recordId: sectorRow.Id }),
+        fetchApex("team", { sectorId: sectorRow.Id }),
+      ]);
+      rows.push({
+        id: sectorRow.Id,
+        sector: JSON.parse(sectorResult.body).returnValue ?? null,
+        team: JSON.parse(teamResult.body).returnValue ?? [],
+      });
+    }
+    return NextResponse.json({ rows });
+  }
+
   if (action === "sector" || action === "team" || action === "sectors") {
     const id = url.searchParams.get("id");
     const params =
