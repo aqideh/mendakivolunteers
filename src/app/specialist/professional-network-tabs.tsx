@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+
+import { professionalNetworks } from "@/lib/content/professional-networks";
 
 import styles from "../professionals/professionals.module.css";
 
@@ -16,72 +19,7 @@ export type ProfessionalNetworkEventCard = Readonly<{
   ctaUrl: string | null;
 }>;
 
-const professionalNetworks = [
-  {
-    name: "Aerospace and Aviation",
-    linkedinUrl: "https://www.linkedin.com/groups/14406677/",
-  },
-  {
-    name: "Banking & Finance",
-    linkedinUrl: "https://www.linkedin.com/groups/14161777/",
-  },
-  {
-    name: "Early Childhood",
-    linkedinUrl: "https://www.linkedin.com/groups/14290278/",
-  },
-  {
-    name: "Education",
-    linkedinUrl: "https://www.linkedin.com/groups/36980182/",
-  },
-  {
-    name: "Engineering",
-    linkedinUrl: "https://www.linkedin.com/groups/14237296/",
-  },
-  {
-    name: "Entrepreneurship",
-    linkedinUrl: "https://www.linkedin.com/groups/23250004/",
-  },
-  {
-    name: "Healthcare",
-    linkedinUrl: "https://www.linkedin.com/groups/14276878/",
-  },
-  {
-    name: "Human Resources",
-    linkedinUrl: "https://www.linkedin.com/groups/14289305/",
-  },
-  {
-    name: "Legal",
-    linkedinUrl: "https://www.linkedin.com/groups/14249872/",
-  },
-  {
-    name: "Life Sciences",
-    linkedinUrl: "https://www.linkedin.com/groups/14115620/",
-  },
-  {
-    name: "Media & Creatives",
-    linkedinUrl: "https://www.linkedin.com/groups/14284323/",
-  },
-  {
-    name: "Public Sector",
-    linkedinUrl: "https://www.linkedin.com/groups/14288321/",
-  },
-  {
-    name: "Social Services",
-    linkedinUrl: "https://www.linkedin.com/groups/14284320/",
-  },
-  {
-    name: "Sports",
-    linkedinUrl: "https://www.linkedin.com/groups/14288285/",
-  },
-  {
-    name: "Sustainability",
-    linkedinUrl: "https://www.linkedin.com/groups/14287266/",
-  },
-  {
-    name: "Tech",
-    linkedinUrl: "https://www.linkedin.com/groups/14502157/",
-  },
-] as const;
+
 
 type TabKey = "directory" | "upcoming" | "past";
 
@@ -221,15 +159,13 @@ export function ProfessionalNetworkTabs({
               <article className={styles.networkCard} key={network.name}>
                 <span className={styles.networkLabel}>Professional Network</span>
                 <h3>{network.name}</h3>
-                <a
+                <Link
                   className={styles.networkLink}
-                  href={network.linkedinUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={`/specialist/networks/${network.slug}`}
                 >
-                  <span>Visit LinkedIn</span>
-                  <span aria-hidden="true">↗</span>
-                </a>
+                  <span>View Network</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
               </article>
             ))}
           </div>
