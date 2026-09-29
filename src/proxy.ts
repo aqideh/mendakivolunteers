@@ -6,13 +6,28 @@ import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
   const appEnvironment = getAppEnvironment();
-  const { supabaseUrl } = getPublicConfig();
+  const { appUrl, supabaseUrl } = getPublicConfig();
   const nonce = crypto.randomUUID().replaceAll("-", "");
   const contentSecurityPolicy = buildContentSecurityPolicy({
     appEnvironment,
     nonce,
     supabaseUrl,
   });
+  const isStagingBranch =
+    appEnvironment === "staging" &&
+    process.env.VERCEL_ENV === "preview" &&
+    process.env.VERCEL_GIT_COMMIT_REF === "staging";
+
+  if (isStagingBranch) {
+    const canonicalAppUrl = new URL(appUrl);
+    if (request.nextUrl.origin !== canonicalAppUrl.origin) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.protocol = canonicalAppUrl.protocol;
+      redirectUrl.host = canonicalAppUrl.host;
+      return Response.redirect(redirectUrl, 307);
+    }
+  }
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
   requestHeaders.set("x-nonce", nonce);
