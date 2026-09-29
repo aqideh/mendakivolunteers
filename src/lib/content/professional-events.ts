@@ -1,10 +1,9 @@
 import "server-only";
 
 import { cache } from "react";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-import { getPublicConfig } from "@/lib/env";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const professionalEventSchema = z.object({
   id: z.string().uuid(),
@@ -14,25 +13,19 @@ const professionalEventSchema = z.object({
   ends_at: z.string().nullable(),
   venue: z.string().nullable(),
   cta_label: z.string(),
+  cta_url: z.string().url().nullable(),
   sort_order: z.number(),
 });
 
 export type ProfessionalEvent = z.infer<typeof professionalEventSchema>;
 
 export const getPublishedProfessionalEvents = cache(async (): Promise<ProfessionalEvent[]> => {
-  const { supabaseUrl, supabasePublishableKey } = getPublicConfig();
-  const supabase = createSupabaseClient(supabaseUrl, supabasePublishableKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  const supabase = getPhaseOneAdminClient();
 
   const { data, error } = await supabase
     .schema("content")
     .from("professional_events")
-    .select("id, title, summary, starts_at, ends_at, venue, cta_label, sort_order")
+    .select("id, title, summary, starts_at, ends_at, venue, cta_label, cta_url, sort_order")
     .eq("is_published", true)
     .order("sort_order", { ascending: true })
     .order("starts_at", { ascending: true, nullsFirst: false })
