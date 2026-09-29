@@ -2,6 +2,7 @@ export const programmeRundownBucket = "programme-rundowns";
 export const programmeRundownMaxFileSize = 5 * 1024 * 1024;
 export const programmeRundownMaxImagesPerEvent = 20;
 export const programmeRundownMaxFilesPerSelection = 10;
+export const programmeRundownSignedUrlTtlSeconds = 10 * 60;
 
 export const programmeRundownMimeTypes = [
   "image/jpeg",
