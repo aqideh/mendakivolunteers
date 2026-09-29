@@ -22,7 +22,7 @@ type VolunteerBadgeGalleryProps = Readonly<{
   badges: VolunteerBadgeAward[];
   catalogue: VolunteerBadgeDefinition[];
   approvedHours: number;
-  nextMilestone?: number;
+  nextMilestone: number | undefined;
 }>;
 
 type BadgeIconKind =
