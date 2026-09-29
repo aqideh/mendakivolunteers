@@ -9,6 +9,8 @@ export type ProfessionalNetworkEventCard = Readonly<{
   title: string;
   summary: string | null;
   dateLabel: string;
+  startsAt: string | null;
+  endsAt: string | null;
   venue: string | null;
   ctaLabel: string;
   ctaUrl: string | null;
@@ -16,77 +18,130 @@ export type ProfessionalNetworkEventCard = Readonly<{
 
 const professionalNetworks = [
   {
-    name: "PN for Aerospace and Aviation",
+    name: "Aerospace and Aviation",
     linkedinUrl: "https://www.linkedin.com/groups/14406677/",
   },
   {
-    name: "PN for Banking & Finance",
+    name: "Banking & Finance",
     linkedinUrl: "https://www.linkedin.com/groups/14161777/",
   },
   {
-    name: "PN for Early Childhood",
+    name: "Early Childhood",
     linkedinUrl: "https://www.linkedin.com/groups/14290278/",
   },
   {
-    name: "PN for Education",
+    name: "Education",
     linkedinUrl: "https://www.linkedin.com/groups/36980182/",
   },
   {
-    name: "PN for Engineering",
+    name: "Engineering",
     linkedinUrl: "https://www.linkedin.com/groups/14237296/",
   },
   {
-    name: "PN for Entrepreneurship",
+    name: "Entrepreneurship",
     linkedinUrl: "https://www.linkedin.com/groups/23250004/",
   },
   {
-    name: "PN for Healthcare",
+    name: "Healthcare",
     linkedinUrl: "https://www.linkedin.com/groups/14276878/",
   },
   {
-    name: "PN for Human Resources",
+    name: "Human Resources",
     linkedinUrl: "https://www.linkedin.com/groups/14289305/",
   },
   {
-    name: "PN for Legal",
+    name: "Legal",
     linkedinUrl: "https://www.linkedin.com/groups/14249872/",
   },
   {
-    name: "PN for Life Sciences",
+    name: "Life Sciences",
     linkedinUrl: "https://www.linkedin.com/groups/14115620/",
   },
   {
-    name: "PN for Media & Creatives",
+    name: "Media & Creatives",
     linkedinUrl: "https://www.linkedin.com/groups/14284323/",
   },
   {
-    name: "PN for Public Sector",
+    name: "Public Sector",
     linkedinUrl: "https://www.linkedin.com/groups/14288321/",
   },
   {
-    name: "PN for Social Services",
+    name: "Social Services",
     linkedinUrl: "https://www.linkedin.com/groups/14284320/",
   },
   {
-    name: "PN for Sports",
+    name: "Sports",
     linkedinUrl: "https://www.linkedin.com/groups/14288285/",
   },
   {
-    name: "PN for Sustainability",
+    name: "Sustainability",
     linkedinUrl: "https://www.linkedin.com/groups/14287266/",
   },
   {
-    name: "PN for Technology",
+    name: "Tech",
     linkedinUrl: "https://www.linkedin.com/groups/14502157/",
   },
 ] as const;
 
-type TabKey = "directory" | "events";
+type TabKey = "directory" | "upcoming" | "past";
 
-export function ProfessionalNetworkTabs({
+function EventGrid({
   events,
+  mode,
 }: Readonly<{
   events: readonly ProfessionalNetworkEventCard[];
+  mode: "upcoming" | "past";
+}>) {
+  if (events.length === 0) {
+    return (
+      <div className={styles.emptyState}>
+        {mode === "upcoming"
+          ? "No upcoming Professional Network events are published right now."
+          : "No past Professional Network events are available yet."}
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.eventGrid}>
+      {events.map((event) => (
+        <article className={styles.eventCard} key={event.id}>
+          <div className={styles.eventMeta}>
+            <span>{event.dateLabel}</span>
+            {event.venue ? <span>{event.venue}</span> : null}
+          </div>
+          <h3>{event.title}</h3>
+          <p>{event.summary}</p>
+          {mode === "upcoming" ? (
+            event.ctaUrl ? (
+              <a
+                className={styles.eventCta}
+                href={event.ctaUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>{event.ctaLabel}</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            ) : (
+              <button className={styles.deadCta} type="button" disabled aria-disabled="true">
+                <span>{event.ctaLabel}</span>
+                <span aria-hidden="true">↗</span>
+              </button>
+            )
+          ) : null}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export function ProfessionalNetworkTabs({
+  upcomingEvents,
+  pastEvents,
+}: Readonly<{
+  upcomingEvents: readonly ProfessionalNetworkEventCard[];
+  pastEvents: readonly ProfessionalNetworkEventCard[];
 }>) {
   const [activeTab, setActiveTab] = useState<TabKey>("directory");
 
@@ -95,6 +150,16 @@ export function ProfessionalNetworkTabs({
       className={`${styles.eventsSection} phaseone-opportunities-peek`}
       aria-label="Professional Networks directory and events"
     >
+      <aside className={styles.networkInfoBox}>
+        <p>
+          The MENDAKI Professional Networks (PN) is a platform that connects and empowers
+          professionals within the Malay/Muslim community to nurture leadership, foster
+          collaboration and accelerate collective success. Through industry-focused initiatives,
+          networking opportunities and knowledge sharing, PN enables members to build meaningful
+          connections, support one another&apos;s growth and contribute back to the community.
+        </p>
+      </aside>
+
       <div className={styles.tabList} role="tablist" aria-label="Professional Networks">
         <button
           id="professional-networks-directory-tab"
@@ -110,19 +175,35 @@ export function ProfessionalNetworkTabs({
           <span>Directory</span>
           <span className={styles.tabCount}>{professionalNetworks.length}</span>
         </button>
+
         <button
-          id="professional-networks-events-tab"
+          id="professional-networks-upcoming-tab"
           className={`${styles.tabButton} ${
-            activeTab === "events" ? styles.tabButtonActive : ""
+            activeTab === "upcoming" ? styles.tabButtonActive : ""
           }`}
           type="button"
           role="tab"
-          aria-selected={activeTab === "events"}
-          aria-controls="professional-networks-events-panel"
-          onClick={() => setActiveTab("events")}
+          aria-selected={activeTab === "upcoming"}
+          aria-controls="professional-networks-upcoming-panel"
+          onClick={() => setActiveTab("upcoming")}
         >
-          <span>Events</span>
-          <span className={styles.tabCount}>{events.length}</span>
+          <span>Upcoming Events</span>
+          <span className={styles.tabCount}>{upcomingEvents.length}</span>
+        </button>
+
+        <button
+          id="professional-networks-past-tab"
+          className={`${styles.tabButton} ${
+            activeTab === "past" ? styles.tabButtonActive : ""
+          }`}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "past"}
+          aria-controls="professional-networks-past-panel"
+          onClick={() => setActiveTab("past")}
+        >
+          <span>Past Events</span>
+          <span className={styles.tabCount}>{pastEvents.length}</span>
         </button>
       </div>
 
@@ -153,49 +234,33 @@ export function ProfessionalNetworkTabs({
             ))}
           </div>
         </div>
-      ) : (
+      ) : null}
+
+      {activeTab === "upcoming" ? (
         <div
           className={styles.tabPanel}
-          id="professional-networks-events-panel"
+          id="professional-networks-upcoming-panel"
           role="tabpanel"
-          aria-labelledby="professional-networks-events-tab"
+          aria-labelledby="professional-networks-upcoming-tab"
           tabIndex={0}
-          key="events"
+          key="upcoming"
         >
-          {events.length > 0 ? (
-            <div className={styles.eventGrid}>
-              {events.map((event) => (
-                <article className={styles.eventCard} key={event.id}>
-                  <div className={styles.eventMeta}>
-                    <span>{event.dateLabel}</span>
-                    {event.venue ? <span>{event.venue}</span> : null}
-                  </div>
-                  <h3>{event.title}</h3>
-                  <p>{event.summary}</p>
-                  {event.ctaUrl ? (
-                    <a
-                      className={styles.eventCta}
-                      href={event.ctaUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <span>{event.ctaLabel}</span>
-                      <span aria-hidden="true">↗</span>
-                    </a>
-                  ) : (
-                    <button className={styles.deadCta} type="button" disabled aria-disabled="true">
-                      <span>{event.ctaLabel}</span>
-                      <span aria-hidden="true">↗</span>
-                    </button>
-                  )}
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className={styles.emptyState}>New Professional Network events will appear here.</div>
-          )}
+          <EventGrid events={upcomingEvents} mode="upcoming" />
         </div>
-      )}
+      ) : null}
+
+      {activeTab === "past" ? (
+        <div
+          className={styles.tabPanel}
+          id="professional-networks-past-panel"
+          role="tabpanel"
+          aria-labelledby="professional-networks-past-tab"
+          tabIndex={0}
+          key="past"
+        >
+          <EventGrid events={pastEvents} mode="past" />
+        </div>
+      ) : null}
     </section>
   );
 }
