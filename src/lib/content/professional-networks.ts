@@ -544,14 +544,6 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "organisation": "MakBesar Pte Ltd",
         "displayOrder": 10
       },
-      {
-        "id": "a2X850000008biNEAQ",
-        "name": "LABUBU AMAXE",
-        "group": "Member",
-        "designation": "IT",
-        "organisation": "TTSH",
-        "displayOrder": 11
-      }
     ]
   },
   {
@@ -628,14 +620,6 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "organisation": "KKH",
         "displayOrder": 8
       },
-      {
-        "id": "a2X850000008biLEAQ",
-        "name": "LABUBU AMAXE",
-        "group": "Member",
-        "designation": "IT",
-        "organisation": "TTSH",
-        "displayOrder": 9
-      }
     ]
   },
   {
@@ -1275,13 +1259,6 @@ export const professionalNetworks: readonly ProfessionalNetwork[] = [
         "group": "Core Team Member",
         "designation": "Technology Business Partner, Boeing"
       },
-      {
-        "id": "a2X850000008biMEAQ",
-        "name": "LABUBU AMAXE",
-        "group": "Member",
-        "designation": "IT",
-        "organisation": "TTSH"
-      }
     ]
   }
 ] as const;
