@@ -13,6 +13,7 @@ const professionalEventSchema = z.object({
   ends_at: z.string().nullable(),
   venue: z.string().nullable(),
   cta_label: z.string(),
+  cta_url: z.string().url().nullable(),
   sort_order: z.number(),
 });
 
@@ -24,7 +25,7 @@ export const getPublishedProfessionalEvents = cache(async (): Promise<Profession
   const { data, error } = await supabase
     .schema("content")
     .from("professional_events")
-    .select("id, title, summary, starts_at, ends_at, venue, cta_label, sort_order")
+    .select("id, title, summary, starts_at, ends_at, venue, cta_label, cta_url, sort_order")
     .eq("is_published", true)
     .order("sort_order", { ascending: true })
     .order("starts_at", { ascending: true, nullsFirst: false })
