@@ -48,8 +48,8 @@ select throws_ok(
     where slug = 'welcome-to-the-volunteer-portal'
   $$,
   '42501',
-  'Publisher permission is required to edit privileged content',
-  'content editors cannot modify already-published records'
+  'permission denied for table news_posts',
+  'content editors cannot modify published records through the browser Data API'
 );
 
 select * from finish();
