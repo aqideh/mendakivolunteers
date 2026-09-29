@@ -36,7 +36,7 @@ const successMessages: Record<string, string> = {
 };
 
 export default async function ContentAdminPage({ searchParams }: ContentAdminPageProps) {
-  const { supabase, access } = await requireContentManager({ next: "/admin/content" });
+  const { access } = await requireContentManager({ next: "/admin/content" });
   const parameters = await searchParams;
   const successCode = readParameter(parameters, "success");
   const errorMessage = readParameter(parameters, "error");
@@ -58,7 +58,7 @@ export default async function ContentAdminPage({ searchParams }: ContentAdminPag
       .order("starts_at", { ascending: true })
       .order("sort_order", { ascending: true })
       .limit(20000),
-    supabase
+    admin
       .schema("content")
       .from("news_posts")
       .select("id, slug, title, status, publish_at, published_at, updated_at, featured")
