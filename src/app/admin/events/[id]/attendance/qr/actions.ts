@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 
-import { requireAttendanceOperator } from "@/lib/auth/event-access";
+import { requireAttendanceOperatorForEvent } from "@/lib/auth/event-access";
 import { createAttendanceQrSession } from "@/lib/phaseone/attendance-qr";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
@@ -21,7 +21,7 @@ export async function generateAttendanceQr(input: unknown): Promise<AttendanceQr
   if (!parsed.success) return { ok: false, error: "QR request could not be read." };
 
   const returnPath = `/admin/events/${parsed.data.eventId}/attendance/qr?timeslot=${encodeURIComponent(parsed.data.timeslotId)}&action=${encodeURIComponent(parsed.data.action)}`;
-  const { userId } = await requireAttendanceOperator(returnPath);
+  const { userId } = await requireAttendanceOperatorForEvent(parsed.data.eventId, returnPath);
   const admin = getPhaseOneAdminClient();
   const { data: timeslot, error } = await admin
     .from("phaseone_event_timeslots")
