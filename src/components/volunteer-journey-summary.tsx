@@ -1,17 +1,16 @@
 import Link from "next/link";
 import { formatPoints } from "@/lib/gamification/read-model";
+import {
+  VolunteerBadgeGallery,
+  type VolunteerBadgeAward,
+  type VolunteerBadgeDefinition,
+} from "@/components/volunteer-badge-gallery";
 import { createClient } from "@/lib/supabase/server";
 
 type BadgeSnapshot = {
   linked: boolean;
-  badges: Array<{
-    award_id: string;
-    badge_id: string;
-    stable_key: string;
-    name: string;
-    description: string;
-    awarded_at: string;
-  }>;
+  badges: VolunteerBadgeAward[];
+  catalogue: VolunteerBadgeDefinition[];
 };
 
 type PointsSnapshot = {
@@ -57,6 +56,7 @@ export async function VolunteerJourneySummary({ approvedMinutes }: { approvedMin
   const pathwaySnapshot = positionsResult.data as PathwaySnapshot | null;
   const positions = pathwaySnapshot?.positions ?? [];
   const badgeRows = badges?.badges ?? [];
+  const badgeCatalogue = badges?.catalogue ?? [];
 
   const hours = approvedMinutes / 60;
   const nextMilestone = [15, 30, 60].find((target) => hours < target);
@@ -83,34 +83,12 @@ export async function VolunteerJourneySummary({ approvedMinutes }: { approvedMin
       </div>
 
       <div className="card-grid">
-        <article className="card">
-          <h3>Badges</h3>
-          {nextMilestone ? (
-            <div>
-              <p className="muted">{hours.toFixed(1)} of {nextMilestone} approved hours towards your next badge</p>
-              <progress value={Math.min(hours, nextMilestone)} max={nextMilestone} aria-label={`Progress towards ${nextMilestone} approved hours`} />
-            </div>
-          ) : (
-            <p className="muted">60-hour milestone achieved. Thank you for your contribution.</p>
-          )}
-          {badgeRows.length ? (
-            <ul className="phaseone-compact-list">
-              {badgeRows.map((badge) => (
-                <li key={badge.award_id}>
-                  <strong>{badge.name}</strong>
-                  <span className="muted">{badge.description}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">
-              No badges earned yet. Your first badge appears when your first contribution is approved.
-            </p>
-          )}
-          <Link className="text-link" href="/points">
-            View points history
-          </Link>
-        </article>
+        <VolunteerBadgeGallery
+          badges={badgeRows}
+          catalogue={badgeCatalogue}
+          approvedHours={hours}
+          nextMilestone={nextMilestone}
+        />
 
         <article className="card">
           <h3>Pathway status</h3>
