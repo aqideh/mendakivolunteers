@@ -3,9 +3,9 @@
 import type { AuthError } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import { createEmailLinkClient } from "@/lib/supabase/email-link";
 import { getPublicConfig } from "@/lib/env";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
-import { createClient } from "@/lib/supabase/server";
 
 const emailSchema = z.string().trim().email().max(254);
 
@@ -22,7 +22,7 @@ export type VolunteerVerificationResendState = Readonly<{
 }>;
 
 const genericSuccessMessage =
-  "If the email can receive messages, a KELUARGA account link has been sent. Open it to verify your email and finish creating your account.";
+  "Thanks! Please check your inbox for a verification email from Keluarga MENDAKI. Follow the link to verify your email and complete your account setup.";
 
 const genericResendSuccessMessage =
   "If this email has a pending KELUARGA account, a new verification link has been sent.";
@@ -58,7 +58,7 @@ export async function requestVolunteerSignUpLink(
   );
 
   try {
-    const supabase = await createClient();
+    const supabase = createEmailLinkClient();
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -109,7 +109,7 @@ export async function resendVolunteerVerificationLink(
   );
 
   try {
-    const supabase = await createClient();
+    const supabase = createEmailLinkClient();
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
