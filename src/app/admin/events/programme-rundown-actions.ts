@@ -121,6 +121,7 @@ export async function registerProgrammeRundownImage(input: {
 
 export async function deleteProgrammeRundownImage(imageIdValue: string) {
   const imageId = imageIdSchema.parse(imageIdValue);
+  await requireProgrammeManager("/admin/events");
   const admin = getPhaseOneAdminClient();
   const { data: image, error } = await admin
     .from("phaseone_event_rundown_images")
@@ -130,7 +131,6 @@ export async function deleteProgrammeRundownImage(imageIdValue: string) {
 
   if (error || !image) throw new Error("Programme rundown image could not be found.");
   const eventId = String(image.event_id);
-  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
   const event = await requireExistingEvent(eventId);
 
   const { error: deleteError } = await admin
@@ -163,6 +163,7 @@ export async function moveProgrammeRundownImage(
   direction: "up" | "down",
 ) {
   const imageId = imageIdSchema.parse(imageIdValue);
+  await requireProgrammeManager("/admin/events");
   const admin = getPhaseOneAdminClient();
   const { data: selected, error: selectedError } = await admin
     .from("phaseone_event_rundown_images")
@@ -172,7 +173,6 @@ export async function moveProgrammeRundownImage(
   if (selectedError || !selected) throw new Error("Programme rundown image could not be found.");
 
   const eventId = String(selected.event_id);
-  await requireProgrammeManager(`/admin/events/${eventId}/edit`);
   const event = await requireExistingEvent(eventId);
   const { data: images, error } = await admin
     .from("phaseone_event_rundown_images")
