@@ -27,15 +27,30 @@ export default async function SpecialistPage() {
     getPublishedProfessionalEvents(),
   ]);
 
+  const now = new Date();
   const eventCards = events.map((event) => ({
     id: event.id,
     title: event.title,
     summary: event.summary,
     dateLabel: eventDateLabel(event.starts_at, event.ends_at),
+    startsAt: event.starts_at,
+    endsAt: event.ends_at,
     venue: event.venue,
     ctaLabel: event.cta_label,
     ctaUrl: event.cta_url,
   }));
+
+  const upcomingEvents = eventCards.filter((event) => {
+    const comparisonDate = event.endsAt ?? event.startsAt;
+    return comparisonDate ? new Date(comparisonDate) >= now : true;
+  });
+
+  const pastEvents = eventCards
+    .filter((event) => {
+      const comparisonDate = event.endsAt ?? event.startsAt;
+      return comparisonDate ? new Date(comparisonDate) < now : false;
+    })
+    .reverse();
 
   return (
     <RoleLanding
@@ -44,7 +59,12 @@ export default async function SpecialistPage() {
       heroImage={heroImage}
       items={[]}
       ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Join MENDAKI PN" }]}
-      afterContent={<ProfessionalNetworkTabs events={eventCards} />}
+      afterContent={
+        <ProfessionalNetworkTabs
+          upcomingEvents={upcomingEvents}
+          pastEvents={pastEvents}
+        />
+      }
     />
   );
 }
