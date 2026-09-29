@@ -36,7 +36,7 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
   const { data, error: loadError } = await admin
     .schema("content")
     .from("professional_events")
-    .select("id, title, summary, starts_at, ends_at, venue, cta_label, is_published, sort_order")
+    .select("id, title, summary, starts_at, ends_at, venue, cta_label, cta_url, is_published, sort_order")
     .order("sort_order", { ascending: true })
     .order("starts_at", { ascending: true, nullsFirst: false })
     .order("title", { ascending: true });
@@ -111,6 +111,7 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
                     <span className={styles.eventMeta}>
                       <span>{event.starts_at ? new Intl.DateTimeFormat("en-SG", { timeZone: "Asia/Singapore", day: "numeric", month: "short", year: "numeric" }).format(new Date(event.starts_at)) : "Date not set"}</span>
                       {event.venue ? <span>{event.venue}</span> : null}
+                      <span>{event.cta_url ? "CTA linked" : "CTA link not set"}</span>
                     </span>
                   </div>
                   <span className={styles.eventSummaryActions}>
