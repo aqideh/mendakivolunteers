@@ -1,6 +1,6 @@
 # Development roadmap
 
-**Last reviewed:** 25 September 2026  
+**Last reviewed:** 28 September 2026  
 **Reference branch:** `staging`
 
 ## Current mission
@@ -18,15 +18,15 @@ Work through these in order unless a production defect takes priority.
 - [x] **Finish MakLom React + Mantine changeover.** Rebuild Events, Attendance and Imports with feature parity, then switch production and retire the superseded static/Web Awesome runtime.
 - [x] **Build MakLom Contribution Review UI.** Pending/needs-review queue, approve, adjust minutes, reject, audit history and reviewer metadata.
 - [x] **Build MakLom Profile Change Review UI.** Searchable review queue, before/proposed/current-value comparison, approve-and-apply, reject, reviewer notes and concurrent-change protection are live in MakLom production for the current mobile-change inbox contract.
-- [x] **Build XLSX programme/event ingestion.** VolTeam/Admin can upload the standard Opportunities + Shifts workbook, preview validation, detect duplicate slugs/workbooks and atomically create unpublished programme/shift drafts.\n- [ ] **Build MakLom Insights & Reviews Inbox.** Preserve event/source context, support accept/edit/dismiss and provide longitudinal volunteer history.
+- [x] **Build XLSX programme/event ingestion.** VolTeam/Admin can upload the standard Opportunities + Shifts workbook, preview validation, detect duplicate slugs/workbooks and atomically create unpublished programme/shift drafts.\n- [x] **Build MakLom Insights & Reviews Inbox.** Cross-event review surface preserves source/event provenance, supports staff-edited interpretation plus accept/dismiss decisions, blocks acceptance until canonical volunteer matching, and shows longitudinal volunteer history.
 - [x] **Activate FormSG -> MakLom production webhook.** Configure secret/endpoint, run a controlled submission, verify field mapping and verify retry/idempotency.
 - [ ] **Activate OneMap address enrichment in staging.** The server-side integration is implemented: postal code -> verified address/coordinates -> planning area -> GE2025 GRC/SMC. Add the staging OneMap credentials in Vercel, then run live postal-code UAT and confirm derived geography before marking complete.
 - [ ] **Load and reconcile opening volunteer-shirt stock.** Enter the physical stocktake by type/size and record known historical shirt recipients before using first-event issuance operationally.
 - [ ] **Run full Event Operations UAT.** Single shifts, adjacent/overlapping shifts, gaps, early/missing checkout, walk-ins, manual rosters, cancellations, corrections, QR, mobile event-day use and first-shirt issuance.
-- [ ] **Run end-to-end shared-platform UAT.** FormSG lead -> MakLom conversion -> KELUARGA registration -> roster -> attendance -> contribution review -> approved hours on dashboard.
+- [x] **Run end-to-end shared-platform UAT.** Passed on staging on 28 September 2026 with rollback-only data and permanent regression coverage: FormSG lead -> MakLom conversion -> canonical KELUARGA account -> registration -> roster -> attendance -> automatic contribution candidate -> MakLom approval/audit -> approved hours visible through volunteer RLS/dashboard data.
 - [ ] **Clean stale repository state.** Close/reconcile obsolete PRs/issues and remove stale runtime/document references to superseded YM Hub, Volunteer.gov.sg and KELUARGA recruitment architecture.
 - [x] **Define and implement recognition policy v1.** Approved contributions, engagement caps, 15/30/60-hour bonuses, automatic badges and correction reversals. Referral-success criteria remain to be defined separately.
-- [ ] **Build cross-event Volunteer Management intelligence.** Volunteer history, accepted insights/reviews, repeat engagement, contribution trends, retention and impact reporting with explicit denominator/deduplication rules.
+- [x] **Build cross-event Volunteer Management intelligence.** MakLom now provides deduplicated volunteer/event history, repeat engagement, 30/60/90-day mature-cohort retention, monthly participation, separated historical vs approved KELUARGA hours, reviewed observation counts, impact aggregation and filtered CSV export.
 
 ## Current platform priorities
 
@@ -63,11 +63,11 @@ Work through these in order unless a production defect takes priority.
 
 
 
-- cross-event volunteer history;
-- approved contribution reporting;
-- retention/repeat engagement;
-- participation and hours metrics with explicit counting rules;
-- reviewed skill/interest development evidence.
+- [x] cross-event volunteer history;
+- [x] approved contribution reporting with provenance separated from historical credited time;
+- [x] retention/repeat engagement;
+- [x] participation and hours metrics with explicit counting rules;
+- [x] reviewed observation evidence and event impact aggregation.
 
 ### P4 — legacy retirement
 
