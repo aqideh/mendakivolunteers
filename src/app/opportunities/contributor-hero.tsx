@@ -16,7 +16,7 @@ const states = [
     key: "contribute",
     title: "Transform Ideas into Community Impact",
     description:
-      "Have an idea that benefits MENDAKI volunteers? Individuals, community groups, and organisations are welcome to propose projects that enhance volunteers' skills, well-being, recognition, or overall volunteering experience.",
+      "Have an idea that could make a difference in the community? Individuals, community groups and organisations are welcome to propose projects that support MENDAKI’s beneficiaries and the wider Malay/Muslim community.",
   },
   {
     key: "donate",
