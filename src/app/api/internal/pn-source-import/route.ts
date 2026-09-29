@@ -8,6 +8,38 @@ const SOURCES = {
 
 export const dynamic = "force-dynamic";
 
+const APEX = {
+  sector: { classId: "@udd/01p85000000tFWH", method: "getPNSector" },
+  team: { classId: "@udd/01p85000000t4cT", method: "getCoreTeamMembers" },
+  sectors: { classId: "@udd/01p85000000t8kv", method: "getPNSectors" },
+} as const;
+
+async function fetchApex(
+  action: keyof typeof APEX,
+  params: Record<string, string> = {},
+) {
+  const config = APEX[action];
+  const apexUrl = new URL("/webruntime/api/apex/execute", BASE);
+  apexUrl.searchParams.set("cacheable", "true");
+  apexUrl.searchParams.set("classname", config.classId);
+  apexUrl.searchParams.set("isContinuation", "false");
+  apexUrl.searchParams.set("method", config.method);
+  apexUrl.searchParams.set("namespace", "");
+  apexUrl.searchParams.set("params", JSON.stringify(params));
+  apexUrl.searchParams.set("language", "en-US");
+  apexUrl.searchParams.set("asGuest", "true");
+  apexUrl.searchParams.set("htmlEncode", "false");
+
+  const result = await fetchText(apexUrl.toString());
+  return {
+    url: apexUrl.toString(),
+    status: result.response.status,
+    contentType: result.response.headers.get("content-type"),
+    body: result.body,
+  };
+}
+
+
 async function fetchText(url: string) {
   const response = await fetch(url, {
     cache: "no-store",
@@ -116,6 +148,16 @@ function inspect(body: string) {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const action = url.searchParams.get("action");
+  if (action === "sector" || action === "team" || action === "sectors") {
+    const id = url.searchParams.get("id");
+    const params =
+      action === "sector" ? (id ? { recordId: id } : {}) :
+      action === "team" ? (id ? { sectorId: id } : {}) :
+      {};
+    return NextResponse.json(await fetchApex(action, params));
+  }
+
   const sourceKey = url.searchParams.get("source");
   if (sourceKey !== "list" && sourceKey !== "aerospace") {
     return NextResponse.json({ error: "Unsupported source" }, { status: 400 });
