@@ -5,7 +5,7 @@ import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 import { getPublishedProfessionalEvents } from "@/lib/content/professional-events";
 
-import styles from "../professionals/professionals.module.css";
+import { ProfessionalNetworkTabs } from "./professional-network-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -27,45 +27,15 @@ export default async function SpecialistPage() {
     getPublishedProfessionalEvents(),
   ]);
 
-  const eventsSection = (
-    <section
-      className={`${styles.eventsSection} phaseone-opportunities-peek`}
-      aria-label="Upcoming Professional Network events"
-    >
-      {events.length > 0 ? (
-        <div className={styles.eventGrid}>
-          {events.map((event) => (
-            <article className={styles.eventCard} key={event.id}>
-              <div className={styles.eventMeta}>
-                <span>{eventDateLabel(event.starts_at, event.ends_at)}</span>
-                {event.venue ? <span>{event.venue}</span> : null}
-              </div>
-              <h3>{event.title}</h3>
-              <p>{event.summary}</p>
-              {event.cta_url ? (
-                <a
-                  className={styles.eventCta}
-                  href={event.cta_url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span>{event.cta_label}</span>
-                  <span aria-hidden="true">↗</span>
-                </a>
-              ) : (
-                <button className={styles.deadCta} type="button" disabled aria-disabled="true">
-                  <span>{event.cta_label}</span>
-                  <span aria-hidden="true">↗</span>
-                </button>
-              )}
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.emptyState}>New Professional Network events will appear here.</div>
-      )}
-    </section>
-  );
+  const eventCards = events.map((event) => ({
+    id: event.id,
+    title: event.title,
+    summary: event.summary,
+    dateLabel: eventDateLabel(event.starts_at, event.ends_at),
+    venue: event.venue,
+    ctaLabel: event.cta_label,
+    ctaUrl: event.cta_url,
+  }));
 
   return (
     <RoleLanding
@@ -78,7 +48,7 @@ export default async function SpecialistPage() {
       }}
       items={[]}
       ctas={[{ href: "https://form.gov.sg/6ab08df24e9cff0f3ac1af45", label: "Volunteer" }]}
-      afterContent={eventsSection}
+      afterContent={<ProfessionalNetworkTabs events={eventCards} />}
     />
   );
 }
