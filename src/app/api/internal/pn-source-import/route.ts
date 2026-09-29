@@ -8,6 +8,57 @@ const SOURCES = {
 
 export const dynamic = "force-dynamic";
 
+function extract(html: string) {
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const urls = Array.from(
+    new Set(
+      (html.match(/https?:\\?\/\\?\/[^"'<>\s)]+/g) ?? [])
+        .map((value) => value.replace(/\\\//g, "/"))
+        .filter((value) =>
+          /pn-sector|linkedin|file\.force|cms\/delivery|salesforce/i.test(value),
+        ),
+    ),
+  ).slice(0, 250);
+
+  const ids = Array.from(new Set(html.match(/a2W[A-Za-z0-9]{12,15}/g) ?? [])).slice(0, 100);
+  const keywords = [
+    "A fraternity",
+    "Core Team",
+    "Aerospace",
+    "Aviation",
+    "Banking",
+    "Finance",
+    "Early Childhood",
+    "Engineering",
+    "Technology",
+    "Tech",
+  ];
+  const snippets = keywords.flatMap((keyword) => {
+    const lowered = html.toLowerCase();
+    const needle = keyword.toLowerCase();
+    const output: string[] = [];
+    let from = 0;
+    while (output.length < 8) {
+      const index = lowered.indexOf(needle, from);
+      if (index < 0) break;
+      output.push(html.slice(Math.max(0, index - 500), index + 1000));
+      from = index + needle.length;
+    }
+    return output.map((snippet) => ({ keyword, snippet }));
+  });
+
+  return { text: text.slice(0, 12000), urls, ids, snippets };
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const sourceKey = url.searchParams.get("source");
@@ -26,12 +77,9 @@ export async function GET(request: Request) {
   });
 
   const body = await response.text();
-  return new NextResponse(body, {
+  return NextResponse.json({
+    source: SOURCES[sourceKey],
     status: response.status,
-    headers: {
-      "content-type": response.headers.get("content-type") ?? "text/html; charset=utf-8",
-      "cache-control": "no-store",
-      "x-source-url": SOURCES[sourceKey],
-    },
+    ...extract(body),
   });
 }
