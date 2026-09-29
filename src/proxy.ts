@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import { getAppEnvironment, getPublicConfig } from "@/lib/env";
 import { buildContentSecurityPolicy } from "@/lib/security/headers";
+import { buildCanonicalStagingRedirectUrl } from "@/lib/staging-canonical-url";
 import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
@@ -19,11 +20,11 @@ export async function proxy(request: NextRequest) {
     process.env.VERCEL_GIT_COMMIT_REF === "staging";
 
   if (isStagingBranch) {
-    const canonicalAppUrl = new URL(appUrl);
-    if (request.nextUrl.origin !== canonicalAppUrl.origin) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.protocol = canonicalAppUrl.protocol;
-      redirectUrl.host = canonicalAppUrl.host;
+    const redirectUrl = buildCanonicalStagingRedirectUrl(
+      request.nextUrl.toString(),
+      appUrl,
+    );
+    if (redirectUrl) {
       return Response.redirect(redirectUrl, 307);
     }
   }
