@@ -137,7 +137,7 @@
 
 .roleGrid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
   width: min(74rem, calc(100% - 1.5rem));
   margin-inline: auto;
@@ -162,6 +162,7 @@
 }
 
 .roleChoice:nth-child(5) {
+  grid-column: 2 / span 2;
   animation-delay: 180ms;
 }
 
