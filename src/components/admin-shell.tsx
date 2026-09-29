@@ -210,7 +210,7 @@ export function AdminShell({ children, roles, email }: AdminShellProps) {
             <Icon name="home" />
             <span>Back to Keluarga</span>
           </Link>
-          <Link className={styles.account} href="/profile">
+          <Link className={styles.account} href="/dashboard">
             <span className={styles.avatar} aria-hidden="true">
               {(email?.trim().charAt(0) || "K").toUpperCase()}
             </span>
