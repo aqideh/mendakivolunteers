@@ -22,6 +22,7 @@ function parsePayload(formData: FormData) {
   const summary = textValue(formData, "summary");
   const venue = textValue(formData, "venue");
   const ctaLabel = textValue(formData, "ctaLabel") || "Register";
+  const ctaUrl = textValue(formData, "ctaUrl");
   const startsAt = optionalDateTime(formData, "startsAt");
   const endsAt = optionalDateTime(formData, "endsAt");
   const sortOrder = Number(textValue(formData, "sortOrder") || "0");
@@ -30,6 +31,20 @@ function parsePayload(formData: FormData) {
   if (summary.length < 10 || summary.length > 600) throw new Error("Enter a valid event summary.");
   if (venue && (venue.length < 2 || venue.length > 180)) throw new Error("Enter a valid venue.");
   if (ctaLabel.length < 2 || ctaLabel.length > 40) throw new Error("Enter a valid CTA label.");
+  if (ctaUrl) {
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(ctaUrl);
+    } catch {
+      throw new Error("Enter a valid CTA link.");
+    }
+    if (parsedUrl.protocol !== "https:") {
+      throw new Error("CTA link must use HTTPS.");
+    }
+    if (ctaUrl.length > 2048) {
+      throw new Error("CTA link is too long.");
+    }
+  }
   if (!Number.isInteger(sortOrder) || sortOrder < -1000 || sortOrder > 1000) {
     throw new Error("Sort order must be a whole number between -1000 and 1000.");
   }
@@ -42,6 +57,7 @@ function parsePayload(formData: FormData) {
     summary,
     venue: venue || null,
     cta_label: ctaLabel,
+    cta_url: ctaUrl || null,
     starts_at: startsAt,
     ends_at: endsAt,
     sort_order: sortOrder,
