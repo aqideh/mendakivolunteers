@@ -28,6 +28,11 @@ begin
 end;
 $$;
 
+grant usage on schema maklom_private to authenticated, service_role;
+grant execute on function maklom_private.match_or_create_volunteer(
+  text,text,text,smallint,text,text[],text,text
+) to authenticated, service_role;
+
 revoke all on function public.maklom_match_or_create_volunteer(
   text,text,text,smallint,text,text[],text,text
 ) from public, anon;
