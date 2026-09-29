@@ -654,3 +654,347 @@
 .profile-passport-signout {
   min-width: 7rem;
 }
+
+
+/* Volunteer badge gallery */
+.volunteer-badge-panel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 215, 0, 0.12), transparent 14rem),
+    #fff;
+  overflow: hidden;
+}
+
+.volunteer-badge-summary {
+  display: grid;
+  width: 100%;
+  gap: 1rem;
+  border: 0;
+  padding: 1.25rem;
+  cursor: pointer;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  font: inherit;
+}
+
+.volunteer-badge-summary:hover,
+.volunteer-badge-summary:focus-visible {
+  background: color-mix(in srgb, var(--surface-subtle) 65%, transparent);
+}
+
+.volunteer-badge-summary-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.volunteer-badge-summary-copy > span:first-child {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.volunteer-badge-summary-copy strong {
+  font-size: 1.05rem;
+}
+
+.volunteer-badge-summary-copy small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.volunteer-badge-summary-arrow {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.volunteer-badge-earned-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.9rem;
+}
+
+.volunteer-badge-earned-item {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.volunteer-badge-emblem {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 5.7rem;
+  aspect-ratio: 1;
+  clip-path: polygon(25% 7%, 75% 7%, 96% 28%, 96% 72%, 75% 93%, 25% 93%, 4% 72%, 4% 28%);
+  background: linear-gradient(145deg, #ffdf4d, #e0a900);
+  filter: drop-shadow(0 7px 10px rgba(55, 58, 54, 0.14));
+}
+
+.volunteer-badge-emblem::before {
+  content: "";
+  position: absolute;
+  inset: 0.32rem;
+  clip-path: inherit;
+  background: #171916;
+}
+
+.volunteer-badge-emblem-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: calc(100% - 0.72rem);
+  height: calc(100% - 0.72rem);
+  clip-path: inherit;
+  color: #171916;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 215, 0, 0.2), transparent 48%),
+    #fffdf5;
+}
+
+.volunteer-badge-emblem svg {
+  width: 58%;
+  height: 58%;
+  fill: currentColor;
+  overflow: visible;
+}
+
+.volunteer-badge-emblem .badge-icon-accent {
+  fill: #ffbf00;
+}
+
+.volunteer-badge-emblem .badge-icon-cutout {
+  color: #fffdf5;
+  fill: #fffdf5;
+}
+
+.volunteer-badge-emblem[data-earned="false"] {
+  background: linear-gradient(145deg, #d7d8d5, #a9aaa7);
+  filter: none;
+}
+
+.volunteer-badge-emblem[data-earned="false"]::before {
+  background: #8e908c;
+}
+
+.volunteer-badge-emblem[data-earned="false"] .volunteer-badge-emblem-inner {
+  color: #8f918e;
+  background: #e7e8e5;
+}
+
+.volunteer-badge-emblem[data-earned="false"] .badge-icon-accent {
+  fill: #a4a6a2;
+}
+
+.volunteer-badge-emblem[data-earned="false"] .badge-icon-cutout {
+  color: #e7e8e5;
+  fill: #e7e8e5;
+}
+
+.volunteer-badge-progress {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.volunteer-badge-progress progress {
+  width: 100%;
+  height: 0.48rem;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-subtle);
+}
+
+.volunteer-badge-progress progress::-webkit-progress-bar {
+  background: var(--surface-subtle);
+}
+
+.volunteer-badge-progress progress::-webkit-progress-value {
+  background: var(--primary);
+}
+
+.volunteer-badge-progress progress::-moz-progress-bar {
+  background: var(--primary);
+}
+
+.volunteer-badge-progress-complete {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.volunteer-badge-empty {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.volunteer-badge-dialog {
+  width: min(58rem, calc(100% - 1.25rem));
+  max-height: min(82vh, 50rem);
+  border: 0;
+  border-radius: 1.2rem;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(20, 22, 20, 0.28);
+}
+
+.volunteer-badge-dialog::backdrop {
+  background: rgba(20, 22, 20, 0.52);
+  backdrop-filter: blur(3px);
+}
+
+.volunteer-badge-dialog-card {
+  max-height: min(82vh, 50rem);
+  overflow: auto;
+  padding: clamp(1.2rem, 3vw, 2rem);
+}
+
+.volunteer-badge-dialog-header {
+  position: sticky;
+  top: -0.1rem;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+  padding-bottom: 1rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.volunteer-badge-dialog-header h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+}
+
+.volunteer-badge-dialog-header p {
+  max-width: 38rem;
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.volunteer-badge-dialog-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.volunteer-badge-catalogue {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.volunteer-badge-catalogue-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.volunteer-badge-catalogue-item[data-earned="false"] {
+  background: #f6f6f4;
+  color: #747773;
+}
+
+.volunteer-badge-catalogue-item h3 {
+  margin: 0.2rem 0 0.25rem;
+  font-size: 1rem;
+}
+
+.volunteer-badge-catalogue-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.volunteer-badge-catalogue-item small {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.volunteer-badge-state {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  color: #5b4a00;
+  background: #fff2ad;
+  font-size: 0.68rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.volunteer-badge-catalogue-item[data-earned="false"] .volunteer-badge-state {
+  color: #686a67;
+  background: #dedfdd;
+}
+
+@media (max-width: 760px) {
+  .volunteer-badge-earned-row {
+    display: flex;
+    gap: 0.8rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .volunteer-badge-earned-item {
+    flex: 0 0 6.2rem;
+    scroll-snap-align: start;
+  }
+
+  .volunteer-badge-emblem {
+    width: 5rem;
+  }
+
+  .volunteer-badge-catalogue {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .volunteer-badge-summary {
+    padding: 1rem;
+  }
+
+  .volunteer-badge-catalogue-item {
+    grid-template-columns: 4.4rem minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .volunteer-badge-catalogue-item .volunteer-badge-emblem {
+    width: 4.4rem;
+  }
+}
