@@ -2,11 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireEventManager } from "@/lib/auth/event-access";
-import { createClient } from "@/lib/supabase/server";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const sizes = ["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"] as const;
 const types = ["round_neck", "collared"] as const;
@@ -31,10 +30,11 @@ export async function issueVolunteerShirt(formData: FormData) {
   }
 
   const back = `/admin/events/${parsed.data.eventId}/attendance${parsed.data.timeslotId ? `?timeslot=${encodeURIComponent(parsed.data.timeslotId)}` : ""}`;
-  await requireEventManager(back);
-  const supabase = (await createClient()) as unknown as SupabaseClient;
+  const { userId } = await requireEventManager(back);
+  const admin = getPhaseOneAdminClient();
 
-  const result = await supabase.rpc("issue_volunteer_shirt", {
+  const result = await admin.rpc("server_issue_volunteer_shirt", {
+    p_actor_user_id: userId,
     p_volunteer_id: parsed.data.volunteerId,
     p_shirt_type: parsed.data.shirtType,
     p_size: parsed.data.size,
