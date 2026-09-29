@@ -28,7 +28,7 @@
   background-color: #eef0f1;
   background-repeat: no-repeat;
   background-size: cover;
-  opacity: 0.62;
+  opacity: 0.67;
 }
 
 .heroShade {
@@ -147,18 +147,18 @@
 
 .inlineAction {
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: 2.35rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.9rem;
-  border: 2px solid var(--primary);
-  border-radius: 0.6rem;
-  padding: 0.5rem 0.75rem 0.45rem;
-  color: var(--primary);
-  background: #000000;
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16);
-  font-size: 0.8rem;
-  font-weight: 800;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  border: 1px solid #d7d9d7;
+  border-radius: 0.55rem;
+  padding: 0.4rem 0.65rem;
+  color: #555b58;
+  background: rgba(239, 240, 237, 0.92);
+  box-shadow: none;
+  font-size: 0.76rem;
+  font-weight: 700;
   text-decoration: none;
   transition:
     box-shadow 120ms ease,
@@ -166,8 +166,22 @@
     background-color 120ms ease;
 }
 
+.inlineAction::before {
+  content: "i";
+  display: inline-grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .inlineAction span:last-child {
-  color: #ffffff;
+  display: none;
 }
 
 .secondaryAction {
@@ -185,10 +199,14 @@
   transform: translateY(-1px);
 }
 
-.primaryAction:hover,
-.inlineAction:hover {
+.primaryAction:hover {
   background: var(--brand-strong);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+}
+
+.inlineAction:hover {
+  background: rgba(229, 231, 227, 0.96);
+  box-shadow: 0 6px 14px rgba(55, 58, 54, 0.1);
 }
 
 .roles {
@@ -241,7 +259,7 @@
   }
 
   .heroMedia {
-    opacity: 0.52;
+    opacity: 0.57;
   }
 
   .heroShade {
