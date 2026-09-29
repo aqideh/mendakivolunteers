@@ -1,43 +1,172 @@
 .eventsSection {
-  width: min(72rem, calc(100% - 2rem));
-  margin: clamp(3rem, 7vw, 5rem) auto 0;
+  width: min(100rem, calc(100% - 2rem));
+  margin: clamp(1.25rem, 2.5vw, 2rem) auto 0;
 }
 
-.eventsHeader {
-  display: grid;
-  gap: 0.65rem;
-  max-width: 48rem;
-  margin-bottom: 1.5rem;
+.tabList {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  padding: 0.4rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: #f3f3ef;
 }
 
-.eventsHeader h2 {
-  margin: 0;
-  font-size: clamp(1.9rem, 4vw, 3rem);
-  letter-spacing: -0.035em;
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-width: 9rem;
+  min-height: 2.9rem;
+  border: 0;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  background: transparent;
+  color: #272822;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.eventsHeader p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.55;
+.tabButton:hover {
+  transform: translateY(-1px);
 }
 
+.tabButtonActive {
+  background: #000000;
+  color: var(--primary);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.tabCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.tabButton:not(.tabButtonActive) .tabCount {
+  background: #ffffff;
+}
+
+.tabPanel {
+  animation: tabFadeSlide 220ms ease both;
+  outline: none;
+}
+
+@keyframes tabFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.directoryGrid,
 .eventGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
+.networkCard,
 .eventCard {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: 0.85rem;
-  min-height: 19rem;
   border: 1px solid var(--border);
   border-radius: 0.9rem;
   padding: 1.25rem;
   background: #ffffff;
   box-shadow: 0 10px 30px rgba(55, 58, 54, 0.06);
+}
+
+.networkCard {
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+  min-height: 13.5rem;
+}
+
+.eventCard {
+  grid-template-rows: auto auto 1fr auto;
+  gap: 0.85rem;
+  min-height: 19rem;
+}
+
+.networkLabel {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.networkCard h3,
+.eventCard h3 {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.networkCard h3 {
+  font-size: 1.3rem;
+  line-height: 1.25;
+}
+
+.eventCard h3 {
+  font-size: 1.35rem;
+}
+
+.networkLink,
+.eventCta,
+.deadCta {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 2px solid var(--primary);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--primary);
+  background: #000000;
+  font: inherit;
+  font-weight: 800;
+}
+
+.networkLink,
+.eventCta {
+  text-decoration: none;
+  transition:
+    box-shadow 120ms ease,
+    transform 120ms ease,
+    background-color 120ms ease;
+}
+
+.networkLink:hover,
+.eventCta:hover {
+  background: var(--brand-strong);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+  transform: translateY(-1px);
+}
+
+.networkLink span:last-child,
+.eventCta span:last-child {
+  color: #ffffff;
 }
 
 .eventMeta {
@@ -55,12 +184,6 @@
   background: #f3f3ef;
 }
 
-.eventCard h3 {
-  margin: 0;
-  font-size: 1.35rem;
-  letter-spacing: -0.02em;
-}
-
 .eventCard p {
   margin: 0;
   color: var(--muted);
@@ -68,18 +191,6 @@
 }
 
 .deadCta {
-  display: inline-flex;
-  min-height: 3rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border: 2px solid var(--primary);
-  border-radius: 0.6rem;
-  padding: 0.55rem 0.75rem;
-  color: var(--primary);
-  background: #000000;
-  font: inherit;
-  font-weight: 800;
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -92,13 +203,43 @@
   background: #fafaf8;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .tabPanel {
+    animation: none;
+  }
+
+  .tabButton,
+  .networkLink,
+  .eventCta {
+    transition: none;
+  }
+}
+
+@media (min-width: 1600px) {
+  .directoryGrid,
+  .eventGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 900px) {
+  .directoryGrid,
   .eventGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 620px) {
+  .tabList {
+    display: grid;
+    width: 100%;
+  }
+
+  .tabButton {
+    min-width: 0;
+  }
+
+  .directoryGrid,
   .eventGrid {
     grid-template-columns: 1fr;
   }
