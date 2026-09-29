@@ -7,6 +7,7 @@ import { getLandingPageImage } from "@/lib/content/landing-page-media";
 import {
   getProfessionalNetwork,
   professionalNetworks,
+  type ProfessionalNetworkTeamMember,
 } from "@/lib/content/professional-networks";
 
 import styles from "./network.module.css";
@@ -28,10 +29,56 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${network.name} | MENDAKI Professional Networks`,
-    description:
-      network.description ??
-      `Connect with the MENDAKI Professional Network for ${network.name}.`,
+    description: network.description,
   };
+}
+
+function MemberCard({
+  member,
+  leadership = false,
+}: {
+  member: ProfessionalNetworkTeamMember;
+  leadership?: boolean;
+}) {
+  const initials = member.name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("");
+
+  return (
+    <article className={leadership ? `${styles.teamCard} ${styles.leadershipCard}` : styles.teamCard}>
+      {member.photoUrl ? (
+        <img className={styles.profilePhoto} src={member.photoUrl} alt="" />
+      ) : (
+        <div className={styles.avatar} aria-hidden="true">
+          {initials}
+        </div>
+      )}
+
+      <div className={styles.memberCopy}>
+        <span className={leadership ? styles.leadershipBadge : styles.memberBadge}>
+          {member.group === "PN Lead" || member.group === "Assistant Lead"
+            ? member.group
+            : "Core Team Member"}
+        </span>
+        <h3>{member.name}</h3>
+        {member.designation ? <p>{member.designation}</p> : null}
+        {member.organisation ? <p className={styles.organisation}>{member.organisation}</p> : null}
+        {member.linkedinUrl ? (
+          <a
+            className={styles.memberLinkedIn}
+            href={member.linkedinUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            LinkedIn <span aria-hidden="true">↗</span>
+          </a>
+        ) : null}
+      </div>
+    </article>
+  );
 }
 
 export default async function ProfessionalNetworkPage({ params }: PageProps) {
@@ -41,9 +88,12 @@ export default async function ProfessionalNetworkPage({ params }: PageProps) {
 
   const fallbackHero = await getLandingPageImage("specialist");
   const heroImage = network.heroImage ?? fallbackHero;
-  const description =
-    network.description ??
-    `Part of the MENDAKI Professional Networks, ${network.name} connects Malay/Muslim professionals to build meaningful industry relationships, share knowledge, grow professionally and contribute back to the community.`;
+  const leadership = network.coreTeam.filter(
+    (member) => member.group === "PN Lead" || member.group === "Assistant Lead",
+  );
+  const members = network.coreTeam.filter(
+    (member) => member.group !== "PN Lead" && member.group !== "Assistant Lead",
+  );
 
   return (
     <div className="site-shell phaseone-shell">
@@ -76,7 +126,7 @@ export default async function ProfessionalNetworkPage({ params }: PageProps) {
               <span className={styles.sectionKicker}>About the network</span>
               <h2>Build connections. Grow together.</h2>
             </div>
-            <p>{description}</p>
+            <p>{network.description}</p>
           </div>
 
           <div className={styles.actions}>
@@ -97,29 +147,47 @@ export default async function ProfessionalNetworkPage({ params }: PageProps) {
               <h2 id="core-team-title">Core Team</h2>
             </div>
 
-            {network.coreTeam.length > 0 ? (
-              <div className={styles.teamGrid}>
-                {network.coreTeam.map((member) => (
-                  <article className={styles.teamCard} key={`${member.name}-${member.role ?? ""}`}>
-                    <div className={styles.avatar} aria-hidden="true">
-                      {member.name
-                        .split(" ")
-                        .slice(0, 2)
-                        .map((part) => part[0])
-                        .join("")}
-                    </div>
-                    <div>
-                      <h3>{member.name}</h3>
-                      {member.role ? <p>{member.role}</p> : null}
-                    </div>
-                  </article>
-                ))}
+            {leadership.length > 0 ? (
+              <div className={styles.teamGroup}>
+                <h3 className={styles.groupTitle}>Leadership</h3>
+                <div className={styles.leadershipGrid}>
+                  {leadership.map((member) => (
+                    <MemberCard member={member} leadership key={member.id} />
+                  ))}
+                </div>
               </div>
-            ) : (
-              <div className={styles.teamPending}>
-                Core Team details are being migrated from the Professional Networks directory.
+            ) : null}
+
+            {members.length > 0 ? (
+              <div className={styles.teamGroup}>
+                <h3 className={styles.groupTitle}>Core Team Members</h3>
+                <div className={styles.teamGrid}>
+                  {members.map((member) => (
+                    <MemberCard member={member} key={member.id} />
+                  ))}
+                </div>
               </div>
-            )}
+            ) : null}
+          </section>
+
+          <section className={styles.connectSection}>
+            <div>
+              <span className={styles.sectionKicker}>Connect with this network</span>
+              <h2>Continue the conversation</h2>
+              <p>
+                Join the network&apos;s LinkedIn group for discussions, professional connections
+                and sector updates.
+              </p>
+            </div>
+            <a
+              className={styles.secondaryAction}
+              href={network.linkedinUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>Visit LinkedIn</span>
+              <span aria-hidden="true">↗</span>
+            </a>
           </section>
         </section>
       </main>
