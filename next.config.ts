@@ -20,13 +20,6 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4mb",
     },
   },
-  images: {
-    remotePatterns: [
-      new URL(
-        "https://glpdougaxlgaipqlzcbq.supabase.co/storage/v1/object/public/programme-rundowns/**",
-      ),
-    ],
-  },
   async headers() {
     return [
       {
