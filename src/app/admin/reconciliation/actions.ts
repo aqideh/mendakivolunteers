@@ -162,6 +162,8 @@ export async function rejectAndRequestProfileRefill(formData: FormData) {
       candidate_volunteer_id: null,
       requested_sections: parsedSections.data,
       volunteer_message: message,
+      submitted_for_review_at: null,
+      resubmitted_at: null,
       resolution_notes: note(formData),
       resolved_by: null,
       resolved_at: null,
