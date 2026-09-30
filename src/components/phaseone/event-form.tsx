@@ -190,7 +190,6 @@ export function EventForm({
   function handleSubmit(submitEvent: FormEvent<HTMLFormElement>) {
     submitEvent.preventDefault();
     const form = submitEvent.currentTarget;
-    if (!form.reportValidity()) return;
 
     const formData = new FormData(form);
     if (!event?.id && recoveryEventId) formData.set("id", recoveryEventId);
@@ -216,6 +215,7 @@ export function EventForm({
   return (
     <form
       className="phaseone-admin-form"
+      noValidate
       onChange={scheduleAutosave}
       onInput={scheduleAutosave}
       onSubmit={handleSubmit}
