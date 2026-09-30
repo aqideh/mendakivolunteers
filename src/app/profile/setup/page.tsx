@@ -84,7 +84,7 @@ const steps: Array<{ key: SetupStep; label: string; required: boolean }> = [
   { key: "event-readiness", label: "Event readiness", required: true },
   { key: "education", label: "Education", required: true },
   { key: "photo", label: "Profile photo", required: true },
-  { key: "about", label: "About you", required: false },
+  { key: "about", label: "About you", required: true },
   { key: "review", label: "Review", required: true },
 ];
 
@@ -145,20 +145,30 @@ function milestoneState(input: {
   return {
     contact: Boolean(input.displayName.trim() && input.mobile?.trim()),
     home: Boolean(privateDetails?.postal_code && privateDetails?.address_line),
-    personal: Boolean(privateDetails?.date_of_birth),
+    personal:
+      Boolean(privateDetails?.date_of_birth) &&
+      (privateDetails?.languages_spoken?.length ?? 0) > 0 &&
+      Boolean(privateDetails?.emergency_contact_name?.trim()) &&
+      Boolean(privateDetails?.emergency_contact_mobile?.trim()),
     interests: (profile?.interests?.length ?? 0) > 0,
     skills: (profile?.skills?.length ?? 0) > 0,
     availability:
       (profile?.availability_slots?.length ?? 0) > 0 &&
-      Boolean(profile?.preferred_commitment),
+      Boolean(profile?.preferred_commitment) &&
+      Boolean(profile?.availability_notes?.trim()),
     eventReadiness:
       Boolean(privateDetails?.tshirt_size) &&
+      Boolean(privateDetails?.dietary_requirements?.trim()) &&
       Boolean(
         privateDetails?.no_known_food_allergies ||
           privateDetails?.food_allergies?.trim(),
       ),
-    education: Boolean(privateDetails?.highest_qualification),
+    education:
+      Boolean(privateDetails?.highest_qualification) &&
+      Boolean(privateDetails?.institution?.trim()) &&
+      Boolean(privateDetails?.field_of_study?.trim()),
     photo: Boolean(profile?.avatar_path),
+    about: Boolean(profile?.bio?.trim()),
   };
 }
 
@@ -220,7 +230,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
     privateDetails,
   });
   const completeCount = Object.values(milestones).filter(Boolean).length;
-  const completion = Math.round((completeCount / 9) * 100);
+  const completion = Math.round((completeCount / 10) * 100);
 
   let avatarUrl: string | null = null;
   if (profile?.avatar_path) {
@@ -297,8 +307,8 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                                   : step.key === "photo"
                                     ? milestones.photo
                                     : step.key === "about"
-                                      ? Boolean(profile?.bio)
-                                      : completeCount === 9;
+                                      ? milestones.about
+                                      : completeCount === 10;
 
                 return (
                   <li
@@ -467,32 +477,35 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="setup-languages">Languages spoken <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-languages">Languages spoken</label>
                 <input
                   id="setup-languages"
                   name="languagesSpoken"
                   defaultValue={privateDetails?.languages_spoken?.join(", ") ?? ""}
                   placeholder="English, Malay, Mandarin"
+                  required
                 />
                 <span className="form-help">Separate languages with commas.</span>
               </div>
               <div className="form-field">
-                <label htmlFor="setup-emergency-name">Emergency contact name <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-emergency-name">Emergency contact name</label>
                 <input
                   id="setup-emergency-name"
                   name="emergencyContactName"
                   maxLength={160}
                   defaultValue={privateDetails?.emergency_contact_name ?? ""}
+                  required
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="setup-emergency-mobile">Emergency contact number <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-emergency-mobile">Emergency contact number</label>
                 <input
                   id="setup-emergency-mobile"
                   name="emergencyContactMobile"
                   maxLength={40}
                   inputMode="tel"
                   defaultValue={privateDetails?.emergency_contact_mobile ?? ""}
+                  required
                 />
               </div>
               <div className="profile-setup-actions">
@@ -579,13 +592,15 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                 ))}
               </fieldset>
               <div className="form-field">
-                <label htmlFor="setup-availability-notes">Anything else? <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-availability-notes">Availability notes</label>
                 <textarea
                   id="setup-availability-notes"
                   name="availabilityNotes"
                   rows={3}
                   maxLength={800}
                   defaultValue={profile?.availability_notes ?? ""}
+                  placeholder="Add any useful availability details, or enter N/A."
+                  required
                 />
               </div>
               <div className="profile-setup-actions">
@@ -611,14 +626,15 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                 </select>
               </div>
               <div className="form-field">
-                <label htmlFor="setup-dietary">Dietary requirements <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-dietary">Dietary requirements</label>
                 <textarea
                   id="setup-dietary"
                   name="dietaryRequirements"
                   rows={3}
                   maxLength={800}
                   defaultValue={privateDetails?.dietary_requirements ?? ""}
-                  placeholder="For example: vegetarian, halal-only, no seafood"
+                  placeholder="For example: vegetarian, halal-only, no seafood, or None"
+                  required
                 />
               </div>
               <div className="form-field">
@@ -665,21 +681,25 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                 </select>
               </div>
               <div className="form-field">
-                <label htmlFor="setup-institution">School / institution <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-institution">School / institution</label>
                 <input
                   id="setup-institution"
                   name="institution"
                   maxLength={200}
                   defaultValue={privateDetails?.institution ?? ""}
+                  placeholder="Enter N/A if not applicable"
+                  required
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="setup-field-study">Field of study <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-field-study">Field of study</label>
                 <input
                   id="setup-field-study"
                   name="fieldOfStudy"
                   maxLength={200}
                   defaultValue={privateDetails?.field_of_study ?? ""}
+                  placeholder="Enter N/A if not applicable"
+                  required
                 />
               </div>
               <div className="profile-setup-actions">
@@ -733,6 +753,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                   maxLength={500}
                   defaultValue={profile?.bio ?? ""}
                   placeholder="A short introduction about how you like to contribute."
+                  required
                 />
               </div>
               <div className="profile-setup-actions">
@@ -746,7 +767,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
             <div className="profile-setup-review">
               <div className="profile-setup-review-score">
                 <strong>{completion}%</strong>
-                <span>{completeCount} of 9 essentials complete</span>
+                <span>{completeCount} of 10 essentials complete</span>
               </div>
 
               <div className="profile-setup-review-list">
@@ -760,6 +781,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                   ["Event readiness", milestones.eventReadiness, "event-readiness"],
                   ["Education", milestones.education, "education"],
                   ["Profile photo", milestones.photo, "photo"],
+                  ["About you", milestones.about, "about"],
                 ].map(([label, done, step]) => (
                   <Link key={String(step)} href={stepHref(step as SetupStep, false)}>
                     <span className="profile-setup-review-check" data-complete={done ? "true" : "false"}>
@@ -774,7 +796,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
               <div className="profile-setup-actions">
                 <Link className="button button-secondary" href={stepHref("about", false)}>Back</Link>
                 <form action={completeProfileSetup}>
-                  <button className="button button-primary" type="submit" disabled={completeCount < 9}>
+                  <button className="button button-primary" type="submit" disabled={completeCount < 10}>
                     Finish profile setup
                   </button>
                 </form>
