@@ -78,7 +78,7 @@ export function ProfileEducationFields({
           aria-required={fieldOfStudyRequired}
         />
         <span className="form-help">
-          Required for ITE, Diploma, Bachelor's degree and Postgraduate qualifications.
+          Required for ITE, Diploma, Bachelor&apos;s degree and Postgraduate qualifications.
         </span>
       </div>
     </>
