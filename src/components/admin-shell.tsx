@@ -26,6 +26,7 @@ type IconName =
   | "events"
   | "registrations"
   | "volunteers"
+  | "reconciliation"
   | "content"
   | "image"
   | "network"
@@ -46,6 +47,7 @@ const navGroups: ReadonlyArray<Readonly<{ title: string; items: readonly NavItem
       { href: "/admin/events", label: "Event Operations", icon: "events" },
       { href: "/admin/registrations", label: "Registrations", icon: "registrations", fullAdminOnly: true },
       { href: "/admin/volunteers", label: "Volunteers", icon: "volunteers", fullAdminOnly: true },
+      { href: "/admin/reconciliation", label: "Reconciliation", icon: "reconciliation", fullAdminOnly: true },
       { href: "/admin/content", label: "Content & Opportunities", icon: "content", fullAdminOnly: true },
     ],
   },
@@ -97,6 +99,8 @@ function Icon({ name }: { name: IconName }) {
       return <svg {...common}><path d="M9 5h10a2 2 0 0 1 2 2v12H9" /><path d="M5 3h4v18H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M13 10h4M13 14h4" /></svg>;
     case "volunteers":
       return <svg {...common}><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" /><path d="M16 7.5a2.5 2.5 0 1 1 0 5M17 15c2.3.5 4 2.5 4 5" /></svg>;
+    case "reconciliation":
+      return <svg {...common}><path d="M7 7h10M7 17h10" /><path d="m4 7 2-2 2 2M20 17l-2 2-2-2" /><path d="M6 5v8a4 4 0 0 0 4 4h6M18 19v-8a4 4 0 0 0-4-4H8" /></svg>;
     case "content":
       return <svg {...common}><path d="M4 4h16v16H4z" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>;
     case "image":
