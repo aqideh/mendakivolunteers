@@ -212,7 +212,27 @@ export async function savePersonalStep(formData: FormData) {
   }
 
   const languages = parseTags(formData.get("languagesSpoken"));
-  if (languages.some((value) => value.length > 60) || languages.length > 12) {
+  const emergencyContactName = z
+    .string()
+    .trim()
+    .min(1)
+    .max(160)
+    .safeParse(formData.get("emergencyContactName"));
+  const emergencyContactMobile = z
+    .string()
+    .trim()
+    .min(7)
+    .max(40)
+    .regex(/^[0-9+() .-]+$/)
+    .safeParse(formData.get("emergencyContactMobile"));
+
+  if (
+    languages.length === 0 ||
+    languages.some((value) => value.length > 60) ||
+    languages.length > 12 ||
+    !emergencyContactName.success ||
+    !emergencyContactMobile.success
+  ) {
     redirect(`/profile/setup?step=personal&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
@@ -220,8 +240,8 @@ export async function savePersonalStep(formData: FormData) {
   const result = await upsertPrivateDetails(client, volunteerId, {
     date_of_birth: parsed.data,
     languages_spoken: languages,
-    emergency_contact_name: optionalText(formData.get("emergencyContactName"), 160),
-    emergency_contact_mobile: optionalText(formData.get("emergencyContactMobile"), 40),
+    emergency_contact_name: emergencyContactName.data,
+    emergency_contact_mobile: emergencyContactMobile.data,
   });
 
   if (result.error) {
@@ -286,8 +306,14 @@ export async function saveAvailabilityStep(formData: FormData) {
 
   const slotsParsed = z.array(z.enum(availabilitySlotValues)).min(1).max(5).safeParse(slots);
   const commitmentParsed = z.enum(commitmentValues).safeParse(formData.get("preferredCommitment"));
+  const availabilityNotes = z
+    .string()
+    .trim()
+    .min(1)
+    .max(800)
+    .safeParse(formData.get("availabilityNotes"));
 
-  if (!slotsParsed.success || !commitmentParsed.success) {
+  if (!slotsParsed.success || !commitmentParsed.success || !availabilityNotes.success) {
     redirect(`/profile/setup?step=availability&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
@@ -299,7 +325,7 @@ export async function saveAvailabilityStep(formData: FormData) {
         volunteer_id: volunteerId,
         availability_slots: slotsParsed.data,
         preferred_commitment: commitmentParsed.data,
-        availability_notes: optionalText(formData.get("availabilityNotes"), 800),
+        availability_notes: availabilityNotes.data,
       },
       { onConflict: "volunteer_id" },
     );
@@ -317,16 +343,25 @@ export async function saveEventReadinessStep(formData: FormData) {
   const shirtSize = z.enum(shirtSizes).safeParse(formData.get("tshirtSize"));
   const noKnownAllergies = formData.get("noKnownFoodAllergies") === "on";
   const foodAllergies = optionalText(formData.get("foodAllergies"), 800);
-  const dietaryRequirements = optionalText(formData.get("dietaryRequirements"), 800);
+  const dietaryRequirements = z
+    .string()
+    .trim()
+    .min(1)
+    .max(800)
+    .safeParse(formData.get("dietaryRequirements"));
 
-  if (!shirtSize.success || (!noKnownAllergies && !foodAllergies)) {
+  if (
+    !shirtSize.success ||
+    !dietaryRequirements.success ||
+    (!noKnownAllergies && !foodAllergies)
+  ) {
     redirect(`/profile/setup?step=event-readiness&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=event-readiness");
   const result = await upsertPrivateDetails(client, volunteerId, {
     tshirt_size: shirtSize.data,
-    dietary_requirements: dietaryRequirements,
+    dietary_requirements: dietaryRequirements.data,
     no_known_food_allergies: noKnownAllergies,
     food_allergies: noKnownAllergies ? null : foodAllergies,
   });
@@ -342,16 +377,28 @@ export async function saveEventReadinessStep(formData: FormData) {
 export async function saveEducationStep(formData: FormData) {
   const isEdit = editMode(formData);
   const qualification = z.enum(qualificationValues).safeParse(formData.get("highestQualification"));
+  const institution = z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .safeParse(formData.get("institution"));
+  const fieldOfStudy = z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .safeParse(formData.get("fieldOfStudy"));
 
-  if (!qualification.success) {
+  if (!qualification.success || !institution.success || !fieldOfStudy.success) {
     redirect(`/profile/setup?step=education&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=education");
   const result = await upsertPrivateDetails(client, volunteerId, {
     highest_qualification: qualification.data,
-    institution: optionalText(formData.get("institution"), 200),
-    field_of_study: optionalText(formData.get("fieldOfStudy"), 200),
+    institution: institution.data,
+    field_of_study: fieldOfStudy.data,
   });
 
   if (result.error) {
@@ -365,6 +412,16 @@ export async function saveEducationStep(formData: FormData) {
 export async function savePhotoVisibilityStep(formData: FormData) {
   const isEdit = editMode(formData);
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=photo");
+  const photoResult = await client
+    .from("keluarga_volunteer_profiles")
+    .select("avatar_path")
+    .eq("volunteer_id", volunteerId)
+    .maybeSingle();
+
+  if (photoResult.error || !photoResult.data?.avatar_path) {
+    redirect(`/profile/setup?step=photo&error=validation${isEdit ? "&mode=edit" : ""}`);
+  }
+
   const result = await client
     .from("keluarga_volunteer_profiles")
     .upsert(
@@ -386,13 +443,18 @@ export async function savePhotoVisibilityStep(formData: FormData) {
 
 export async function saveAboutStep(formData: FormData) {
   const isEdit = editMode(formData);
-  const bio = optionalText(formData.get("bio"), 500);
+  const bio = z.string().trim().min(1).max(500).safeParse(formData.get("bio"));
+
+  if (!bio.success) {
+    redirect(`/profile/setup?step=about&error=validation${isEdit ? "&mode=edit" : ""}`);
+  }
+
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=about");
 
   const result = await client
     .from("keluarga_volunteer_profiles")
     .upsert(
-      { volunteer_id: volunteerId, bio },
+      { volunteer_id: volunteerId, bio: bio.data },
       { onConflict: "volunteer_id" },
     );
 
@@ -416,13 +478,13 @@ export async function completeProfileSetup() {
       .single(),
     client
       .from("keluarga_volunteer_profiles")
-      .select("avatar_path, interests, skills, availability_slots, preferred_commitment")
+      .select("avatar_path, bio, interests, skills, availability_notes, availability_slots, preferred_commitment")
       .eq("volunteer_id", volunteerId)
       .maybeSingle(),
     client
       .from("volunteer_private_details")
       .select(
-        "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification",
+        "date_of_birth, postal_code, address_line, dietary_requirements, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification, institution, field_of_study, languages_spoken, emergency_contact_name, emergency_contact_mobile",
       )
       .eq("volunteer_id", volunteerId)
       .maybeSingle(),
@@ -443,16 +505,24 @@ export async function completeProfileSetup() {
     Boolean(volunteerResult.data.display_name?.trim()) &&
     Boolean(volunteerResult.data.mobile?.trim()) &&
     Boolean(profileResult.data.avatar_path) &&
+    Boolean(profileResult.data.bio?.trim()) &&
     (profileResult.data.interests?.length ?? 0) > 0 &&
     (profileResult.data.skills?.length ?? 0) > 0 &&
     (profileResult.data.availability_slots?.length ?? 0) > 0 &&
     Boolean(profileResult.data.preferred_commitment) &&
+    Boolean(profileResult.data.availability_notes?.trim()) &&
     Boolean(privateDetails.date_of_birth) &&
     Boolean(privateDetails.postal_code) &&
     Boolean(privateDetails.address_line) &&
+    (privateDetails.languages_spoken?.length ?? 0) > 0 &&
+    Boolean(privateDetails.emergency_contact_name?.trim()) &&
+    Boolean(privateDetails.emergency_contact_mobile?.trim()) &&
+    Boolean(privateDetails.dietary_requirements?.trim()) &&
     Boolean(privateDetails.tshirt_size) &&
     (privateDetails.no_known_food_allergies || Boolean(privateDetails.food_allergies?.trim())) &&
-    Boolean(privateDetails.highest_qualification);
+    Boolean(privateDetails.highest_qualification) &&
+    Boolean(privateDetails.institution?.trim()) &&
+    Boolean(privateDetails.field_of_study?.trim());
 
   if (!complete) {
     redirect("/profile/setup?step=review&error=incomplete");
