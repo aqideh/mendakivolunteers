@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { requireActiveAccount } from "@/lib/auth/account-access";
 import { resolveSingaporePostalCode } from "@/lib/onemap/server";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const contactSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
@@ -99,7 +100,7 @@ async function getVolunteerContext(next: string) {
     redirect("/dashboard?error=profile_update_failed");
   }
 
-  return { client, volunteerId: volunteerResult.data.id };
+  return { client, volunteerId: volunteerResult.data.id, userId };
 }
 
 async function upsertPrivateDetails(
@@ -404,7 +405,7 @@ export async function saveAboutStep(formData: FormData) {
 }
 
 export async function completeProfileSetup() {
-  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=review");
+  const { client, volunteerId, userId } = await getVolunteerContext("/profile/setup?step=review");
 
   const [volunteerResult, profileResult, privateResult] = await Promise.all([
     client
@@ -466,6 +467,33 @@ export async function completeProfileSetup() {
     redirect("/profile/setup?step=review&error=save");
   }
 
+  const admin = getPhaseOneAdminClient();
+  const now = new Date().toISOString();
+  const reviewResult = await admin
+    .schema("core")
+    .from("account_link_cases")
+    .update({
+      status: "pending",
+      reason_code: "temporary_unverified_email",
+      review_outcome: null,
+      requested_sections: [],
+      volunteer_message: null,
+      submitted_for_review_at: now,
+      resolved_by: null,
+      resolved_at: null,
+    })
+    .eq("auth_user_id", userId)
+    .in("status", ["pending", "needs_review"])
+    .eq("reason_code", "temporary_unverified_email");
+
+  if (reviewResult.error) {
+    console.error("Unable to submit temporary volunteer profile for review", {
+      code: reviewResult.error.code,
+    });
+  }
+
   refreshProfilePaths();
+  revalidatePath("/admin/reconciliation");
+  revalidatePath("/admin");
   redirect("/dashboard?success=profile_updated");
 }
