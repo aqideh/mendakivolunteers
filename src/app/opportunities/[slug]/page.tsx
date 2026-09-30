@@ -214,14 +214,11 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
           lastTimeslot.ends_at ?? lastTimeslot.starts_at,
         )
       : null;
-  const descriptionParagraphs: string[] = (
+  const opportunityDescription =
     typeof event.opportunity_description === "string"
       ? event.opportunity_description
-      : ""
-  )
-    .split(/\n{2,}/)
-    .map((paragraph: string) => paragraph.trim())
-    .filter(Boolean);
+      : "";
+  const hasOpportunityDescription = opportunityDescription.trim().length > 0;
 
   return (
     <div className="site-shell phaseone-shell">
@@ -287,17 +284,15 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
                   </div>
                 </div>
 
-                {descriptionParagraphs.length > 0 ? (
+                {hasOpportunityDescription ? (
                   <section
                     className="phaseone-opportunity-copy"
                     aria-labelledby="about-opportunity-title"
                   >
                     <h2 id="about-opportunity-title">About this opportunity</h2>
-                    <div className="prose-block">
-                      {descriptionParagraphs.map((paragraph) => (
-                        <p key={paragraph}>{paragraph}</p>
-                      ))}
-                    </div>
+                    <p className="prose-block phaseone-opportunity-description">
+                      {opportunityDescription}
+                    </p>
                   </section>
                 ) : null}
 
