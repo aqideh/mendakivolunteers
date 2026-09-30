@@ -166,6 +166,33 @@ export async function createVolunteerPasswordAccount(
   }
 
   const admin = getPhaseOneAdminClient();
+  const protectedIdentityResult = await admin
+    .schema("core")
+    .from("volunteers")
+    .select("id", { count: "exact", head: true })
+    .eq("primary_email_normalized", email)
+    .eq("account_access_eligible", true);
+
+  if (protectedIdentityResult.error) {
+    console.error("Existing volunteer identity check failed", {
+      code: protectedIdentityResult.error.code,
+    });
+    await recordSignupAttempt(clientKey, emailKey, false);
+    return {
+      status: "error",
+      message: "Account creation is temporarily unavailable. Please try again.",
+    };
+  }
+
+  if ((protectedIdentityResult.count ?? 0) > 0) {
+    await recordSignupAttempt(clientKey, emailKey, false);
+    return {
+      status: "error",
+      message:
+        "This email requires verification before a new account can be created. Contact Volunteer Management for access while email verification is unavailable.",
+    };
+  }
+
   const createResult = await admin.auth.admin.createUser({
     email,
     password: parsedPassword.data,
