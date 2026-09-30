@@ -57,6 +57,7 @@ const navGroups: ReadonlyArray<Readonly<{ title: string; items: readonly NavItem
       { href: "/admin/pathways", label: "Volunteer Pathways", icon: "pathways", fullAdminOnly: true },
       { href: "/admin/inventory/shirts", label: "Shirt Inventory", icon: "shirt", fullAdminOnly: true },
       { href: "/admin/points", label: "Points", icon: "points", fullAdminOnly: true },
+      { href: "/admin/rewards", label: "Rewards", icon: "points", fullAdminOnly: true },
       { href: "/admin/badges", label: "Badges", icon: "badges", fullAdminOnly: true },
     ],
   },
