@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { createClientMock, redirectMock, signInWithPasswordMock } = vi.hoisted(
-  () => ({
-    createClientMock: vi.fn(),
-    redirectMock: vi.fn(),
-    signInWithPasswordMock: vi.fn(),
-  }),
-);
+const {
+  createClientMock,
+  redirectMock,
+  reviewMaybeSingleMock,
+  signInWithPasswordMock,
+} = vi.hoisted(() => ({
+  createClientMock: vi.fn(),
+  redirectMock: vi.fn(),
+  reviewMaybeSingleMock: vi.fn(),
+  signInWithPasswordMock: vi.fn(),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: createClientMock,
@@ -30,13 +34,36 @@ function formData(
   return data;
 }
 
+function reviewQuery() {
+  const query = {
+    from: vi.fn(),
+    select: vi.fn(),
+    eq: vi.fn(),
+    in: vi.fn(),
+    limit: vi.fn(),
+    maybeSingle: reviewMaybeSingleMock,
+  };
+  query.from.mockReturnValue(query);
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.in.mockReturnValue(query);
+  query.limit.mockReturnValue(query);
+  return query;
+}
+
 describe("volunteer password sign-in", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    reviewMaybeSingleMock.mockResolvedValue({ data: null, error: null });
+    const query = reviewQuery();
     createClientMock.mockResolvedValue({
       auth: { signInWithPassword: signInWithPasswordMock },
+      schema: vi.fn(() => query),
     });
-    signInWithPasswordMock.mockResolvedValue({ error: null });
+    signInWithPasswordMock.mockResolvedValue({
+      data: { user: { id: "11111111-1111-4111-8111-111111111111" } },
+      error: null,
+    });
   });
 
   it("only exports the password sign-in action", () => {
@@ -64,8 +91,29 @@ describe("volunteer password sign-in", () => {
     );
   });
 
+  it("routes temporary accounts through the review prompt", async () => {
+    reviewMaybeSingleMock.mockResolvedValue({
+      data: { id: "22222222-2222-4222-8222-222222222222" },
+      error: null,
+    });
+
+    await volunteerSignInActions.signInVolunteerWithPassword(
+      { status: "idle", message: "" },
+      formData(
+        "volunteer@example.test",
+        "StrongPassword123",
+        "/opportunities/community-day",
+      ),
+    );
+
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/account/review?next=%2Fopportunities%2Fcommunity-day",
+    );
+  });
+
   it("returns a generic error for rejected credentials", async () => {
     signInWithPasswordMock.mockResolvedValue({
+      data: { user: null },
       error: { code: "invalid_credentials", status: 400 },
     });
     vi.spyOn(console, "error").mockImplementation(() => undefined);
