@@ -38,13 +38,7 @@ export function VolunteerSignUpForm({ nextPath }: VolunteerSignUpFormProps) {
           placeholder="you@example.com"
           required
           disabled={pending}
-          aria-describedby="community-signup-email-help"
         />
-        <span className="form-help" id="community-signup-email-help">
-          We are temporarily allowing account creation without email verification.
-          Your email will not be used to link previous volunteer records until it is
-          verified later.
-        </span>
       </div>
 
       <div className="form-field">
