@@ -136,6 +136,9 @@ export default async function PointsPage() {
             </p>
           </div>
           <div className="actions">
+            <Link className="button button-primary" href="/rewards">
+              Redeem points
+            </Link>
             <Link className="button button-secondary" href="/dashboard">
               Back to My Profile
             </Link>
