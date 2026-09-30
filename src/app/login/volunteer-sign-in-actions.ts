@@ -30,7 +30,7 @@ export async function signInVolunteerWithPassword(
   }
 
   let reviewRedirect: string | null = null;
-  let resolvedNext = getSafeRedirectPath(
+  const resolvedNext = getSafeRedirectPath(
     formData.get("next")?.toString(),
     "/dashboard",
   );
