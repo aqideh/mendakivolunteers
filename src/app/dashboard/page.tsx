@@ -44,6 +44,8 @@ type PrivateDetails = {
   food_allergies: string | null;
   no_known_food_allergies: boolean;
   highest_qualification: string | null;
+  institution: string | null;
+  field_of_study: string | null;
 };
 
 type PointsSnapshot = {
@@ -133,7 +135,13 @@ function profileMilestones(input: {
         input.privateDetails?.no_known_food_allergies ||
           input.privateDetails?.food_allergies?.trim(),
       ),
-    education: Boolean(input.privateDetails?.highest_qualification),
+    education:
+      Boolean(input.privateDetails?.highest_qualification) &&
+      Boolean(input.privateDetails?.institution?.trim()) &&
+      (!["ite", "diploma", "bachelors", "postgraduate"].includes(
+        input.privateDetails?.highest_qualification ?? "",
+      ) ||
+        Boolean(input.privateDetails?.field_of_study?.trim())),
     photo: Boolean(input.avatarPath),
   };
 }
@@ -256,7 +264,7 @@ export default async function DashboardPage({
         accountClient
           .from("volunteer_private_details")
           .select(
-            "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification",
+            "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification, institution, field_of_study",
           )
           .eq("volunteer_id", volunteer.id)
           .maybeSingle(),
