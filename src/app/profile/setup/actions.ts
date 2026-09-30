@@ -108,12 +108,20 @@ async function upsertPrivateDetails(
   volunteerId: string,
   values: Record<string, unknown>,
 ) {
+  const updateResult = await client
+    .from("volunteer_private_details")
+    .update(values)
+    .eq("volunteer_id", volunteerId)
+    .select("volunteer_id")
+    .maybeSingle();
+
+  if (updateResult.error || updateResult.data) {
+    return updateResult;
+  }
+
   return client
     .from("volunteer_private_details")
-    .upsert(
-      { volunteer_id: volunteerId, ...values },
-      { onConflict: "volunteer_id" },
-    );
+    .insert({ volunteer_id: volunteerId, ...values });
 }
 
 function refreshProfilePaths() {
