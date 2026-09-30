@@ -29,9 +29,15 @@ export async function signInVolunteerWithPassword(
     return { status: "error", message: "Enter your password." };
   }
 
+  let reviewRedirect: string | null = null;
+  let resolvedNext = getSafeRedirectPath(
+    formData.get("next")?.toString(),
+    "/dashboard",
+  );
+
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: parsedEmail.data.toLowerCase(),
       password: parsedPassword.data,
     });
@@ -46,6 +52,21 @@ export async function signInVolunteerWithPassword(
         message: "Invalid email address or password.",
       };
     }
+
+    if (data.user) {
+      const reviewResult = await supabase
+        .schema("core")
+        .from("account_link_cases")
+        .select("id")
+        .eq("auth_user_id", data.user.id)
+        .in("status", ["pending", "needs_review"])
+        .limit(1)
+        .maybeSingle();
+
+      if (!reviewResult.error && reviewResult.data) {
+        reviewRedirect = `/account/review?next=${encodeURIComponent(resolvedNext)}`;
+      }
+    }
   } catch (error) {
     console.error("Volunteer password sign-in is not configured", {
       message: error instanceof Error ? error.message : "Unknown error",
@@ -56,7 +77,5 @@ export async function signInVolunteerWithPassword(
     };
   }
 
-  redirect(
-    getSafeRedirectPath(formData.get("next")?.toString(), "/dashboard"),
-  );
+  redirect(reviewRedirect ?? resolvedNext);
 }
