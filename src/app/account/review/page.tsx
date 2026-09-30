@@ -62,6 +62,8 @@ export default async function AccountReviewPage({ searchParams }: PageProps) {
 
   const review = result.data;
   const refill = review.review_outcome === "refill_required";
+  const awaitingInitialProfile =
+    !refill && !review.submitted_for_review_at;
   const requested = review.requested_sections ?? [];
   const success = param(parameters, "success");
   const error = param(parameters, "error");
@@ -71,7 +73,20 @@ export default async function AccountReviewPage({ searchParams }: PageProps) {
       <PortalHeader status="Profile review" dashboard />
       <main className="page-frame">
         <section className="section">
-          {refill ? (
+          {awaitingInitialProfile ? (
+            <>
+              <h1>Complete your volunteer profile</h1>
+              <p>
+                Finish your volunteer profile so Volunteer Management can review
+                this temporary account. Your information will remain separate
+                from any historical volunteer record until verified
+                authentication is available.
+              </p>
+              <Link className="button button-primary" href="/profile/setup">
+                Complete profile
+              </Link>
+            </>
+          ) : refill ? (
             <>
               <h1>Please update your volunteer profile</h1>
               <p>
