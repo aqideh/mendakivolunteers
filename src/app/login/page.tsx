@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { LoginForm } from "@/app/login/login-form";
 import { VolunteerAuthPanel } from "@/app/login/volunteer-auth-panel";
 import { BrandLockup } from "@/components/brand-lockup";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
@@ -16,14 +15,11 @@ type LoginPageProps = Readonly<{
 
 function getLoginErrorMessage(errorCode: string | undefined): string | undefined {
   switch (errorCode) {
-    case "invalid_or_expired_link":
-    case "magic_link_invalid":
-      return "This login link is invalid, expired, or has already been used. Request a new link.";
     case "account_inactive":
       return "This Keluarga MENDAKI account is not active. Contact the volunteer team.";
     case "account_authorization_unavailable":
     case "account_setup_unavailable":
-      return "Keluarga MENDAKI could not finish setting up your account. Request a new sign-in link and try again.";
+      return "Keluarga MENDAKI could not finish setting up your account. Please try again or contact the volunteer team.";
     default:
       return undefined;
   }
@@ -54,8 +50,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       </header>
 
       <main className="auth-layout auth-login-layout">
-        <section className="auth-panel auth-login-card" aria-labelledby="community-auth-title">
-
+        <section
+          className="auth-panel auth-login-card"
+          aria-labelledby="volunteer-auth-title"
+        >
           {initialError ? (
             <div className="notice notice-error" role="alert">
               {initialError}
@@ -64,18 +62,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           {passwordReset === "success" ? (
             <div className="notice notice-success" role="status">
-              Your password has been reset. Log in with your new password.
+              Your password has been reset. Sign in with your new password.
             </div>
           ) : null}
 
           <VolunteerAuthPanel initialMode={initialMode} nextPath={nextPath} />
 
-          <details className="auth-password-disclosure">
-            <summary>Staff or password login</summary>
-            <div className="auth-password-disclosure-body">
-              <LoginForm nextPath={nextPath} initialError={undefined} />
-            </div>
-          </details>
+          <p className="auth-login-copy">
+            Staff accounts can use the same sign-in form.
+          </p>
 
           <p className="auth-browse-link">
             <Link className="text-link" href="/opportunities">
