@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 import { saveEvent } from "@/app/admin/events/actions";
 import { saveEventFormDraft } from "@/app/admin/events/draft-actions";
@@ -104,6 +105,7 @@ export function EventForm({
   event?: EventFormValue;
   draft?: EventFormDraft;
 }) {
+  const router = useRouter();
   const restoredTimeslots = !event ? draftTimeslots(draft) : [];
   const initialTimeslots = (event?.timeslots ?? []).map((timeslot) => ({
     id: timeslot.id,
@@ -201,7 +203,11 @@ export function EventForm({
         if (result.status === "error") {
           if (!event?.id && result.eventId) setRecoveryEventId(result.eventId);
           setSaveState({ status: "error", message: result.message });
+          return;
         }
+
+        router.replace(result.redirectTo);
+        router.refresh();
       } catch (error) {
         console.error("Unable to submit event guide", error);
         setSaveState({
