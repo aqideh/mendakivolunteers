@@ -1,88 +1,102 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  createEmailLinkClientMock,
-  getPublicConfigMock,
-  signInWithOtpMock,
-} = vi.hoisted(() => ({
-  createEmailLinkClientMock: vi.fn(),
-  getPublicConfigMock: vi.fn(),
-  signInWithOtpMock: vi.fn(),
+const { createClientMock, redirectMock, signInWithPasswordMock } = vi.hoisted(
+  () => ({
+    createClientMock: vi.fn(),
+    redirectMock: vi.fn(),
+    signInWithPasswordMock: vi.fn(),
+  }),
+);
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: createClientMock,
 }));
 
-vi.mock("@/lib/supabase/email-link", () => ({
-  createEmailLinkClient: createEmailLinkClientMock,
-}));
-
-vi.mock("@/lib/env", () => ({
-  getPublicConfig: getPublicConfigMock,
+vi.mock("next/navigation", () => ({
+  redirect: redirectMock,
 }));
 
 import * as volunteerSignInActions from "@/app/login/volunteer-sign-in-actions";
 
-function formData(email: string, next = "/dashboard") {
+function formData(
+  email: string,
+  password = "StrongPassword123",
+  next = "/dashboard",
+) {
   const data = new FormData();
   data.set("email", email);
+  data.set("password", password);
   data.set("next", next);
   return data;
 }
 
-describe("volunteer email sign-in", () => {
+describe("volunteer password sign-in", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    createEmailLinkClientMock.mockReturnValue({
-      auth: { signInWithOtp: signInWithOtpMock },
+    createClientMock.mockResolvedValue({
+      auth: { signInWithPassword: signInWithPasswordMock },
     });
-    getPublicConfigMock.mockReturnValue({
-      appUrl: "https://mendakivolunteers.vercel.app",
-    });
-    signInWithOtpMock.mockResolvedValue({ error: null });
+    signInWithPasswordMock.mockResolvedValue({ error: null });
   });
 
-  it("only exposes the async server action at runtime", () => {
+  it("only exports the password sign-in action", () => {
     expect(Object.keys(volunteerSignInActions)).toEqual([
-      "requestVolunteerSignInLink",
+      "signInVolunteerWithPassword",
     ]);
-    expect(
-      volunteerSignInActions.requestVolunteerSignInLink.constructor.name,
-    ).toBe("AsyncFunction");
   });
 
-  it("normalizes email without creating a new volunteer account", async () => {
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
+  it("normalizes email and preserves a safe return path", async () => {
+    await volunteerSignInActions.signInVolunteerWithPassword(
       { status: "idle", message: "" },
-      formData(" New.Volunteer@Example.Test ", "/opportunities/community-day"),
+      formData(
+        " New.Volunteer@Example.Test ",
+        "StrongPassword123",
+        "/opportunities/community-day",
+      ),
     );
 
-    expect(result.status).toBe("success");
-    expect(signInWithOtpMock).toHaveBeenCalledWith({
+    expect(signInWithPasswordMock).toHaveBeenCalledWith({
       email: "new.volunteer@example.test",
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo:
-          "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fopportunities%2Fcommunity-day",
-      },
+      password: "StrongPassword123",
     });
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/opportunities/community-day",
+    );
   });
 
-  it("rejects unsafe return destinations", async () => {
-    await volunteerSignInActions.requestVolunteerSignInLink(
+  it("returns a generic error for rejected credentials", async () => {
+    signInWithPasswordMock.mockResolvedValue({
+      error: { code: "invalid_credentials", status: 400 },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await volunteerSignInActions.signInVolunteerWithPassword(
       { status: "idle", message: "" },
-      formData("volunteer@example.test", "https://attacker.example/path"),
+      formData("volunteer@example.test", "WrongPassword123"),
     );
 
-    expect(signInWithOtpMock).toHaveBeenCalledWith({
-      email: "volunteer@example.test",
-      options: expect.objectContaining({
-        shouldCreateUser: false,
-        emailRedirectTo:
-          "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fdashboard",
-      }),
+    expect(result).toEqual({
+      status: "error",
+      message: "Invalid email address or password.",
     });
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 
-  it("rejects an invalid email before calling Supabase", async () => {
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
+  it("rejects unsafe return paths", async () => {
+    await volunteerSignInActions.signInVolunteerWithPassword(
+      { status: "idle", message: "" },
+      formData(
+        "volunteer@example.test",
+        "StrongPassword123",
+        "https://attacker.example",
+      ),
+    );
+
+    expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("rejects invalid input without calling Supabase", async () => {
+    const result = await volunteerSignInActions.signInVolunteerWithPassword(
       { status: "idle", message: "" },
       formData("not-an-email"),
     );
@@ -91,49 +105,6 @@ describe("volunteer email sign-in", () => {
       status: "error",
       message: "Enter a valid email address.",
     });
-    expect(signInWithOtpMock).not.toHaveBeenCalled();
-  });
-
-  it("keeps delivery failures non-disclosing while retaining diagnostics", async () => {
-    signInWithOtpMock.mockResolvedValue({
-      error: { code: "over_email_send_rate_limit", status: 429 },
-    });
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
-      formData("volunteer@example.test"),
-    );
-
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("If the email can receive messages");
-    expect(result.message).not.toContain("volunteer@example.test");
-    expect(consoleError).toHaveBeenCalledWith(
-      "Volunteer magic-link request was not delivered",
-      expect.objectContaining({
-        code: "over_email_send_rate_limit",
-        status: 429,
-      }),
-    );
-  });
-
-  it("reports missing public configuration without attempting delivery", async () => {
-    getPublicConfigMock.mockImplementation(() => {
-      throw new Error("NEXT_PUBLIC_APP_URL missing");
-    });
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
-      formData("volunteer@example.test"),
-    );
-
-    expect(result).toEqual({
-      status: "error",
-      message: "Volunteer sign-in is not configured in this environment.",
-    });
-    expect(signInWithOtpMock).not.toHaveBeenCalled();
+    expect(signInWithPasswordMock).not.toHaveBeenCalled();
   });
 });
