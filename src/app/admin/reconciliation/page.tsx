@@ -70,6 +70,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
       "id, auth_user_id, status, reason_code, review_outcome, candidate_volunteer_id, requested_sections, volunteer_message, submitted_for_review_at, resubmitted_at, created_at",
     )
     .in("status", ["pending", "needs_review"])
+    .not("submitted_for_review_at", "is", null)
     .order("submitted_for_review_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 
