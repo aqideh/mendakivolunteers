@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { z } from "zod";
 
 import { getPublicConfig } from "@/lib/env";
@@ -14,7 +15,7 @@ export type VolunteerSignInState = Readonly<{
 }>;
 
 const genericSuccessMessage =
-  "If the email can receive messages, a KELUARGA sign-in link has been sent. Check your inbox and junk folder.";
+  "Request received. If the email is linked to a Keluarga profile, a sign-in link is being sent. It may take a moment to arrive. Check your inbox and junk folder.";
 
 export async function requestVolunteerSignInLink(
   _previousState: VolunteerSignInState,
@@ -37,20 +38,26 @@ export async function requestVolunteerSignInLink(
     const callbackUrl = new URL("/auth/confirm", appUrl);
     callbackUrl.searchParams.set("next", nextPath);
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: callbackUrl.toString(),
-      },
-    });
+    after(async () => {
+      try {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: false,
+            emailRedirectTo: callbackUrl.toString(),
+          },
+        });
 
-    if (error) {
-      console.error("Volunteer magic-link request was not delivered", {
-        code: error.code,
-        status: error.status,
-      });
-    }
+        if (error) {
+          console.error("Volunteer magic-link request was not delivered", {
+            code: error.code,
+            status: error.status,
+          });
+        }
+      } catch (error) {
+        console.error("Volunteer magic-link background delivery failed", error);
+      }
+    });
   } catch (error) {
     console.error("Volunteer magic-link sign-in is not configured", error);
     return {
