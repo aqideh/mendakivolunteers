@@ -32,6 +32,26 @@
   border: 1px solid var(--border);
   border-radius: 0.8rem;
   background: var(--surface-subtle);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.eventPreview:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.eventPreview[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.eventPreviewDragging {
+  border-style: dashed;
+  box-shadow: inset 0 0 0 3px currentColor;
 }
 
 .eventPreview img {
@@ -47,4 +67,23 @@
   place-items: center;
   color: var(--muted);
   font-size: 0.84rem;
+}
+
+.eventDropPrompt {
+  position: absolute;
+  left: 50%;
+  bottom: 0.75rem;
+  z-index: 1;
+  width: max-content;
+  max-width: calc(100% - 1.5rem);
+  transform: translateX(-50%);
+  padding: 0.48rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.76);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  pointer-events: none;
 }
