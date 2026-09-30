@@ -350,16 +350,26 @@ export async function saveEventReadinessStep(formData: FormData) {
 export async function saveEducationStep(formData: FormData) {
   const isEdit = editMode(formData);
   const qualification = z.enum(qualificationValues).safeParse(formData.get("highestQualification"));
+  const institution = optionalText(formData.get("institution"), 200);
+  const fieldOfStudy = optionalText(formData.get("fieldOfStudy"), 200);
 
-  if (!qualification.success) {
+  const fieldOfStudyRequired =
+    qualification.success &&
+    ["ite", "diploma", "bachelors", "postgraduate"].includes(qualification.data);
+
+  if (
+    !qualification.success ||
+    !institution ||
+    (fieldOfStudyRequired && !fieldOfStudy)
+  ) {
     redirect(`/profile/setup?step=education&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=education");
   const result = await upsertPrivateDetails(client, volunteerId, {
     highest_qualification: qualification.data,
-    institution: optionalText(formData.get("institution"), 200),
-    field_of_study: optionalText(formData.get("fieldOfStudy"), 200),
+    institution,
+    field_of_study: fieldOfStudy,
   });
 
   if (result.error) {
@@ -430,7 +440,7 @@ export async function completeProfileSetup() {
     client
       .from("volunteer_private_details")
       .select(
-        "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification",
+        "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification, institution, field_of_study",
       )
       .eq("volunteer_id", volunteerId)
       .maybeSingle(),
@@ -460,7 +470,12 @@ export async function completeProfileSetup() {
     Boolean(privateDetails.address_line) &&
     Boolean(privateDetails.tshirt_size) &&
     (privateDetails.no_known_food_allergies || Boolean(privateDetails.food_allergies?.trim())) &&
-    Boolean(privateDetails.highest_qualification);
+    Boolean(privateDetails.highest_qualification) &&
+    Boolean(privateDetails.institution?.trim()) &&
+    (!["ite", "diploma", "bachelors", "postgraduate"].includes(
+      privateDetails.highest_qualification ?? "",
+    ) ||
+      Boolean(privateDetails.field_of_study?.trim()));
 
   if (!complete) {
     redirect("/profile/setup?step=review&error=incomplete");
