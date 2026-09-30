@@ -9,7 +9,6 @@ import {
   isValidRecoveryPassword,
   recoveryPasswordRequirements,
 } from "@/lib/auth/password-recovery";
-import { VolunteerVerificationResendForm } from "@/app/login/volunteer-verification-resend-form";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 import { createClient } from "@/lib/supabase/client";
 
@@ -110,7 +109,7 @@ export function MagicLinkConfirmation() {
         setState({
           status: "error",
           message:
-            "This secure link is invalid, expired, or has already been used. Request a new link.",
+            "This secure link is invalid, expired, or has already been used.",
         });
         return;
       }
@@ -314,10 +313,9 @@ export function MagicLinkConfirmation() {
       {state.status === "error" ? (
         <div className="auth-verification-recovery">
           <p className="muted">
-            Enter the email address you used to create your account and we’ll
-            send a fresh verification link.
+            Return to sign in. If this was a password-recovery link, contact
+            Volunteer Management while email delivery is unavailable.
           </p>
-          <VolunteerVerificationResendForm nextPath="/dashboard" />
           <Link className="button button-secondary" href="/login">
             Return to sign in
           </Link>

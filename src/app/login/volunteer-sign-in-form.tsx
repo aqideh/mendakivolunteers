@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 
 import {
-  requestVolunteerSignInLink,
+  signInVolunteerWithPassword,
   type VolunteerSignInState,
 } from "@/app/login/volunteer-sign-in-actions";
 
@@ -18,13 +18,14 @@ type VolunteerSignInFormProps = Readonly<{
 
 export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
   const [state, formAction, pending] = useActionState(
-    requestVolunteerSignInLink,
+    signInVolunteerWithPassword,
     initialState,
   );
 
   return (
     <form action={formAction} className="auth-primary-form" noValidate>
       <input type="hidden" name="next" value={nextPath} />
+
       <div className="form-field">
         <label htmlFor="volunteer-email">Email address</label>
         <input
@@ -37,11 +38,20 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
           placeholder="you@example.com"
           required
           disabled={pending}
-          aria-describedby="volunteer-email-help"
         />
-        <span className="form-help" id="volunteer-email-help">
-          Use the email linked to your Keluarga profile.
-        </span>
+      </div>
+
+      <div className="form-field">
+        <label htmlFor="volunteer-password">Password</label>
+        <input
+          id="volunteer-password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          maxLength={128}
+          required
+          disabled={pending}
+        />
       </div>
 
       <button
@@ -49,7 +59,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
         type="submit"
         disabled={pending}
       >
-        {pending ? "Sending link…" : "Send sign-in link"}
+        {pending ? "Signing in…" : "Sign in"}
       </button>
 
       <p
