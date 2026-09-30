@@ -717,6 +717,13 @@ export default async function DashboardPage({
                   </span>
                   <span aria-hidden="true">→</span>
                 </Link>
+                <Link href="/rewards">
+                  <span>
+                    <strong>Redeem points</strong>
+                    <small>Use your points when partner rewards are available</small>
+                  </span>
+                  <span aria-hidden="true">→</span>
+                </Link>
                 <Link href="/pathways">
                   <span>
                     <strong>Pathway map</strong>
