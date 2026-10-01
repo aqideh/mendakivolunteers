@@ -273,6 +273,10 @@ export async function POST(request: Request) {
       blockers.push("This volunteer has retained YM Hub or official-hours history.");
     }
 
+    if (profileDetailsResult.data?.avatar_path) {
+      blockers.push("This volunteer has an uploaded profile photo. Remove it first.");
+    }
+
     if ((await countPublic("attendance_log", "volunteer_id", profileId)) > 0) {
       blockers.push("MakLom attendance history exists.");
     }
@@ -438,15 +442,6 @@ export async function POST(request: Request) {
           },
           409,
         );
-      }
-    }
-
-    if (profileDetailsResult.data?.avatar_path) {
-      const photoRemoval = await admin.storage
-        .from("volunteer-profile-photos")
-        .remove([profileDetailsResult.data.avatar_path]);
-      if (photoRemoval.error) {
-        console.error("Test volunteer photo cleanup failed", photoRemoval.error);
       }
     }
 
