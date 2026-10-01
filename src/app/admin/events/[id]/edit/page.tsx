@@ -45,7 +45,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const canManageProgramme = hasProgrammeManagerRole(roles);
   const admin = getPhaseOneAdminClient();
 
-  const [eventResult, timeslotsResult, rosterCountResult, importsResult, rundownImagesResult] = await Promise.all([
+  const [eventResult, timeslotsResult, rosterCountResult, importsResult, rosterLinksResult, rundownImagesResult] = await Promise.all([
     admin
       .from("phaseone_events")
       .select("id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order, is_opportunity_published, operations_scope, credit_contribution_hours")
@@ -63,10 +63,16 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
       .eq("event_id", id),
     admin
       .from("phaseone_roster_imports")
-      .select("id, mode, file_name, row_count, replaced_count, integration_mode, linked_volunteer_count, created_volunteer_count, uploaded_at")
+      .select("id, mode, file_name, row_count, replaced_count, integration_mode, linked_volunteer_count, created_volunteer_count, review_volunteer_count, uploaded_at")
       .eq("event_id", id)
       .order("uploaded_at", { ascending: false })
       .limit(10),
+    admin
+      .from("phaseone_roster")
+      .select("id, volunteer_name, volunteer_key, email, mobile, volunteer_link_status, volunteer_link_note")
+      .eq("event_id", id)
+      .not("volunteer_link_status", "is", null)
+      .order("volunteer_name", { ascending: true }),
     admin
       .from("phaseone_event_rundown_images")
       .select("id, storage_path, original_file_name, sort_order, created_at")
@@ -85,7 +91,9 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
     !timeslotsResult.data ||
     rosterCountResult.error ||
     importsResult.error ||
-    !importsResult.data
+    !importsResult.data ||
+    rosterLinksResult.error ||
+    !rosterLinksResult.data
   ) {
     throw new Error("Event operations data could not be loaded");
   }
@@ -112,6 +120,16 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
     | "manual_integrated";
   const creditContributionHours = Boolean(
     eventResult.data.credit_contribution_hours,
+  );
+  const rosterLinkRows = rosterLinksResult.data;
+  const matchedRosterCount = rosterLinkRows.filter(
+    (row) => row.volunteer_link_status === "matched_existing",
+  ).length;
+  const createdRosterCount = rosterLinkRows.filter(
+    (row) => row.volunteer_link_status === "created_new",
+  ).length;
+  const reviewRosterRows = rosterLinkRows.filter(
+    (row) => row.volunteer_link_status === "needs_review",
   );
   const event = {
     ...eventResult.data,
@@ -262,6 +280,42 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             </>
           ) : null}
 
+          {operationsScope !== "manual_isolated" && rosterLinkRows.length > 0 ? (
+            <div className="panel">
+              <div className="section-header">
+                <div>
+                  <p className="eyebrow">Volunteer database</p>
+                  <h3>Roster reconciliation</h3>
+                </div>
+                <span className="status-pill">{reviewRosterRows.length} need review</span>
+              </div>
+              <p className="muted">
+                {matchedRosterCount} roster assignment{matchedRosterCount === 1 ? "" : "s"} matched existing volunteers and {createdRosterCount} were linked to newly created KELUARGA volunteer IDs.
+              </p>
+              {reviewRosterRows.length > 0 ? (
+                <div className="table-wrap">
+                  <table className="content-table">
+                    <thead>
+                      <tr><th>Volunteer</th><th>Contact</th><th>Status</th><th>Reason</th></tr>
+                    </thead>
+                    <tbody>
+                      {reviewRosterRows.map((row) => (
+                        <tr key={row.id}>
+                          <td>{row.volunteer_name}</td>
+                          <td>{row.email ?? row.mobile ?? row.volunteer_key ?? "—"}</td>
+                          <td><span className="status-pill">Needs review</span></td>
+                          <td>{row.volunteer_link_note ?? "The volunteer could not be matched unambiguously."}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="notice notice-success">All roster volunteers are linked to KELUARGA volunteer records.</div>
+              )}
+            </div>
+          ) : null}
+
           <RosterUpload
             eventId={event.id}
             operationsScope={operationsScope}
@@ -291,7 +345,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             <div className="phaseone-disclosure-body">
               <div className="table-wrap">
                 <table className="content-table">
-                  <thead><tr><th>Uploaded</th><th>File</th><th>Mode</th><th>Data</th><th>Rows</th><th>Linked</th><th>New</th><th>Replaced</th></tr></thead>
+                  <thead><tr><th>Uploaded</th><th>File</th><th>Mode</th><th>Data</th><th>Rows</th><th>Linked</th><th>New</th><th>Review</th><th>Replaced</th></tr></thead>
                   <tbody>
                     {importsResult.data.map((item) => (
                       <tr key={item.id}>
@@ -302,10 +356,11 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
                         <td>{item.row_count}</td>
                         <td>{item.linked_volunteer_count}</td>
                         <td>{item.created_volunteer_count}</td>
+                        <td>{item.review_volunteer_count}</td>
                         <td>{item.replaced_count}</td>
                       </tr>
                     ))}
-                    {importsResult.data.length === 0 ? <tr><td colSpan={8}>No roster imports yet.</td></tr> : null}
+                    {importsResult.data.length === 0 ? <tr><td colSpan={9}>No roster imports yet.</td></tr> : null}
                   </tbody>
                 </table>
               </div>
