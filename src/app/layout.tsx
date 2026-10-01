@@ -9,6 +9,7 @@ import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Golos_Text } from "next/font/google";
 
+import { InteractionFeedback } from "@/components/interaction-feedback";
 import { keluargaTheme } from "@/lib/ui/theme";
 
 import "./globals.css";
@@ -58,6 +59,7 @@ export default function RootLayout({
       </head>
       <body>
         <MantineProvider forceColorScheme="light" theme={keluargaTheme}>
+          <InteractionFeedback />
           {children}
         </MantineProvider>
         <Analytics />

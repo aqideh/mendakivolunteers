@@ -226,17 +226,32 @@ export async function savePersonalStep(formData: FormData) {
     redirect(`/profile/setup?step=personal&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
-  const languages = parseTags(formData.get("languagesSpoken"));
-  if (languages.some((value) => value.length > 60) || languages.length > 12) {
+  const languages = tagsSchema.safeParse(parseTags(formData.get("languagesSpoken")));
+  const emergencyContact = z
+    .object({
+      name: z.string().trim().min(1).max(160),
+      mobile: z
+        .string()
+        .trim()
+        .min(7)
+        .max(40)
+        .regex(/^[0-9+() .-]+$/),
+    })
+    .safeParse({
+      name: formData.get("emergencyContactName"),
+      mobile: formData.get("emergencyContactMobile"),
+    });
+
+  if (!languages.success || !emergencyContact.success) {
     redirect(`/profile/setup?step=personal&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=personal");
   const result = await upsertPrivateDetails(client, volunteerId, {
     date_of_birth: parsed.data,
-    languages_spoken: languages,
-    emergency_contact_name: optionalText(formData.get("emergencyContactName"), 160),
-    emergency_contact_mobile: optionalText(formData.get("emergencyContactMobile"), 40),
+    languages_spoken: languages.data,
+    emergency_contact_name: emergencyContact.data.name,
+    emergency_contact_mobile: emergencyContact.data.mobile,
   });
 
   if (result.error) {
@@ -447,7 +462,7 @@ export async function completeProfileSetup() {
     client
       .from("volunteer_private_details")
       .select(
-        "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification, institution, field_of_study",
+        "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification, institution, field_of_study, languages_spoken, emergency_contact_name, emergency_contact_mobile",
       )
       .eq("volunteer_id", volunteerId)
       .maybeSingle(),
@@ -473,6 +488,9 @@ export async function completeProfileSetup() {
     (profileResult.data.availability_slots?.length ?? 0) > 0 &&
     Boolean(profileResult.data.preferred_commitment) &&
     Boolean(privateDetails.date_of_birth) &&
+    (privateDetails.languages_spoken?.length ?? 0) > 0 &&
+    Boolean(privateDetails.emergency_contact_name?.trim()) &&
+    Boolean(privateDetails.emergency_contact_mobile?.trim()) &&
     Boolean(privateDetails.postal_code) &&
     Boolean(privateDetails.address_line) &&
     Boolean(privateDetails.tshirt_size) &&

@@ -132,7 +132,11 @@ function milestoneState(input: {
   return {
     contact: Boolean(input.displayName.trim() && input.mobile?.trim()),
     home: Boolean(privateDetails?.postal_code && privateDetails?.address_line),
-    personal: Boolean(privateDetails?.date_of_birth),
+    personal:
+      Boolean(privateDetails?.date_of_birth) &&
+      (privateDetails?.languages_spoken?.length ?? 0) > 0 &&
+      Boolean(privateDetails?.emergency_contact_name?.trim()) &&
+      Boolean(privateDetails?.emergency_contact_mobile?.trim()),
     interests: (profile?.interests?.length ?? 0) > 0,
     skills: (profile?.skills?.length ?? 0) > 0,
     availability:
@@ -462,32 +466,37 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="setup-languages">Languages spoken <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-languages">Languages spoken</label>
                 <input
                   id="setup-languages"
                   name="languagesSpoken"
                   defaultValue={privateDetails?.languages_spoken?.join(", ") ?? ""}
                   placeholder="English, Malay, Mandarin"
+                  required
                 />
                 <span className="form-help">Separate languages with commas.</span>
               </div>
               <div className="form-field">
-                <label htmlFor="setup-emergency-name">Emergency contact name <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-emergency-name">Emergency contact name</label>
                 <input
                   id="setup-emergency-name"
                   name="emergencyContactName"
                   maxLength={160}
                   defaultValue={privateDetails?.emergency_contact_name ?? ""}
+                  required
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="setup-emergency-mobile">Emergency contact number <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-emergency-mobile">Emergency contact number</label>
                 <input
                   id="setup-emergency-mobile"
                   name="emergencyContactMobile"
+                  minLength={7}
                   maxLength={40}
                   inputMode="tel"
+                  autoComplete="tel"
                   defaultValue={privateDetails?.emergency_contact_mobile ?? ""}
+                  required
                 />
               </div>
               <div className="profile-setup-actions">
@@ -693,7 +702,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
             <form action={saveAboutStep} className="profile-setup-form">
               {editMode ? <input type="hidden" name="mode" value="edit" /> : null}
               <div className="form-field">
-                <label htmlFor="setup-bio">About me</label>
+                <label htmlFor="setup-bio">About me <span className="muted">(optional)</span></label>
                 <textarea
                   id="setup-bio"
                   name="bio"

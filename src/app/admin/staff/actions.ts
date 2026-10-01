@@ -39,6 +39,17 @@ export type StaffRoleMutationResult = Readonly<
   | { ok: false; message: string }
 >;
 
+function getStaffSetupEmailErrorMessage(errorMessage: string): string {
+  if (
+    errorMessage.includes("Application-specific password required") ||
+    errorMessage.includes("InvalidSecondFactor")
+  ) {
+    return "Staff access was granted, but email delivery is blocked by the Google SMTP configuration. Update the Supabase SMTP password to a Google App Password, then use Send setup email again.";
+  }
+
+  return "Staff access was granted, but the password setup email could not be sent. Use Send setup email to try again.";
+}
+
 async function setStaffAccessLevel(
   targetUserId: string,
   role: (typeof staffInviteRoleValues)[number],
@@ -224,8 +235,7 @@ export async function inviteStaffMember(
       });
       return {
         status: "error",
-        message:
-          "Staff access was granted, but the password setup email could not be sent. Use Send setup email to try again.",
+        message: getStaffSetupEmailErrorMessage(setupEmailError.message),
       };
     }
 
@@ -273,7 +283,10 @@ export async function sendStaffSetupEmail(
   );
 
   if (error) {
-    return { status: "error", message: "The setup email could not be sent." };
+    return {
+      status: "error",
+      message: getStaffSetupEmailErrorMessage(error.message),
+    };
   }
 
   return {
