@@ -14,6 +14,7 @@ import {
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
 import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
+import { RosterFilters } from "@/components/phaseone/roster-filters";
 import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
 import {
@@ -413,7 +414,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       )
     : [];
 
-  const query = (parameter(parameters, "q") ?? "").trim().toLowerCase();
+  const rawQuery = (parameter(parameters, "q") ?? "").trim();
+  const query = rawQuery.toLowerCase();
   const requestedFilter = parameter(parameters, "status") ?? "all";
   const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "withdrawn", "absent", "anomaly"]);
   const filter = validFilters.has(requestedFilter) ? requestedFilter : "all";
@@ -430,14 +432,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     ].filter(Boolean).join(" ").toLowerCase();
     return matchesStatus && (!query || haystack.includes(query));
   });
+  const visibleRosterIds = new Set(visible.map(({ volunteer }) => volunteer.id));
   const counts = records.reduce<Record<AttendanceStatus, number>>(
     (totals, record) => ({ ...totals, [record.status]: totals[record.status] + 1 }),
     { pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0 },
   );
-  const activeFilterLabel = filter === "all"
-    ? query ? "Search" : null
-    : statusLabel(filter as AttendanceStatus);
-
   const successCode = parameter(parameters, "success");
   const successMessage = successCode === "attendance_recorded"
     ? "Attendance recorded."
@@ -584,7 +583,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   <h2 id="attendance-roster-title">Volunteer roster</h2>
                 </div>
                 <div className="actions">
-                  <span className="status-pill">{visible.length} shown{activeFilterLabel ? ` · ${activeFilterLabel}` : ""}</span>
+                  <span className="status-pill" aria-live="polite"><span data-roster-visible-count>{visible.length}</span> shown</span>
                   {canManageEvent ? (
                     <BulkCheckoutButton
                       checkedInCount={counts.signed_in}
@@ -655,64 +654,18 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               </details>
               ) : null}
 
-              <form className="phaseone-attendance-filters phaseone-desktop-filters" method="get">
-                <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
-                <div className="form-field"><label htmlFor="q">Search</label><input id="q" name="q" defaultValue={query} placeholder="Name, volunteer ID or contact number" /></div>
-                <div className="form-field"><label htmlFor="status">Status</label><select id="status" name="status" defaultValue={filter}><option value="all">All</option><option value="pending">Not arrived</option><option value="signed_in">Checked in</option><option value="signed_out">Checked out</option><option value="withdrawn">Withdrawn</option><option value="absent">Absent</option><option value="anomaly">Needs review</option></select></div>
-                <button className="button button-secondary" type="submit">Apply filters</button>
-              </form>
-
-              <details
-                className="phaseone-mobile-filter"
-                data-active={filter !== "all" || query ? "true" : undefined}
-              >
-                <summary aria-label="Filter roster" title="Filter roster">
-                  <svg aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="M4 5h16l-6.25 7.1v5.15l-3.5 1.75v-6.9L4 5Z" />
-                  </svg>
-                  <span className="phaseone-mobile-filter-dot" aria-hidden="true" />
-                </summary>
-                <div className="phaseone-mobile-filter-panel">
-                  <div className="phaseone-mobile-filter-heading">
-                    <strong>Filter roster</strong>
-                    <span className="muted">{visible.length} shown</span>
-                  </div>
-                  <form className="phaseone-mobile-filter-form" method="get">
-                    <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
-                    <div className="form-field">
-                      <label htmlFor="mobile-q">Search</label>
-                      <input id="mobile-q" name="q" defaultValue={query} placeholder="Name, ID or contact" />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="mobile-status">Status</label>
-                      <select id="mobile-status" name="status" defaultValue={filter}>
-                        <option value="all">All</option>
-                        <option value="pending">Not arrived</option>
-                        <option value="signed_in">Checked in</option>
-                        <option value="signed_out">Checked out</option>
-                        <option value="withdrawn">Withdrawn</option>
-                        <option value="absent">Absent</option>
-                        <option value="anomaly">Needs review</option>
-                      </select>
-                    </div>
-                    <div className="phaseone-mobile-filter-actions">
-                      <button className="button button-primary" type="submit">Apply</button>
-                      <Link
-                        className="button button-secondary"
-                        href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(selectedTimeslot.id)}`}
-                      >
-                        Clear
-                      </Link>
-                    </div>
-                  </form>
-                </div>
-              </details>
+              <RosterFilters
+                initialQuery={rawQuery}
+                initialShownCount={visible.length}
+                initialStatus={filter}
+                timeslotId={selectedTimeslot.id}
+              />
 
               {canManageEvent ? (
                 <p className="muted phaseone-roster-swipe-hint">Swipe a volunteer card right for Review or Insight.</p>
               ) : null}
-              <div className="phaseone-attendance-list">
-                {visible.map(({ volunteer, attendance, effectiveAttendance, status }) => {
+              <div className="phaseone-attendance-list" id="roster-list">
+                {records.map(({ volunteer, attendance, effectiveAttendance, status }) => {
                   const linkedNextShift = nextShiftLink(effectiveAttendance?.session_id);
                   const isCarryover = effectiveAttendance?.continuation_type === "scheduled";
                   const isExtended = effectiveAttendance?.continuation_type === "extended_on_site";
@@ -745,13 +698,25 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         ? shirtIssue.volunteer_shirt_skus[0]
                         : shirtIssue.volunteer_shirt_skus)
                     : null;
+                  const rosterFilterText = [
+                    volunteer.volunteer_key,
+                    volunteer.volunteer_name,
+                    volunteer.email,
+                    volunteer.mobile,
+                    volunteer.age == null ? null : String(volunteer.age),
+                    volunteer.tshirt_size,
+                    volunteer.dietary_requirements,
+                  ].filter(Boolean).join(" ").toLowerCase();
 
                   return (
                     <article
                       className="phaseone-attendance-card phaseone-checkin-card"
+                      data-filter-text={rosterFilterText}
                       data-highlighted={highlightedRosterId === volunteer.id ? "true" : undefined}
+                      data-roster-filterable="true"
                       data-status={status}
                       data-underage={isUnder18 ? "true" : undefined}
+                      hidden={!visibleRosterIds.has(volunteer.id)}
                       id={`roster-${volunteer.id}`}
                       key={volunteer.id}
                     >
