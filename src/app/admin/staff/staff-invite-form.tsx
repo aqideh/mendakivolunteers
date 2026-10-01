@@ -46,7 +46,9 @@ export function StaffInviteForm() {
           KELUARGA will create an invitation-only staff account, assign the
           selected access level and email a one-time setup link. The staff member
           chooses a password during setup; normal sign-in then uses work email +
-          password and does not require inbox access.
+          password and does not require inbox access. Staff, VolTeam and Admin
+          accounts must use a @mendaki.org.sg work email; Volunteer Leaders may
+          use an external email.
         </p>
       </div>
 
