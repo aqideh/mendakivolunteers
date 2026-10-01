@@ -68,10 +68,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           <VolunteerAuthPanel initialMode={initialMode} nextPath={nextPath} />
 
-          <p className="auth-login-copy">
-            Staff accounts can use the same sign-in form.
-          </p>
-
           <p className="auth-browse-link">
             <Link className="text-link" href="/opportunities">
               Continue without signing in
