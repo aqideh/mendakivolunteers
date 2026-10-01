@@ -1,5 +1,6 @@
 "use server";
 
+import type { User } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -135,43 +136,105 @@ export async function inviteStaffMember(
   const redirectTo = new URL("/auth/confirm", appUrl);
   redirectTo.searchParams.set("next", "/staff/setup");
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(
-    email,
-    {
-      redirectTo: redirectTo.toString(),
-      data: { staff_invite: true },
-    },
-  );
+  let targetUser: User | null = null;
+  const perPage = 1000;
 
-  if (error || !data.user) {
-    console.error("Unable to invite staff member", {
-      code: error?.code,
-      status: error?.status,
-    });
-    return {
-      status: "error",
-      message:
-        "The staff invitation could not be sent. Check whether the address already has an account.",
-    };
+  for (let page = 1; ; page += 1) {
+    const { data: userPage, error: listError } =
+      await admin.auth.admin.listUsers({ page, perPage });
+
+    if (listError) {
+      console.error("Unable to check for an existing staff account", {
+        code: listError.code,
+        status: listError.status,
+      });
+      return {
+        status: "error",
+        message: "The staff account could not be checked. Try again.",
+      };
+    }
+
+    targetUser =
+      userPage.users.find(
+        (user) => user.email?.trim().toLowerCase() === email,
+      ) ?? null;
+
+    if (targetUser || userPage.users.length < perPage) {
+      break;
+    }
+  }
+
+  let invitedNewUser = false;
+
+  if (!targetUser) {
+    const { data: inviteData, error: inviteError } =
+      await admin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: redirectTo.toString(),
+        data: { staff_invite: true },
+      });
+
+    if (inviteError || !inviteData.user) {
+      console.error("Unable to invite staff member", {
+        code: inviteError?.code,
+        status: inviteError?.status,
+      });
+      return {
+        status: "error",
+        message: "The staff invitation could not be sent. Try again.",
+      };
+    }
+
+    targetUser = inviteData.user;
+    invitedNewUser = true;
   }
 
   const roleResult = await setStaffAccessLevel(
-    data.user.id,
+    targetUser.id,
     parsedRole.data,
     grantedBy,
   );
 
   if (!roleResult.ok) {
-    const rollback = await admin.auth.admin.deleteUser(data.user.id);
-    if (rollback.error) {
-      console.error("Unable to roll back incomplete staff invitation", {
-        code: rollback.error.code,
-        status: rollback.error.status,
-      });
+    if (invitedNewUser) {
+      const rollback = await admin.auth.admin.deleteUser(targetUser.id);
+      if (rollback.error) {
+        console.error("Unable to roll back incomplete staff invitation", {
+          code: rollback.error.code,
+          status: rollback.error.status,
+        });
+      }
     }
     return {
       status: "error",
       message: "The invitation could not be completed. No staff access was granted.",
+    };
+  }
+
+  if (!invitedNewUser) {
+    const passwordSetupRedirectTo = new URL("/auth/confirm", appUrl);
+    const { error: setupEmailError } =
+      await admin.auth.resetPasswordForEmail(email, {
+        redirectTo: passwordSetupRedirectTo.toString(),
+      });
+
+    if (setupEmailError) {
+      console.error("Unable to send setup email to existing staff account", {
+        code: setupEmailError.code,
+        status: setupEmailError.status,
+      });
+      return {
+        status: "error",
+        message:
+          "Staff access was granted, but the password setup email could not be sent. Use Send setup email to try again.",
+      };
+    }
+
+    return {
+      status: "success",
+      message:
+        parsedRole.data === "admin"
+          ? "Existing account found. Admin access was granted and a password setup email was sent. Admin access includes MakLom administrator access."
+          : "Existing account found. Access was updated and a password setup email was sent.",
     };
   }
 
