@@ -702,7 +702,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
             <form action={saveAboutStep} className="profile-setup-form">
               {editMode ? <input type="hidden" name="mode" value="edit" /> : null}
               <div className="form-field">
-                <label htmlFor="setup-bio">About me</label>
+                <label htmlFor="setup-bio">About me <span className="muted">(optional)</span></label>
                 <textarea
                   id="setup-bio"
                   name="bio"
