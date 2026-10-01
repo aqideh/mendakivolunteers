@@ -86,6 +86,7 @@ export function RosterVolunteerMatchFixer({
   return (
     <details
       className="phaseone-attendance-edit phaseone-identity-fix"
+      data-needs-review={needsReview ? "true" : undefined}
       name={detailsName}
     >
       <summary>
