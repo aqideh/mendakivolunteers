@@ -7,7 +7,10 @@ import {
   addWalkInVolunteer,
   applyAttendanceChange,
 } from "@/app/admin/events/[id]/attendance/actions";
-import { issueVolunteerShirt } from "@/app/admin/events/[id]/attendance/shirt-actions";
+import {
+  issueAdditionalVolunteerShirt,
+  issueVolunteerShirt,
+} from "@/app/admin/events/[id]/attendance/shirt-actions";
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
 import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
@@ -22,6 +25,7 @@ import {
 import { PortalHeader } from "@/components/portal-header";
 import {
   hasEventManagerRole,
+  hasProgrammeManagerRole,
   requireAttendanceOperatorForEvent,
 } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
@@ -226,6 +230,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const { id } = await params;
   const { roles } = await requireAttendanceOperatorForEvent(id, `/admin/events/${id}/attendance`);
   const canManageEvent = hasEventManagerRole(roles);
+  const canIssueAdditionalShirt = hasProgrammeManagerRole(roles);
   const admin = getPhaseOneAdminClient();
   const [
     eventResult,
@@ -293,8 +298,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       canonicalVolunteerIds.length
         ? admin
             .from("volunteer_shirt_issuances")
-            .select("volunteer_id, issued_at, issuance_source, collection_method, preferred_size_at_issue, volunteer_shirt_skus(shirt_type,size)")
+            .select("id, volunteer_id, issued_at, issuance_source, collection_method, preferred_size_at_issue, issue_kind, issue_reason, volunteer_shirt_skus(shirt_type,size)")
             .in("volunteer_id", canonicalVolunteerIds)
+            .order("issued_at", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
       admin
         .from("volunteer_shirt_stock")
@@ -313,9 +319,12 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const privateDetailsByVolunteer = new Map(
     (privateDetailsResult.data ?? []).map((item) => [item.volunteer_id, item]),
   );
-  const shirtIssueByVolunteer = new Map(
-    (shirtIssuanceResult.data ?? []).map((item) => [item.volunteer_id, item]),
-  );
+  const shirtIssuesByVolunteer = new Map<string, NonNullable<typeof shirtIssuanceResult.data>>();
+  for (const item of shirtIssuanceResult.data ?? []) {
+    const current = shirtIssuesByVolunteer.get(item.volunteer_id) ?? [];
+    current.push(item);
+    shirtIssuesByVolunteer.set(item.volunteer_id, current);
+  }
   const shirtStock = shirtStockResult.data ?? [];
 
   const stockFor = (shirtType: string, size: string) =>
@@ -433,16 +442,22 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   ? "Volunteer shirt issued and inventory updated."
                   : successCode === "shirt_already_collected"
                     ? "Volunteer shirt collection recorded without changing current stock."
-                    : undefined;
+                    : successCode === "shirt_additional_issued"
+                      ? "Additional volunteer shirt issued and inventory updated."
+                      : undefined;
   const errorCode = parameter(parameters, "error");
   const errorMessage =
     errorCode === "shirt_already_issued"
       ? "This volunteer already has a recorded shirt issue."
       : errorCode === "shirt_out_of_stock"
         ? "The selected shirt is out of stock."
-        : errorCode === "shirt_issue_failed"
-          ? "The shirt could not be issued."
-          : errorCode;
+        : errorCode === "shirt_initial_required"
+          ? "An initial shirt record is required before issuing another shirt."
+          : errorCode === "shirt_reason_details_required"
+            ? "Add a short explanation when using Other as the shirt issue reason."
+            : errorCode === "shirt_issue_failed"
+              ? "The shirt could not be issued."
+              : errorCode;
   const event = eventResult.data;
 
   const dayGroups = new Map<string, Timeslot[]>();
@@ -696,9 +711,10 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   const privateDetails = canonicalVolunteerId
                     ? privateDetailsByVolunteer.get(canonicalVolunteerId)
                     : undefined;
-                  const shirtIssue = canonicalVolunteerId
-                    ? shirtIssueByVolunteer.get(canonicalVolunteerId)
-                    : undefined;
+                  const shirtIssues = canonicalVolunteerId
+                    ? shirtIssuesByVolunteer.get(canonicalVolunteerId) ?? []
+                    : [];
+                  const shirtIssue = shirtIssues[0];
                   const preferredShirtSize =
                     privateDetails?.tshirt_size ?? volunteer.tshirt_size ?? null;
                   const dietaryRequirements =
@@ -761,11 +777,12 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                                   : "Issued from tracked inventory."
                               }
                             >
-                              {shirtIssue.collection_method === "already_collected" ? "Shirt already collected" : "Shirt issued"}
+                              Shirt collected
                               {" · "}{actualShirt.shirt_type === "collared" ? "Collared" : "Round-neck"} {actualShirt.size}
                               {shirtIssue.preferred_size_at_issue && shirtIssue.preferred_size_at_issue !== actualShirt.size
                                 ? ` · preferred ${shirtIssue.preferred_size_at_issue}`
                                 : ""}
+                              {shirtIssues.length > 1 ? ` · +${shirtIssues.length - 1} additional` : ""}
                             </span>
                           ) : canManageEvent ? (
                             <details className="phaseone-shirt-disclosure">
@@ -969,6 +986,72 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                               </div>
                             </form>
                           </details>
+
+                          {canIssueAdditionalShirt && canonicalVolunteerId && shirtIssue ? (
+                            <details className="phaseone-attendance-edit phaseone-additional-shirt" name={staffToolsName}>
+                              <summary>Another shirt</summary>
+                              <form action={issueAdditionalVolunteerShirt} className="phaseone-shirt-issue-form">
+                                <input type="hidden" name="eventId" value={id} />
+                                <input type="hidden" name="volunteerId" value={canonicalVolunteerId} />
+                                <input type="hidden" name="timeslotId" value={selectedTimeslot.id} />
+                                <input type="hidden" name="preferredSize" value={preferredShirtSize ?? ""} />
+                                <div className="phaseone-shirt-choice-grid">
+                                  <div className="form-field">
+                                    <label htmlFor={`additional-shirt-reason-${volunteer.id}`}>Reason</label>
+                                    <select id={`additional-shirt-reason-${volunteer.id}`} name="issueReason" required>
+                                      <option value="">Select reason</option>
+                                      <option value="replacement_damaged">Replacement — damaged</option>
+                                      <option value="replacement_lost">Replacement — lost</option>
+                                      <option value="different_shirt_type">Different shirt type</option>
+                                      <option value="programme_requirement">Programme / role requirement</option>
+                                      <option value="new_allocation_cycle">New allocation cycle</option>
+                                      <option value="other">Other</option>
+                                    </select>
+                                  </div>
+                                  <div className="form-field">
+                                    <label htmlFor={`additional-shirt-type-${volunteer.id}`}>Shirt type</label>
+                                    <select id={`additional-shirt-type-${volunteer.id}`} name="shirtType" required>
+                                      <option value="round_neck">Round-neck</option>
+                                      <option value="collared">Collared</option>
+                                    </select>
+                                  </div>
+                                  <div className="form-field">
+                                    <label htmlFor={`additional-shirt-size-${volunteer.id}`}>Actual size issued</label>
+                                    <select
+                                      defaultValue={preferredShirtSize ?? ""}
+                                      id={`additional-shirt-size-${volunteer.id}`}
+                                      name="actualSize"
+                                      required
+                                    >
+                                      <option value="" disabled>Select size</option>
+                                      {["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"].map((size) => (
+                                        <option key={size} value={size}>
+                                          {size} · RN {stockFor("round_neck", size)} / Collared {stockFor("collared", size)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                                <div className="form-field">
+                                  <label htmlFor={`additional-shirt-note-${volunteer.id}`}>
+                                    Note <span className="muted">(required for Other)</span>
+                                  </label>
+                                  <input
+                                    id={`additional-shirt-note-${volunteer.id}`}
+                                    name="note"
+                                    maxLength={1000}
+                                    placeholder="Optional context for the additional issue"
+                                  />
+                                </div>
+                                <div className="phaseone-shirt-form-actions">
+                                  <button className="button button-secondary" type="submit">Issue another shirt</button>
+                                  <small className="muted">
+                                    This creates a new issuance record and deducts the actual size from stock.
+                                  </small>
+                                </div>
+                              </form>
+                            </details>
+                          ) : null}
 
                           {volunteer.volunteer_id ? (
                             <RosterProfileDetailsEditor
