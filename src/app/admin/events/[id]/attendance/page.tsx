@@ -988,6 +988,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                               eventId={id}
                               mobile={volunteer.mobile}
                               dietaryRequirements={volunteer.dietary_requirements}
+                              detailsName={staffToolsName}
                               rosterId={volunteer.id}
                               timeslotId={selectedTimeslot.id}
                               volunteerName={volunteer.volunteer_name}
