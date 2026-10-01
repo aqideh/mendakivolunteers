@@ -157,33 +157,20 @@ export async function importRosterWithDiagnostics(
   }
 
   const operationsScope = String(eventResult.data.operations_scope);
-  const isManual = operationsScope === "manual_isolated" || operationsScope === "manual_integrated";
-  const integratesVolunteers = operationsScope === "manual_integrated";
+  const isIsolatedManual = operationsScope === "manual_isolated";
+  const integratesVolunteers = !isIsolatedManual;
 
-  if (
-    integratesVolunteers &&
-    parsed.data.rows.some((row) => {
-      const key = row.volunteer_key?.trim().toUpperCase() ?? "";
-      return !/^KEL[0-9]{5}$/.test(key) && !row.email && !row.mobile;
-    })
-  ) {
-    return rosterImportError(
-      "Integrated manual events require an existing KELUARGA Volunteer ID, email address, or mobile number for every volunteer. Use an isolated manual event if the roster must remain name-only.",
-      "ROSTER_INTEGRATION_IDENTIFIER_REQUIRED",
-    );
-  }
-
-  const rpcName = isManual
+  const rpcName = isIsolatedManual
     ? "phaseone_apply_manual_roster_import"
-    : "phaseone_apply_roster_import";
-  const rpcArgs = isManual
+    : "phaseone_apply_database_roster_import";
+  const rpcArgs = isIsolatedManual
     ? {
         p_event_id: parsed.data.eventId,
         p_mode: parsed.data.mode,
         p_file_name: parsed.data.fileName,
         p_rows: parsed.data.rows,
         p_uploaded_by: userId,
-        p_integrate_volunteers: integratesVolunteers,
+        p_integrate_volunteers: false,
       }
     : {
         p_event_id: parsed.data.eventId,
@@ -220,12 +207,18 @@ export async function importRosterWithDiagnostics(
     typeof result.created_volunteer_count === "number"
       ? result.created_volunteer_count
       : 0;
+  const matchedExistingCount =
+    typeof result.matched_existing_volunteer_count === "number"
+      ? result.matched_existing_volunteer_count
+      : Math.max(linkedCount - createdCount, 0);
+  const reviewCount =
+    typeof result.review_volunteer_count === "number"
+      ? result.review_volunteer_count
+      : 0;
   const message =
-    operationsScope === "manual_integrated"
-      ? `${rowCount} assignment${rowCount === 1 ? "" : "s"} imported. ${linkedCount} KELUARGA volunteer${linkedCount === 1 ? "" : "s"} linked, including ${createdCount} new volunteer record${createdCount === 1 ? "" : "s"}.`
-      : operationsScope === "manual_isolated"
-        ? `${rowCount} event-only volunteer assignment${rowCount === 1 ? "" : "s"} imported. No main volunteer records were created or changed.`
-        : `${rowCount} volunteer assignment${rowCount === 1 ? "" : "s"} imported successfully.`;
+    operationsScope === "manual_isolated"
+      ? `${rowCount} event-only volunteer assignment${rowCount === 1 ? "" : "s"} imported. No main volunteer records were created or changed.`
+      : `${rowCount} assignment${rowCount === 1 ? "" : "s"} imported. ${matchedExistingCount} matched existing volunteer${matchedExistingCount === 1 ? "" : "s"}, ${createdCount} new volunteer ID${createdCount === 1 ? "" : "s"} created${reviewCount > 0 ? `, and ${reviewCount} volunteer${reviewCount === 1 ? "" : "s"} flagged for review` : ""}.`;
 
   return {
     status: "success",
