@@ -35,10 +35,8 @@ export async function requestVolunteerSignInLink(
   }
 
   const email = parsedEmail.data.toLowerCase();
-  const nextPath = getSafeRedirectPath(
-    formData.get("next")?.toString(),
-    "/dashboard",
-  );
+  const requestedNext = formData.get("next")?.toString();
+  const nextPath = getSafeRedirectPath(requestedNext, "/dashboard");
 
   if (isMendakiWorkEmail(email)) {
     const parsedPassword = passwordSchema.safeParse(formData.get("password"));
@@ -106,7 +104,7 @@ export async function requestVolunteerSignInLink(
       };
     }
 
-    redirect(getSafeRedirectPath(nextPath, "/admin/events"));
+    redirect(getSafeRedirectPath(requestedNext, "/admin/events"));
   }
 
   try {
