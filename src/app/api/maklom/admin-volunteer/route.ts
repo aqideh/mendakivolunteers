@@ -275,10 +275,6 @@ export async function POST(request: Request) {
       blockers.push("This volunteer has retained YM Hub or official-hours history.");
     }
 
-    if (profileDetailsResult.data?.avatar_path) {
-      blockers.push("This volunteer has an uploaded profile photo. Remove it first.");
-    }
-
     if ((await countPublic("attendance_log", "volunteer_id", profileId)) > 0) {
       blockers.push("MakLom attendance history exists.");
     }
@@ -447,6 +443,23 @@ export async function POST(request: Request) {
     }
 
     if (target.auth_user_id) {
+      const avatarPath = profileDetailsResult.data?.avatar_path ?? null;
+      if (avatarPath) {
+        const photoRemoval = await admin.storage
+          .from("volunteer-profile-photos")
+          .remove([avatarPath]);
+        if (photoRemoval.error) {
+          return json(
+            origin,
+            {
+              ...summary,
+              error: "The volunteer profile photo could not be removed, so the account was left intact.",
+            },
+            409,
+          );
+        }
+      }
+
       const authRemoval = await admin.auth.admin.deleteUser(target.auth_user_id);
       if (authRemoval.error) {
         return json(
@@ -454,7 +467,7 @@ export async function POST(request: Request) {
           {
             ...summary,
             error:
-              "The sign-in account could not be removed. If this account owns uploaded files, remove those files first.",
+              "The sign-in account could not be removed after its profile photo was cleaned up. Review any remaining Storage objects owned by this account.",
           },
           409,
         );
