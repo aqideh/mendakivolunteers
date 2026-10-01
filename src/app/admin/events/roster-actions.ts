@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireEventManager, requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   getPhaseOneValidationMessage,
@@ -794,5 +794,102 @@ export async function updateRosterVolunteerProfileDetails(input: {
     status: "success",
     message:
       "Saved to the volunteer profile and refreshed this event roster.",
+  };
+}
+
+
+const rosterVolunteerRelinkSchema = z.object({
+  eventId: z.string().uuid(),
+  rosterId: z.string().uuid(),
+  targetVolunteerId: z.string().uuid(),
+});
+
+export type RosterVolunteerRelinkState = Readonly<{
+  status: "idle" | "success" | "error";
+  message: string;
+  targetVolunteerCode?: string;
+  duplicateRetired?: boolean;
+}>;
+
+export async function relinkRosterVolunteer(input: {
+  eventId: string;
+  rosterId: string;
+  targetVolunteerId: string;
+}): Promise<RosterVolunteerRelinkState> {
+  const parsed = rosterVolunteerRelinkSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Choose a valid volunteer record before linking.",
+    };
+  }
+
+  const { userId } = await requireProgrammeManager(
+    `/admin/events/${parsed.data.eventId}/attendance`,
+  );
+  const admin = getPhaseOneAdminClient();
+  const { data, error } = await admin.rpc("phaseone_relink_roster_volunteer", {
+    p_event_id: parsed.data.eventId,
+    p_roster_id: parsed.data.rosterId,
+    p_target_volunteer_id: parsed.data.targetVolunteerId,
+    p_actor_user_id: userId,
+  });
+
+  if (error) {
+    console.error("Unable to relink roster volunteer identity", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+      rosterId: parsed.data.rosterId,
+    });
+
+    if (/already assigned to one of these event shifts/i.test(error.message)) {
+      return {
+        status: "error",
+        message:
+          "That volunteer is already on one of these shifts. Resolve the duplicate roster assignment before linking.",
+      };
+    }
+    if (/isolated event/i.test(error.message)) {
+      return {
+        status: "error",
+        message: "This isolated event cannot link to the shared volunteer database.",
+      };
+    }
+    if (error.code === "42501") {
+      return {
+        status: "error",
+        message: "Only Volunteer Team and admins can correct volunteer identity matches.",
+      };
+    }
+
+    return {
+      status: "error",
+      message: "The volunteer match could not be updated.",
+    };
+  }
+
+  const result =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+  const targetVolunteerCode =
+    typeof result.target_volunteer_code === "string"
+      ? result.target_volunteer_code
+      : undefined;
+  const duplicateRetired = result.source_duplicate_retired === true;
+  const assignmentsUpdated =
+    typeof result.assignments_updated === "number"
+      ? result.assignments_updated
+      : 1;
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/edit`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance/monitor`);
+
+  return {
+    status: "success",
+    message: `Linked ${assignmentsUpdated} roster assignment${assignmentsUpdated === 1 ? "" : "s"} to ${targetVolunteerCode ?? "the selected volunteer"}.${duplicateRetired ? " The accidental roster-created volunteer record was retired." : ""}`,
+    ...(targetVolunteerCode ? { targetVolunteerCode } : {}),
+    duplicateRetired,
   };
 }
