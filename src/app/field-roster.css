@@ -848,3 +848,96 @@
   padding: 0;
   background: transparent;
 }
+
+
+/* 2026-10-01: roster control alignment and stronger Review/Insight affordances */
+.phaseone-shirt-choice-grid {
+  align-items: start;
+}
+
+.phaseone-shirt-choice-grid .form-field {
+  align-content: start;
+}
+
+.phaseone-shirt-choice-grid .form-field > label {
+  min-height: 1.15rem;
+}
+
+.phaseone-shirt-choice-grid select {
+  min-height: 3rem;
+}
+
+.phaseone-shirt-choice-grid .form-field:last-child .muted {
+  min-height: 1.05rem;
+}
+
+.phaseone-staff-tools > details {
+  align-self: center;
+}
+
+.phaseone-staff-tools > details > summary {
+  min-height: 2.15rem;
+  gap: 0.35rem;
+  padding: 0.38rem 0.58rem;
+}
+
+.phaseone-staff-tool-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.phaseone-volunteer-review .phaseone-staff-tool-icon {
+  fill: currentColor;
+  stroke-width: 1.4;
+}
+
+.phaseone-staff-tools .phaseone-volunteer-review > summary {
+  border: 1px solid #d2b100;
+  background: #fff3ae;
+  color: #4f3d00;
+}
+
+.phaseone-staff-tools .phaseone-inline-insight > summary {
+  border: 1px solid #58bdc7;
+  background: #ddf5f7;
+  color: #0b4c53;
+}
+
+.phaseone-staff-tools .phaseone-volunteer-review > summary:hover {
+  border-color: #b49400;
+  background: #ffe76d;
+  color: #433300;
+}
+
+.phaseone-staff-tools .phaseone-inline-insight > summary:hover {
+  border-color: #329da8;
+  background: #c8eff2;
+  color: #073f45;
+}
+
+.phaseone-staff-tools .phaseone-profile-details > summary,
+.phaseone-staff-tools .phaseone-attendance-correct > summary,
+.phaseone-staff-tools .phaseone-additional-shirt > summary,
+.phaseone-staff-tools .phaseone-walk-in-edit > summary {
+  min-height: 2.15rem;
+  display: inline-flex;
+  align-items: center;
+  padding-top: 0.38rem;
+  padding-bottom: 0.38rem;
+}
+
+@media (max-width: 759px) {
+  .phaseone-staff-tools > details > summary,
+  .phaseone-staff-tools .phaseone-profile-details > summary,
+  .phaseone-staff-tools .phaseone-attendance-correct > summary,
+  .phaseone-staff-tools .phaseone-additional-shirt > summary,
+  .phaseone-staff-tools .phaseone-walk-in-edit > summary {
+    min-height: 2rem;
+  }
+}
