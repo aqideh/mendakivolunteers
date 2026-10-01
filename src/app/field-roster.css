@@ -841,3 +841,10 @@
     display: block;
   }
 }
+
+
+.phaseone-shirt-status .phaseone-shirt-disclosure:not([open]) {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
