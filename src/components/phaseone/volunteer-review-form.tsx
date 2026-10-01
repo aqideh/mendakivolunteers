@@ -9,6 +9,7 @@ type VolunteerReviewFormProps = {
   eventId: string;
   rosterId: string;
   timeslotId: string;
+  detailsName?: string;
 };
 
 const ratingOptions = [
@@ -19,11 +20,11 @@ const ratingOptions = [
   { value: 1, label: "Significant concerns" },
 ];
 
-export function VolunteerReviewForm({ eventId, rosterId, timeslotId }: VolunteerReviewFormProps) {
+export function VolunteerReviewForm({ eventId, rosterId, timeslotId, detailsName }: VolunteerReviewFormProps) {
   return (
-    <details className="phaseone-volunteer-review">
+    <details className="phaseone-volunteer-review" name={detailsName}>
       <summary aria-label="Review volunteer">
-        <span>★ Review</span>
+        <span>Review</span>
         <span className="phaseone-volunteer-review-hint">Quick rating + optional notes</span>
       </summary>
       <form action={saveVolunteerReview} className="volunteer-review-form">

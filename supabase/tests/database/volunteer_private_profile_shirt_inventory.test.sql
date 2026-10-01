@@ -1,6 +1,6 @@
 begin;
 
-select plan(16);
+select plan(20);
 
 select has_table(
   'public',
@@ -108,6 +108,37 @@ select has_view(
   'public',
   'volunteer_shirt_stock',
   'current volunteer shirt stock view exists'
+);
+
+
+select has_column(
+  'public',
+  'volunteer_shirt_issuances',
+  'collection_method',
+  'shirt issuance records whether stock was issued now or already collected'
+);
+
+select has_column(
+  'public',
+  'volunteer_shirt_issuances',
+  'preferred_size_at_issue',
+  'shirt issuance preserves the preferred size snapshot'
+);
+
+select has_function(
+  'public',
+  'server_record_volunteer_shirt',
+  array['uuid','uuid','text','text','text','uuid','text','text'],
+  'service-boundary roster shirt recording RPC exists'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.server_record_volunteer_shirt(uuid,uuid,text,text,text,uuid,text,text)',
+    'EXECUTE'
+  ),
+  'signed-in users cannot call privileged roster shirt recording directly'
 );
 
 select has_function(
