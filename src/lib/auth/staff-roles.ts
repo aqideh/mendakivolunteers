@@ -9,6 +9,20 @@ export const staffInviteRoleValues = [
 
 export type StaffInviteRole = (typeof staffInviteRoleValues)[number];
 
+export const internalStaffRoleValues = [
+  "staff",
+  "volteam",
+  "admin",
+] as const satisfies readonly StaffInviteRole[];
+
+export function isMendakiWorkEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith("@mendaki.org.sg");
+}
+
+export function roleRequiresMendakiWorkEmail(role: StaffInviteRole): boolean {
+  return (internalStaffRoleValues as readonly StaffInviteRole[]).includes(role);
+}
+
 export const staffInviteRoleOptions: readonly Readonly<{
   value: StaffInviteRole;
   label: string;

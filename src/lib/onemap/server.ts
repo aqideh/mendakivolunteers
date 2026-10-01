@@ -26,6 +26,13 @@ const planningAreaSchema = z.object({
 
 let cachedToken: { value: string; expiresAtMs: number } | null = null;
 
+export class OneMapConfigurationError extends Error {
+  constructor(message = "OneMap API credentials are not configured.") {
+    super(message);
+    this.name = "OneMapConfigurationError";
+  }
+}
+
 function oneMapBaseUrl() {
   return process.env.ONEMAP_BASE_URL?.trim() || "https://www.onemap.gov.sg";
 }
@@ -35,8 +42,23 @@ async function getOneMapToken() {
     return cachedToken.value;
   }
 
-  const email = z.string().email().parse(process.env.ONEMAP_API_EMAIL);
-  const password = z.string().min(1).parse(process.env.ONEMAP_API_PASSWORD);
+  const emailResult = z
+    .string()
+    .trim()
+    .email()
+    .safeParse(process.env.ONEMAP_API_EMAIL);
+  const passwordResult = z
+    .string()
+    .trim()
+    .min(1)
+    .safeParse(process.env.ONEMAP_API_PASSWORD);
+
+  if (!emailResult.success || !passwordResult.success) {
+    throw new OneMapConfigurationError();
+  }
+
+  const email = emailResult.data;
+  const password = passwordResult.data;
 
   const response = await fetch(`${oneMapBaseUrl()}/api/auth/post/getToken`, {
     method: "POST",

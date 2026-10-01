@@ -6,7 +6,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireActiveAccount } from "@/lib/auth/account-access";
-import { resolveSingaporePostalCode } from "@/lib/onemap/server";
+import { OneMapConfigurationError, resolveSingaporePostalCode } from "@/lib/onemap/server";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const contactSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
@@ -99,7 +100,7 @@ async function getVolunteerContext(next: string) {
     redirect("/dashboard?error=profile_update_failed");
   }
 
-  return { client, volunteerId: volunteerResult.data.id };
+  return { client, volunteerId: volunteerResult.data.id, userId };
 }
 
 async function upsertPrivateDetails(
@@ -107,12 +108,20 @@ async function upsertPrivateDetails(
   volunteerId: string,
   values: Record<string, unknown>,
 ) {
+  const updateResult = await client
+    .from("volunteer_private_details")
+    .update(values)
+    .eq("volunteer_id", volunteerId)
+    .select("volunteer_id")
+    .maybeSingle();
+
+  if (updateResult.error || updateResult.data) {
+    return updateResult;
+  }
+
   return client
     .from("volunteer_private_details")
-    .upsert(
-      { volunteer_id: volunteerId, ...values },
-      { onConflict: "volunteer_id" },
-    );
+    .insert({ volunteer_id: volunteerId, ...values });
 }
 
 function refreshProfilePaths() {
@@ -166,8 +175,15 @@ export async function saveHomeStep(formData: FormData) {
   } catch (error) {
     console.error("Unable to verify volunteer home location with OneMap", {
       message: error instanceof Error ? error.message : "Unknown OneMap error",
+      kind: error instanceof OneMapConfigurationError ? "configuration" : "lookup",
     });
-    redirect(`/profile/setup?step=home&error=location_lookup${isEdit ? "&mode=edit" : ""}`);
+
+    const code =
+      error instanceof OneMapConfigurationError
+        ? "location_service_unavailable"
+        : "location_lookup";
+
+    redirect(`/profile/setup?step=home&error=${code}${isEdit ? "&mode=edit" : ""}`);
   }
 
   const result = await client.rpc("update_current_volunteer_home_location", {
@@ -210,17 +226,32 @@ export async function savePersonalStep(formData: FormData) {
     redirect(`/profile/setup?step=personal&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
-  const languages = parseTags(formData.get("languagesSpoken"));
-  if (languages.some((value) => value.length > 60) || languages.length > 12) {
+  const languages = tagsSchema.safeParse(parseTags(formData.get("languagesSpoken")));
+  const emergencyContact = z
+    .object({
+      name: z.string().trim().min(1).max(160),
+      mobile: z
+        .string()
+        .trim()
+        .min(7)
+        .max(40)
+        .regex(/^[0-9+() .-]+$/),
+    })
+    .safeParse({
+      name: formData.get("emergencyContactName"),
+      mobile: formData.get("emergencyContactMobile"),
+    });
+
+  if (!languages.success || !emergencyContact.success) {
     redirect(`/profile/setup?step=personal&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=personal");
   const result = await upsertPrivateDetails(client, volunteerId, {
     date_of_birth: parsed.data,
-    languages_spoken: languages,
-    emergency_contact_name: optionalText(formData.get("emergencyContactName"), 160),
-    emergency_contact_mobile: optionalText(formData.get("emergencyContactMobile"), 40),
+    languages_spoken: languages.data,
+    emergency_contact_name: emergencyContact.data.name,
+    emergency_contact_mobile: emergencyContact.data.mobile,
   });
 
   if (result.error) {
@@ -341,16 +372,26 @@ export async function saveEventReadinessStep(formData: FormData) {
 export async function saveEducationStep(formData: FormData) {
   const isEdit = editMode(formData);
   const qualification = z.enum(qualificationValues).safeParse(formData.get("highestQualification"));
+  const institution = optionalText(formData.get("institution"), 200);
+  const fieldOfStudy = optionalText(formData.get("fieldOfStudy"), 200);
 
-  if (!qualification.success) {
+  const fieldOfStudyRequired =
+    qualification.success &&
+    ["ite", "diploma", "bachelors", "postgraduate"].includes(qualification.data);
+
+  if (
+    !qualification.success ||
+    !institution ||
+    (fieldOfStudyRequired && !fieldOfStudy)
+  ) {
     redirect(`/profile/setup?step=education&error=validation${isEdit ? "&mode=edit" : ""}`);
   }
 
   const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=education");
   const result = await upsertPrivateDetails(client, volunteerId, {
     highest_qualification: qualification.data,
-    institution: optionalText(formData.get("institution"), 200),
-    field_of_study: optionalText(formData.get("fieldOfStudy"), 200),
+    institution,
+    field_of_study: fieldOfStudy,
   });
 
   if (result.error) {
@@ -404,7 +445,7 @@ export async function saveAboutStep(formData: FormData) {
 }
 
 export async function completeProfileSetup() {
-  const { client, volunteerId } = await getVolunteerContext("/profile/setup?step=review");
+  const { client, volunteerId, userId } = await getVolunteerContext("/profile/setup?step=review");
 
   const [volunteerResult, profileResult, privateResult] = await Promise.all([
     client
@@ -421,7 +462,7 @@ export async function completeProfileSetup() {
     client
       .from("volunteer_private_details")
       .select(
-        "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification",
+        "date_of_birth, postal_code, address_line, tshirt_size, food_allergies, no_known_food_allergies, highest_qualification, institution, field_of_study, languages_spoken, emergency_contact_name, emergency_contact_mobile",
       )
       .eq("volunteer_id", volunteerId)
       .maybeSingle(),
@@ -447,11 +488,19 @@ export async function completeProfileSetup() {
     (profileResult.data.availability_slots?.length ?? 0) > 0 &&
     Boolean(profileResult.data.preferred_commitment) &&
     Boolean(privateDetails.date_of_birth) &&
+    (privateDetails.languages_spoken?.length ?? 0) > 0 &&
+    Boolean(privateDetails.emergency_contact_name?.trim()) &&
+    Boolean(privateDetails.emergency_contact_mobile?.trim()) &&
     Boolean(privateDetails.postal_code) &&
     Boolean(privateDetails.address_line) &&
     Boolean(privateDetails.tshirt_size) &&
     (privateDetails.no_known_food_allergies || Boolean(privateDetails.food_allergies?.trim())) &&
-    Boolean(privateDetails.highest_qualification);
+    Boolean(privateDetails.highest_qualification) &&
+    Boolean(privateDetails.institution?.trim()) &&
+    (!["ite", "diploma", "bachelors", "postgraduate"].includes(
+      privateDetails.highest_qualification ?? "",
+    ) ||
+      Boolean(privateDetails.field_of_study?.trim()));
 
   if (!complete) {
     redirect("/profile/setup?step=review&error=incomplete");
@@ -466,6 +515,33 @@ export async function completeProfileSetup() {
     redirect("/profile/setup?step=review&error=save");
   }
 
+  const admin = getPhaseOneAdminClient();
+  const now = new Date().toISOString();
+  const reviewResult = await admin
+    .schema("core")
+    .from("account_link_cases")
+    .update({
+      status: "pending",
+      reason_code: "temporary_unverified_email",
+      review_outcome: null,
+      requested_sections: [],
+      volunteer_message: null,
+      submitted_for_review_at: now,
+      resolved_by: null,
+      resolved_at: null,
+    })
+    .eq("auth_user_id", userId)
+    .in("status", ["pending", "needs_review"])
+    .eq("reason_code", "temporary_unverified_email");
+
+  if (reviewResult.error) {
+    console.error("Unable to submit temporary volunteer profile for review", {
+      code: reviewResult.error.code,
+    });
+  }
+
   refreshProfilePaths();
+  revalidatePath("/admin/reconciliation");
+  revalidatePath("/admin");
   redirect("/dashboard?success=profile_updated");
 }

@@ -10,6 +10,7 @@ type WalkInEditFormProps = {
   mobile: string | null;
   age: number | null;
   dietaryRequirements: string | null;
+  detailsName?: string;
 };
 
 export function WalkInEditForm({
@@ -21,9 +22,10 @@ export function WalkInEditForm({
   mobile,
   age,
   dietaryRequirements,
+  detailsName,
 }: WalkInEditFormProps) {
   return (
-    <details className="phaseone-walk-in-edit">
+    <details className="phaseone-walk-in-edit" name={detailsName}>
       <summary>Edit walk-in details</summary>
       <form action={updateWalkInVolunteerDetails} className="phaseone-walk-in-edit-form">
         <input name="eventId" type="hidden" value={eventId} />

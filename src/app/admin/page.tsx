@@ -168,6 +168,7 @@ export default async function AdminPage() {
     registrationMonthCountResult,
     pendingCountResult,
     waitlistedCountResult,
+    reconciliationCountResult,
     recentRegistrationsResult,
     attendanceMonthResult,
     attendanceAuditResult,
@@ -203,6 +204,12 @@ export default async function AdminPage() {
       .select("id", { count: "exact", head: true })
       .eq("status", "waitlisted"),
     admin
+      .schema("core")
+      .from("account_link_cases")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["pending", "needs_review"])
+      .not("submitted_for_review_at", "is", null),
+    admin
       .from("keluarga_registrations")
       .select("id, volunteer_id, event_id, status, submitted_at")
       .order("submitted_at", { ascending: false })
@@ -228,6 +235,7 @@ export default async function AdminPage() {
     registrationMonthCountResult,
     pendingCountResult,
     waitlistedCountResult,
+    reconciliationCountResult,
     recentRegistrationsResult,
     attendanceMonthResult,
     attendanceAuditResult,
@@ -240,6 +248,7 @@ export default async function AdminPage() {
       registrationsMonth: registrationMonthCountResult.error?.code,
       pending: pendingCountResult.error?.code,
       waitlisted: waitlistedCountResult.error?.code,
+      reconciliation: reconciliationCountResult.error?.code,
       recentRegistrations: recentRegistrationsResult.error?.code,
       attendanceMonth: attendanceMonthResult.error?.code,
       attendanceAudit: attendanceAuditResult.error?.code,
@@ -415,6 +424,7 @@ export default async function AdminPage() {
   const attentionCount =
     (pendingCountResult.count ?? 0) +
     (waitlistedCountResult.count ?? 0) +
+    (reconciliationCountResult.count ?? 0) +
     emptyRosterEvents.length +
     unpublishedGuides.length;
 
@@ -512,6 +522,10 @@ export default async function AdminPage() {
             <Link href="/admin/registrations">
               <span>Waitlisted registrations</span>
               <strong>{waitlistedCountResult.count ?? 0}</strong>
+            </Link>
+            <Link href="/admin/reconciliation">
+              <span>Volunteer profiles for reconciliation</span>
+              <strong>{reconciliationCountResult.count ?? 0}</strong>
             </Link>
             <Link href="/admin/events">
               <span>Events in next 7 days with no roster</span>

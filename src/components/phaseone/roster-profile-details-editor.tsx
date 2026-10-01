@@ -21,12 +21,14 @@ export function RosterProfileDetailsEditor({
   volunteerName,
   tshirtSize,
   dietaryRequirements,
+  detailsName,
 }: {
   eventId: string;
   volunteerId: string;
   volunteerName: string;
   tshirtSize: string | null;
   dietaryRequirements: string | null;
+  detailsName?: string;
 }) {
   const router = useRouter();
   const [shirt, setShirt] = useState(tshirtSize ?? "");
@@ -50,8 +52,8 @@ export function RosterProfileDetailsEditor({
   }
 
   return (
-    <details className="phaseone-attendance-edit">
-      <summary>Profile details</summary>
+    <details className="phaseone-attendance-edit phaseone-profile-details" name={detailsName}>
+      <summary>Profile</summary>
       <div className="phaseone-attendance-correction">
         <p className="muted">
           Update missing operational profile details for {volunteerName}. These

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { requireEventManager } from "@/lib/auth/event-access";
+import { requireEventManager, requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   getPhaseOneValidationMessage,
@@ -157,33 +157,18 @@ export async function importRosterWithDiagnostics(
   }
 
   const operationsScope = String(eventResult.data.operations_scope);
-  const isManual = operationsScope === "manual_isolated" || operationsScope === "manual_integrated";
-  const integratesVolunteers = operationsScope === "manual_integrated";
-
-  if (
-    integratesVolunteers &&
-    parsed.data.rows.some((row) => {
-      const key = row.volunteer_key?.trim().toUpperCase() ?? "";
-      return !/^KEL[0-9]{5}$/.test(key) && !row.email && !row.mobile;
-    })
-  ) {
-    return rosterImportError(
-      "Integrated manual events require an existing KELUARGA Volunteer ID, email address, or mobile number for every volunteer. Use an isolated manual event if the roster must remain name-only.",
-      "ROSTER_INTEGRATION_IDENTIFIER_REQUIRED",
-    );
-  }
-
-  const rpcName = isManual
+  const isIsolatedManual = operationsScope === "manual_isolated";
+  const rpcName = isIsolatedManual
     ? "phaseone_apply_manual_roster_import"
-    : "phaseone_apply_roster_import";
-  const rpcArgs = isManual
+    : "phaseone_apply_database_roster_import";
+  const rpcArgs = isIsolatedManual
     ? {
         p_event_id: parsed.data.eventId,
         p_mode: parsed.data.mode,
         p_file_name: parsed.data.fileName,
         p_rows: parsed.data.rows,
         p_uploaded_by: userId,
-        p_integrate_volunteers: integratesVolunteers,
+        p_integrate_volunteers: false,
       }
     : {
         p_event_id: parsed.data.eventId,
@@ -220,12 +205,18 @@ export async function importRosterWithDiagnostics(
     typeof result.created_volunteer_count === "number"
       ? result.created_volunteer_count
       : 0;
+  const matchedExistingCount =
+    typeof result.matched_existing_volunteer_count === "number"
+      ? result.matched_existing_volunteer_count
+      : Math.max(linkedCount - createdCount, 0);
+  const reviewCount =
+    typeof result.review_volunteer_count === "number"
+      ? result.review_volunteer_count
+      : 0;
   const message =
-    operationsScope === "manual_integrated"
-      ? `${rowCount} assignment${rowCount === 1 ? "" : "s"} imported. ${linkedCount} KELUARGA volunteer${linkedCount === 1 ? "" : "s"} linked, including ${createdCount} new volunteer record${createdCount === 1 ? "" : "s"}.`
-      : operationsScope === "manual_isolated"
-        ? `${rowCount} event-only volunteer assignment${rowCount === 1 ? "" : "s"} imported. No main volunteer records were created or changed.`
-        : `${rowCount} volunteer assignment${rowCount === 1 ? "" : "s"} imported successfully.`;
+    operationsScope === "manual_isolated"
+      ? `${rowCount} event-only volunteer assignment${rowCount === 1 ? "" : "s"} imported. No main volunteer records were created or changed.`
+      : `${rowCount} assignment${rowCount === 1 ? "" : "s"} imported. ${matchedExistingCount} matched existing volunteer${matchedExistingCount === 1 ? "" : "s"}, ${createdCount} new volunteer ID${createdCount === 1 ? "" : "s"} created${reviewCount > 0 ? `, and ${reviewCount} volunteer${reviewCount === 1 ? "" : "s"} flagged for review` : ""}.`;
 
   return {
     status: "success",
@@ -803,5 +794,102 @@ export async function updateRosterVolunteerProfileDetails(input: {
     status: "success",
     message:
       "Saved to the volunteer profile and refreshed this event roster.",
+  };
+}
+
+
+const rosterVolunteerRelinkSchema = z.object({
+  eventId: z.string().uuid(),
+  rosterId: z.string().uuid(),
+  targetVolunteerId: z.string().uuid(),
+});
+
+export type RosterVolunteerRelinkState = Readonly<{
+  status: "idle" | "success" | "error";
+  message: string;
+  targetVolunteerCode?: string;
+  duplicateRetired?: boolean;
+}>;
+
+export async function relinkRosterVolunteer(input: {
+  eventId: string;
+  rosterId: string;
+  targetVolunteerId: string;
+}): Promise<RosterVolunteerRelinkState> {
+  const parsed = rosterVolunteerRelinkSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Choose a valid volunteer record before linking.",
+    };
+  }
+
+  const { userId } = await requireProgrammeManager(
+    `/admin/events/${parsed.data.eventId}/attendance`,
+  );
+  const admin = getPhaseOneAdminClient();
+  const { data, error } = await admin.rpc("phaseone_relink_roster_volunteer", {
+    p_event_id: parsed.data.eventId,
+    p_roster_id: parsed.data.rosterId,
+    p_target_volunteer_id: parsed.data.targetVolunteerId,
+    p_actor_user_id: userId,
+  });
+
+  if (error) {
+    console.error("Unable to relink roster volunteer identity", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+      rosterId: parsed.data.rosterId,
+    });
+
+    if (/already assigned to one of these event shifts/i.test(error.message)) {
+      return {
+        status: "error",
+        message:
+          "That volunteer is already on one of these shifts. Resolve the duplicate roster assignment before linking.",
+      };
+    }
+    if (/isolated event/i.test(error.message)) {
+      return {
+        status: "error",
+        message: "This isolated event cannot link to the shared volunteer database.",
+      };
+    }
+    if (error.code === "42501") {
+      return {
+        status: "error",
+        message: "Only Volunteer Team and admins can correct volunteer identity matches.",
+      };
+    }
+
+    return {
+      status: "error",
+      message: "The volunteer match could not be updated.",
+    };
+  }
+
+  const result =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+  const targetVolunteerCode =
+    typeof result.target_volunteer_code === "string"
+      ? result.target_volunteer_code
+      : undefined;
+  const duplicateRetired = result.source_duplicate_retired === true;
+  const assignmentsUpdated =
+    typeof result.assignments_updated === "number"
+      ? result.assignments_updated
+      : 1;
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/edit`);
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance/monitor`);
+
+  return {
+    status: "success",
+    message: `Linked ${assignmentsUpdated} roster assignment${assignmentsUpdated === 1 ? "" : "s"} to ${targetVolunteerCode ?? "the selected volunteer"}.${duplicateRetired ? " The accidental roster-created volunteer record was retired." : ""}`,
+    ...(targetVolunteerCode ? { targetVolunteerCode } : {}),
+    duplicateRetired,
   };
 }

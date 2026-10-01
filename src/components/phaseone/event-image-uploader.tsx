@@ -1,6 +1,12 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import {
+  useRef,
+  useState,
+  useTransition,
+  type DragEvent,
+  type KeyboardEvent,
+} from "react";
 
 import {
   attachEventImage,
@@ -26,13 +32,16 @@ export function EventImageUploader({
   onImageChange: (url: string | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
   const [currentUrl, setCurrentUrl] = useState(imageUrl);
   const [message, setMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const isBusy = uploading || isPending;
 
   async function upload(file: File | undefined) {
-    if (!file) return;
+    if (!file || isBusy) return;
     setMessage(null);
     setUploading(true);
 
@@ -76,7 +85,56 @@ export function EventImageUploader({
     }
   }
 
+  function openFilePicker() {
+    if (!isBusy) inputRef.current?.click();
+  }
+
+  function onDropZoneKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openFilePicker();
+  }
+
+  function onDragEnter(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isBusy) return;
+
+    dragDepthRef.current += 1;
+    setIsDragging(true);
+  }
+
+  function onDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isBusy) return;
+
+    event.dataTransfer.dropEffect = "copy";
+  }
+
+  function onDragLeave(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isBusy) return;
+
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDragging(false);
+  }
+
+  function onDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    dragDepthRef.current = 0;
+    setIsDragging(false);
+
+    if (isBusy) return;
+    void upload(event.dataTransfer.files?.[0]);
+  }
+
   function remove() {
+    if (isBusy) return;
+
     setMessage(null);
     startTransition(async () => {
       try {
@@ -96,13 +154,33 @@ export function EventImageUploader({
 
   return (
     <div className={styles.eventImage}>
-      <div className={styles.eventPreview}>
+      <div
+        aria-busy={isBusy}
+        aria-disabled={isBusy}
+        aria-label="Upload an event card image. Drag and drop an image here, or press Enter to browse."
+        className={`${styles.eventPreview} ${isDragging ? styles.eventPreviewDragging : ""}`}
+        onClick={openFilePicker}
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onKeyDown={onDropZoneKeyDown}
+        role="button"
+        tabIndex={isBusy ? -1 : 0}
+      >
         {currentUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={currentUrl} alt="" />
         ) : (
           <span className={styles.eventPlaceholder}>No opportunity image</span>
         )}
+        <span className={styles.eventDropPrompt} aria-hidden="true">
+          {isDragging
+            ? "Drop image to upload"
+            : uploading
+              ? "Preparing image…"
+              : "Drag & drop or click to upload"}
+        </span>
       </div>
       <input
         ref={inputRef}
@@ -115,8 +193,8 @@ export function EventImageUploader({
         <button
           className="button button-secondary"
           type="button"
-          disabled={uploading || isPending}
-          onClick={() => inputRef.current?.click()}
+          disabled={isBusy}
+          onClick={openFilePicker}
         >
           {uploading
             ? "Preparing image…"
@@ -128,7 +206,7 @@ export function EventImageUploader({
           <button
             className="text-link button-reset"
             type="button"
-            disabled={uploading || isPending}
+            disabled={isBusy}
             onClick={remove}
           >
             Remove
@@ -136,8 +214,9 @@ export function EventImageUploader({
         ) : null}
       </div>
       <p className="form-help">
-        Images are centre-cropped to 16:9, resized to 1600 × 900 and converted to
-        WebP before upload.
+        Drag and drop an image onto the preview, or use the upload button. Images
+        are centre-cropped to 16:9, resized to 1600 × 900 and converted to WebP
+        before upload.
       </p>
       {message ? (
         <p className={styles.status} role="status">

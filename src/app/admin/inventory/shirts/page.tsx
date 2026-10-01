@@ -70,7 +70,8 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
         .limit(2000),
       admin
         .from("volunteer_shirt_issuances")
-        .select("volunteer_id"),
+        .select("id, volunteer_id, issued_at, issuance_source, collection_method, preferred_size_at_issue, issue_kind, issue_reason, event_id, note, volunteer_shirt_skus(shirt_type,size), phaseone_events(title)")
+        .order("issued_at", { ascending: false }),
     ]);
 
   if (
@@ -84,6 +85,9 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
 
   const issuedVolunteerIds = new Set(
     (issuanceResult.data ?? []).map(({ volunteer_id }) => volunteer_id),
+  );
+  const volunteerById = new Map(
+    (volunteerResult.data ?? []).map((volunteer) => [volunteer.id, volunteer]),
   );
   const volunteersWithoutIssue = (volunteerResult.data ?? []).filter(
     ({ id }) => !issuedVolunteerIds.has(id),
@@ -107,7 +111,7 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
           <div>
             <h1>Volunteer shirt inventory</h1>
             <p className="muted">
-              Track stock by shirt type and size. Each volunteer can have one recorded shirt issue.
+              Track stock by shirt type and size. Initial collection and any authorised additional issues are kept as a full issuance history.
             </p>
           </div>
         </div>
@@ -214,7 +218,7 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
             <div>
               <h2 id="previous-shirt-title">Record a previous shirt issue</h2>
               <p className="muted">
-                Use this for volunteers who received their one shirt before KELUARGA tracked inventory.
+                Use this only when no shirt record exists yet and the volunteer had already collected one before KELUARGA tracked inventory.
                 This does not reduce current stock.
               </p>
             </div>
@@ -256,6 +260,84 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
               </button>
             </div>
           </form>
+        </section>
+
+        <section className="section" aria-labelledby="shirt-records-title">
+          <div className="section-header">
+            <div>
+              <h2 id="shirt-records-title">Volunteer shirt records</h2>
+              <p className="muted">
+                Actual shirt received is kept separately from the volunteer&apos;s preferred size.
+                Already-collected records do not reduce current stock.
+              </p>
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table className="content-table">
+              <thead>
+                <tr>
+                  <th>Volunteer</th>
+                  <th>Actual shirt</th>
+                  <th>Preferred</th>
+                  <th>Record</th>
+                  <th>Reason</th>
+                  <th>When</th>
+                  <th>Event</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(issuanceResult.data ?? []).map((row) => {
+                  const volunteer = volunteerById.get(row.volunteer_id);
+                  const sku = Array.isArray(row.volunteer_shirt_skus)
+                    ? row.volunteer_shirt_skus[0]
+                    : row.volunteer_shirt_skus;
+                  const event = Array.isArray(row.phaseone_events)
+                    ? row.phaseone_events[0]
+                    : row.phaseone_events;
+                  return (
+                    <tr key={row.id}>
+                      <td>
+                        {volunteer
+                          ? `${volunteer.volunteer_code} · ${volunteer.display_name ?? "Volunteer"}`
+                          : row.volunteer_id}
+                      </td>
+                      <td>{sku ? `${shirtTypeLabel(sku.shirt_type)} · ${sku.size}` : "—"}</td>
+                      <td>
+                        {row.preferred_size_at_issue ?? "—"}
+                        {row.preferred_size_at_issue && sku && row.preferred_size_at_issue !== sku.size
+                          ? " · different size issued"
+                          : ""}
+                      </td>
+                      <td>
+                        {row.issue_kind === "additional"
+                          ? "Additional issue"
+                          : row.collection_method === "already_collected"
+                            ? "Already collected"
+                            : "Initial issue"}
+                      </td>
+                      <td>
+                        {row.issue_reason
+                          ? row.issue_reason.replaceAll("_", " ")
+                          : "—"}
+                      </td>
+                      <td>{new Intl.DateTimeFormat("en-SG", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: "Asia/Singapore",
+                      }).format(new Date(row.issued_at))}</td>
+                      <td>{event?.title ?? "—"}</td>
+                    </tr>
+                  );
+                })}
+                {(issuanceResult.data ?? []).length === 0 ? (
+                  <tr><td colSpan={7}>No volunteer shirt records yet.</td></tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="section" aria-labelledby="inventory-history-title">

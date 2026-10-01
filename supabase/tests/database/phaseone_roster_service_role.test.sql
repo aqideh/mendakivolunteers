@@ -1,6 +1,6 @@
 begin;
 
-select plan(4);
+select plan(7);
 
 select ok(
   has_column_privilege('service_role', 'auth.users', 'id', 'SELECT'),
@@ -13,6 +13,32 @@ select ok(
 select ok(
   not has_column_privilege('authenticated', 'auth.users', 'id', 'SELECT'),
   'authenticated clients cannot read auth user IDs'
+);
+
+
+select has_function(
+  'public',
+  'phaseone_relink_roster_volunteer',
+  array['uuid','uuid','uuid','uuid'],
+  'roster volunteer identity relink RPC exists'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.phaseone_relink_roster_volunteer(uuid,uuid,uuid,uuid)',
+    'EXECUTE'
+  ),
+  'authenticated clients cannot relink roster identities directly'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.phaseone_relink_roster_volunteer(uuid,uuid,uuid,uuid)',
+    'EXECUTE'
+  ),
+  'service role can execute roster identity relink RPC'
 );
 
 insert into auth.users (id, email)

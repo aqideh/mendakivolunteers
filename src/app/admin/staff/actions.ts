@@ -1,10 +1,15 @@
 "use server";
 
+import type { User } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/staff-access";
-import { staffInviteRoleValues } from "@/lib/auth/staff-roles";
+import {
+  isMendakiWorkEmail,
+  roleRequiresMendakiWorkEmail,
+  staffInviteRoleValues,
+} from "@/lib/auth/staff-roles";
 import { getPublicConfig } from "@/lib/env";
 import {
   buildPasswordSetupUrl,
@@ -34,12 +39,37 @@ export type StaffRoleMutationResult = Readonly<
   | { ok: false; message: string }
 >;
 
+function getStaffSetupEmailErrorMessage(errorMessage: string): string {
+  if (
+    errorMessage.includes("Application-specific password required") ||
+    errorMessage.includes("InvalidSecondFactor")
+  ) {
+    return "Staff access was granted, but email delivery is blocked by the Google SMTP configuration. Update the Supabase SMTP password to a Google App Password, then use Send setup email again.";
+  }
+
+  return "Staff access was granted, but the password setup email could not be sent. Use Send setup email to try again.";
+}
+
 async function setStaffAccessLevel(
   targetUserId: string,
   role: (typeof staffInviteRoleValues)[number],
   grantedBy: string,
 ): Promise<StaffRoleMutationResult> {
   const admin = getPhaseOneAdminClient();
+
+  if (roleRequiresMendakiWorkEmail(role)) {
+    const userResult = await admin.auth.admin.getUserById(targetUserId);
+    const targetEmail = userResult.data.user?.email ?? "";
+
+    if (userResult.error || !isMendakiWorkEmail(targetEmail)) {
+      return {
+        ok: false,
+        message:
+          "Staff, VolTeam and Admin access require a @mendaki.org.sg work email.",
+      };
+    }
+  }
+
   const { error } = await admin.schema("core").rpc("set_staff_access_level", {
     p_user_id: targetUserId,
     p_role: role,
@@ -99,49 +129,122 @@ export async function inviteStaffMember(
     return { status: "error", message: "Select a valid staff role." };
   }
 
+  const email = parsedEmail.data.toLowerCase();
+  if (
+    roleRequiresMendakiWorkEmail(parsedRole.data) &&
+    !isMendakiWorkEmail(email)
+  ) {
+    return {
+      status: "error",
+      message:
+        "Staff, VolTeam and Admin accounts must use a @mendaki.org.sg work email. Volunteer Leaders may use an external email.",
+    };
+  }
+
   const { userId: grantedBy } = await requireAdmin();
   const admin = getPhaseOneAdminClient();
   const { appUrl } = getPublicConfig();
   const redirectTo = new URL("/auth/confirm", appUrl);
   redirectTo.searchParams.set("next", "/staff/setup");
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(
-    parsedEmail.data.toLowerCase(),
-    {
-      redirectTo: redirectTo.toString(),
-      data: { staff_invite: true },
-    },
-  );
+  let targetUser: User | null = null;
+  const perPage = 1000;
 
-  if (error || !data.user) {
-    console.error("Unable to invite staff member", {
-      code: error?.code,
-      status: error?.status,
-    });
-    return {
-      status: "error",
-      message:
-        "The staff invitation could not be sent. Check whether the address already has an account.",
-    };
+  for (let page = 1; ; page += 1) {
+    const { data: userPage, error: listError } =
+      await admin.auth.admin.listUsers({ page, perPage });
+
+    if (listError) {
+      console.error("Unable to check for an existing staff account", {
+        code: listError.code,
+        status: listError.status,
+      });
+      return {
+        status: "error",
+        message: "The staff account could not be checked. Try again.",
+      };
+    }
+
+    targetUser =
+      userPage.users.find(
+        (user) => user.email?.trim().toLowerCase() === email,
+      ) ?? null;
+
+    if (targetUser || userPage.users.length < perPage) {
+      break;
+    }
+  }
+
+  let invitedNewUser = false;
+
+  if (!targetUser) {
+    const { data: inviteData, error: inviteError } =
+      await admin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: redirectTo.toString(),
+        data: { staff_invite: true },
+      });
+
+    if (inviteError || !inviteData.user) {
+      console.error("Unable to invite staff member", {
+        code: inviteError?.code,
+        status: inviteError?.status,
+      });
+      return {
+        status: "error",
+        message: "The staff invitation could not be sent. Try again.",
+      };
+    }
+
+    targetUser = inviteData.user;
+    invitedNewUser = true;
   }
 
   const roleResult = await setStaffAccessLevel(
-    data.user.id,
+    targetUser.id,
     parsedRole.data,
     grantedBy,
   );
 
   if (!roleResult.ok) {
-    const rollback = await admin.auth.admin.deleteUser(data.user.id);
-    if (rollback.error) {
-      console.error("Unable to roll back incomplete staff invitation", {
-        code: rollback.error.code,
-        status: rollback.error.status,
-      });
+    if (invitedNewUser) {
+      const rollback = await admin.auth.admin.deleteUser(targetUser.id);
+      if (rollback.error) {
+        console.error("Unable to roll back incomplete staff invitation", {
+          code: rollback.error.code,
+          status: rollback.error.status,
+        });
+      }
     }
     return {
       status: "error",
       message: "The invitation could not be completed. No staff access was granted.",
+    };
+  }
+
+  if (!invitedNewUser) {
+    const passwordSetupRedirectTo = new URL("/auth/confirm", appUrl);
+    const { error: setupEmailError } =
+      await admin.auth.resetPasswordForEmail(email, {
+        redirectTo: passwordSetupRedirectTo.toString(),
+      });
+
+    if (setupEmailError) {
+      console.error("Unable to send setup email to existing staff account", {
+        code: setupEmailError.code,
+        status: setupEmailError.status,
+      });
+      return {
+        status: "error",
+        message: getStaffSetupEmailErrorMessage(setupEmailError.message),
+      };
+    }
+
+    return {
+      status: "success",
+      message:
+        parsedRole.data === "admin"
+          ? "Existing account found. Admin access was granted and a password setup email was sent. Admin access includes MakLom administrator access."
+          : "Existing account found. Access was updated and a password setup email was sent.",
     };
   }
 
@@ -180,7 +283,10 @@ export async function sendStaffSetupEmail(
   );
 
   if (error) {
-    return { status: "error", message: "The setup email could not be sent." };
+    return {
+      status: "error",
+      message: getStaffSetupEmailErrorMessage(error.message),
+    };
   }
 
   return {

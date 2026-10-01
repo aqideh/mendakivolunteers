@@ -210,11 +210,17 @@ export async function duplicateEvent(formData: FormData) {
   redirect(`/admin/events/${created.id}/edit?success=event_duplicated`);
 }
 
-export type EventSaveResult = Readonly<{
-  status: "error";
-  message: string;
-  eventId?: string;
-}>;
+export type EventSaveResult =
+  | Readonly<{
+      status: "success";
+      redirectTo: string;
+      eventId: string;
+    }>
+  | Readonly<{
+      status: "error";
+      message: string;
+      eventId?: string;
+    }>;
 
 function eventSaveError(message: string, eventId?: string): EventSaveResult {
   return eventId ? { status: "error", message, eventId } : { status: "error", message };
@@ -353,7 +359,11 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
 
     revalidateEventRoutes(current.data?.slug);
     revalidateEventRoutes(parsed.data.slug);
-    redirect(`/admin/events/${parsed.data.id}/edit?success=event_updated`);
+    return {
+      status: "success",
+      redirectTo: `/admin/events/${parsed.data.id}/edit?success=event_updated`,
+      eventId: parsed.data.id,
+    };
   }
 
   const { data: created, error: createError } = await admin
@@ -438,7 +448,11 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
   }
 
   revalidateEventRoutes(parsed.data.slug);
-  redirect(`/admin/events/${created.id}/edit?success=event_created`);
+  return {
+    status: "success",
+    redirectTo: `/admin/events/${created.id}/edit?success=event_created`,
+    eventId: created.id,
+  };
 }
 
 export async function importRoster(formData: FormData) {

@@ -163,7 +163,7 @@
 
 .roleChoice:nth-child(5) {
   grid-column: 1 / -1;
-  width: calc(37.5% - 1.125rem);
+  width: calc((100% - 3rem) * 0.375);
   justify-self: center;
   animation-delay: 180ms;
 }
@@ -171,7 +171,7 @@
 .roleChoice:nth-child(5) .roleLabel strong {
   overflow: visible;
   text-overflow: clip;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .roleOption {

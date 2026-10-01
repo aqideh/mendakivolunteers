@@ -132,6 +132,20 @@
   margin: 0.7rem 0 0.9rem;
 }
 
+.phaseone-roster-filter-shell {
+  min-width: 0;
+}
+
+.phaseone-attendance-filters.phaseone-roster-filter-controls {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 680px) {
+  .phaseone-attendance-filters.phaseone-roster-filter-controls {
+    grid-template-columns: minmax(16rem, 1fr) minmax(10rem, 0.35fr);
+  }
+}
+
 .phaseone-mobile-filter {
   display: none;
 }
