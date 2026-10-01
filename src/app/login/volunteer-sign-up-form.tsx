@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
-  createVolunteerPasswordAccount,
+  requestVolunteerSignUpLink,
   type VolunteerSignUpState,
 } from "@/app/login/volunteer-sign-up-actions";
+import { VolunteerVerificationResendForm } from "@/app/login/volunteer-verification-resend-form";
 
 const initialState: VolunteerSignUpState = {
   status: "idle",
@@ -17,15 +18,40 @@ type VolunteerSignUpFormProps = Readonly<{
 }>;
 
 export function VolunteerSignUpForm({ nextPath }: VolunteerSignUpFormProps) {
+  const [email, setEmail] = useState("");
   const [state, formAction, pending] = useActionState(
-    createVolunteerPasswordAccount,
+    requestVolunteerSignUpLink,
     initialState,
   );
+
+  if (state.status === "success") {
+    return (
+      <div className="auth-verification-state">
+        <p className="form-message" data-status="success" aria-live="polite">
+          {state.message}
+        </p>
+        <p className="auth-verification-email">
+          Verification email sent to <strong>{email}</strong>.
+        </p>
+        <VolunteerVerificationResendForm
+          nextPath={nextPath}
+          defaultEmail={email}
+          compact
+        />
+        <button
+          className="text-link auth-change-email"
+          type="button"
+          onClick={() => window.location.reload()}
+        >
+          Use a different email
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="auth-primary-form" noValidate>
       <input type="hidden" name="next" value={nextPath} />
-
       <div className="form-field">
         <label htmlFor="community-signup-email">Email address</label>
         <input
@@ -39,47 +65,13 @@ export function VolunteerSignUpForm({ nextPath }: VolunteerSignUpFormProps) {
           required
           disabled={pending}
           aria-describedby="community-signup-email-help"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
         />
         <span className="form-help" id="community-signup-email-help">
-          We are temporarily allowing account creation without email verification.
-          Your email will not be used to link previous volunteer records until it is
-          verified later.
+          Use an email address you can access. You will verify it before your
+          KELUARGA account is created.
         </span>
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="community-signup-password">Password</label>
-        <input
-          id="community-signup-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={12}
-          maxLength={128}
-          required
-          disabled={pending}
-          aria-describedby="community-signup-password-help"
-        />
-        <span className="form-help" id="community-signup-password-help">
-          Use 12 to 128 characters with uppercase and lowercase letters and at
-          least one number.
-        </span>
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="community-signup-password-confirm">
-          Confirm password
-        </label>
-        <input
-          id="community-signup-password-confirm"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          minLength={12}
-          maxLength={128}
-          required
-          disabled={pending}
-        />
       </div>
 
       <button
@@ -87,7 +79,7 @@ export function VolunteerSignUpForm({ nextPath }: VolunteerSignUpFormProps) {
         type="submit"
         disabled={pending}
       >
-        {pending ? "Creating account…" : "Create account"}
+        {pending ? "Sending link…" : "Send sign-up link"}
       </button>
 
       <p
