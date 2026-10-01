@@ -23,6 +23,7 @@ export function VolunteerSignUpForm({ nextPath }: VolunteerSignUpFormProps) {
     requestVolunteerSignUpLink,
     initialState,
   );
+  const workEmail = email.trim().toLowerCase().endsWith("@mendaki.org.sg");
 
   if (state.status === "success") {
     return (
@@ -69,8 +70,9 @@ export function VolunteerSignUpForm({ nextPath }: VolunteerSignUpFormProps) {
           onChange={(event) => setEmail(event.target.value)}
         />
         <span className="form-help" id="community-signup-email-help">
-          Use an email address you can access. You will verify it before your
-          KELUARGA account is created.
+          {workEmail
+            ? "MENDAKI work emails use the staff access process rather than volunteer sign-up."
+            : "Use an email address you can access. You will verify it before your KELUARGA account is created."}
         </span>
       </div>
 

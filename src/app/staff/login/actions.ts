@@ -83,7 +83,7 @@ export async function signInStaffWithPassword(
     return {
       status: "error",
       message:
-        "This account is not an active staff account. Ask a Keluarga Admin to check your access.",
+        "This account isn’t set up for Keluarga staff access yet. Please contact the Volunteer Management team if you need access.",
     };
   }
 

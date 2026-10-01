@@ -145,6 +145,10 @@ export function MagicLinkConfirmation() {
         window.location.replace("/login?error=account_inactive");
         return;
       }
+      if (linkResult === "staff_access_required") {
+        window.location.replace("/login?error=staff_access_required");
+        return;
+      }
       if (linkResult === "email_unverified" || linkResult === "needs_review") {
         window.location.replace("/login?error=account_setup_unavailable");
         return;

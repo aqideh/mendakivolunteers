@@ -1,13 +1,21 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
 
+import { isMendakiWorkEmail, staffInviteRoleValues } from "@/lib/auth/staff-roles";
 import { getPublicConfig } from "@/lib/env";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
+import { createClient } from "@/lib/supabase/server";
 import { createEmailLinkClient } from "@/lib/supabase/email-link";
 
 const emailSchema = z.string().trim().email().max(254);
+const passwordSchema = z.string().min(1).max(128);
+
+const staffAccessMessage =
+  "This work email isn’t set up for Keluarga staff access yet. Please contact the Volunteer Management team if you need access.";
 
 export type VolunteerSignInState = Readonly<{
   status: "idle" | "success" | "error";
@@ -27,10 +35,77 @@ export async function requestVolunteerSignInLink(
   }
 
   const email = parsedEmail.data.toLowerCase();
-  const nextPath = getSafeRedirectPath(
-    formData.get("next")?.toString(),
-    "/dashboard",
-  );
+  const requestedNext = formData.get("next")?.toString();
+  const nextPath = getSafeRedirectPath(requestedNext, "/dashboard");
+
+  if (isMendakiWorkEmail(email)) {
+    const parsedPassword = passwordSchema.safeParse(formData.get("password"));
+    const admin = getPhaseOneAdminClient();
+
+    const accountResult = await admin
+      .schema("core")
+      .from("user_accounts")
+      .select("id,status")
+      .eq("claimed_email_normalized", email)
+      .maybeSingle();
+
+    if (accountResult.error) {
+      console.error("Staff account lookup failed", {
+        code: accountResult.error.code,
+      });
+      return {
+        status: "error",
+        message: "Staff sign-in is temporarily unavailable. Please try again.",
+      };
+    }
+
+    if (!accountResult.data) {
+      return { status: "error", message: staffAccessMessage };
+    }
+
+    const rolesResult = await admin
+      .schema("core")
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", accountResult.data.id)
+      .in("role", [...staffInviteRoleValues]);
+
+    if (rolesResult.error) {
+      console.error("Staff role lookup failed", {
+        code: rolesResult.error.code,
+      });
+      return {
+        status: "error",
+        message: "Staff sign-in is temporarily unavailable. Please try again.",
+      };
+    }
+
+    if (
+      accountResult.data.status !== "active" ||
+      (rolesResult.data ?? []).length === 0
+    ) {
+      return { status: "error", message: staffAccessMessage };
+    }
+
+    if (!parsedPassword.success) {
+      return { status: "error", message: "Enter your staff password." };
+    }
+
+    const supabase = await createClient();
+    const signInResult = await supabase.auth.signInWithPassword({
+      email,
+      password: parsedPassword.data,
+    });
+
+    if (signInResult.error) {
+      return {
+        status: "error",
+        message: "The email or password is incorrect.",
+      };
+    }
+
+    redirect(getSafeRedirectPath(requestedNext, "/admin/events"));
+  }
 
   try {
     const supabase = createEmailLinkClient();

@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/staff-access";
-import { staffInviteRoleValues } from "@/lib/auth/staff-roles";
+import {
+  isMendakiWorkEmail,
+  roleRequiresMendakiWorkEmail,
+  staffInviteRoleValues,
+} from "@/lib/auth/staff-roles";
 import { getPublicConfig } from "@/lib/env";
 import {
   buildPasswordSetupUrl,
@@ -40,6 +44,20 @@ async function setStaffAccessLevel(
   grantedBy: string,
 ): Promise<StaffRoleMutationResult> {
   const admin = getPhaseOneAdminClient();
+
+  if (roleRequiresMendakiWorkEmail(role)) {
+    const userResult = await admin.auth.admin.getUserById(targetUserId);
+    const targetEmail = userResult.data.user?.email ?? "";
+
+    if (userResult.error || !isMendakiWorkEmail(targetEmail)) {
+      return {
+        ok: false,
+        message:
+          "Staff, VolTeam and Admin access require a @mendaki.org.sg work email.",
+      };
+    }
+  }
+
   const { error } = await admin.schema("core").rpc("set_staff_access_level", {
     p_user_id: targetUserId,
     p_role: role,
@@ -99,6 +117,18 @@ export async function inviteStaffMember(
     return { status: "error", message: "Select a valid staff role." };
   }
 
+  const email = parsedEmail.data.toLowerCase();
+  if (
+    roleRequiresMendakiWorkEmail(parsedRole.data) &&
+    !isMendakiWorkEmail(email)
+  ) {
+    return {
+      status: "error",
+      message:
+        "Staff, VolTeam and Admin accounts must use a @mendaki.org.sg work email. Volunteer Leaders may use an external email.",
+    };
+  }
+
   const { userId: grantedBy } = await requireAdmin();
   const admin = getPhaseOneAdminClient();
   const { appUrl } = getPublicConfig();
@@ -106,7 +136,7 @@ export async function inviteStaffMember(
   redirectTo.searchParams.set("next", "/staff/setup");
 
   const { data, error } = await admin.auth.admin.inviteUserByEmail(
-    parsedEmail.data.toLowerCase(),
+    email,
     {
       redirectTo: redirectTo.toString(),
       data: { staff_invite: true },
