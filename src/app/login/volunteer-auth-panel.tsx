@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { VolunteerSignInForm } from "@/app/login/volunteer-sign-in-form";
@@ -62,6 +63,10 @@ export function VolunteerAuthPanel({
       ) : (
         <VolunteerSignInForm nextPath={nextPath} />
       )}
+
+      <p className="form-help">
+        Keluarga staff? <Link href="/staff/login">Sign in with your staff password</Link>.
+      </p>
     </div>
   );
 }

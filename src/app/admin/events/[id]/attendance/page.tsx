@@ -7,11 +7,16 @@ import {
   addWalkInVolunteer,
   applyAttendanceChange,
 } from "@/app/admin/events/[id]/attendance/actions";
-import { issueVolunteerShirt } from "@/app/admin/events/[id]/attendance/shirt-actions";
+import {
+  issueAdditionalVolunteerShirt,
+  issueVolunteerShirt,
+} from "@/app/admin/events/[id]/attendance/shirt-actions";
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
 import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
+import { RosterFilters } from "@/components/phaseone/roster-filters";
 import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
+import { RosterVolunteerMatchFixer } from "@/components/phaseone/roster-volunteer-match-fixer";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
 import {
   BulkCheckoutButton,
@@ -22,6 +27,7 @@ import {
 import { PortalHeader } from "@/components/portal-header";
 import {
   hasEventManagerRole,
+  hasProgrammeManagerRole,
   requireAttendanceOperatorForEvent,
 } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
@@ -68,6 +74,21 @@ type SessionShiftLink = {
   roster_id: string;
   timeslot_id: string;
   continuation_type: ContinuationType;
+};
+
+type ShirtIssuance = {
+  id: string;
+  volunteer_id: string;
+  issued_at: string;
+  issuance_source: string;
+  collection_method: string;
+  preferred_size_at_issue: string | null;
+  issue_kind: string;
+  issue_reason: string | null;
+  volunteer_shirt_skus:
+    | { shirt_type: string; size: string }
+    | { shirt_type: string; size: string }[]
+    | null;
 };
 
 function parameter(values: Record<string, string | string[] | undefined>, key: string) {
@@ -226,6 +247,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const { id } = await params;
   const { roles } = await requireAttendanceOperatorForEvent(id, `/admin/events/${id}/attendance`);
   const canManageEvent = hasEventManagerRole(roles);
+  const canIssueAdditionalShirt = hasProgrammeManagerRole(roles);
   const admin = getPhaseOneAdminClient();
   const [
     eventResult,
@@ -244,7 +266,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
+      .select("id, timeslot_id, volunteer_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key, volunteer_link_status, volunteer_link_note")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(2000),
@@ -293,8 +315,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       canonicalVolunteerIds.length
         ? admin
             .from("volunteer_shirt_issuances")
-            .select("volunteer_id, issued_at, issuance_source, volunteer_shirt_skus(shirt_type,size)")
+            .select("id, volunteer_id, issued_at, issuance_source, collection_method, preferred_size_at_issue, issue_kind, issue_reason, volunteer_shirt_skus(shirt_type,size)")
             .in("volunteer_id", canonicalVolunteerIds)
+            .order("issued_at", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
       admin
         .from("volunteer_shirt_stock")
@@ -313,9 +336,12 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const privateDetailsByVolunteer = new Map(
     (privateDetailsResult.data ?? []).map((item) => [item.volunteer_id, item]),
   );
-  const shirtIssueByVolunteer = new Map(
-    (shirtIssuanceResult.data ?? []).map((item) => [item.volunteer_id, item]),
-  );
+  const shirtIssuesByVolunteer = new Map<string, ShirtIssuance[]>();
+  for (const item of (shirtIssuanceResult.data ?? []) as ShirtIssuance[]) {
+    const current = shirtIssuesByVolunteer.get(item.volunteer_id) ?? [];
+    current.push(item);
+    shirtIssuesByVolunteer.set(item.volunteer_id, current);
+  }
   const shirtStock = shirtStockResult.data ?? [];
 
   const stockFor = (shirtType: string, size: string) =>
@@ -389,7 +415,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       )
     : [];
 
-  const query = (parameter(parameters, "q") ?? "").trim().toLowerCase();
+  const rawQuery = (parameter(parameters, "q") ?? "").trim();
+  const query = rawQuery.toLowerCase();
   const requestedFilter = parameter(parameters, "status") ?? "all";
   const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "withdrawn", "absent", "anomaly"]);
   const filter = validFilters.has(requestedFilter) ? requestedFilter : "all";
@@ -406,14 +433,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     ].filter(Boolean).join(" ").toLowerCase();
     return matchesStatus && (!query || haystack.includes(query));
   });
+  const visibleRosterIds = new Set(visible.map(({ volunteer }) => volunteer.id));
   const counts = records.reduce<Record<AttendanceStatus, number>>(
     (totals, record) => ({ ...totals, [record.status]: totals[record.status] + 1 }),
     { pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0 },
   );
-  const activeFilterLabel = filter === "all"
-    ? query ? "Search" : null
-    : statusLabel(filter as AttendanceStatus);
-
   const successCode = parameter(parameters, "success");
   const successMessage = successCode === "attendance_recorded"
     ? "Attendance recorded."
@@ -431,16 +455,24 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 ? "Walk-in volunteer details updated."
                 : successCode === "shirt_issued"
                   ? "Volunteer shirt issued and inventory updated."
-                  : undefined;
+                  : successCode === "shirt_already_collected"
+                    ? "Volunteer shirt collection recorded without changing current stock."
+                    : successCode === "shirt_additional_issued"
+                      ? "Additional volunteer shirt issued and inventory updated."
+                      : undefined;
   const errorCode = parameter(parameters, "error");
   const errorMessage =
     errorCode === "shirt_already_issued"
       ? "This volunteer already has a recorded shirt issue."
       : errorCode === "shirt_out_of_stock"
         ? "The selected shirt is out of stock."
-        : errorCode === "shirt_issue_failed"
-          ? "The shirt could not be issued."
-          : errorCode;
+        : errorCode === "shirt_initial_required"
+          ? "An initial shirt record is required before issuing another shirt."
+          : errorCode === "shirt_reason_details_required"
+            ? "Add a short explanation when using Other as the shirt issue reason."
+            : errorCode === "shirt_issue_failed"
+              ? "The shirt could not be issued."
+              : errorCode;
   const event = eventResult.data;
 
   const dayGroups = new Map<string, Timeslot[]>();
@@ -552,7 +584,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   <h2 id="attendance-roster-title">Volunteer roster</h2>
                 </div>
                 <div className="actions">
-                  <span className="status-pill">{visible.length} shown{activeFilterLabel ? ` · ${activeFilterLabel}` : ""}</span>
+                  <span className="status-pill" aria-live="polite"><span data-roster-visible-count>{visible.length}</span> shown</span>
                   {canManageEvent ? (
                     <BulkCheckoutButton
                       checkedInCount={counts.signed_in}
@@ -623,64 +655,18 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               </details>
               ) : null}
 
-              <form className="phaseone-attendance-filters phaseone-desktop-filters" method="get">
-                <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
-                <div className="form-field"><label htmlFor="q">Search</label><input id="q" name="q" defaultValue={query} placeholder="Name, volunteer ID or contact number" /></div>
-                <div className="form-field"><label htmlFor="status">Status</label><select id="status" name="status" defaultValue={filter}><option value="all">All</option><option value="pending">Not arrived</option><option value="signed_in">Checked in</option><option value="signed_out">Checked out</option><option value="withdrawn">Withdrawn</option><option value="absent">Absent</option><option value="anomaly">Needs review</option></select></div>
-                <button className="button button-secondary" type="submit">Apply filters</button>
-              </form>
-
-              <details
-                className="phaseone-mobile-filter"
-                data-active={filter !== "all" || query ? "true" : undefined}
-              >
-                <summary aria-label="Filter roster" title="Filter roster">
-                  <svg aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="M4 5h16l-6.25 7.1v5.15l-3.5 1.75v-6.9L4 5Z" />
-                  </svg>
-                  <span className="phaseone-mobile-filter-dot" aria-hidden="true" />
-                </summary>
-                <div className="phaseone-mobile-filter-panel">
-                  <div className="phaseone-mobile-filter-heading">
-                    <strong>Filter roster</strong>
-                    <span className="muted">{visible.length} shown</span>
-                  </div>
-                  <form className="phaseone-mobile-filter-form" method="get">
-                    <input name="timeslot" type="hidden" value={selectedTimeslot.id} />
-                    <div className="form-field">
-                      <label htmlFor="mobile-q">Search</label>
-                      <input id="mobile-q" name="q" defaultValue={query} placeholder="Name, ID or contact" />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="mobile-status">Status</label>
-                      <select id="mobile-status" name="status" defaultValue={filter}>
-                        <option value="all">All</option>
-                        <option value="pending">Not arrived</option>
-                        <option value="signed_in">Checked in</option>
-                        <option value="signed_out">Checked out</option>
-                        <option value="withdrawn">Withdrawn</option>
-                        <option value="absent">Absent</option>
-                        <option value="anomaly">Needs review</option>
-                      </select>
-                    </div>
-                    <div className="phaseone-mobile-filter-actions">
-                      <button className="button button-primary" type="submit">Apply</button>
-                      <Link
-                        className="button button-secondary"
-                        href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(selectedTimeslot.id)}`}
-                      >
-                        Clear
-                      </Link>
-                    </div>
-                  </form>
-                </div>
-              </details>
+              <RosterFilters
+                initialQuery={rawQuery}
+                initialShownCount={visible.length}
+                initialStatus={filter}
+                timeslotId={selectedTimeslot.id}
+              />
 
               {canManageEvent ? (
                 <p className="muted phaseone-roster-swipe-hint">Swipe a volunteer card right for Review or Insight.</p>
               ) : null}
-              <div className="phaseone-attendance-list">
-                {visible.map(({ volunteer, attendance, effectiveAttendance, status }) => {
+              <div className="phaseone-attendance-list" id="roster-list">
+                {records.map(({ volunteer, attendance, effectiveAttendance, status }) => {
                   const linkedNextShift = nextShiftLink(effectiveAttendance?.session_id);
                   const isCarryover = effectiveAttendance?.continuation_type === "scheduled";
                   const isExtended = effectiveAttendance?.continuation_type === "extended_on_site";
@@ -694,9 +680,10 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   const privateDetails = canonicalVolunteerId
                     ? privateDetailsByVolunteer.get(canonicalVolunteerId)
                     : undefined;
-                  const shirtIssue = canonicalVolunteerId
-                    ? shirtIssueByVolunteer.get(canonicalVolunteerId)
-                    : undefined;
+                  const shirtIssues = canonicalVolunteerId
+                    ? shirtIssuesByVolunteer.get(canonicalVolunteerId) ?? []
+                    : [];
+                  const shirtIssue = shirtIssues[0];
                   const preferredShirtSize =
                     privateDetails?.tshirt_size ?? volunteer.tshirt_size ?? null;
                   const dietaryRequirements =
@@ -706,13 +693,31 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   const allergySummary = privateDetails?.no_known_food_allergies
                     ? "No known food allergies"
                     : privateDetails?.food_allergies ?? null;
+                  const staffToolsName = `roster-tools-${volunteer.id}`;
+                  const actualShirt = shirtIssue
+                    ? (Array.isArray(shirtIssue.volunteer_shirt_skus)
+                        ? shirtIssue.volunteer_shirt_skus[0]
+                        : shirtIssue.volunteer_shirt_skus)
+                    : null;
+                  const rosterFilterText = [
+                    volunteer.volunteer_key,
+                    volunteer.volunteer_name,
+                    volunteer.email,
+                    volunteer.mobile,
+                    volunteer.age == null ? null : String(volunteer.age),
+                    volunteer.tshirt_size,
+                    volunteer.dietary_requirements,
+                  ].filter(Boolean).join(" ").toLowerCase();
 
                   return (
                     <article
                       className="phaseone-attendance-card phaseone-checkin-card"
+                      data-filter-text={rosterFilterText}
                       data-highlighted={highlightedRosterId === volunteer.id ? "true" : undefined}
+                      data-roster-filterable="true"
                       data-status={status}
                       data-underage={isUnder18 ? "true" : undefined}
+                      hidden={!visibleRosterIds.has(volunteer.id)}
                       id={`roster-${volunteer.id}`}
                       key={volunteer.id}
                     >
@@ -723,6 +728,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             <p className="record-kicker">{volunteer.volunteer_key ?? "No volunteer ID"}</p>
                             {isUnder18 ? <span className="status-pill phaseone-underage-badge">Under 18</span> : null}
                             {volunteer.entry_method === "walk_in" ? <span className="status-pill phaseone-walk-in-badge">Walk-in</span> : null}
+                            {volunteer.volunteer_link_status === "needs_review" ? (
+                              <span className="status-pill phaseone-match-review-badge">Check volunteer match</span>
+                            ) : null}
                             {isCarryover ? <span className="status-pill phaseone-continuation-badge">Continuing from earlier shift</span> : null}
                             {isExtended ? <span className="status-pill phaseone-continuation-badge">Extended from earlier shift</span> : null}
                             {linkedNextShift && status === "signed_in" ? (
@@ -730,50 +738,104 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             ) : null}
                           </div>
                           <h3>{volunteer.volunteer_name}</h3>
-                          <p className="muted">{volunteer.mobile ?? "No contact number"} · Age: {volunteer.age ?? "—"} · T-shirt: {preferredShirtSize ?? "—"}</p>
-                          <p className="muted"><strong>Meal / dietary:</strong> {dietaryRequirements ?? "—"}</p>
-                          {allergySummary ? <p className="muted"><strong>Food allergies:</strong> {allergySummary}</p> : null}
+                          <p className="muted phaseone-roster-core-meta">
+                            {volunteer.mobile ?? "No contact number"} · Age {volunteer.age ?? "—"}
+                            {preferredShirtSize ? ` · Shirt ${preferredShirtSize}` : ""}
+                            {dietaryRequirements ? ` · ${dietaryRequirements}` : ""}
+                          </p>
+                          {allergySummary && allergySummary !== "No known food allergies" ? (
+                            <p className="phaseone-roster-alert"><strong>Food allergy:</strong> {allergySummary}</p>
+                          ) : null}
                         </div>
                         <span className="status-pill" data-state={status}>{statusLabel(status)}</span>
                       </div>
 
                       {canonicalVolunteerId ? (
                         <div className="phaseone-shirt-status">
-                          {shirtIssue ? (
-                            <span className="status-pill" data-state="verified">
-                              Shirt issued
+                          {shirtIssue && actualShirt ? (
+                            <span
+                              className="phaseone-shirt-chip phaseone-shirt-chip-complete"
+                              title={
+                                shirtIssue.collection_method === "already_collected"
+                                  ? "Recorded as collected previously; current inventory was not reduced."
+                                  : "Issued from tracked inventory."
+                              }
+                            >
+                              Shirt collected
+                              {" · "}{actualShirt.shirt_type === "collared" ? "Collared" : "Round-neck"} {actualShirt.size}
+                              {shirtIssue.preferred_size_at_issue && shirtIssue.preferred_size_at_issue !== actualShirt.size
+                                ? ` · preferred ${shirtIssue.preferred_size_at_issue}`
+                                : ""}
+                              {shirtIssues.length > 1 ? ` · +${shirtIssues.length - 1} additional` : ""}
                             </span>
-                          ) : preferredShirtSize && canManageEvent ? (
-                            <details>
-                              <summary>
-                                Shirt due · {preferredShirtSize}
+                          ) : canManageEvent ? (
+                            <details className="phaseone-shirt-disclosure">
+                              <summary className="phaseone-shirt-chip">
+                                {preferredShirtSize ? `Issue shirt · ${preferredShirtSize}` : "Record shirt"}
                               </summary>
                               <form action={issueVolunteerShirt} className="phaseone-shirt-issue-form">
                                 <input type="hidden" name="eventId" value={id} />
                                 <input type="hidden" name="volunteerId" value={canonicalVolunteerId} />
                                 <input type="hidden" name="timeslotId" value={selectedTimeslot.id} />
-                                <div className="form-field">
-                                  <label htmlFor={`shirt-type-${volunteer.id}`}>Shirt type</label>
-                                  <select id={`shirt-type-${volunteer.id}`} name="shirtType" required>
-                                    <option value="round_neck">
-                                      Round-neck · {stockFor("round_neck", preferredShirtSize)} in stock
-                                    </option>
-                                    <option value="collared">
-                                      Collared · {stockFor("collared", preferredShirtSize)} in stock
-                                    </option>
-                                  </select>
+                                <input type="hidden" name="preferredSize" value={preferredShirtSize ?? ""} />
+
+                                <div className="phaseone-shirt-choice-grid">
+                                  <div className="form-field">
+                                    <label htmlFor={`shirt-method-${volunteer.id}`}>Record as</label>
+                                    <select
+                                      defaultValue="issued_now"
+                                      id={`shirt-method-${volunteer.id}`}
+                                      name="collectionMethod"
+                                      required
+                                    >
+                                      <option value="issued_now">Issue from stock now</option>
+                                      <option value="already_collected">Already collected</option>
+                                    </select>
+                                  </div>
+                                  <div className="form-field">
+                                    <label htmlFor={`shirt-type-${volunteer.id}`}>Shirt type</label>
+                                    <select id={`shirt-type-${volunteer.id}`} name="shirtType" required>
+                                      <option value="round_neck">Round-neck</option>
+                                      <option value="collared">Collared</option>
+                                    </select>
+                                  </div>
+                                  <div className="form-field">
+                                    <label htmlFor={`shirt-size-${volunteer.id}`}>
+                                      Actual size received
+                                    </label>
+                                    <select
+                                      defaultValue={preferredShirtSize ?? ""}
+                                      id={`shirt-size-${volunteer.id}`}
+                                      name="actualSize"
+                                      required
+                                    >
+                                      <option value="" disabled>Select size</option>
+                                      {["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"].map((size) => (
+                                        <option key={size} value={size}>
+                                          {size} · RN {stockFor("round_neck", size)} / Collared {stockFor("collared", size)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <p className="muted">
+                                      {preferredShirtSize
+                                        ? `Preferred size: ${preferredShirtSize}. Change this if a different size is issued.`
+                                        : "Choose the size actually received."}
+                                    </p>
+                                  </div>
                                 </div>
-                                <input type="hidden" name="size" value={preferredShirtSize} />
-                                <button className="button button-secondary" type="submit">
-                                  Confirm shirt issue
-                                </button>
+                                <div className="phaseone-shirt-form-actions">
+                                  <button className="button button-secondary" type="submit">
+                                    Save shirt record
+                                  </button>
+                                  <small className="muted">
+                                    “Already collected” records the shirt without reducing current stock.
+                                  </small>
+                                </div>
                               </form>
                             </details>
                           ) : preferredShirtSize ? (
-                            <span className="status-pill">Shirt due · {preferredShirtSize}</span>
-                          ) : (
-                            <span className="status-pill">Shirt size needed</span>
-                          )}
+                            <span className="phaseone-shirt-chip">Shirt not recorded · {preferredShirtSize}</span>
+                          ) : null}
                         </div>
                       ) : null}
 
@@ -841,136 +903,229 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       ) : null}
 
                       {canManageEvent ? (
-                        <>
-                      <VolunteerReviewForm
-                        eventId={id}
-                        rosterId={volunteer.id}
-                        timeslotId={selectedTimeslot.id}
-                      />
+                        <div className="phaseone-staff-tools" aria-label="Volunteer staff tools">
+                          <VolunteerReviewForm
+                            detailsName={staffToolsName}
+                            eventId={id}
+                            rosterId={volunteer.id}
+                            timeslotId={selectedTimeslot.id}
+                          />
 
-                      {canManageEvent && volunteer.volunteer_id ? (
-                        <RosterProfileDetailsEditor
-                          dietaryRequirements={volunteer.dietary_requirements}
-                          eventId={id}
-                          tshirtSize={volunteer.tshirt_size}
-                          volunteerId={volunteer.volunteer_id}
-                          volunteerName={volunteer.volunteer_name}
-                        />
-                      ) : null}
+                          <details className="phaseone-inline-insight" name={staffToolsName}>
+                            <summary aria-label="Add volunteer insight">
+                              <svg
+                                aria-hidden="true"
+                                className="phaseone-staff-tool-icon"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M9 18h6M10 21h4M8.2 14.8A7 7 0 1 1 15.8 14.8c-.9.7-1.4 1.5-1.6 2.2h-4.4c-.2-.7-.7-1.5-1.6-2.2Z" />
+                              </svg>
+                              <span>Insight</span>
+                              <span className="phaseone-inline-insight-hint">Skill, interest, connection, etc.</span>
+                            </summary>
+                            <form action={addVolunteerInsight} className="insight-capture-form phaseone-inline-insight-form">
+                              <input name="eventId" type="hidden" value={id} />
+                              <input name="rosterId" type="hidden" value={volunteer.id} />
+                              <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
+                              <div className="insight-capture-grid">
+                                <div className="form-field">
+                                  <label htmlFor={`insight-category-${volunteer.id}`}>What did you learn?</label>
+                                  <select id={`insight-category-${volunteer.id}`} name="category" defaultValue="interest">
+                                    <option value="interest">Interest</option>
+                                    <option value="skill">Skill</option>
+                                    <option value="experience">Experience</option>
+                                    <option value="connection">Connection / affiliation</option>
+                                    <option value="role_preference">Role preference</option>
+                                    <option value="availability">Availability</option>
+                                    <option value="language">Language</option>
+                                    <option value="development">Development interest</option>
+                                    <option value="follow_up">Follow-up</option>
+                                    <option value="note">Other useful note</option>
+                                  </select>
+                                </div>
+                                <div className="form-field">
+                                  <label htmlFor={`insight-source-${volunteer.id}`}>Source</label>
+                                  <select id={`insight-source-${volunteer.id}`} name="sourceType" defaultValue="volunteer_shared">
+                                    <option value="volunteer_shared">Volunteer told me</option>
+                                    <option value="staff_observed">Staff observed</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div className="form-field">
+                                <label htmlFor={`insight-value-${volunteer.id}`}>Insight</label>
+                                <input
+                                  id={`insight-value-${volunteer.id}`}
+                                  name="value"
+                                  maxLength={240}
+                                  placeholder="e.g. Interested in mentoring, photography, weekends"
+                                  required
+                                />
+                              </div>
+                              <div className="form-field">
+                                <label htmlFor={`insight-detail-${volunteer.id}`}>Context <span className="muted">optional</span></label>
+                                <textarea
+                                  id={`insight-detail-${volunteer.id}`}
+                                  name="detail"
+                                  maxLength={1500}
+                                  rows={2}
+                                  placeholder="Short factual context that will help someone understand this later"
+                                />
+                              </div>
+                              <div className="phaseone-inline-insight-actions">
+                                <button className="button button-primary" type="submit">Save insight</button>
+                                <Link className="text-link" href={`/admin/events/${id}/insights`}>Review all insights</Link>
+                              </div>
+                            </form>
+                          </details>
 
-                      {volunteer.entry_method === "walk_in" ? (
-                        <WalkInEditForm
-                          age={volunteer.age}
-                          email={volunteer.email}
-                          eventId={id}
-                          mobile={volunteer.mobile}
-                          dietaryRequirements={volunteer.dietary_requirements}
-                          rosterId={volunteer.id}
-                          timeslotId={selectedTimeslot.id}
-                          volunteerName={volunteer.volunteer_name}
-                        />
-                      ) : null}
-
-                      <details className="phaseone-inline-insight">
-                        <summary aria-label="Add volunteer insight">
-                          <span>+ Insight</span>
-                          <span className="phaseone-inline-insight-hint">Skill, interest, connection, etc.</span>
-                        </summary>
-                        <form action={addVolunteerInsight} className="insight-capture-form phaseone-inline-insight-form">
-                          <input name="eventId" type="hidden" value={id} />
-                          <input name="rosterId" type="hidden" value={volunteer.id} />
-                          <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
-                          <div className="insight-capture-grid">
-                            <div className="form-field">
-                              <label htmlFor={`insight-category-${volunteer.id}`}>What did you learn?</label>
-                              <select id={`insight-category-${volunteer.id}`} name="category" defaultValue="interest">
-                                <option value="interest">Interest</option>
-                                <option value="skill">Skill</option>
-                                <option value="experience">Experience</option>
-                                <option value="connection">Connection / affiliation</option>
-                                <option value="role_preference">Role preference</option>
-                                <option value="availability">Availability</option>
-                                <option value="language">Language</option>
-                                <option value="development">Development interest</option>
-                                <option value="follow_up">Follow-up</option>
-                                <option value="note">Other useful note</option>
-                              </select>
-                            </div>
-                            <div className="form-field">
-                              <label htmlFor={`insight-source-${volunteer.id}`}>Source</label>
-                              <select id={`insight-source-${volunteer.id}`} name="sourceType" defaultValue="volunteer_shared">
-                                <option value="volunteer_shared">Volunteer told me</option>
-                                <option value="staff_observed">Staff observed</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div className="form-field">
-                            <label htmlFor={`insight-value-${volunteer.id}`}>Insight</label>
-                            <input
-                              id={`insight-value-${volunteer.id}`}
-                              name="value"
-                              maxLength={240}
-                              placeholder="e.g. Interested in mentoring, photography, weekends"
-                              required
+                          {canIssueAdditionalShirt ? (
+                            <RosterVolunteerMatchFixer
+                              currentContact={volunteer.email ?? volunteer.mobile ?? null}
+                              currentVolunteerCode={volunteer.volunteer_key}
+                              currentVolunteerName={volunteer.volunteer_name}
+                              detailsName={staffToolsName}
+                              eventId={id}
+                              needsReview={volunteer.volunteer_link_status === "needs_review"}
+                              rosterId={volunteer.id}
                             />
-                          </div>
-                          <div className="form-field">
-                            <label htmlFor={`insight-detail-${volunteer.id}`}>Context <span className="muted">optional</span></label>
-                            <textarea
-                              id={`insight-detail-${volunteer.id}`}
-                              name="detail"
-                              maxLength={1500}
-                              rows={2}
-                              placeholder="Short factual context that will help someone understand this later"
-                            />
-                          </div>
-                          <div className="phaseone-inline-insight-actions">
-                            <button className="button button-primary" type="submit">Save insight</button>
-                            <Link className="text-link" href={`/admin/events/${id}/insights`}>Review all insights</Link>
-                          </div>
-                        </form>
-                      </details>
+                          ) : null}
 
-                        </>
+                          {canIssueAdditionalShirt && canonicalVolunteerId && shirtIssue ? (
+                            <details className="phaseone-attendance-edit phaseone-additional-shirt" name={staffToolsName}>
+                              <summary>Another shirt</summary>
+                              <form action={issueAdditionalVolunteerShirt} className="phaseone-shirt-issue-form">
+                                <input type="hidden" name="eventId" value={id} />
+                                <input type="hidden" name="volunteerId" value={canonicalVolunteerId} />
+                                <input type="hidden" name="timeslotId" value={selectedTimeslot.id} />
+                                <input type="hidden" name="preferredSize" value={preferredShirtSize ?? ""} />
+                                <div className="phaseone-shirt-choice-grid">
+                                  <div className="form-field">
+                                    <label htmlFor={`additional-shirt-reason-${volunteer.id}`}>Reason</label>
+                                    <select id={`additional-shirt-reason-${volunteer.id}`} name="issueReason" required>
+                                      <option value="">Select reason</option>
+                                      <option value="replacement_damaged">Replacement — damaged</option>
+                                      <option value="replacement_lost">Replacement — lost</option>
+                                      <option value="different_shirt_type">Different shirt type</option>
+                                      <option value="programme_requirement">Programme / role requirement</option>
+                                      <option value="new_allocation_cycle">New allocation cycle</option>
+                                      <option value="other">Other</option>
+                                    </select>
+                                  </div>
+                                  <div className="form-field">
+                                    <label htmlFor={`additional-shirt-type-${volunteer.id}`}>Shirt type</label>
+                                    <select id={`additional-shirt-type-${volunteer.id}`} name="shirtType" required>
+                                      <option value="round_neck">Round-neck</option>
+                                      <option value="collared">Collared</option>
+                                    </select>
+                                  </div>
+                                  <div className="form-field">
+                                    <label htmlFor={`additional-shirt-size-${volunteer.id}`}>Actual size issued</label>
+                                    <select
+                                      defaultValue={preferredShirtSize ?? ""}
+                                      id={`additional-shirt-size-${volunteer.id}`}
+                                      name="actualSize"
+                                      required
+                                    >
+                                      <option value="" disabled>Select size</option>
+                                      {["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"].map((size) => (
+                                        <option key={size} value={size}>
+                                          {size} · RN {stockFor("round_neck", size)} / Collared {stockFor("collared", size)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                                <div className="form-field">
+                                  <label htmlFor={`additional-shirt-note-${volunteer.id}`}>
+                                    Note <span className="muted">(required for Other)</span>
+                                  </label>
+                                  <input
+                                    id={`additional-shirt-note-${volunteer.id}`}
+                                    name="note"
+                                    maxLength={1000}
+                                    placeholder="Optional context for the additional issue"
+                                  />
+                                </div>
+                                <div className="phaseone-shirt-form-actions">
+                                  <button className="button button-secondary" type="submit">Issue another shirt</button>
+                                  <small className="muted">
+                                    This creates a new issuance record and deducts the actual size from stock.
+                                  </small>
+                                </div>
+                              </form>
+                            </details>
+                          ) : null}
+
+                          {volunteer.volunteer_id ? (
+                            <RosterProfileDetailsEditor
+                              detailsName={staffToolsName}
+                              dietaryRequirements={volunteer.dietary_requirements}
+                              eventId={id}
+                              tshirtSize={volunteer.tshirt_size}
+                              volunteerId={volunteer.volunteer_id}
+                              volunteerName={volunteer.volunteer_name}
+                            />
+                          ) : null}
+
+                          {volunteer.entry_method === "walk_in" ? (
+                            <WalkInEditForm
+                              age={volunteer.age}
+                              email={volunteer.email}
+                              eventId={id}
+                              mobile={volunteer.mobile}
+                              dietaryRequirements={volunteer.dietary_requirements}
+                              detailsName={staffToolsName}
+                              rosterId={volunteer.id}
+                              timeslotId={selectedTimeslot.id}
+                              volunteerName={volunteer.volunteer_name}
+                            />
+                          ) : null}
+
+                          {usesInheritedSession ? (
+                            <p className="muted phaseone-inherited-note">
+                              Attendance corrections belong to the shift where this volunteer originally checked in.
+                            </p>
+                          ) : (
+                            <details className="phaseone-attendance-edit phaseone-attendance-correct" name={staffToolsName}>
+                              <summary>Correct attendance</summary>
+                              <form action={applyAttendanceChange} className="phaseone-attendance-correction">
+                                <input name="eventId" type="hidden" value={id} />
+                                <input name="rosterId" type="hidden" value={volunteer.id} />
+                                <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
+                                <div className="form-field">
+                                  <label htmlFor={`action-${volunteer.id}`}>Correction</label>
+                                  <select
+                                    id={`action-${volunteer.id}`}
+                                    name="action"
+                                    defaultValue={attendance?.non_attendance_status ? "clear_non_attendance" : attendance?.signed_in_at ? (attendance.signed_out_at ? "clear_sign_out" : "mark_sign_out") : "mark_sign_in"}
+                                  >
+                                    <option value="mark_sign_in">Set or correct check-in</option>
+                                    <option value="mark_sign_out">Set or correct check-out</option>
+                                    <option value="clear_sign_in">Clear check-in</option>
+                                    <option value="clear_sign_out">Clear check-out</option>
+                                    <option value="mark_withdrawn">Mark withdrawn</option>
+                                    <option value="mark_absent">Mark absent</option>
+                                    <option value="clear_non_attendance">Clear withdrawn/absent status</option>
+                                  </select>
+                                </div>
+                                <div className="form-field">
+                                  <label htmlFor={`timestamp-${volunteer.id}`}>Timestamp</label>
+                                  <input id={`timestamp-${volunteer.id}`} name="timestamp" type="datetime-local" defaultValue={toSingaporeDateTimeLocal(attendance?.non_attendance_marked_at ?? attendance?.signed_out_at ?? attendance?.signed_in_at ?? null)} />
+                                  <p className="muted">Leave blank to use the current time. Singapore time.</p>
+                                </div>
+                                <div className="form-field phaseone-attendance-reason">
+                                  <label htmlFor={`reason-${volunteer.id}`}>Reason</label>
+                                  <input id={`reason-${volunteer.id}`} name="reason" minLength={5} maxLength={500} required placeholder="Required audit reason" />
+                                </div>
+                                <button className="button button-secondary" type="submit">Save correction</button>
+                              </form>
+                            </details>
+                          )}
+                        </div>
                       ) : null}
 
                       {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
 
-                      {canManageEvent ? (
-                        usesInheritedSession ? (
-                        <p className="muted phaseone-inherited-note">
-                          This shift inherits the volunteer&apos;s event-day check-in. Attendance corrections should be made on the shift where they originally checked in.
-                        </p>
-                      ) : (
-                        <details className="phaseone-attendance-edit">
-                          <summary>Correct attendance</summary>
-                          <form action={applyAttendanceChange} className="phaseone-attendance-correction">
-                            <input name="eventId" type="hidden" value={id} />
-                            <input name="rosterId" type="hidden" value={volunteer.id} />
-                            <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
-                            <div className="form-field">
-                              <label htmlFor={`action-${volunteer.id}`}>Correction</label>
-                              <select
-                                id={`action-${volunteer.id}`}
-                                name="action"
-                                defaultValue={attendance?.non_attendance_status ? "clear_non_attendance" : attendance?.signed_in_at ? (attendance.signed_out_at ? "clear_sign_out" : "mark_sign_out") : "mark_sign_in"}
-                              >
-                                <option value="mark_sign_in">Set or correct check-in</option>
-                                <option value="mark_sign_out">Set or correct check-out</option>
-                                <option value="clear_sign_in">Clear check-in</option>
-                                <option value="clear_sign_out">Clear check-out</option>
-                                <option value="mark_withdrawn">Mark withdrawn</option>
-                                <option value="mark_absent">Mark absent</option>
-                                <option value="clear_non_attendance">Clear withdrawn/absent status</option>
-                              </select>
-                            </div>
-                            <div className="form-field"><label htmlFor={`timestamp-${volunteer.id}`}>Timestamp</label><input id={`timestamp-${volunteer.id}`} name="timestamp" type="datetime-local" defaultValue={toSingaporeDateTimeLocal(attendance?.non_attendance_marked_at ?? attendance?.signed_out_at ?? attendance?.signed_in_at ?? null)} /><p className="muted">Leave blank to use the current time. Singapore time.</p></div>
-                            <div className="form-field phaseone-attendance-reason"><label htmlFor={`reason-${volunteer.id}`}>Reason</label><input id={`reason-${volunteer.id}`} name="reason" minLength={5} maxLength={500} required placeholder="Required audit reason" /></div>
-                            <button className="button button-secondary" type="submit">Save correction</button>
-                          </form>
-                        </details>
-                      )
-                      ) : null}
                     </article>
                   );
                 })}

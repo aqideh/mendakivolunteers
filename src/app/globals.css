@@ -238,6 +238,74 @@ h3 {
   transform: none;
 }
 
+.interaction-pending {
+  cursor: progress !important;
+  pointer-events: none;
+}
+
+.interaction-pending::before {
+  content: "";
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 0.9rem;
+  margin-right: 0.5rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.12em;
+  animation: interaction-spin 650ms linear infinite;
+}
+
+.interaction-progress {
+  position: fixed;
+  z-index: 10000;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--accent);
+}
+
+.interaction-progress.is-visible {
+  opacity: 1;
+  animation: interaction-progress 1.4s ease-in-out infinite;
+}
+
+.interaction-status {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes interaction-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes interaction-progress {
+  0% {
+    transform: scaleX(0.08);
+  }
+
+  55% {
+    transform: scaleX(0.72);
+  }
+
+  100% {
+    transform: scaleX(0.96);
+  }
+}
+
 .panel {
   border: 1px solid var(--border);
   border-radius: 1rem;

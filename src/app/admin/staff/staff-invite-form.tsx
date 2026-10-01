@@ -34,7 +34,7 @@ export function StaffInviteForm() {
         if (!option) return;
 
         const confirmed = window.confirm(
-          `Invite ${email} and grant "${option.label}"?\n\n${option.description}\n\nThe staff member will receive a secure account setup email.`,
+          `Invite ${email} and grant "${option.label}"?\n\n${option.description}\n\nThe staff member will receive a secure setup email, choose a password once, then use email + password for normal field sign-in.`,
         );
         if (!confirmed) event.preventDefault();
       }}
@@ -43,9 +43,12 @@ export function StaffInviteForm() {
         <p className="eyebrow">New staff account</p>
         <h2>Invite staff</h2>
         <p className="muted">
-          KELUARGA will create the account, assign the selected staff role and
-          email a secure setup link. Roles are additive, so more permissions can
-          be granted later from the staff table.
+          KELUARGA will create an invitation-only staff account, assign the
+          selected access level and email a one-time setup link. The staff member
+          chooses a password during setup; normal sign-in then uses work email +
+          password and does not require inbox access. Staff, VolTeam and Admin
+          accounts must use a @mendaki.org.sg work email; Volunteer Leaders may
+          use an external email.
         </p>
       </div>
 

@@ -17,6 +17,7 @@ import {
   saveSkillsStep,
 } from "@/app/profile/setup/actions";
 import { PortalHeader } from "@/components/portal-header";
+import { ProfileEducationFields } from "@/components/profile-education-fields";
 import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
 import { requireActiveAccount } from "@/lib/auth/account-access";
 
@@ -106,20 +107,6 @@ const commitmentOptions = [
 
 const shirtSizes = ["S", "M", "L", "XL", "2XL", "3XL", "5XL", "7XL"] as const;
 
-const qualifications = [
-  ["primary", "Primary"],
-  ["secondary", "Secondary"],
-  ["n_level", "N-Level"],
-  ["o_level", "O-Level"],
-  ["a_level", "A-Level"],
-  ["ite", "ITE / Nitec / Higher Nitec"],
-  ["diploma", "Diploma"],
-  ["professional_certificate", "Professional certificate"],
-  ["bachelors", "Bachelor's degree"],
-  ["postgraduate", "Postgraduate"],
-  ["other", "Other"],
-] as const;
-
 function readParameter(
   parameters: Record<string, string | string[] | undefined>,
   name: string,
@@ -145,7 +132,11 @@ function milestoneState(input: {
   return {
     contact: Boolean(input.displayName.trim() && input.mobile?.trim()),
     home: Boolean(privateDetails?.postal_code && privateDetails?.address_line),
-    personal: Boolean(privateDetails?.date_of_birth),
+    personal:
+      Boolean(privateDetails?.date_of_birth) &&
+      (privateDetails?.languages_spoken?.length ?? 0) > 0 &&
+      Boolean(privateDetails?.emergency_contact_name?.trim()) &&
+      Boolean(privateDetails?.emergency_contact_mobile?.trim()),
     interests: (profile?.interests?.length ?? 0) > 0,
     skills: (profile?.skills?.length ?? 0) > 0,
     availability:
@@ -157,7 +148,13 @@ function milestoneState(input: {
         privateDetails?.no_known_food_allergies ||
           privateDetails?.food_allergies?.trim(),
       ),
-    education: Boolean(privateDetails?.highest_qualification),
+    education:
+      Boolean(privateDetails?.highest_qualification) &&
+      Boolean(privateDetails?.institution?.trim()) &&
+      (!["ite", "diploma", "bachelors", "postgraduate"].includes(
+        privateDetails?.highest_qualification ?? "",
+      ) ||
+        Boolean(privateDetails?.field_of_study?.trim())),
     photo: Boolean(profile?.avatar_path),
   };
 }
@@ -239,9 +236,11 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
         ? "Complete all required profile milestones before finishing setup."
         : error === "location_lookup"
           ? "We could not verify that postal code. Check the 6-digit postal code and try again."
-          : error
-            ? "That change could not be saved. Try again."
-            : null;
+          : error === "location_service_unavailable"
+            ? "Postal-code verification is temporarily unavailable. Please try again after the service is restored."
+            : error
+              ? "That change could not be saved. Try again."
+              : null;
 
   const currentIndex = steps.findIndex((step) => step.key === currentStep);
 
@@ -467,32 +466,37 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="setup-languages">Languages spoken <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-languages">Languages spoken</label>
                 <input
                   id="setup-languages"
                   name="languagesSpoken"
                   defaultValue={privateDetails?.languages_spoken?.join(", ") ?? ""}
                   placeholder="English, Malay, Mandarin"
+                  required
                 />
                 <span className="form-help">Separate languages with commas.</span>
               </div>
               <div className="form-field">
-                <label htmlFor="setup-emergency-name">Emergency contact name <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-emergency-name">Emergency contact name</label>
                 <input
                   id="setup-emergency-name"
                   name="emergencyContactName"
                   maxLength={160}
                   defaultValue={privateDetails?.emergency_contact_name ?? ""}
+                  required
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="setup-emergency-mobile">Emergency contact number <span className="muted">(optional)</span></label>
+                <label htmlFor="setup-emergency-mobile">Emergency contact number</label>
                 <input
                   id="setup-emergency-mobile"
                   name="emergencyContactMobile"
+                  minLength={7}
                   maxLength={40}
                   inputMode="tel"
+                  autoComplete="tel"
                   defaultValue={privateDetails?.emergency_contact_mobile ?? ""}
+                  required
                 />
               </div>
               <div className="profile-setup-actions">
@@ -650,38 +654,11 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
           {currentStep === "education" ? (
             <form action={saveEducationStep} className="profile-setup-form">
               {editMode ? <input type="hidden" name="mode" value="edit" /> : null}
-              <div className="form-field">
-                <label htmlFor="setup-qualification">Highest qualification</label>
-                <select
-                  id="setup-qualification"
-                  name="highestQualification"
-                  defaultValue={privateDetails?.highest_qualification ?? ""}
-                  required
-                >
-                  <option value="" disabled>Select qualification</option>
-                  {qualifications.map(([value, label]) => (
-                    <option value={value} key={value}>{label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-field">
-                <label htmlFor="setup-institution">School / institution <span className="muted">(optional)</span></label>
-                <input
-                  id="setup-institution"
-                  name="institution"
-                  maxLength={200}
-                  defaultValue={privateDetails?.institution ?? ""}
-                />
-              </div>
-              <div className="form-field">
-                <label htmlFor="setup-field-study">Field of study <span className="muted">(optional)</span></label>
-                <input
-                  id="setup-field-study"
-                  name="fieldOfStudy"
-                  maxLength={200}
-                  defaultValue={privateDetails?.field_of_study ?? ""}
-                />
-              </div>
+              <ProfileEducationFields
+                highestQualification={privateDetails?.highest_qualification ?? null}
+                institution={privateDetails?.institution ?? null}
+                fieldOfStudy={privateDetails?.field_of_study ?? null}
+              />
               <div className="profile-setup-actions">
                 {!editMode ? <Link className="button button-secondary" href={stepHref("event-readiness", false)}>Back</Link> : null}
                 <button className="button button-primary" type="submit">{editMode ? "Save changes" : "Save and continue"}</button>
@@ -725,7 +702,7 @@ export default async function ProfileSetupPage({ searchParams }: SetupPageProps)
             <form action={saveAboutStep} className="profile-setup-form">
               {editMode ? <input type="hidden" name="mode" value="edit" /> : null}
               <div className="form-field">
-                <label htmlFor="setup-bio">About me</label>
+                <label htmlFor="setup-bio">About me <span className="muted">(optional)</span></label>
                 <textarea
                   id="setup-bio"
                   name="bio"

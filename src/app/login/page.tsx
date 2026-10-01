@@ -17,6 +17,8 @@ function getLoginErrorMessage(errorCode: string | undefined): string | undefined
   switch (errorCode) {
     case "account_inactive":
       return "This Keluarga MENDAKI account is not active. Contact the volunteer team.";
+    case "staff_access_required":
+      return "This work email isn’t set up for Keluarga staff access yet. Please contact the Volunteer Management team if you need access.";
     case "account_authorization_unavailable":
     case "account_setup_unavailable":
       return "Keluarga MENDAKI could not finish setting up your account. Please try again or contact the volunteer team.";
@@ -67,10 +69,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           ) : null}
 
           <VolunteerAuthPanel initialMode={initialMode} nextPath={nextPath} />
-
-          <p className="auth-login-copy">
-            Staff accounts can use the same sign-in form.
-          </p>
 
           <p className="auth-browse-link">
             <Link className="text-link" href="/opportunities">

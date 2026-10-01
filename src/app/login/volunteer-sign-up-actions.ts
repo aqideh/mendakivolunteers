@@ -3,6 +3,7 @@
 import type { AuthError } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import { isMendakiWorkEmail } from "@/lib/auth/staff-roles";
 import { createEmailLinkClient } from "@/lib/supabase/email-link";
 import { getPublicConfig } from "@/lib/env";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
@@ -20,6 +21,9 @@ export type VolunteerVerificationResendState = Readonly<{
   status: EmailActionStatus;
   message: string;
 }>;
+
+const staffAccessMessage =
+  "This work email isn’t set up for Keluarga staff access yet. Please contact the Volunteer Management team if you need access.";
 
 const genericSuccessMessage =
   "Thanks! Please check your inbox for a verification email from Keluarga MENDAKI. Follow the link to verify your email and complete your account setup.";
@@ -52,6 +56,10 @@ export async function requestVolunteerSignUpLink(
   }
 
   const email = parsedEmail.data.toLowerCase();
+  if (isMendakiWorkEmail(email)) {
+    return { status: "error", message: staffAccessMessage };
+  }
+
   const nextPath = getSafeRedirectPath(
     formData.get("next")?.toString(),
     "/dashboard",
@@ -103,6 +111,10 @@ export async function resendVolunteerVerificationLink(
   }
 
   const email = parsedEmail.data.toLowerCase();
+  if (isMendakiWorkEmail(email)) {
+    return { status: "error", message: staffAccessMessage };
+  }
+
   const nextPath = getSafeRedirectPath(
     formData.get("next")?.toString(),
     "/dashboard",

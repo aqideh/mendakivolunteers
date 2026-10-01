@@ -76,7 +76,7 @@ export function StaffInviteSetupForm() {
     }
 
     await supabase.auth.signOut({ scope: "local" });
-    window.location.replace("/login?password=setup");
+    window.location.replace("/staff/login?setup=success");
   }
 
   return (
@@ -131,7 +131,7 @@ export function StaffInviteSetupForm() {
       </p>
 
       <p className="form-help">
-        Already finished setup? <Link href="/login">Return to staff sign in</Link>.
+        Already finished setup? <Link href="/staff/login">Return to staff sign in</Link>.
       </p>
     </form>
   );

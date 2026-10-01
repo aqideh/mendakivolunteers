@@ -73,6 +73,9 @@ export type Database = {
           id: string;
           status: AccountStatus;
           display_name: string | null;
+          claimed_email_normalized: string | null;
+          email_ownership_verified: boolean;
+          email_ownership_verified_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -80,12 +83,18 @@ export type Database = {
           id: string;
           status?: AccountStatus;
           display_name?: string | null;
+          claimed_email_normalized?: string | null;
+          email_ownership_verified?: boolean;
+          email_ownership_verified_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           status?: AccountStatus;
           display_name?: string | null;
+          claimed_email_normalized?: string | null;
+          email_ownership_verified?: boolean;
+          email_ownership_verified_at?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -159,6 +168,12 @@ export type Database = {
           id: string;
           auth_user_id: string;
           candidate_ymhub_volunteer_id: string | null;
+          candidate_volunteer_id: string | null;
+          review_outcome: string | null;
+          requested_sections: string[];
+          volunteer_message: string | null;
+          submitted_for_review_at: string | null;
+          resubmitted_at: string | null;
           status: LinkCaseStatus;
           reason_code: string | null;
           resolution_notes: string | null;
@@ -171,6 +186,12 @@ export type Database = {
           id?: string;
           auth_user_id: string;
           candidate_ymhub_volunteer_id?: string | null;
+          candidate_volunteer_id?: string | null;
+          review_outcome?: string | null;
+          requested_sections?: string[];
+          volunteer_message?: string | null;
+          submitted_for_review_at?: string | null;
+          resubmitted_at?: string | null;
           status?: LinkCaseStatus;
           reason_code?: string | null;
           resolution_notes?: string | null;
@@ -181,6 +202,12 @@ export type Database = {
         };
         Update: {
           candidate_ymhub_volunteer_id?: string | null;
+          candidate_volunteer_id?: string | null;
+          review_outcome?: string | null;
+          requested_sections?: string[];
+          volunteer_message?: string | null;
+          submitted_for_review_at?: string | null;
+          resubmitted_at?: string | null;
           status?: LinkCaseStatus;
           reason_code?: string | null;
           resolution_notes?: string | null;

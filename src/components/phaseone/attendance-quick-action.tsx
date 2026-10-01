@@ -52,13 +52,13 @@ const labels: Record<AttendanceQuickAction, { idle: string; pending: string; suc
     message: "Check-out recorded.",
   },
   mark_withdrawn: {
-    idle: "Withdrawn",
+    idle: "Withdraw",
     pending: "Marking withdrawn…",
     success: "Withdrawn ✓",
     message: "Volunteer marked as withdrawn.",
   },
   mark_absent: {
-    idle: "Absent",
+    idle: "Mark absent",
     pending: "Marking absent…",
     success: "Absent ✓",
     message: "Volunteer marked as absent.",

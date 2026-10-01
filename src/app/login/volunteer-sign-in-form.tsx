@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
   requestVolunteerSignInLink,
@@ -17,10 +17,12 @@ type VolunteerSignInFormProps = Readonly<{
 }>;
 
 export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
+  const [email, setEmail] = useState("");
   const [state, formAction, pending] = useActionState(
     requestVolunteerSignInLink,
     initialState,
   );
+  const staffEmail = email.trim().toLowerCase().endsWith("@mendaki.org.sg");
 
   return (
     <form action={formAction} className="auth-primary-form" noValidate>
@@ -38,18 +40,43 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
           required
           disabled={pending}
           aria-describedby="volunteer-email-help"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
         />
         <span className="form-help" id="volunteer-email-help">
-          Use the email linked to your Keluarga profile.
+          {staffEmail
+            ? "MENDAKI staff use their work email and password."
+            : "Use the email linked to your Keluarga profile."}
         </span>
       </div>
+
+      {staffEmail ? (
+        <div className="form-field">
+          <label htmlFor="staff-password">Password</label>
+          <input
+            id="staff-password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            maxLength={128}
+            required
+            disabled={pending}
+          />
+        </div>
+      ) : null}
 
       <button
         className="button button-primary"
         type="submit"
         disabled={pending}
       >
-        {pending ? "Sending link…" : "Send sign-in link"}
+        {pending
+          ? staffEmail
+            ? "Signing in…"
+            : "Sending link…"
+          : staffEmail
+            ? "Sign in with password"
+            : "Send sign-in link"}
       </button>
 
       <p
