@@ -74,6 +74,21 @@ type SessionShiftLink = {
   continuation_type: ContinuationType;
 };
 
+type ShirtIssuance = {
+  id: string;
+  volunteer_id: string;
+  issued_at: string;
+  issuance_source: string;
+  collection_method: string;
+  preferred_size_at_issue: string | null;
+  issue_kind: string;
+  issue_reason: string | null;
+  volunteer_shirt_skus:
+    | { shirt_type: string; size: string }
+    | { shirt_type: string; size: string }[]
+    | null;
+};
+
 function parameter(values: Record<string, string | string[] | undefined>, key: string) {
   const value = values[key];
   return Array.isArray(value) ? value[0] : value;
@@ -319,8 +334,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const privateDetailsByVolunteer = new Map(
     (privateDetailsResult.data ?? []).map((item) => [item.volunteer_id, item]),
   );
-  const shirtIssuesByVolunteer = new Map<string, NonNullable<typeof shirtIssuanceResult.data>>();
-  for (const item of shirtIssuanceResult.data ?? []) {
+  const shirtIssuesByVolunteer = new Map<string, ShirtIssuance[]>();
+  for (const item of (shirtIssuanceResult.data ?? []) as ShirtIssuance[]) {
     const current = shirtIssuesByVolunteer.get(item.volunteer_id) ?? [];
     current.push(item);
     shirtIssuesByVolunteer.set(item.volunteer_id, current);
