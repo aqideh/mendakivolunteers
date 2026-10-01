@@ -563,3 +563,281 @@
 .phaseone-shirt-issue-form select {
   width: 100%;
 }
+
+
+/* 2026-10-01: attendance-first roster hierarchy */
+.phaseone-checkin-card {
+  align-items: start;
+}
+
+.phaseone-checkin-card .phaseone-attendance-summary {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.phaseone-roster-core-meta {
+  max-width: 62rem;
+}
+
+.phaseone-roster-alert {
+  margin: 0.3rem 0 0;
+  color: var(--danger);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.phaseone-shirt-status {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
+.phaseone-shirt-disclosure {
+  width: fit-content;
+}
+
+.phaseone-shirt-disclosure > summary {
+  list-style: none;
+}
+
+.phaseone-shirt-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.phaseone-shirt-chip {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  border: 1px solid #d5b500;
+  border-radius: 999px;
+  padding: 0.32rem 0.62rem;
+  cursor: pointer;
+  color: #554300;
+  background: #fff8cf;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.phaseone-shirt-chip-complete {
+  border-color: #9cc8b8;
+  cursor: default;
+  color: #145d4a;
+  background: #eef8f4;
+}
+
+.phaseone-shirt-disclosure[open] {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.7rem;
+  background: var(--surface-subtle);
+}
+
+.phaseone-shirt-disclosure[open] > summary {
+  margin-bottom: 0.65rem;
+}
+
+.phaseone-shirt-issue-form {
+  margin-top: 0;
+}
+
+.phaseone-shirt-choice-grid {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.7fr) minmax(9rem, 0.7fr) minmax(14rem, 1fr);
+  gap: 0.65rem;
+}
+
+.phaseone-shirt-choice-grid .form-field {
+  margin-bottom: 0;
+}
+
+.phaseone-shirt-choice-grid .muted {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.phaseone-shirt-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+}
+
+.phaseone-pending-actions,
+.phaseone-continuous-actions {
+  grid-column: 1 / -1;
+}
+
+.phaseone-staff-tools {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+  padding-top: 0.45rem;
+}
+
+.phaseone-staff-tools > details {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.phaseone-staff-tools > details > summary {
+  display: inline-flex;
+  width: auto;
+  min-height: 1.9rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.45rem;
+  padding: 0.3rem 0.48rem;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 750;
+  line-height: 1;
+  list-style: none;
+}
+
+.phaseone-staff-tools > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.phaseone-staff-tools > details > summary:hover,
+.phaseone-staff-tools > details[open] > summary {
+  color: var(--ink);
+  background: #f1f2ef;
+}
+
+.phaseone-staff-tools .phaseone-volunteer-review > summary,
+.phaseone-staff-tools .phaseone-inline-insight > summary {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.phaseone-staff-tools .phaseone-volunteer-review > summary:hover,
+.phaseone-staff-tools .phaseone-inline-insight > summary:hover,
+.phaseone-staff-tools .phaseone-volunteer-review[open] > summary,
+.phaseone-staff-tools .phaseone-inline-insight[open] > summary {
+  border-color: transparent;
+  background: #f1f2ef;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.phaseone-staff-tools .phaseone-volunteer-review[open],
+.phaseone-staff-tools .phaseone-inline-insight[open],
+.phaseone-staff-tools .phaseone-profile-details[open],
+.phaseone-staff-tools .phaseone-attendance-correct[open],
+.phaseone-staff-tools .phaseone-walk-in-edit[open] {
+  flex: 1 0 100%;
+  width: 100%;
+  margin-top: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.6rem;
+  background: #fbfcfb;
+}
+
+.phaseone-staff-tools .phaseone-volunteer-review[open] > summary,
+.phaseone-staff-tools .phaseone-inline-insight[open] > summary,
+.phaseone-staff-tools .phaseone-profile-details[open] > summary,
+.phaseone-staff-tools .phaseone-attendance-correct[open] > summary {
+  width: 100%;
+  min-height: 2rem;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0 0 0.55rem;
+  background: transparent;
+  color: var(--ink);
+}
+
+.phaseone-staff-tools .phaseone-volunteer-review[open] > summary::after,
+.phaseone-staff-tools .phaseone-inline-insight[open] > summary::after {
+  content: "×";
+  display: inline-grid;
+  width: 1.2rem;
+  height: 1.2rem;
+  place-items: center;
+  margin-left: auto;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  line-height: 1;
+  opacity: 0.65;
+}
+
+.phaseone-staff-tools .volunteer-review-form,
+.phaseone-staff-tools .phaseone-inline-insight-form,
+.phaseone-staff-tools .phaseone-attendance-correction {
+  margin-top: 0.55rem;
+}
+
+.phaseone-staff-tools .phaseone-volunteer-review-hint,
+.phaseone-staff-tools .phaseone-inline-insight-hint {
+  display: none;
+}
+
+@media (min-width: 760px) {
+  .phaseone-pending-actions {
+    grid-template-columns: minmax(14rem, 1.6fr) minmax(8.5rem, 0.65fr) minmax(8.5rem, 0.65fr);
+  }
+
+  .phaseone-pending-actions > .phaseone-quick-action-wrap:first-child .phaseone-checkin-action {
+    min-height: 2.85rem;
+    font-size: 0.96rem;
+  }
+
+  .phaseone-pending-actions > .phaseone-quick-action-wrap:not(:first-child) .phaseone-checkin-action {
+    min-height: 2.55rem;
+    border-color: var(--border);
+    color: var(--muted);
+  }
+}
+
+@media (max-width: 759px) {
+  .phaseone-shirt-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phaseone-shirt-disclosure,
+  .phaseone-shirt-chip {
+    max-width: 100%;
+  }
+
+  .phaseone-staff-tools {
+    gap: 0.15rem;
+    padding-top: 0.35rem;
+  }
+
+  .phaseone-staff-tools > details > summary {
+    min-height: 1.8rem;
+    padding: 0.28rem 0.38rem;
+    font-size: 0.69rem;
+  }
+
+  .phaseone-pending-actions {
+    grid-template-columns: 1.35fr 0.85fr 0.95fr;
+  }
+
+  .phaseone-roster-swipe-hint {
+    display: none;
+  }
+
+  .phaseone-attendance-card[data-swipe-ready="true"]
+    > .phaseone-staff-tools
+    > .phaseone-volunteer-review:not([open]),
+  .phaseone-attendance-card[data-swipe-ready="true"]
+    > .phaseone-staff-tools
+    > .phaseone-inline-insight:not([open]) {
+    display: block;
+  }
+}
