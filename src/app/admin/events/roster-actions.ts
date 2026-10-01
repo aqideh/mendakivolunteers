@@ -158,8 +158,6 @@ export async function importRosterWithDiagnostics(
 
   const operationsScope = String(eventResult.data.operations_scope);
   const isIsolatedManual = operationsScope === "manual_isolated";
-  const integratesVolunteers = !isIsolatedManual;
-
   const rpcName = isIsolatedManual
     ? "phaseone_apply_manual_roster_import"
     : "phaseone_apply_database_roster_import";
