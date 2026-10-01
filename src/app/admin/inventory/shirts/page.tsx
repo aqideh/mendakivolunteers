@@ -70,7 +70,7 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
         .limit(2000),
       admin
         .from("volunteer_shirt_issuances")
-        .select("id, volunteer_id, issued_at, issuance_source, collection_method, preferred_size_at_issue, event_id, note, volunteer_shirt_skus(shirt_type,size), phaseone_events(title)")
+        .select("id, volunteer_id, issued_at, issuance_source, collection_method, preferred_size_at_issue, issue_kind, issue_reason, event_id, note, volunteer_shirt_skus(shirt_type,size), phaseone_events(title)")
         .order("issued_at", { ascending: false }),
     ]);
 
@@ -111,7 +111,7 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
           <div>
             <h1>Volunteer shirt inventory</h1>
             <p className="muted">
-              Track stock by shirt type and size. Each volunteer can have one recorded shirt issue.
+              Track stock by shirt type and size. Initial collection and any authorised additional issues are kept as a full issuance history.
             </p>
           </div>
         </div>
@@ -218,7 +218,7 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
             <div>
               <h2 id="previous-shirt-title">Record a previous shirt issue</h2>
               <p className="muted">
-                Use this for volunteers who received their one shirt before KELUARGA tracked inventory.
+                Use this only when no shirt record exists yet and the volunteer had already collected one before KELUARGA tracked inventory.
                 This does not reduce current stock.
               </p>
             </div>
@@ -280,6 +280,7 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
                   <th>Actual shirt</th>
                   <th>Preferred</th>
                   <th>Record</th>
+                  <th>Reason</th>
                   <th>When</th>
                   <th>Event</th>
                 </tr>
@@ -307,7 +308,18 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
                           ? " · different size issued"
                           : ""}
                       </td>
-                      <td>{row.collection_method === "already_collected" ? "Already collected" : "Issued from stock"}</td>
+                      <td>
+                        {row.issue_kind === "additional"
+                          ? "Additional issue"
+                          : row.collection_method === "already_collected"
+                            ? "Already collected"
+                            : "Initial issue"}
+                      </td>
+                      <td>
+                        {row.issue_reason
+                          ? row.issue_reason.replaceAll("_", " ")
+                          : "—"}
+                      </td>
                       <td>{new Intl.DateTimeFormat("en-SG", {
                         day: "numeric",
                         month: "short",
@@ -321,7 +333,7 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
                   );
                 })}
                 {(issuanceResult.data ?? []).length === 0 ? (
-                  <tr><td colSpan={6}>No volunteer shirt records yet.</td></tr>
+                  <tr><td colSpan={7}>No volunteer shirt records yet.</td></tr>
                 ) : null}
               </tbody>
             </table>

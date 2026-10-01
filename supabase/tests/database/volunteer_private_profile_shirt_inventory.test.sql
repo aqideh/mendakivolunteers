@@ -1,6 +1,6 @@
 begin;
 
-select plan(20);
+select plan(24);
 
 select has_table(
   'public',
@@ -85,7 +85,7 @@ select has_table(
 );
 
 select ok(
-  exists (
+  not exists (
     select 1
     from pg_constraint con
     join pg_class c on c.oid = con.conrelid
@@ -95,7 +95,7 @@ select ok(
       and con.contype = 'u'
       and pg_get_constraintdef(con.oid) = 'UNIQUE (volunteer_id)'
   ),
-  'one shirt issuance per volunteer is enforced in the database'
+  'shirt issuance ledger allows authorised additional issues'
 );
 
 select has_table(
@@ -123,6 +123,36 @@ select has_column(
   'volunteer_shirt_issuances',
   'preferred_size_at_issue',
   'shirt issuance preserves the preferred size snapshot'
+);
+
+select has_column(
+  'public',
+  'volunteer_shirt_issuances',
+  'issue_kind',
+  'shirt issuance distinguishes initial and additional issues'
+);
+
+select has_column(
+  'public',
+  'volunteer_shirt_issuances',
+  'issue_reason',
+  'additional shirt issues record a reason'
+);
+
+select has_function(
+  'public',
+  'server_issue_additional_volunteer_shirt',
+  array['uuid','uuid','text','text','text','uuid','text','text'],
+  'service-boundary additional shirt issue RPC exists'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.server_issue_additional_volunteer_shirt(uuid,uuid,text,text,text,uuid,text,text)',
+    'EXECUTE'
+  ),
+  'signed-in users cannot call additional shirt issuance directly'
 );
 
 select has_function(
