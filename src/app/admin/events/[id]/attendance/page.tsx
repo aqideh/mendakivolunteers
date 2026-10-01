@@ -16,6 +16,7 @@ import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form
 import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
 import { RosterFilters } from "@/components/phaseone/roster-filters";
 import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
+import { RosterVolunteerMatchFixer } from "@/components/phaseone/roster-volunteer-match-fixer";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
 import {
   BulkCheckoutButton,
@@ -265,7 +266,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .order("sort_order", { ascending: true }),
     admin
       .from("phaseone_roster")
-      .select("id, timeslot_id, volunteer_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key")
+      .select("id, timeslot_id, volunteer_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key, volunteer_link_status, volunteer_link_note")
       .eq("event_id", id)
       .order("volunteer_name")
       .limit(2000),
@@ -727,6 +728,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             <p className="record-kicker">{volunteer.volunteer_key ?? "No volunteer ID"}</p>
                             {isUnder18 ? <span className="status-pill phaseone-underage-badge">Under 18</span> : null}
                             {volunteer.entry_method === "walk_in" ? <span className="status-pill phaseone-walk-in-badge">Walk-in</span> : null}
+                            {volunteer.volunteer_link_status === "needs_review" ? (
+                              <span className="status-pill phaseone-match-review-badge">Check volunteer match</span>
+                            ) : null}
                             {isCarryover ? <span className="status-pill phaseone-continuation-badge">Continuing from earlier shift</span> : null}
                             {isExtended ? <span className="status-pill phaseone-continuation-badge">Extended from earlier shift</span> : null}
                             {linkedNextShift && status === "signed_in" ? (
@@ -973,6 +977,18 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                               </div>
                             </form>
                           </details>
+
+                          {canIssueAdditionalShirt ? (
+                            <RosterVolunteerMatchFixer
+                              currentContact={volunteer.email ?? volunteer.mobile ?? null}
+                              currentVolunteerCode={volunteer.volunteer_key}
+                              currentVolunteerName={volunteer.volunteer_name}
+                              detailsName={staffToolsName}
+                              eventId={id}
+                              needsReview={volunteer.volunteer_link_status === "needs_review"}
+                              rosterId={volunteer.id}
+                            />
+                          ) : null}
 
                           {canIssueAdditionalShirt && canonicalVolunteerId && shirtIssue ? (
                             <details className="phaseone-attendance-edit phaseone-additional-shirt" name={staffToolsName}>
