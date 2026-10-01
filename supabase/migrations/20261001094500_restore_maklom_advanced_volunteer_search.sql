@@ -1,12 +1,23 @@
 begin;
 
+alter table public.volunteers
+  add column if not exists neighbourhood text,
+  add column if not exists planning_area text,
+  add column if not exists electoral_division text;
+
+grant select (event_id) on public.phaseone_roster to authenticated;
+
 create or replace view public.maklom_volunteer_search_v2
 with (security_invoker = true)
 as
 with attended as (
   select
     p.core_volunteer_id,
-    coalesce(array_agg(distinct p.event_title order by p.event_title) filter (where nullif(btrim(p.event_title),'') is not null),'{}'::text[]) as attended_events
+    coalesce(
+      array_agg(distinct p.event_title order by p.event_title)
+        filter (where nullif(btrim(p.event_title),'') is not null),
+      '{}'::text[]
+    ) as attended_events
   from public.maklom_event_participation p
   group by p.core_volunteer_id
 ),
@@ -14,39 +25,43 @@ registered as (
   select
     r.volunteer_id as core_volunteer_id,
     count(distinct r.event_id)::integer as registered_event_count,
-    coalesce(array_agg(distinct e.title order by e.title) filter (where nullif(btrim(e.title),'') is not null),'{}'::text[]) as registered_events
+    coalesce(
+      array_agg(distinct e.title order by e.title)
+        filter (where nullif(btrim(e.title),'') is not null),
+      '{}'::text[]
+    ) as registered_events
   from public.phaseone_roster r
   join public.phaseone_events e on e.id=r.event_id
   where r.volunteer_id is not null
   group by r.volunteer_id
 )
 select
-  d.id,
-  d.core_volunteer_id,
-  d.volunteer_code,
-  d.name,
-  d.nric,
-  d.email,
-  d.phone,
-  d.gender,
-  d.address,
-  d.neighbourhood,
-  d.planning_area,
-  d.electoral_division,
-  d.recruited_year,
-  d.chat_session,
-  d.chat_session_date,
-  d.interests,
-  d.languages_spoken,
-  d.programmes_registered,
-  d.tags,
-  d.emergency_name,
-  d.emergency_phone,
-  d.shirt_size,
-  d.dietary,
-  d.notes,
-  d.updated_at,
-  d.row_version,
+  v.id,
+  v.core_volunteer_id,
+  cv.volunteer_code,
+  v.name,
+  v.nric,
+  v.email,
+  v.phone,
+  v.gender,
+  v.address,
+  v.neighbourhood,
+  v.planning_area,
+  v.electoral_division,
+  v.recruited_year,
+  v.chat_session,
+  v.chat_session_date,
+  v.interests,
+  v.languages_spoken,
+  v.programmes_registered,
+  v.tags,
+  v.emergency_name,
+  v.emergency_phone,
+  v.shirt_size,
+  v.dietary,
+  v.notes,
+  v.updated_at,
+  v.row_version,
   coalesce(i.event_count,0)::integer as attended_event_count,
   coalesce(r.registered_event_count,0)::integer as registered_event_count,
   coalesce(i.historical_credited_minutes,0)::bigint
@@ -57,20 +72,21 @@ select
   coalesce(i.active_last_90d,false) as active_last_90d,
   coalesce(a.attended_events,'{}'::text[]) as attended_events,
   coalesce(r.registered_events,'{}'::text[]) as registered_events,
-  coalesce((select min(tag) from unnest(d.tags) tag),'') as first_tag,
+  coalesce((select min(tag) from unnest(v.tags) tag),'') as first_tag,
   lower(concat_ws(' ',
-    d.volunteer_code,d.name,d.nric,d.phone,d.email,d.gender,d.address,
-    d.neighbourhood,d.planning_area,d.electoral_division,d.recruited_year::text,
-    d.chat_session,d.chat_session_date::text,d.interests,d.languages_spoken,
-    array_to_string(d.programmes_registered,' '),array_to_string(d.tags,' '),
-    d.emergency_name,d.emergency_phone,d.shirt_size,d.dietary,d.notes,
+    cv.volunteer_code,v.name,v.nric,v.phone,v.email,v.gender,v.address,
+    v.neighbourhood,v.planning_area,v.electoral_division,v.recruited_year::text,
+    v.chat_session,v.chat_session_date::text,v.interests,v.languages_spoken,
+    array_to_string(v.programmes_registered,' '),array_to_string(v.tags,' '),
+    v.emergency_name,v.emergency_phone,v.shirt_size,v.dietary,v.notes,
     array_to_string(coalesce(a.attended_events,'{}'::text[]),' '),
     array_to_string(coalesce(r.registered_events,'{}'::text[]),' ')
   )) as search_text
-from public.maklom_volunteer_search_directory d
-left join public.maklom_volunteer_intelligence i on i.core_volunteer_id=d.core_volunteer_id
-left join attended a on a.core_volunteer_id=d.core_volunteer_id
-left join registered r on r.core_volunteer_id=d.core_volunteer_id;
+from public.volunteers v
+join core.volunteers cv on cv.id=v.core_volunteer_id
+left join public.maklom_volunteer_intelligence i on i.core_volunteer_id=v.core_volunteer_id
+left join attended a on a.core_volunteer_id=v.core_volunteer_id
+left join registered r on r.core_volunteer_id=v.core_volunteer_id;
 
 revoke all on public.maklom_volunteer_search_v2 from anon;
 grant select on public.maklom_volunteer_search_v2 to authenticated,service_role;
