@@ -1,199 +1,159 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  createClientMock,
-  createUserMock,
-  deleteUserMock,
-  ensureVolunteerMock,
-  getAdminClientMock,
-  getServerSecretMock,
-  headersMock,
-  redirectMock,
-  signInWithPasswordMock,
+  createEmailLinkClientMock,
+  getPublicConfigMock,
+  resendMock,
+  signInWithOtpMock,
 } = vi.hoisted(() => ({
-  createClientMock: vi.fn(),
-  createUserMock: vi.fn(),
-  deleteUserMock: vi.fn(),
-  ensureVolunteerMock: vi.fn(),
-  getAdminClientMock: vi.fn(),
-  getServerSecretMock: vi.fn(),
-  headersMock: vi.fn(),
-  redirectMock: vi.fn(),
-  signInWithPasswordMock: vi.fn(),
+  createEmailLinkClientMock: vi.fn(),
+  getPublicConfigMock: vi.fn(),
+  resendMock: vi.fn(),
+  signInWithOtpMock: vi.fn(),
 }));
 
-function queryResult(result: { count?: number; error?: unknown } = {}) {
-  const resolved = {
-    count: result.count ?? 0,
-    error: result.error ?? null,
-  };
-  const query = {
-    select: vi.fn(),
-    eq: vi.fn(),
-    gte: vi.fn(),
-    insert: vi.fn(),
-    then: (
-      resolve: (value: typeof resolved) => unknown,
-      reject?: (reason: unknown) => unknown,
-    ) => Promise.resolve(resolved).then(resolve, reject),
-  };
-  query.select.mockReturnValue(query);
-  query.eq.mockReturnValue(query);
-  query.gte.mockResolvedValue(resolved);
-  query.insert.mockReturnValue(query);
-  return query;
-}
-
-vi.mock("next/headers", () => ({
-  headers: headersMock,
+vi.mock("@/lib/supabase/email-link", () => ({
+  createEmailLinkClient: createEmailLinkClientMock,
 }));
 
-vi.mock("next/navigation", () => ({
-  redirect: redirectMock,
-}));
-
-vi.mock("@/lib/phaseone/admin", () => ({
-  getPhaseOneAdminClient: getAdminClientMock,
-  getPhaseOneServerSecret: getServerSecretMock,
-}));
-
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: createClientMock,
+vi.mock("@/lib/env", () => ({
+  getPublicConfig: getPublicConfigMock,
 }));
 
 import * as volunteerSignUpActions from "@/app/login/volunteer-sign-up-actions";
 
-function formData(
-  email: string,
-  password = "StrongPassword123",
-  next = "/dashboard",
-) {
+function formData(email: string, next = "/dashboard") {
   const data = new FormData();
   data.set("email", email);
-  data.set("password", password);
-  data.set("confirmPassword", password);
   data.set("next", next);
   return data;
 }
 
-describe("volunteer password sign-up", () => {
+describe("volunteer email sign-up", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
-    headersMock.mockResolvedValue({
-      get: (name: string) =>
-        name === "cf-connecting-ip" ? "203.0.113.10" : null,
-    });
-    getServerSecretMock.mockReturnValue(
-      "0123456789abcdef0123456789abcdef",
-    );
-
-    getAdminClientMock.mockReturnValue({
+    createEmailLinkClientMock.mockReturnValue({
       auth: {
-        admin: {
-          createUser: createUserMock,
-          deleteUser: deleteUserMock,
-        },
+        resend: resendMock,
+        signInWithOtp: signInWithOtpMock,
       },
-      schema: vi.fn(() => ({
-        from: vi.fn(() => queryResult()),
-      })),
     });
-
-    createUserMock.mockResolvedValue({
-      data: { user: { id: "11111111-1111-4111-8111-111111111111" } },
-      error: null,
+    getPublicConfigMock.mockReturnValue({
+      appUrl: "https://mendakivolunteers.vercel.app",
     });
-    deleteUserMock.mockResolvedValue({ data: null, error: null });
-    signInWithPasswordMock.mockResolvedValue({ error: null });
-    ensureVolunteerMock.mockResolvedValue({
-      data: "created_unverified",
-      error: null,
-    });
-    createClientMock.mockResolvedValue({
-      auth: { signInWithPassword: signInWithPasswordMock },
-      schema: vi.fn(() => ({ rpc: ensureVolunteerMock })),
-    });
+    signInWithOtpMock.mockResolvedValue({ error: null });
+    resendMock.mockResolvedValue({ error: null });
   });
 
-  it("only exports the password account action", () => {
-    expect(Object.keys(volunteerSignUpActions)).toEqual([
-      "createVolunteerPasswordAccount",
+  it("only exposes the two async server actions at runtime", () => {
+    expect(Object.keys(volunteerSignUpActions).sort()).toEqual([
+      "requestVolunteerSignUpLink",
+      "resendVolunteerVerificationLink",
     ]);
+    expect(
+      volunteerSignUpActions.requestVolunteerSignUpLink.constructor.name,
+    ).toBe("AsyncFunction");
+    expect(
+      volunteerSignUpActions.resendVolunteerVerificationLink.constructor.name,
+    ).toBe("AsyncFunction");
   });
 
-  it("creates an isolated unverified account and establishes a session", async () => {
-    await volunteerSignUpActions.createVolunteerPasswordAccount(
+  it("creates a volunteer account and preserves a safe return path", async () => {
+    const result = await volunteerSignUpActions.requestVolunteerSignUpLink(
       { status: "idle", message: "" },
-      formData(
-        " New.Volunteer@Example.Test ",
-        "StrongPassword123",
-        "/opportunities/community-day",
-      ),
+      formData(" New.Volunteer@Example.Test ", "/opportunities/community-day"),
     );
 
-    expect(createUserMock).toHaveBeenCalledWith({
+    expect(result.status).toBe("success");
+    expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "new.volunteer@example.test",
-      password: "StrongPassword123",
-      email_confirm: true,
-      app_metadata: {
-        keluarga_email_ownership_verified: false,
-        keluarga_signup_method: "password_without_email",
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo:
+          "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fopportunities%2Fcommunity-day",
       },
     });
-    expect(signInWithPasswordMock).toHaveBeenCalledWith({
-      email: "new.volunteer@example.test",
-      password: "StrongPassword123",
-    });
-    expect(ensureVolunteerMock).toHaveBeenCalledWith(
-      "ensure_current_keluarga_volunteer",
-    );
-    expect(redirectMock).toHaveBeenCalledWith(
-      "/opportunities/community-day",
-    );
   });
 
-  it("sends dashboard signups to profile setup", async () => {
-    await volunteerSignUpActions.createVolunteerPasswordAccount(
-      { status: "idle", message: "" },
-      formData("volunteer@example.test"),
-    );
-
-    expect(redirectMock).toHaveBeenCalledWith("/profile/setup");
-  });
-
-  it("rejects weak or mismatched passwords before account creation", async () => {
-    const weak = await volunteerSignUpActions.createVolunteerPasswordAccount(
-      { status: "idle", message: "" },
-      formData("volunteer@example.test", "weak"),
-    );
-    expect(weak.status).toBe("error");
-
-    const mismatchData = formData("volunteer@example.test");
-    mismatchData.set("confirmPassword", "DifferentPassword123");
-    const mismatch =
-      await volunteerSignUpActions.createVolunteerPasswordAccount(
-        { status: "idle", message: "" },
-        mismatchData,
-      );
-    expect(mismatch).toEqual({
-      status: "error",
-      message: "The passwords do not match.",
-    });
-    expect(createUserMock).not.toHaveBeenCalled();
-  });
-
-  it("rejects an invalid email before account creation", async () => {
+  it("resends signup verification without creating another account", async () => {
     const result =
-      await volunteerSignUpActions.createVolunteerPasswordAccount(
+      await volunteerSignUpActions.resendVolunteerVerificationLink(
         { status: "idle", message: "" },
-        formData("not-an-email"),
+        formData(" Pending.Volunteer@Example.Test ", "/profile/setup"),
       );
+
+    expect(result.status).toBe("success");
+    expect(resendMock).toHaveBeenCalledWith({
+      type: "signup",
+      email: "pending.volunteer@example.test",
+      options: {
+        emailRedirectTo:
+          "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fprofile%2Fsetup",
+      },
+    });
+    expect(signInWithOtpMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps resend responses generic when Supabase cannot send", async () => {
+    resendMock.mockResolvedValue({
+      error: { code: "user_not_found", status: 400 },
+    });
+
+    const result =
+      await volunteerSignUpActions.resendVolunteerVerificationLink(
+        { status: "idle", message: "" },
+        formData("unknown@example.test"),
+      );
+
+    expect(result.status).toBe("success");
+    expect(result.message).not.toContain("not found");
+  });
+
+  it("surfaces email rate limiting without exposing account state", async () => {
+    resendMock.mockResolvedValue({
+      error: { code: "over_email_send_rate_limit", status: 429 },
+    });
+
+    const result =
+      await volunteerSignUpActions.resendVolunteerVerificationLink(
+        { status: "idle", message: "" },
+        formData("pending@example.test"),
+      );
+
+    expect(result).toEqual({
+      status: "error",
+      message:
+        "Please wait a minute before requesting another verification email.",
+    });
+  });
+
+  it("rejects unsafe return destinations", async () => {
+    await volunteerSignUpActions.requestVolunteerSignUpLink(
+      { status: "idle", message: "" },
+      formData("volunteer@example.test", "https://attacker.example/path"),
+    );
+
+    expect(signInWithOtpMock).toHaveBeenCalledWith({
+      email: "volunteer@example.test",
+      options: expect.objectContaining({
+        shouldCreateUser: true,
+        emailRedirectTo:
+          "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fdashboard",
+      }),
+    });
+  });
+
+  it("rejects an invalid email before calling Supabase", async () => {
+    const result = await volunteerSignUpActions.requestVolunteerSignUpLink(
+      { status: "idle", message: "" },
+      formData("not-an-email"),
+    );
 
     expect(result).toEqual({
       status: "error",
       message: "Enter a valid email address.",
     });
-    expect(createUserMock).not.toHaveBeenCalled();
+    expect(signInWithOtpMock).not.toHaveBeenCalled();
+    expect(resendMock).not.toHaveBeenCalled();
   });
 });
