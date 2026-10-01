@@ -944,6 +944,13 @@ export default async function AttendancePage({ params, searchParams }: PageProps
 
                           <details className="phaseone-inline-insight" name={staffToolsName}>
                             <summary aria-label="Add volunteer insight">
+                              <svg
+                                aria-hidden="true"
+                                className="phaseone-staff-tool-icon"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M9 18h6M10 21h4M8.2 14.8A7 7 0 1 1 15.8 14.8c-.9.7-1.4 1.5-1.6 2.2h-4.4c-.2-.7-.7-1.5-1.6-2.2Z" />
+                              </svg>
                               <span>Insight</span>
                               <span className="phaseone-inline-insight-hint">Skill, interest, connection, etc.</span>
                             </summary>
