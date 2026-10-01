@@ -32,28 +32,36 @@ export function RosterFilters({
 
   useEffect(() => {
     const section = rootRef.current?.closest<HTMLElement>(".phaseone-admin-section");
-    if (!section) return;
+    const list = section?.querySelector<HTMLElement>("#roster-list");
+    if (!section || !list) return;
 
-    const normalizedQuery = query.trim().toLowerCase();
-    let nextShownCount = 0;
+    const applyFilters = () => {
+      const normalizedQuery = query.trim().toLowerCase();
+      let nextShownCount = 0;
 
-    section
-      .querySelectorAll<HTMLElement>(".phaseone-checkin-card[data-roster-filterable='true']")
-      .forEach((card) => {
-        const matchesStatus = status === "all" || card.dataset.status === status;
-        const matchesQuery =
-          !normalizedQuery ||
-          (card.dataset.filterText ?? "").includes(normalizedQuery);
-        const visible = matchesStatus && matchesQuery;
+      list
+        .querySelectorAll<HTMLElement>(".phaseone-checkin-card[data-roster-filterable='true']")
+        .forEach((card) => {
+          const matchesStatus = status === "all" || card.dataset.status === status;
+          const matchesQuery =
+            !normalizedQuery ||
+            (card.dataset.filterText ?? "").includes(normalizedQuery);
+          const visible = matchesStatus && matchesQuery;
 
-        card.hidden = !visible;
-        if (visible) nextShownCount += 1;
-      });
+          card.hidden = !visible;
+          if (visible) nextShownCount += 1;
+        });
 
-    setShownCount(nextShownCount);
+      setShownCount(nextShownCount);
 
-    const count = section.querySelector<HTMLElement>("[data-roster-visible-count]");
-    if (count) count.textContent = String(nextShownCount);
+      const count = section.querySelector<HTMLElement>("[data-roster-visible-count]");
+      if (count) count.textContent = String(nextShownCount);
+    };
+
+    applyFilters();
+
+    const observer = new MutationObserver(() => applyFilters());
+    observer.observe(list, { childList: true, subtree: true });
 
     const url = new URL(window.location.href);
     url.searchParams.set("timeslot", timeslotId);
@@ -75,6 +83,8 @@ export function RosterFilters({
       "",
       `${url.pathname}${url.search}${url.hash}`,
     );
+
+    return () => observer.disconnect();
   }, [query, status, timeslotId]);
 
   const filtersActive = status !== "all" || query.trim().length > 0;
