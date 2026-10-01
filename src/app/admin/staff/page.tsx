@@ -131,9 +131,10 @@ export default async function StaffAccessPage() {
         <StaffInviteForm />
 
         <div className="notice" role="status">
-          Use the emailed setup flow by default. Manual setup links remain available
-          as an administrative recovery option and should only be shared directly
-          with the intended staff member.
+          Staff invitations are available only to Admins. The initial setup link is
+          sent to the staff member&apos;s work email. After choosing a password, they
+          should use Staff sign in with email + password during field operations.
+          Manual setup links remain an Admin-only recovery option.
         </div>
 
         <div className="table-wrap">
