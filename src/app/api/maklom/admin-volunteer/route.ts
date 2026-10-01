@@ -231,6 +231,8 @@ export async function POST(request: Request) {
   }
 
   const blockers: string[] = [];
+  let pointCount = 0;
+  let badgeCount = 0;
 
   try {
     if (target.auth_user_id === actor.id) {
@@ -337,7 +339,7 @@ export async function POST(request: Request) {
       blockers.push("Historical attendance import history exists.");
     }
 
-    const [pointCount, badgeCount, positionCount] = await Promise.all([
+    const gamificationAndPathwayCounts = await Promise.all([
       countSchema(
         "gamification",
         "point_ledger_entries",
@@ -347,10 +349,10 @@ export async function POST(request: Request) {
       countSchema("gamification", "volunteer_badges", "volunteer_id", coreVolunteerId),
       countSchema("pathways", "volunteer_positions", "volunteer_id", coreVolunteerId),
     ]);
+    pointCount = gamificationAndPathwayCounts[0];
+    badgeCount = gamificationAndPathwayCounts[1];
+    const positionCount = gamificationAndPathwayCounts[2];
 
-    if (pointCount + badgeCount > 0) {
-      blockers.push("Points or badge history exists.");
-    }
     if (positionCount > 0) {
       blockers.push("Volunteer pathway history exists.");
     }
@@ -398,6 +400,8 @@ export async function POST(request: Request) {
     registrationCount: registrationIds.length,
     rosterCount: rosterIds.length,
     recruitmentApplicationCount: recruitmentResult.data?.length ?? 0,
+    pointEntryCount: pointCount,
+    badgeCount,
   };
 
   if (body.action !== "remove-test-record") {
@@ -430,6 +434,18 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (pointCount > 0 || badgeCount > 0) {
+      const gamificationCleanup = await admin
+        .schema("core")
+        .rpc("purge_test_volunteer_gamification", {
+          p_volunteer_id: coreVolunteerId,
+          p_actor_user_id: actor.id,
+        });
+      if (gamificationCleanup.error) {
+        throw gamificationCleanup.error;
+      }
+    }
+
     if (target.auth_user_id) {
       const authRemoval = await admin.auth.admin.deleteUser(target.auth_user_id);
       if (authRemoval.error) {
@@ -486,6 +502,8 @@ export async function POST(request: Request) {
         removed_registrations: registrationIds.length,
         removed_roster_rows: rosterIds.length,
         removed_recruitment_applications: recruitmentResult.data?.length ?? 0,
+        removed_point_entries: pointCount,
+        removed_badges: badgeCount,
         removed_auth_account: Boolean(target.auth_user_id),
       },
     });
@@ -499,6 +517,8 @@ export async function POST(request: Request) {
       volunteerCode: target.volunteer_code,
       registrationCount: registrationIds.length,
       rosterCount: rosterIds.length,
+      removedPointEntries: pointCount,
+      removedBadges: badgeCount,
     });
   } catch (error) {
     console.error("MakLom admin volunteer action failed", error);
