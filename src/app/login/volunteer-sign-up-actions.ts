@@ -1,139 +1,54 @@
 "use server";
 
-import { createHmac } from "node:crypto";
-
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import type { AuthError } from "@supabase/supabase-js";
 import { z } from "zod";
 
-import {
-  isValidRecoveryPassword,
-  recoveryPasswordRequirements,
-} from "@/lib/auth/password-recovery";
-import {
-  getPhaseOneAdminClient,
-  getPhaseOneServerSecret,
-} from "@/lib/phaseone/admin";
+import { createEmailLinkClient } from "@/lib/supabase/email-link";
+import { getPublicConfig } from "@/lib/env";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
-import { createClient } from "@/lib/supabase/server";
 
 const emailSchema = z.string().trim().email().max(254);
-const passwordSchema = z.string().min(1).max(128);
 
-const CLIENT_ATTEMPT_LIMIT = 5;
-const EMAIL_ATTEMPT_LIMIT = 3;
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-
-type SignUpStatus = "idle" | "success" | "error";
+type EmailActionStatus = "idle" | "success" | "error";
 
 export type VolunteerSignUpState = Readonly<{
-  status: SignUpStatus;
+  status: EmailActionStatus;
   message: string;
 }>;
 
-function hashSignupKey(value: string): string {
-  return createHmac("sha256", getPhaseOneServerSecret())
-    .update(value)
-    .digest("hex");
+export type VolunteerVerificationResendState = Readonly<{
+  status: EmailActionStatus;
+  message: string;
+}>;
+
+const genericSuccessMessage =
+  "Thanks! Please check your inbox for a verification email from Keluarga MENDAKI. Follow the link to verify your email and complete your account setup.";
+
+const genericResendSuccessMessage =
+  "If this email has a pending KELUARGA account, a new verification link has been sent.";
+
+function getEmailRedirectTo(nextPath: string) {
+  const { appUrl } = getPublicConfig();
+  const callbackUrl = new URL("/auth/confirm", appUrl);
+  callbackUrl.searchParams.set("next", nextPath);
+  return callbackUrl.toString();
 }
 
-async function signupRateLimitKeys(email: string) {
-  const requestHeaders = await headers();
-  const forwardedFor = requestHeaders.get("x-forwarded-for");
-  const clientAddress =
-    requestHeaders.get("cf-connecting-ip") ??
-    forwardedFor?.split(",")[0]?.trim() ??
-    "unknown";
-
-  return {
-    clientKey: hashSignupKey(`client:${clientAddress}`),
-    emailKey: hashSignupKey(`email:${email}`),
-  };
-}
-
-async function isSignupRateLimited(
-  clientKey: string,
-  emailKey: string,
-): Promise<boolean> {
-  const admin = getPhaseOneAdminClient();
-  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-
-  const [clientResult, emailResult] = await Promise.all([
-    admin
-      .schema("core")
-      .from("auth_signup_attempts")
-      .select("id", { count: "exact", head: true })
-      .eq("client_key", clientKey)
-      .gte("attempted_at", since),
-    admin
-      .schema("core")
-      .from("auth_signup_attempts")
-      .select("id", { count: "exact", head: true })
-      .eq("email_key", emailKey)
-      .gte("attempted_at", since),
-  ]);
-
-  if (clientResult.error || emailResult.error) {
-    console.error("Volunteer signup abuse controls could not be checked", {
-      clientCode: clientResult.error?.code,
-      emailCode: emailResult.error?.code,
-    });
-    throw new Error("Signup abuse controls unavailable");
-  }
-
+function isEmailRateLimitError(error: AuthError): boolean {
   return (
-    (clientResult.count ?? 0) >= CLIENT_ATTEMPT_LIMIT ||
-    (emailResult.count ?? 0) >= EMAIL_ATTEMPT_LIMIT
+    error.status === 429 ||
+    error.code === "email_rate_limit_exceeded" ||
+    error.code === "over_email_send_rate_limit"
   );
 }
 
-async function recordSignupAttempt(
-  clientKey: string,
-  emailKey: string,
-  wasSuccessful: boolean,
-) {
-  const admin = getPhaseOneAdminClient();
-  const result = await admin
-    .schema("core")
-    .from("auth_signup_attempts")
-    .insert({
-      client_key: clientKey,
-      email_key: emailKey,
-      was_successful: wasSuccessful,
-    });
-
-  if (result.error) {
-    console.error("Volunteer signup attempt could not be recorded", {
-      code: result.error.code,
-    });
-  }
-}
-
-export async function createVolunteerPasswordAccount(
+export async function requestVolunteerSignUpLink(
   _previousState: VolunteerSignUpState,
   formData: FormData,
 ): Promise<VolunteerSignUpState> {
   const parsedEmail = emailSchema.safeParse(formData.get("email"));
-  const parsedPassword = passwordSchema.safeParse(formData.get("password"));
-  const confirmPassword = formData.get("confirmPassword");
-
   if (!parsedEmail.success) {
     return { status: "error", message: "Enter a valid email address." };
-  }
-
-  if (
-    !parsedPassword.success ||
-    !isValidRecoveryPassword(parsedPassword.data)
-  ) {
-    return { status: "error", message: recoveryPasswordRequirements };
-  }
-
-  if (
-    typeof confirmPassword !== "string" ||
-    parsedPassword.data !== confirmPassword
-  ) {
-    return { status: "error", message: "The passwords do not match." };
   }
 
   const email = parsedEmail.data.toLowerCase();
@@ -142,132 +57,89 @@ export async function createVolunteerPasswordAccount(
     "/dashboard",
   );
 
-  let clientKey: string;
-  let emailKey: string;
-
   try {
-    ({ clientKey, emailKey } = await signupRateLimitKeys(email));
-    if (await isSignupRateLimited(clientKey, emailKey)) {
-      await recordSignupAttempt(clientKey, emailKey, false);
-      return {
-        status: "error",
-        message:
-          "Too many account creation attempts. Please try again in about 15 minutes.",
-      };
-    }
-  } catch (error) {
-    console.error("Volunteer signup abuse controls are unavailable", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
-    return {
-      status: "error",
-      message: "Account creation is temporarily unavailable. Please try again.",
-    };
-  }
+    const supabase = createEmailLinkClient();
 
-  const admin = getPhaseOneAdminClient();
-  const protectedIdentityResult = await admin
-    .schema("core")
-    .from("volunteers")
-    .select("id", { count: "exact", head: true })
-    .eq("primary_email_normalized", email)
-    .eq("account_access_eligible", true);
-
-  if (protectedIdentityResult.error) {
-    console.error("Existing volunteer identity check failed", {
-      code: protectedIdentityResult.error.code,
-    });
-    await recordSignupAttempt(clientKey, emailKey, false);
-    return {
-      status: "error",
-      message: "Account creation is temporarily unavailable. Please try again.",
-    };
-  }
-
-  if ((protectedIdentityResult.count ?? 0) > 0) {
-    await recordSignupAttempt(clientKey, emailKey, false);
-    return {
-      status: "error",
-      message:
-        "This email requires verification before a new account can be created. Contact Volunteer Management for access while email verification is unavailable.",
-    };
-  }
-
-  const createResult = await admin.auth.admin.createUser({
-    email,
-    password: parsedPassword.data,
-    email_confirm: true,
-    app_metadata: {
-      keluarga_email_ownership_verified: false,
-      keluarga_signup_method: "password_without_email",
-    },
-  });
-
-  if (createResult.error || !createResult.data.user) {
-    await recordSignupAttempt(clientKey, emailKey, false);
-    console.error("Volunteer password account could not be created", {
-      code: createResult.error?.code,
-      status: createResult.error?.status,
-    });
-    return {
-      status: "error",
-      message:
-        "The account could not be created. If you have used this email before, sign in instead.",
-    };
-  }
-
-  const createdUserId = createResult.data.user.id;
-
-  try {
-    const supabase = await createClient();
-    const signInResult = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password: parsedPassword.data,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: getEmailRedirectTo(nextPath),
+      },
     });
 
-    if (signInResult.error) {
-      throw signInResult.error;
-    }
-
-    const accountClient = supabase as unknown as SupabaseClient;
-    const ensureResult = await accountClient
-      .schema("core")
-      .rpc("ensure_current_keluarga_volunteer");
-
-    if (
-      ensureResult.error ||
-      !["created_unverified", "already_linked"].includes(
-        String(ensureResult.data ?? ""),
-      )
-    ) {
-      console.error("New volunteer identity could not be provisioned", {
-        code: ensureResult.error?.code,
-        result: ensureResult.data,
+    if (error) {
+      console.error("Volunteer sign-up link request was not delivered", {
+        code: error.code,
+        status: error.status,
       });
-      throw new Error("Volunteer identity provisioning failed");
-    }
 
-    await recordSignupAttempt(clientKey, emailKey, true);
+      if (isEmailRateLimitError(error)) {
+        return {
+          status: "error",
+          message:
+            "Please wait a minute before requesting another verification email.",
+        };
+      }
+    }
   } catch (error) {
-    console.error("Volunteer password signup could not be completed", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
-
-    try {
-      await admin.auth.admin.deleteUser(createdUserId);
-    } catch (cleanupError) {
-      console.error("Incomplete volunteer account cleanup failed", {
-        message:
-          cleanupError instanceof Error ? cleanupError.message : "Unknown error",
-      });
-    }
-
-    await recordSignupAttempt(clientKey, emailKey, false);
+    console.error("Volunteer sign-up is not configured", error);
     return {
       status: "error",
-      message: "The account could not be completed. Please try again.",
+      message: "Volunteer sign-up is not configured in this environment.",
     };
   }
 
-  redirect(nextPath === "/dashboard" ? "/profile/setup" : nextPath);
+  return { status: "success", message: genericSuccessMessage };
+}
+
+export async function resendVolunteerVerificationLink(
+  _previousState: VolunteerVerificationResendState,
+  formData: FormData,
+): Promise<VolunteerVerificationResendState> {
+  const parsedEmail = emailSchema.safeParse(formData.get("email"));
+  if (!parsedEmail.success) {
+    return { status: "error", message: "Enter a valid email address." };
+  }
+
+  const email = parsedEmail.data.toLowerCase();
+  const nextPath = getSafeRedirectPath(
+    formData.get("next")?.toString(),
+    "/dashboard",
+  );
+
+  try {
+    const supabase = createEmailLinkClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: getEmailRedirectTo(nextPath),
+      },
+    });
+
+    if (error) {
+      console.error("Volunteer verification email could not be resent", {
+        code: error.code,
+        status: error.status,
+      });
+
+      if (isEmailRateLimitError(error)) {
+        return {
+          status: "error",
+          message:
+            "Please wait a minute before requesting another verification email.",
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Volunteer verification resend is not configured", error);
+    return {
+      status: "error",
+      message:
+        "Verification email resend is not configured in this environment.",
+    };
+  }
+
+  return { status: "success", message: genericResendSuccessMessage };
 }
