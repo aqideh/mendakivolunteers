@@ -75,7 +75,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
             ? "Signing in…"
             : "Sending link…"
           : staffEmail
-            ? "Sign in"
+            ? "Sign in with password"
             : "Send sign-in link"}
       </button>
 
