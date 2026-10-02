@@ -50,7 +50,10 @@ export function MagicLinkConfirmation() {
       currentUrl.searchParams.get("next"),
       "/dashboard",
     );
-    const isRecovery = rawType === "recovery";
+    const isRecovery =
+      rawType === "recovery" ||
+      currentUrl.searchParams.get("flow") === "recovery";
+    const expectedRecoveryUserId = currentUrl.searchParams.get("account");
     const isInvite = rawType === "invite";
 
     const cleanedUrl = new URL(currentUrl);
@@ -100,6 +103,29 @@ export function MagicLinkConfirmation() {
 
       if (cancelled) {
         return;
+      }
+
+      if (authError && isRecovery) {
+        // A recovery URL is one-time, but the first successful verification may
+        // already have established the user's recovery session. This commonly
+        // happens when the page is reloaded or an email client opens the link a
+        // second time. Continue only when Supabase confirms that session.
+        const existingSessionClient = createClient();
+        const { data: existingUser, error: existingUserError } =
+          await existingSessionClient.auth.getUser();
+
+        if (
+          !existingUserError &&
+          existingUser.user &&
+          expectedRecoveryUserId &&
+          existingUser.user.id === expectedRecoveryUserId
+        ) {
+          setState({
+            status: "recovery",
+            message: "Recovery session verified. Choose a new password below.",
+          });
+          return;
+        }
       }
 
       if (authError) {
@@ -317,11 +343,11 @@ export function MagicLinkConfirmation() {
       {state.status === "error" ? (
         <div className="auth-verification-recovery">
           <p className="muted">
-            Return to sign in. If this was a password-recovery link, contact
-            Volunteer Management while email delivery is unavailable.
+            Return to staff sign in. If this was a password-recovery link, ask
+            Volunteer Management to send a new setup email.
           </p>
-          <Link className="button button-secondary" href="/login">
-            Return to sign in
+          <Link className="button button-secondary" href="/staff/login">
+            Return to staff sign in
           </Link>
         </div>
       ) : null}
