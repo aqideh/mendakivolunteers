@@ -10,5 +10,12 @@ export function createClient() {
     throw new Error("Supabase browser configuration is unavailable.");
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabasePublishableKey);
+  return createBrowserClient<Database>(supabaseUrl, supabasePublishableKey, {
+    auth: {
+      // KELUARGA handles auth callback credentials explicitly in its callback UI.
+      // Disabling automatic URL detection prevents the browser client from racing
+      // that handler over recovery/invite tokens.
+      detectSessionInUrl: false,
+    },
+  });
 }
