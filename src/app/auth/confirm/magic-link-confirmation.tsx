@@ -53,6 +53,7 @@ export function MagicLinkConfirmation() {
     const isRecovery =
       rawType === "recovery" ||
       currentUrl.searchParams.get("flow") === "recovery";
+    const expectedRecoveryUserId = currentUrl.searchParams.get("account");
     const isInvite = rawType === "invite";
 
     const cleanedUrl = new URL(currentUrl);
@@ -113,7 +114,12 @@ export function MagicLinkConfirmation() {
         const { data: existingUser, error: existingUserError } =
           await existingSessionClient.auth.getUser();
 
-        if (!existingUserError && existingUser.user) {
+        if (
+          !existingUserError &&
+          existingUser.user &&
+          expectedRecoveryUserId &&
+          existingUser.user.id === expectedRecoveryUserId
+        ) {
           setState({
             status: "recovery",
             message: "Recovery session verified. Choose a new password below.",
