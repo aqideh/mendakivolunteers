@@ -10,7 +10,7 @@ import {
   recoveryPasswordRequirements,
 } from "@/lib/auth/password-recovery";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
-import { createClient } from "@/lib/supabase/client";
+import { createAuthCallbackClient, createClient } from "@/lib/supabase/client";
 
 const allowedOtpTypes = new Set<EmailOtpType>([
   "email",
@@ -72,7 +72,7 @@ export function MagicLinkConfirmation() {
       let authError: { message: string } | null = errorDescription
         ? { message: errorDescription }
         : null;
-      const supabase = createClient();
+      const supabase = createAuthCallbackClient();
 
       if (!authError && code) {
         const result = await supabase.auth.exchangeCodeForSession(code);
@@ -247,7 +247,7 @@ export function MagicLinkConfirmation() {
       });
     }
 
-    window.location.replace("/login?password_reset=success");
+    window.location.replace("/staff/login?password_reset=success");
   }
 
   const resettingPassword = state.status === "recovery" || state.status === "saving";
