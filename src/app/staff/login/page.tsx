@@ -22,6 +22,9 @@ export default async function StaffLoginPage({
   const setup = Array.isArray(parameters.setup)
     ? parameters.setup[0]
     : parameters.setup;
+  const passwordReset = Array.isArray(parameters.password_reset)
+    ? parameters.password_reset[0]
+    : parameters.password_reset;
   const nextPath = getSafeRedirectPath(requestedNext, "/admin/events");
 
   return (
@@ -38,6 +41,11 @@ export default async function StaffLoginPage({
           {setup === "success" ? (
             <div className="notice notice-success" role="status">
               Your staff account is ready. Sign in with the password you just set.
+            </div>
+          ) : null}
+          {passwordReset === "success" ? (
+            <div className="notice notice-success" role="status">
+              Your password has been updated. Sign in with your new password.
             </div>
           ) : null}
 
