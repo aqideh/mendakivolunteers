@@ -224,6 +224,7 @@ export async function inviteStaffMember(
   if (!invitedNewUser) {
     const passwordSetupRedirectTo = new URL("/auth/confirm", appUrl);
     passwordSetupRedirectTo.searchParams.set("flow", "recovery");
+    passwordSetupRedirectTo.searchParams.set("account", targetUser.id);
     const { error: setupEmailError } =
       await admin.auth.resetPasswordForEmail(email, {
         redirectTo: passwordSetupRedirectTo.toString(),
@@ -279,6 +280,7 @@ export async function sendStaffSetupEmail(
   const { appUrl } = getPublicConfig();
   const redirectTo = new URL("/auth/confirm", appUrl);
   redirectTo.searchParams.set("flow", "recovery");
+  redirectTo.searchParams.set("account", parsedUserId.data);
   const { error } = await admin.auth.resetPasswordForEmail(
     userResult.user.email,
     { redirectTo: redirectTo.toString() },
