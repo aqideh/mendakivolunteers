@@ -1,6 +1,6 @@
 begin;
 
-select plan(23);
+select plan(27);
 
 select has_column('public', 'phaseone_roster', 'attendance_person_key', 'roster rows have a stable event-day attendance identity');
 select has_table('public', 'phaseone_attendance_sessions', 'continuous event-day attendance sessions exist');
@@ -130,6 +130,41 @@ select is(
   (select signed_out_at from public.phaseone_attendance_effective where roster_id = '76000000-0000-4000-8000-000000000011'),
   '2026-09-07 09:15:00+00'::timestamptz,
   'PM effective attendance exposes the same final event-day check-out'
+);
+
+select public.phaseone_apply_attendance_change(
+  '76000000-0000-4000-8000-000000000002',
+  '76000000-0000-4000-8000-000000000010',
+  'clear_sign_out',
+  null,
+  'Test accidental checkout correction',
+  '76000000-0000-4000-8000-000000000001'
+);
+select is(
+  (select checked_out_at from public.phaseone_attendance_sessions where event_id = '76000000-0000-4000-8000-000000000002' and person_key = 'id:mv-1001'),
+  null::timestamptz,
+  'clearing the origin roster check-out reopens the event-day session'
+);
+select is(
+  (select signed_out_at from public.phaseone_attendance_effective where roster_id = '76000000-0000-4000-8000-000000000010'),
+  null::timestamptz,
+  'the corrected origin shift no longer appears checked out'
+);
+select is(
+  (select signed_out_at from public.phaseone_attendance_effective where roster_id = '76000000-0000-4000-8000-000000000011'),
+  null::timestamptz,
+  'the corrected continuation shift no longer inherits the cleared check-out'
+);
+select ok(
+  exists (
+    select 1
+    from public.phaseone_attendance_session_audit
+    where event_id = '76000000-0000-4000-8000-000000000002'
+      and action = 'session_reopened'
+      and roster_id = '76000000-0000-4000-8000-000000000010'
+      and metadata->>'reason' = 'Test accidental checkout correction'
+  ),
+  'the reopened session is audit logged with the correction reason'
 );
 
 select public.phaseone_apply_attendance_transition(
