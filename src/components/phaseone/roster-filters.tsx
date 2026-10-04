@@ -13,6 +13,8 @@ const STATUS_OPTIONS = [
 ] as const;
 
 type RosterFiltersProps = {
+  initialHideWithdrawn: boolean;
+  initialHideAbsent: boolean;
   initialQuery: string;
   initialShownCount: number;
   initialStatus: string;
@@ -20,12 +22,16 @@ type RosterFiltersProps = {
 };
 
 export function RosterFilters({
+  initialHideWithdrawn,
+  initialHideAbsent,
   initialQuery,
   initialShownCount,
   initialStatus,
   timeslotId,
 }: RosterFiltersProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const [hideWithdrawn, setHideWithdrawn] = useState(initialHideWithdrawn);
+  const [hideAbsent, setHideAbsent] = useState(initialHideAbsent);
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState(initialStatus);
   const [shownCount, setShownCount] = useState(initialShownCount);
@@ -46,13 +52,19 @@ export function RosterFilters({
           const matchesQuery =
             !normalizedQuery ||
             (card.dataset.filterText ?? "").includes(normalizedQuery);
-          const visible = matchesStatus && matchesQuery;
+          const matchesExclusions =
+            !(hideWithdrawn && card.dataset.status === "withdrawn") &&
+            !(hideAbsent && card.dataset.status === "absent");
+          const visible = matchesStatus && matchesQuery && matchesExclusions;
 
           card.hidden = !visible;
           if (visible) nextShownCount += 1;
         });
 
       setShownCount(nextShownCount);
+
+      const emptyState = list.querySelector<HTMLElement>("[data-roster-empty-state]");
+      if (emptyState) emptyState.hidden = nextShownCount > 0;
 
       const count = section.querySelector<HTMLElement>("[data-roster-visible-count]");
       if (count) count.textContent = String(nextShownCount);
@@ -61,7 +73,12 @@ export function RosterFilters({
     applyFilters();
 
     const observer = new MutationObserver(() => applyFilters());
-    observer.observe(list, { childList: true, subtree: true });
+    observer.observe(list, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-status", "data-filter-text"],
+    });
 
     const url = new URL(window.location.href);
     url.searchParams.set("timeslot", timeslotId);
@@ -78,6 +95,14 @@ export function RosterFilters({
       url.searchParams.delete("status");
     }
 
+    for (const [key, hidden] of [
+      ["hideWithdrawn", hideWithdrawn],
+      ["hideAbsent", hideAbsent],
+    ] as const) {
+      if (hidden) url.searchParams.set(key, "1");
+      else url.searchParams.delete(key);
+    }
+
     window.history.replaceState(
       window.history.state,
       "",
@@ -85,13 +110,15 @@ export function RosterFilters({
     );
 
     return () => observer.disconnect();
-  }, [query, status, timeslotId]);
+  }, [query, status, timeslotId, hideWithdrawn, hideAbsent]);
 
-  const filtersActive = status !== "all" || query.trim().length > 0;
+  const filtersActive = status !== "all" || query.trim().length > 0 || hideWithdrawn || hideAbsent;
 
   const clearFilters = () => {
     setQuery("");
     setStatus("all");
+    setHideWithdrawn(false);
+    setHideAbsent(false);
   };
 
   return (
@@ -125,6 +152,34 @@ export function RosterFilters({
             ))}
           </select>
         </div>
+        <div className="phaseone-roster-exclusions" role="group" aria-label="Hide roster statuses">
+          <label>
+            <input
+              aria-controls="roster-list"
+              checked={hideWithdrawn}
+              onChange={(event) => setHideWithdrawn(event.target.checked)}
+              type="checkbox"
+            />
+            Hide withdrawn
+          </label>
+          <label>
+            <input
+              aria-controls="roster-list"
+              checked={hideAbsent}
+              onChange={(event) => setHideAbsent(event.target.checked)}
+              type="checkbox"
+            />
+            Hide absent
+          </label>
+        </div>
+        <button
+          className="button button-secondary"
+          disabled={!filtersActive}
+          onClick={clearFilters}
+          type="button"
+        >
+          Clear filters
+        </button>
       </div>
 
       <details
@@ -170,6 +225,26 @@ export function RosterFilters({
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="phaseone-roster-exclusions" role="group" aria-label="Hide roster statuses">
+              <label>
+                <input
+                  aria-controls="roster-list"
+                  checked={hideWithdrawn}
+                  onChange={(event) => setHideWithdrawn(event.target.checked)}
+                  type="checkbox"
+                />
+                Hide withdrawn
+              </label>
+              <label>
+                <input
+                  aria-controls="roster-list"
+                  checked={hideAbsent}
+                  onChange={(event) => setHideAbsent(event.target.checked)}
+                  type="checkbox"
+                />
+                Hide absent
+              </label>
             </div>
             <div className="phaseone-mobile-filter-actions">
               <button
