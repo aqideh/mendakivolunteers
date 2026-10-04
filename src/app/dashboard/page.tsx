@@ -243,10 +243,13 @@ export default async function DashboardPage({
 
   let presentationProfile: KeluargaVolunteerProfile | null = null;
   let privateDetails: PrivateDetails | null = null;
-  let approvedContributions: Array<{
+  let contributions: Array<{
     id: string;
-    approved_minutes: number;
+    operational_minutes: number;
+    approved_minutes: number | null;
     occurred_at: string;
+    status: string;
+    event_title: string | null;
   }> = [];
   let pointsBalance = 0;
   let badgeCount = 0;
@@ -270,9 +273,8 @@ export default async function DashboardPage({
           .maybeSingle(),
         accountClient
           .from("volunteer_contributions")
-          .select("id, approved_minutes, occurred_at")
+          .select("id, operational_minutes, approved_minutes, occurred_at, status, event_title")
           .eq("volunteer_id", volunteer.id)
-          .eq("status", "approved")
           .order("occurred_at", { ascending: false }),
         accountClient.schema("core").rpc("get_current_points_snapshot"),
         accountClient.schema("core").rpc("get_current_badges_snapshot"),
@@ -299,11 +301,14 @@ export default async function DashboardPage({
       (profileResult.data as KeluargaVolunteerProfile | null) ?? null;
     privateDetails =
       (privateResult.data as PrivateDetails | null) ?? null;
-    approvedContributions =
+    contributions =
       (contributionResult.data as Array<{
         id: string;
-        approved_minutes: number;
+        operational_minutes: number;
+        approved_minutes: number | null;
         occurred_at: string;
+        status: string;
+        event_title: string | null;
       }> | null) ?? [];
 
     const points = pointsResult.data as PointsSnapshot | null;
@@ -328,6 +333,9 @@ export default async function DashboardPage({
   const availabilitySlots = presentationProfile?.availability_slots ?? [];
   const preferredCommitment = presentationProfile?.preferred_commitment ?? null;
   const avatarPath = presentationProfile?.avatar_path ?? null;
+  const approvedContributions = contributions.filter(
+    (contribution) => contribution.status === "approved",
+  );
   const approvedMinutes = approvedContributions.reduce(
     (total, contribution) =>
       total + Number(contribution.approved_minutes ?? 0),
@@ -639,7 +647,7 @@ export default async function DashboardPage({
               <div className="profile-passport-section-heading">
                 <div>
                   <h2 id="activity-summary-title">Activity summary</h2>
-                  <p>Approved contributions and your programme registrations.</p>
+                  <p>Your roster assignments, attendance records and programme registrations.</p>
                 </div>
               </div>
               <div className="profile-passport-metrics profile-passport-metrics-compact">
@@ -666,37 +674,53 @@ export default async function DashboardPage({
               </section>
             )}
 
-            {approvedContributions.length > 0 ? (
-              <section aria-labelledby="approved-contributions-title">
+            {contributions.length > 0 ? (
+              <section aria-labelledby="contribution-history-title">
                 <div className="profile-passport-section-heading">
                   <div>
-                    <h2 id="approved-contributions-title">Approved contribution history</h2>
+                    <h2 id="contribution-history-title">Contribution history</h2>
                     <p>
-                      These records have completed review and are included in your volunteer history.
+                      Attendance remains visible while it is being reviewed. Only approved records count toward credited hours and points.
                     </p>
                   </div>
                 </div>
                 <div className="profile-passport-history">
-                  {approvedContributions.map((contribution) => (
-                    <article key={contribution.id}>
-                      <div>
-                        <strong>
-                          {(Number(contribution.approved_minutes) / 60).toFixed(1)} hours
-                        </strong>
-                        <span>
-                          {new Intl.DateTimeFormat("en-SG", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            timeZone: "Asia/Singapore",
-                          }).format(new Date(contribution.occurred_at))}
+                  {contributions.map((contribution) => {
+                    const minutes =
+                      contribution.status === "approved"
+                        ? Number(contribution.approved_minutes ?? 0)
+                        : Number(contribution.operational_minutes ?? 0);
+                    const label =
+                      contribution.status === "approved"
+                        ? "Approved"
+                        : contribution.status === "needs_review"
+                          ? "Needs review"
+                          : contribution.status === "rejected"
+                            ? "Not approved"
+                            : "Pending verification";
+                    return (
+                      <article key={contribution.id}>
+                        <div>
+                          <strong>{contribution.event_title ?? "Volunteer activity"}</strong>
+                          <span>
+                            {(minutes / 60).toFixed(1)} hours ·{" "}
+                            {new Intl.DateTimeFormat("en-SG", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              timeZone: "Asia/Singapore",
+                            }).format(new Date(contribution.occurred_at))}
+                          </span>
+                        </div>
+                        <span
+                          className="status-pill"
+                          data-state={contribution.status === "approved" ? "verified" : contribution.status}
+                        >
+                          {label}
                         </span>
-                      </div>
-                      <span className="status-pill" data-state="verified">
-                        Approved
-                      </span>
-                    </article>
-                  ))}
+                      </article>
+                    );
+                  })}
                 </div>
               </section>
             ) : null}
