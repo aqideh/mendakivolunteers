@@ -889,3 +889,9 @@
 .phaseone-roster-filter-controls > .button {
   justify-self: start;
 }
+
+/* Author grid styles override the browser's default hidden rule. */
+.phaseone-attendance-list > [data-roster-filterable][hidden],
+.phaseone-attendance-list > [data-roster-empty-state][hidden] {
+  display: none !important;
+}
