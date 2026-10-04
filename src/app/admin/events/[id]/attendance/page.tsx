@@ -396,6 +396,47 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       };
     });
 
+  const priorNonAttendanceByPerson = new Map<
+    string,
+    { status: NonAttendanceStatus; timeslot: Timeslot }
+  >();
+  if (selectedTimeslot) {
+    const selectedStart = new Date(selectedTimeslot.starts_at).getTime();
+    const selectedDate = singaporeDateKey(selectedTimeslot.starts_at);
+    const timeslotById = new Map(activeTimeslots.map((timeslot) => [timeslot.id, timeslot]));
+
+    for (const priorRoster of rosterResult.data) {
+      const priorTimeslot = timeslotById.get(priorRoster.timeslot_id);
+      if (
+        !priorTimeslot
+        || singaporeDateKey(priorTimeslot.starts_at) !== selectedDate
+        || new Date(priorTimeslot.starts_at).getTime() >= selectedStart
+      ) {
+        continue;
+      }
+
+      const priorAttendance = attendanceByRoster.get(priorRoster.id);
+      const priorEffectiveAttendance = effectiveAttendanceByRoster.get(priorRoster.id);
+      const priorStatus = statusFor(
+        priorEffectiveAttendance?.signed_in_at ?? priorAttendance?.signed_in_at ?? null,
+        priorEffectiveAttendance?.signed_out_at ?? priorAttendance?.signed_out_at ?? null,
+        priorEffectiveAttendance?.non_attendance_status ?? priorAttendance?.non_attendance_status ?? null,
+      );
+      if (priorStatus !== "absent" && priorStatus !== "withdrawn") continue;
+
+      const current = priorNonAttendanceByPerson.get(priorRoster.attendance_person_key);
+      if (
+        !current
+        || new Date(priorTimeslot.starts_at).getTime() > new Date(current.timeslot.starts_at).getTime()
+      ) {
+        priorNonAttendanceByPerson.set(priorRoster.attendance_person_key, {
+          status: priorStatus,
+          timeslot: priorTimeslot,
+        });
+      }
+    }
+  }
+
   function nextShiftLink(sessionId: string | null | undefined): SessionShiftLink | undefined {
     if (!sessionId || !nextTimeslot) return undefined;
     return (linksBySession.get(sessionId) ?? []).find((link) => link.timeslot_id === nextTimeslot.id);
@@ -662,6 +703,10 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                     volunteer.dietary_requirements,
                   ].filter(Boolean).join(" ").toLowerCase();
 
+                  const priorNonAttendance = priorNonAttendanceByPerson.get(
+                    volunteer.attendance_person_key,
+                  );
+
                   return (
                     <article
                       className="phaseone-attendance-card phaseone-checkin-card"
@@ -683,6 +728,15 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             {volunteer.entry_method === "walk_in" ? <span className="status-pill phaseone-walk-in-badge">Walk-in</span> : null}
                             {volunteer.volunteer_link_status === "needs_review" ? (
                               <span className="status-pill phaseone-match-review-badge">Check volunteer match</span>
+                            ) : null}
+                            {priorNonAttendance ? (
+                              <span
+                                className="status-pill phaseone-prior-shift-badge"
+                                data-prior-status={priorNonAttendance.status}
+                                title={`${timeslotLabel(priorNonAttendance.timeslot)} was marked ${statusLabel(priorNonAttendance.status).toLowerCase()}.`}
+                              >
+                                {timeslotLabel(priorNonAttendance.timeslot)} {statusLabel(priorNonAttendance.status)}
+                              </span>
                             ) : null}
                             {isCarryover ? <span className="status-pill phaseone-continuation-badge">Continuing from earlier shift</span> : null}
                             {isExtended ? <span className="status-pill phaseone-continuation-badge">Extended from earlier shift</span> : null}
