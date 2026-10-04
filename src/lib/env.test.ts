@@ -50,11 +50,11 @@ describe("runtime environment configuration", () => {
     );
   });
 
-  it("uses the production project URL for Vercel production auth callbacks", () => {
+  it("always uses the canonical MENDAKI domain for production auth callbacks", () => {
     expect(
       getPublicConfig({
         VERCEL_ENV: "production",
-        VERCEL_PROJECT_PRODUCTION_URL: "keluarga.mendaki.org.sg",
+        VERCEL_PROJECT_PRODUCTION_URL: "mendakivolunteers.vercel.app",
         VERCEL_URL: "mendakivolunteers-production-deployment.vercel.app",
         NEXT_PUBLIC_SUPABASE_URL: "https://glpdougaxlgaipqlzcbq.supabase.co",
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
