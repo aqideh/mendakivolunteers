@@ -41,9 +41,11 @@ select ok(
     from pg_policies
     where schemaname = 'public'
       and tablename = 'volunteer_contributions'
-      and policyname = 'volunteer_contributions_select_self_approved'
+      and policyname = 'volunteer_contributions_select_self'
+      and cmd = 'SELECT'
+      and roles = '{authenticated}'::name[]
   ),
-  'volunteers can read only approved self contribution records through the dedicated policy'
+  'volunteers can read their own contribution history across review states'
 );
 select has_table('public', 'volunteer_profile_change_inbox', 'MakLom profile-change review inbox exists');
 select has_table('public', 'maklom_profile_inbox', 'MakLom event insight/review inbox exists');
