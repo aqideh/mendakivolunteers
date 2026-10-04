@@ -4,6 +4,10 @@ import { withdrawRegistration } from "@/app/dashboard/registration-actions";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
+function getServerNowMs(): number {
+  return Date.now();
+}
+
 function statusLabel(status: string): string {
   switch (status) {
     case "pending":
@@ -116,7 +120,7 @@ export async function KeluargaRegistrationSummary({
     (timeslotsResult.data ?? []).map((timeslot) => [timeslot.id, timeslot]),
   );
 
-  const now = Date.now();
+  const now = getServerNowMs();
   const currentAssignments = rosterRows
     .map((roster) => {
       const event = eventById.get(roster.event_id);
