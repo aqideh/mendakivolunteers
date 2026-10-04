@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   approveTemporaryVolunteer,
   deferExistingVolunteerMatch,
+  mergeExistingVolunteerIdentity,
   rejectAndRequestProfileRefill,
 } from "@/app/admin/reconciliation/actions";
 import { requireActiveAccount } from "@/lib/auth/account-access";
@@ -129,9 +130,8 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
       .schema("core")
       .from("volunteers")
       .select(
-        "id, volunteer_code, display_name, mobile, primary_email_normalized, official_hours_12_months, official_hours_24_months",
+        "id, volunteer_code, display_name, mobile, primary_email_normalized, auth_user_id, official_hours_12_months, official_hours_24_months",
       )
-      .is("auth_user_id", null)
       .limit(5000),
   ]);
 
@@ -151,8 +151,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
         <div>
           <h1>Volunteer reconciliation</h1>
           <p className="muted">
-            Review temporary unverified accounts. Matches are recorded for later
-            reconciliation; no historical volunteer record is merged here.
+            Review possible duplicate volunteer identities, including verified accounts that may have changed email. Suggested matches are based on exact identifiers and always require staff review.
           </p>
         </div>
       </div>
@@ -187,6 +186,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
             const normalizedMobile = (provisional?.mobile ?? "").replace(/\D/g, "");
 
             const candidates = candidateRows
+              .filter((candidate) => candidate.id !== provisional?.id)
               .map((candidate) => {
                 let score = 0;
                 if (
@@ -213,7 +213,11 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                   <div>
                     <h3>{provisional?.display_name ?? account?.display_name ?? "New volunteer"}</h3>
                     <p className="muted">
-                      {claimedEmail || "No claimed email"} · {provisional?.volunteer_code ?? "No KEL code"}
+                      {claimedEmail || "No claimed email"} · {provisional?.volunteer_code ?? "No KEL code"} · {reviewCase.reason_code === "verified_name_mobile_match"
+                        ? "Verified email · exact name/mobile match"
+                        : reviewCase.reason_code === "ambiguous_name_mobile_match"
+                          ? "Verified email · multiple name/mobile matches"
+                          : "Identity review"}
                     </p>
                   </div>
                   <span className="badge">{reviewCase.review_outcome === "refill_required" ? "Changes requested" : "Pending review"}</span>
@@ -222,7 +226,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                 <div className="form-grid">
                   <div>
                     <strong>Temporary account data</strong>
-                    <p>Email: {claimedEmail || "—"} (unverified)</p>
+                    <p>Email: {claimedEmail || "—"} {account?.email_ownership_verified ? "(verified)" : "(unverified)"}</p>
                     <p>Mobile: {provisional?.mobile ?? "—"}</p>
                     <p>Date of birth: {privateDetails?.date_of_birth ?? "—"}</p>
                     <p>Planning area: {privateDetails?.planning_area ?? "—"}</p>
@@ -241,7 +245,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                             <br />
                             <span className="muted">
                               {candidate.primary_email_normalized ?? "no email"} · {candidate.mobile ?? "no mobile"} ·
-                              {" "}{candidate.official_hours_24_months ?? 0}h / 24 months
+                              {" "}{candidate.official_hours_24_months ?? 0}h / 24 months · {candidate.auth_user_id ? "existing login" : "no login"}
                             </span>
                           </li>
                         ))}
@@ -263,7 +267,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                   <form action={deferExistingVolunteerMatch} className="phaseone-admin-form">
                     <input type="hidden" name="caseId" value={reviewCase.id} />
                     <h4>Record existing volunteer match</h4>
-                    <select name="candidateVolunteerId" required defaultValue="">
+                    <select name="candidateVolunteerId" required defaultValue={reviewCase.candidate_volunteer_id ?? ""}>
                       <option value="" disabled>Select a likely record</option>
                       {candidates.map(({ candidate }) => (
                         <option value={candidate.id} key={candidate.id}>
@@ -276,6 +280,37 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                       Save match for later reconciliation
                     </button>
                   </form>
+
+                  {["verified_name_mobile_match", "ambiguous_name_mobile_match"].includes(reviewCase.reason_code ?? "") ? (
+                    <form action={mergeExistingVolunteerIdentity} className="phaseone-admin-form">
+                      <input type="hidden" name="caseId" value={reviewCase.id} />
+                      <h4>Merge duplicate identity</h4>
+                      <p className="muted">
+                        Keep the selected existing KEL record and merge this newer profile into it.
+                      </p>
+                      <select name="candidateVolunteerId" required defaultValue={reviewCase.candidate_volunteer_id ?? ""}>
+                        <option value="" disabled>Select the canonical record to keep</option>
+                        {candidates.map(({ candidate }) => (
+                          <option value={candidate.id} key={candidate.id}>
+                            {candidate.display_name ?? "Volunteer"} — {candidate.volunteer_code}
+                            {candidate.auth_user_id ? " · existing login" : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <select name="activeLogin" required defaultValue="current">
+                        <option value="current">Keep current verified login/email</option>
+                        <option value="existing">Keep existing record&apos;s verified login/email</option>
+                      </select>
+                      <textarea name="notes" rows={2} maxLength={2000} placeholder="Optional merge notes" />
+                      <label>
+                        <input type="checkbox" name="confirmMerge" required />{" "}
+                        I confirm these records belong to the same volunteer and the selected login should remain active.
+                      </label>
+                      <button className="button button-primary" type="submit" disabled={candidates.length === 0}>
+                        Merge identities
+                      </button>
+                    </form>
+                  ) : null}
                 </div>
 
                 <form action={rejectAndRequestProfileRefill} className="phaseone-admin-form">
