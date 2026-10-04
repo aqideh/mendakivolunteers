@@ -16,6 +16,7 @@ const appEnvironmentSchema = z.enum([
 const vercelEnvironmentSchema = z.enum(["development", "preview", "production"]);
 const booleanSettingSchema = z.enum(["true", "false"]);
 const STAGING_APP_URL = "https://keluargastaging.vercel.app";
+const PRODUCTION_APP_URL = "https://keluarga.mendaki.org.sg";
 const hostnameSchema = z
   .string()
   .trim()
@@ -36,11 +37,11 @@ function inferVercelAppUrl(environment: Environment): string | undefined {
     return STAGING_APP_URL;
   }
 
-  const hostname =
-    environment.VERCEL_ENV === "production"
-      ? environment.VERCEL_PROJECT_PRODUCTION_URL ?? environment.VERCEL_URL
-      : environment.VERCEL_BRANCH_URL ?? environment.VERCEL_URL;
+  if (environment.VERCEL_ENV === "production") {
+    return PRODUCTION_APP_URL;
+  }
 
+  const hostname = environment.VERCEL_BRANCH_URL ?? environment.VERCEL_URL;
   return hostname ? `https://${hostname}` : undefined;
 }
 
