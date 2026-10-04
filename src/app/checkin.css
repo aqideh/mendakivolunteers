@@ -778,41 +778,86 @@
 }
 
 .attendance-feedback-scale {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.45rem;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.35rem, 2vw, 0.7rem);
 }
 
 .attendance-feedback-scale label {
   position: relative;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
 }
 
 .attendance-feedback-scale input {
   position: absolute;
   opacity: 0;
+  pointer-events: none;
 }
 
-.attendance-feedback-scale span {
+.attendance-feedback-heart {
   display: grid;
   place-items: center;
-  min-height: 2.8rem;
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  font-weight: 800;
+  width: clamp(2.6rem, 12vw, 3.2rem);
+  height: clamp(2.6rem, 12vw, 3.2rem);
+  border-radius: 999px;
+  color: var(--foreground);
   cursor: pointer;
+  transition: transform 140ms ease, background 140ms ease;
 }
 
-.attendance-feedback-scale input:checked + span {
+.attendance-feedback-heart svg {
+  width: clamp(1.7rem, 8vw, 2.1rem);
+  height: clamp(1.7rem, 8vw, 2.1rem);
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  transition: fill 140ms ease, transform 140ms ease;
+}
+
+.attendance-feedback-scale label:hover .attendance-feedback-heart {
+  transform: translateY(-1px);
+}
+
+.attendance-feedback-scale label:hover .attendance-feedback-heart svg {
+  transform: scale(1.06);
+}
+
+.attendance-feedback-scale:has(label:nth-child(1) input:checked) label:nth-child(-n+1) svg,
+.attendance-feedback-scale:has(label:nth-child(2) input:checked) label:nth-child(-n+2) svg,
+.attendance-feedback-scale:has(label:nth-child(3) input:checked) label:nth-child(-n+3) svg,
+.attendance-feedback-scale:has(label:nth-child(4) input:checked) label:nth-child(-n+4) svg,
+.attendance-feedback-scale:has(label:nth-child(5) input:checked) label:nth-child(-n+5) svg {
+  fill: currentColor;
+}
+
+.attendance-feedback-scale input:focus-visible + .attendance-feedback-heart {
   outline: 2px solid currentColor;
-  background: var(--surface-subtle, #f6f8f7);
+  outline-offset: 2px;
 }
 
 .attendance-feedback-scale-labels {
   display: flex;
   justify-content: space-between;
+  max-width: min(100%, 18.8rem);
   margin-top: 0.25rem;
   color: var(--muted);
   font-size: 0.74rem;
+}
+
+.attendance-feedback-checkout-time {
+  width: fit-content;
+  margin: -0.35rem 0 1rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  background: var(--surface-subtle, #f6f8f7);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.attendance-feedback-checkout-time strong {
+  color: var(--foreground);
 }
 
 .attendance-feedback-followup {
