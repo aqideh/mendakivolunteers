@@ -420,6 +420,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const requestedFilter = parameter(parameters, "status") ?? "all";
   const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "withdrawn", "absent", "anomaly"]);
   const filter = validFilters.has(requestedFilter) ? requestedFilter : "all";
+  const hideWithdrawn = parameter(parameters, "hideWithdrawn") === "1";
+  const hideAbsent = parameter(parameters, "hideAbsent") === "1";
   const visible = records.filter(({ volunteer, status }) => {
     const matchesStatus = filter === "all" || status === filter;
     const haystack = [
@@ -431,7 +433,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       volunteer.tshirt_size,
       volunteer.dietary_requirements,
     ].filter(Boolean).join(" ").toLowerCase();
-    return matchesStatus && (!query || haystack.includes(query));
+    const matchesExclusions = !(hideWithdrawn && status === "withdrawn") && !(hideAbsent && status === "absent");
+    return matchesStatus && matchesExclusions && (!query || haystack.includes(query));
   });
   const visibleRosterIds = new Set(visible.map(({ volunteer }) => volunteer.id));
   const counts = records.reduce<Record<AttendanceStatus, number>>(
@@ -656,6 +659,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               ) : null}
 
               <RosterFilters
+                initialHideWithdrawn={hideWithdrawn}
+                initialHideAbsent={hideAbsent}
                 initialQuery={rawQuery}
                 initialShownCount={visible.length}
                 initialStatus={filter}
@@ -1129,7 +1134,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                     </article>
                   );
                 })}
-                {visible.length === 0 ? <p className="empty-state">No volunteers match these filters.</p> : null}
+                <p className="empty-state" data-roster-empty-state hidden={visible.length > 0}>No volunteers match these filters.</p>
               </div>
             </section>
           </>
