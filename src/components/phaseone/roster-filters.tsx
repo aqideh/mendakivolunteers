@@ -67,7 +67,7 @@ export function RosterFilters({
         }
       } catch { /* Ignore invalid presentation state. */ }
     }
-  }, [timeslotId]);
+  }, [timeslotId, initialCounts]);
 
   useEffect(() => {
     const section = rootRef.current?.closest<HTMLElement>(".phaseone-admin-section");
@@ -82,9 +82,9 @@ export function RosterFilters({
           filterText: card.dataset.filterText ?? "",
           needsAttention: card.dataset.needsAttention === "true",
         };
-        totals.all += 1;
+        totals.all = (totals.all ?? 0) + 1;
         totals[row.status] = (totals[row.status] ?? 0) + 1;
-        if (row.needsAttention) totals.attention += 1;
+        if (row.needsAttention) totals.attention = (totals.attention ?? 0) + 1;
         const visible = matchesRosterFilter(row, { query, status, hideWithdrawn, hideAbsent });
         card.hidden = !visible;
         if (visible) shown += 1;
@@ -105,7 +105,7 @@ export function RosterFilters({
     for (const [key, value] of [
       ["q", query.trim()], ["status", status === "all" ? "" : status],
       ["hideWithdrawn", hideWithdrawn ? "1" : ""], ["hideAbsent", hideAbsent ? "1" : ""],
-    ]) {
+    ] as const) {
       if (value) url.searchParams.set(key, value); else url.searchParams.delete(key);
     }
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
