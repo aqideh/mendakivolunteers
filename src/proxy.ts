@@ -19,7 +19,10 @@ export async function proxy(request: NextRequest) {
     process.env.VERCEL_ENV === "preview" &&
     process.env.VERCEL_GIT_COMMIT_REF === "staging";
 
-  if (isStagingBranch) {
+  const shouldUseCanonicalHost =
+    appEnvironment === "production" || isStagingBranch;
+
+  if (shouldUseCanonicalHost) {
     const redirectUrl = buildCanonicalStagingRedirectUrl(
       request.nextUrl.toString(),
       appUrl,
