@@ -136,6 +136,47 @@ export async function deferExistingVolunteerMatch(formData: FormData) {
   redirect("/admin/reconciliation?success=matched");
 }
 
+export async function mergeExistingVolunteerIdentity(formData: FormData) {
+  const { userId } = await requireReviewManager();
+  const parsedCaseId = uuidSchema.safeParse(formData.get("caseId"));
+  const parsedCandidateId = uuidSchema.safeParse(formData.get("candidateVolunteerId"));
+  const parsedActiveLogin = z.enum(["current", "existing"]).safeParse(
+    formData.get("activeLogin"),
+  );
+
+  if (
+    !parsedCaseId.success ||
+    !parsedCandidateId.success ||
+    !parsedActiveLogin.success ||
+    formData.get("confirmMerge") !== "on"
+  ) {
+    redirect("/admin/reconciliation?error=invalid");
+  }
+
+  const admin = getPhaseOneAdminClient();
+  const result = await admin.schema("core").rpc(
+    "merge_reconciled_volunteer_identity",
+    {
+      p_case_id: parsedCaseId.data,
+      p_candidate_volunteer_id: parsedCandidateId.data,
+      p_active_login: parsedActiveLogin.data,
+      p_actor_user_id: userId,
+      p_notes: note(formData),
+    },
+  );
+
+  if (result.error) {
+    console.error("Volunteer identity merge failed", {
+      code: result.error.code,
+      message: result.error.message,
+    });
+    redirect("/admin/reconciliation?error=merge");
+  }
+
+  refresh();
+  redirect("/admin/reconciliation?success=merged");
+}
+
 export async function rejectAndRequestProfileRefill(formData: FormData) {
   await requireReviewManager();
   const parsedCaseId = uuidSchema.safeParse(formData.get("caseId"));

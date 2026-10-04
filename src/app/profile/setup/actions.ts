@@ -8,6 +8,7 @@ import { z } from "zod";
 import { requireActiveAccount } from "@/lib/auth/account-access";
 import { OneMapConfigurationError, resolveSingaporePostalCode } from "@/lib/onemap/server";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import { findHighConfidenceIdentityCandidates } from "@/lib/volunteers/reconciliation-candidates";
 
 const contactSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
@@ -517,6 +518,77 @@ export async function completeProfileSetup() {
 
   const admin = getPhaseOneAdminClient();
   const now = new Date().toISOString();
+
+  const [accountResult, candidatePoolResult] = await Promise.all([
+    admin
+      .schema("core")
+      .from("user_accounts")
+      .select("claimed_email_normalized, email_ownership_verified")
+      .eq("id", userId)
+      .maybeSingle(),
+    admin
+      .schema("core")
+      .from("volunteers")
+      .select("id, display_name, mobile, primary_email_normalized")
+      .neq("id", volunteerId)
+      .limit(5000),
+  ]);
+
+  if (
+    !accountResult.error &&
+    !candidatePoolResult.error &&
+    accountResult.data?.email_ownership_verified
+  ) {
+    const candidates = findHighConfidenceIdentityCandidates(
+      {
+        displayName: volunteerResult.data.display_name,
+        mobile: volunteerResult.data.mobile,
+        email: accountResult.data.claimed_email_normalized,
+      },
+      candidatePoolResult.data ?? [],
+    );
+
+    if (candidates.length > 0) {
+      const existingCase = await admin
+        .schema("core")
+        .from("account_link_cases")
+        .select("id")
+        .eq("auth_user_id", userId)
+        .in("status", ["pending", "needs_review"])
+        .maybeSingle();
+
+      if (!existingCase.error) {
+        const values = {
+          status: "needs_review",
+          reason_code:
+            candidates.length === 1
+              ? "verified_name_mobile_match"
+              : "ambiguous_name_mobile_match",
+          candidate_volunteer_id:
+            candidates.length === 1 ? (candidates[0]?.id ?? null) : null,
+          review_outcome: null,
+          requested_sections: [],
+          volunteer_message: null,
+          submitted_for_review_at: now,
+          resolved_by: null,
+          resolved_at: null,
+        };
+
+        if (existingCase.data) {
+          await admin
+            .schema("core")
+            .from("account_link_cases")
+            .update(values)
+            .eq("id", existingCase.data.id);
+        } else {
+          await admin
+            .schema("core")
+            .from("account_link_cases")
+            .insert({ auth_user_id: userId, ...values });
+        }
+      }
+    }
+  }
   const reviewResult = await admin
     .schema("core")
     .from("account_link_cases")
