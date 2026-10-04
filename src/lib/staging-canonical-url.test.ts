@@ -25,6 +25,17 @@ describe("canonical staging redirects", () => {
     );
   });
 
+  it("redirects a production alias to the canonical Keluarga origin without consuming auth parameters", () => {
+    const redirectUrl = buildCanonicalStagingRedirectUrl(
+      "https://legacy-production.example/auth/confirm?next=%2Fdashboard&token_hash=test-token&type=email",
+      "https://keluarga.mendaki.org.sg",
+    );
+
+    expect(redirectUrl?.toString()).toBe(
+      "https://keluarga.mendaki.org.sg/auth/confirm?next=%2Fdashboard&token_hash=test-token&type=email",
+    );
+  });
+
   it("does not redirect requests already on the canonical staging origin", () => {
     expect(
       buildCanonicalStagingRedirectUrl(
