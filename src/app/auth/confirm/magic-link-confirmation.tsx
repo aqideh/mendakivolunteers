@@ -50,9 +50,9 @@ export function MagicLinkConfirmation() {
       currentUrl.searchParams.get("next"),
       "/dashboard",
     );
-    const isRecovery =
-      rawType === "recovery" ||
-      currentUrl.searchParams.get("flow") === "recovery";
+    const flow = currentUrl.searchParams.get("flow");
+    const isRecovery = rawType === "recovery" || flow === "recovery";
+    const isVolunteerOnboarding = flow === "volunteer_onboarding";
     const expectedRecoveryUserId = currentUrl.searchParams.get("account");
     const isInvite = rawType === "invite";
 
@@ -154,6 +154,40 @@ export function MagicLinkConfirmation() {
       }
 
       const accountClient = supabase as unknown as SupabaseClient;
+
+      if (isVolunteerOnboarding) {
+        const { data: inviteResult, error: inviteError } = await accountClient
+          .schema("core")
+          .rpc("accept_current_volunteer_onboarding_invite");
+
+        if (inviteError) {
+          console.error("Volunteer onboarding invitation could not be accepted", {
+            code: inviteError.code,
+            message: inviteError.message,
+          });
+          window.location.replace("/login?error=volunteer_onboarding_unavailable");
+          return;
+        }
+
+        if (inviteResult === "linked_existing" || inviteResult === "already_linked") {
+          window.location.replace("/profile/setup");
+          return;
+        }
+
+        if (inviteResult === "identity_conflict") {
+          window.location.replace("/login?error=volunteer_onboarding_conflict");
+          return;
+        }
+
+        if (inviteResult === "staff_access_required" || inviteResult === "staff_account") {
+          window.location.replace("/login?error=staff_access_required");
+          return;
+        }
+
+        window.location.replace("/login?error=volunteer_onboarding_unavailable");
+        return;
+      }
+
       const { data: linkResult, error: linkError } = await accountClient
         .schema("core")
         .rpc("ensure_current_keluarga_volunteer");
