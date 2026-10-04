@@ -13,7 +13,7 @@ import {
 } from "@/app/admin/events/[id]/attendance/shirt-actions";
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
-import { RosterSwipeActions } from "@/components/phaseone/roster-swipe-actions";
+import { matchesRosterFilter } from "@/lib/phaseone/roster-filter";
 import { RosterFilters } from "@/components/phaseone/roster-filters";
 import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
 import { RosterVolunteerMatchFixer } from "@/components/phaseone/roster-volunteer-match-fixer";
@@ -415,15 +415,20 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       )
     : [];
 
+  const needsAttentionIds = new Set(records
+    .filter(record => record.status === "anomaly"
+      || record.volunteer.volunteer_link_status === "needs_review"
+      || needsNextShiftDecision.some(item => item.volunteer.id === record.volunteer.id))
+    .map(record => record.volunteer.id));
+
   const rawQuery = (parameter(parameters, "q") ?? "").trim();
   const query = rawQuery.toLowerCase();
   const requestedFilter = parameter(parameters, "status") ?? "all";
-  const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "withdrawn", "absent", "anomaly"]);
+  const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "withdrawn", "absent", "anomaly", "attention"]);
   const filter = validFilters.has(requestedFilter) ? requestedFilter : "all";
   const hideWithdrawn = parameter(parameters, "hideWithdrawn") === "1";
   const hideAbsent = parameter(parameters, "hideAbsent") === "1";
   const visible = records.filter(({ volunteer, status }) => {
-    const matchesStatus = filter === "all" || status === filter;
     const haystack = [
       volunteer.volunteer_key,
       volunteer.volunteer_name,
@@ -433,8 +438,10 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       volunteer.tshirt_size,
       volunteer.dietary_requirements,
     ].filter(Boolean).join(" ").toLowerCase();
-    const matchesExclusions = !(hideWithdrawn && status === "withdrawn") && !(hideAbsent && status === "absent");
-    return matchesStatus && matchesExclusions && (!query || haystack.includes(query));
+    return matchesRosterFilter(
+      { status, filterText: haystack, needsAttention: needsAttentionIds.has(volunteer.id) },
+      { query, status: filter, hideWithdrawn, hideAbsent },
+    );
   });
   const visibleRosterIds = new Set(visible.map(({ volunteer }) => volunteer.id));
   const counts = records.reduce<Record<AttendanceStatus, number>>(
@@ -478,40 +485,43 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               : errorCode;
   const event = eventResult.data;
 
-  const dayGroups = new Map<string, Timeslot[]>();
-  for (const timeslot of activeTimeslots) {
-    const key = singaporeDateKey(timeslot.starts_at);
-    const group = dayGroups.get(key) ?? [];
-    group.push(timeslot);
-    dayGroups.set(key, group);
-  }
 
   return (
     <div className="site-shell">
       <PortalHeader status="Roster / check-in" dashboard />
-      <main className="page-frame phaseone-operations-page">
+      <main className="page-frame phaseone-operations-page km-operations-workspace">
         <div className="dashboard-header phaseone-operations-header">
           <div>
             <p className="eyebrow">Staff event operations</p>
             <h1>{event.title}</h1>
             <p className="muted">{event.venue ?? "Venue not set"}</p>
           </div>
-          <div className="actions">
-            {canManageEvent ? (
-              <>
-                <Link className="button button-secondary" href={`/admin/events/${id}/edit#roster`}>Roster setup</Link>
-                <Link className="button button-secondary" href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
-                <Link className="button button-secondary" href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
-              </>
-            ) : null}
+          <div className="actions km-operations-header-actions">
             {selectedTimeslot ? (
-              <>
-                <Link className="button button-primary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_in`}>Show check-in QR</Link>
-                <Link className="button button-secondary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_out`}>Show check-out QR</Link>
-              </>
+              <details className="km-operations-menu">
+                <summary className="button button-primary">Show QR ▾</summary>
+                <div className="km-operations-menu-panel">
+                  <Link href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_in`}>Check-in QR</Link>
+                  <Link href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(selectedTimeslot.id)}&action=check_out`}>Check-out QR</Link>
+                </div>
+              </details>
             ) : null}
             {canManageEvent ? (
-              <a className="button button-secondary" href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
+              <details className="km-operations-menu">
+                <summary className="button button-secondary">Tools ▾</summary>
+                <div className="km-operations-menu-panel">
+                  <Link href={`/admin/events/${id}/edit#roster`}>Roster setup</Link>
+                  <Link href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
+                  <Link href={`/admin/events/${id}/attendance/reconcile`}>Reconcile attendance</Link>
+                  <a href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
+                  <a href="#attendance-audit">Attendance history</a>
+                  {selectedTimeslot ? (
+                    <BulkCheckoutButton checkedInCount={counts.signed_in} eventId={id}
+                      timeslotId={selectedTimeslot.id}
+                      shiftLabel={`${singaporeDateLabel(selectedTimeslot.starts_at)} · ${timeslotLabel(selectedTimeslot)} · ${timeslotTime(selectedTimeslot)}`} />
+                  ) : null}
+                </div>
+              </details>
             ) : null}
           </div>
         </div>
@@ -519,90 +529,31 @@ export default async function AttendancePage({ params, searchParams }: PageProps
         {successMessage ? <div className="notice notice-success" role="status">{successMessage}</div> : null}
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
-        <section className="panel phaseone-shift-picker" aria-labelledby="shift-title">
-          <div className="section-header">
-            <div><p className="eyebrow">Day / shift</p><h2 id="shift-title">Select deployment</h2></div>
-          </div>
-          <div className="phaseone-shift-days">
-            {Array.from(dayGroups.entries()).map(([date, slots]) => (
-              <div className="phaseone-shift-day" key={date}>
-                <strong>{singaporeDateLabel(slots[0]!.starts_at)}</strong>
-                <div className="actions">
-                  {slots.map((timeslot) => (
-                    <Link
-                      className={selectedTimeslot?.id === timeslot.id ? "button button-primary" : "button button-secondary"}
-                      href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(timeslot.id)}`}
-                      key={timeslot.id}
-                    >
-                      {timeslotLabel(timeslot)} · {timeslotTime(timeslot)}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-            {activeTimeslots.length === 0 ? <p className="empty-state">No active shifts are configured for this event.</p> : null}
-          </div>
-        </section>
+        {activeTimeslots.length === 0 ? <p className="empty-state">No active shifts are configured for this event.</p> : null}
 
         {selectedTimeslot ? (
           <>
-            {nextTimeslot ? (
-              <section className="panel phaseone-handover" aria-labelledby="handover-title">
-                <div className="phaseone-handover-heading">
-                  <div>
-                    <p className="eyebrow">Shift handover</p>
-                    <h2 id="handover-title">{timeslotLabel(selectedTimeslot)} → {timeslotLabel(nextTimeslot)}</h2>
-                  </div>
-                  <Link
-                    className="text-link"
-                    href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(nextTimeslot.id)}`}
-                  >
-                    Open {timeslotLabel(nextTimeslot)} roster
-                  </Link>
-                </div>
-                <div className="phaseone-handover-metrics">
-                  <span><strong>{continuingToNext.length}</strong> continuing</span>
-                  <span><strong>{extendedToNext.length}</strong> extended on site</span>
-                  <span><strong>{needsNextShiftDecision.length}</strong> still {timeslotLabel(selectedTimeslot)} only</span>
-                </div>
-                <p className="muted">
-                  Volunteers already rostered for the next shift stay checked in automatically. Use <strong>Extend to {timeslotLabel(nextTimeslot)}</strong> when someone decides to stay longer. Their final check-out closes the whole event-day attendance session.
-                </p>
-              </section>
-            ) : null}
-
-            <section className="metric-grid phaseone-attendance-metrics" aria-label="Attendance totals">
-              <article className="metric-card"><span className="metric-value">{records.length}</span><span className="metric-label">Roster</span></article>
-              <article className="metric-card"><span className="metric-value">{counts.pending}</span><span className="metric-label">Not arrived</span></article>
-              <article className="metric-card"><span className="metric-value">{counts.signed_in}</span><span className="metric-label">Checked in</span></article>
-              <article className="metric-card"><span className="metric-value">{counts.signed_out}</span><span className="metric-label">Checked out</span></article>
-              <article className="metric-card"><span className="metric-value">{counts.withdrawn}</span><span className="metric-label">Withdrawn</span></article>
-              <article className="metric-card"><span className="metric-value">{counts.absent}</span><span className="metric-label">Absent</span></article>
-            </section>
-
             <section className="section panel phaseone-admin-section" aria-labelledby="attendance-roster-title">
-              <div className="section-header phaseone-roster-heading">
-                <div>
-                  <p className="eyebrow">{singaporeDateLabel(selectedTimeslot.starts_at)} · {timeslotLabel(selectedTimeslot)}</p>
-                  <h2 id="attendance-roster-title">Volunteer roster</h2>
-                </div>
-                <div className="actions">
-                  <span className="status-pill" aria-live="polite"><span data-roster-visible-count>{visible.length}</span> shown</span>
-                  {canManageEvent ? (
-                    <BulkCheckoutButton
-                      checkedInCount={counts.signed_in}
-                      eventId={id}
-                      timeslotId={selectedTimeslot.id}
-                    />
-                  ) : null}
-                </div>
-              </div>
-
-              {canManageEvent ? (
+              <h2 id="attendance-roster-title" className="km-roster-sr-only">Volunteer roster</h2>
+              <RosterFilters
+                key={selectedTimeslot.id}
+                initialHideWithdrawn={hideWithdrawn}
+                initialHideAbsent={hideAbsent}
+                initialQuery={rawQuery}
+                initialShownCount={visible.length}
+                initialStatus={filter}
+                initialCounts={{ ...counts, all: records.length, attention: needsAttentionIds.size }}
+                timeslotId={selectedTimeslot.id}
+                shifts={activeTimeslots.map(shift => ({
+                  id: shift.id,
+                  label: `${singaporeDateLabel(shift.starts_at)} · ${timeslotLabel(shift)} · ${timeslotTime(shift)}`,
+                }))}
+              >
+                {canManageEvent ? (
               <details className="phaseone-walk-in">
                 <summary className="phaseone-walk-in-summary">
-                  <span>+ Walk-in volunteer</span>
-                  <span className="phaseone-walk-in-summary-hint">Add on the day</span>
+                  <span>+ Walk-in</span>
+                  
                 </summary>
                 <div className="phaseone-walk-in-body">
                   <p className="muted">
@@ -657,18 +608,15 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
               </details>
               ) : null}
-
-              <RosterFilters
-                initialHideWithdrawn={hideWithdrawn}
-                initialHideAbsent={hideAbsent}
-                initialQuery={rawQuery}
-                initialShownCount={visible.length}
-                initialStatus={filter}
-                timeslotId={selectedTimeslot.id}
-              />
-
-              {canManageEvent ? (
-                <p className="muted phaseone-roster-swipe-hint">Swipe a volunteer card right for Review or Insight.</p>
+              </RosterFilters>
+              {nextTimeslot ? (
+                <details className="km-roster-handover">
+                  <summary>Shift handover · {continuingToNext.length} continuing · {needsNextShiftDecision.length} awaiting decision ▾</summary>
+                  <div>
+                    <p>{extendedToNext.length} extended on site. Volunteers already registered for the next shift continue automatically. Open Shift options on a volunteer to extend their attendance. Their final check-out closes the whole event-day session.</p>
+                    <Link className="text-link" href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(nextTimeslot.id)}`}>Open {timeslotLabel(nextTimeslot)} roster</Link>
+                  </div>
+                </details>
               ) : null}
               <div className="phaseone-attendance-list" id="roster-list">
                 {records.map(({ volunteer, attendance, effectiveAttendance, status }) => {
@@ -721,12 +669,12 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       data-highlighted={highlightedRosterId === volunteer.id ? "true" : undefined}
                       data-roster-filterable="true"
                       data-status={status}
+                      data-needs-attention={needsAttentionIds.has(volunteer.id) ? "true" : undefined}
                       data-underage={isUnder18 ? "true" : undefined}
                       hidden={!visibleRosterIds.has(volunteer.id)}
                       id={`roster-${volunteer.id}`}
                       key={volunteer.id}
                     >
-                      {canManageEvent ? <RosterSwipeActions /> : null}
                       <div className="phaseone-attendance-summary">
                         <div>
                           <div className="phaseone-roster-meta">
@@ -743,11 +691,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             ) : null}
                           </div>
                           <h3>{volunteer.volunteer_name}</h3>
-                          <p className="muted phaseone-roster-core-meta">
+                          <details className="km-roster-contact"><summary>Contact &amp; readiness</summary><p className="muted phaseone-roster-core-meta">
                             {volunteer.mobile ?? "No contact number"} · Age {volunteer.age ?? "—"}
                             {preferredShirtSize ? ` · Shirt ${preferredShirtSize}` : ""}
                             {dietaryRequirements ? ` · ${dietaryRequirements}` : ""}
-                          </p>
+                          </p></details>
                           {allergySummary && allergySummary !== "No known food allergies" ? (
                             <p className="phaseone-roster-alert"><strong>Food allergy:</strong> {allergySummary}</p>
                           ) : null}
@@ -867,6 +815,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             rosterId={volunteer.id}
                             timeslotId={selectedTimeslot.id}
                           />
+                          <details className="km-roster-secondary-actions">
+                            <summary>Other status ▾</summary>
+                            <div>
                           <QuickAttendanceButton
                             action="mark_withdrawn"
                             eventId={id}
@@ -879,6 +830,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             rosterId={volunteer.id}
                             timeslotId={selectedTimeslot.id}
                           />
+                            </div>
+                          </details>
                         </div>
                       ) : status === "signed_in" ? (
                         <div className="phaseone-continuous-actions">
@@ -889,6 +842,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             timeslotId={selectedTimeslot.id}
                           />
                           {nextTimeslot && !linkedNextShift ? (
+                            <details className="km-roster-secondary-actions"><summary>Shift options ▾</summary><div>
                             <ExtendAttendanceButton
                               currentTimeslotId={selectedTimeslot.id}
                               eventId={id}
@@ -896,6 +850,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                               targetLabel={timeslotLabel(nextTimeslot)}
                               targetTimeslotId={nextTimeslot.id}
                             />
+                            </div></details>
                           ) : null}
                         </div>
                       ) : status === "withdrawn" || status === "absent" ? (
@@ -995,6 +950,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             />
                           ) : null}
 
+                          <details className="km-roster-more-actions"><summary>More details ▾</summary><div>
                           {canIssueAdditionalShirt && canonicalVolunteerId && shirtIssue ? (
                             <details className="phaseone-attendance-edit phaseone-additional-shirt" name={staffToolsName}>
                               <summary>Another shirt</summary>
@@ -1126,9 +1082,13 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                               </form>
                             </details>
                           )}
+                          </div></details>
                         </div>
                       ) : null}
 
+                      {nextTimeslot && status === "signed_in" && !linkedNextShift ? (
+                        <p className="km-roster-attention-note">Next shift decision pending · use Shift options to extend if they are staying.</p>
+                      ) : null}
                       {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
 
                     </article>
@@ -1141,9 +1101,12 @@ export default async function AttendancePage({ params, searchParams }: PageProps
         ) : null}
 
         {canManageEvent ? (
-          <Suspense fallback={<section className="section"><p className="muted">Loading recent attendance changes…</p></section>}>
-            <AttendanceAudit eventId={id} rosterNames={rosterNames} />
-          </Suspense>
+          <details className="km-roster-audit" id="attendance-audit">
+            <summary>Recent attendance changes ▾</summary>
+            <Suspense fallback={<p className="muted">Loading recent attendance changes…</p>}>
+              <AttendanceAudit eventId={id} rosterNames={rosterNames} />
+            </Suspense>
+          </details>
         ) : null}
       </main>
     </div>
