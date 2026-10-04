@@ -654,10 +654,16 @@ export default async function AdminPage() {
               <span>Bring in event records in bulk.</span>
             </Link>
             {isAdmin ? (
-              <Link href="/admin/staff">
-                <strong>Invite staff</strong>
-                <span>Manage Keluarga access.</span>
-              </Link>
+              <>
+                <Link href="/admin/onboarding">
+                  <strong>Onboard existing volunteer</strong>
+                  <span>Find a KEL identity and send a secure onboarding email.</span>
+                </Link>
+                <Link href="/admin/staff">
+                  <strong>Invite staff</strong>
+                  <span>Manage Keluarga access.</span>
+                </Link>
+              </>
             ) : (
               <Link href="/admin/volunteers">
                 <strong>Volunteer directory</strong>
