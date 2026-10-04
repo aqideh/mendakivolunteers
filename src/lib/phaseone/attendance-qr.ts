@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-import { getPublicConfig } from "@/lib/env";
+import { getAppEnvironment, getPublicConfig, type Environment } from "@/lib/env";
 import { getPhaseOneAdminClient, getPhaseOneServerSecret } from "@/lib/phaseone/admin";
 
 export type AttendanceQrAction = "check_in" | "check_out";
@@ -17,6 +17,13 @@ const DEVICE_TTL_SECONDS = 14 * 60 * 60;
 export const attendanceDeviceCookieName = "keluarga_attendance_identity";
 export const attendanceDeviceMaxAge = DEVICE_TTL_SECONDS;
 export const attendanceQrRefreshMs = QR_TTL_MS;
+
+export function getAttendanceQrOrigin(environment: Environment = process.env): string {
+  const { appUrl } = getPublicConfig(environment);
+  return getAppEnvironment(environment) === "production"
+    ? "https://keluarga.mendaki.org.sg"
+    : appUrl;
+}
 
 function safeEqual(left: Buffer, right: Buffer): boolean {
   return left.length === right.length && timingSafeEqual(left, right);
@@ -110,8 +117,7 @@ export async function createAttendanceQrSession(input: Readonly<{
   });
   if (error) throw new Error("Attendance QR could not be created");
 
-  const { appUrl } = getPublicConfig();
-  const url = new URL("/attendance/scan", appUrl);
+  const url = new URL("/attendance/scan", getAttendanceQrOrigin());
   url.searchParams.set("t", token);
   return { url: url.toString(), expiresAt };
 }

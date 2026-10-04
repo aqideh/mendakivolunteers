@@ -1121,8 +1121,11 @@
 /* Event Operations: compact roster workspace */
 .km-operations-workspace { max-width: 1200px; }
 .km-operations-workspace .phaseone-operations-header {
+  position: relative;
+  z-index: 60;
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   margin-bottom: 1rem; padding: 0; border: 0; border-radius: 0;
+  overflow: visible;
   background: transparent; box-shadow: none;
 }
 .km-operations-workspace .phaseone-operations-header::after { display: none; }
