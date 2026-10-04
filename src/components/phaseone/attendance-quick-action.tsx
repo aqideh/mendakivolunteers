@@ -28,6 +28,7 @@ type BulkCheckoutButtonProps = {
   eventId: string;
   timeslotId: string;
   checkedInCount: number;
+  shiftLabel?: string;
 };
 
 type ExtendAttendanceButtonProps = {
@@ -82,15 +83,20 @@ export function QuickAttendanceButton({
   const [, startRefresh] = useTransition();
   const [outcome, setOutcome] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [recordedAction, setRecordedAction] = useState<AttendanceQuickAction | null>(null);
+  const currentOutcome = recordedAction === action ? outcome : "idle";
+  const currentMessage = recordedAction === action ? message : null;
   const copy = labels[action];
   const isPrimaryAction = action === "mark_sign_in" || action === "mark_sign_out";
 
   function submit() {
-    if (isSaving || outcome === "success") return;
+    if (isSaving || currentOutcome === "success") return;
 
+    setRecordedAction(action);
     setOutcome("idle");
     setMessage(null);
     startSaving(async () => {
+      try {
       const result = await recordAttendanceQuickAction({
         eventId,
         rosterId,
@@ -105,9 +111,17 @@ export function QuickAttendanceButton({
       }
 
       setOutcome("success");
-      setMessage(copy.message);
+      const timestamp = result.signedOutAt ?? result.signedInAt ?? result.updatedAt;
+      const time = timestamp ? new Intl.DateTimeFormat("en-SG", {
+        timeZone: "Asia/Singapore", hour: "2-digit", minute: "2-digit",
+      }).format(new Date(timestamp)) : null;
+      setMessage(time ? `${copy.message} ${time}` : copy.message);
 
       startRefresh(() => router.refresh());
+      } catch {
+        setOutcome("error");
+        setMessage("The request could not be completed. Please try again.");
+      }
     });
   }
 
@@ -116,18 +130,18 @@ export function QuickAttendanceButton({
       <button
         aria-busy={isSaving}
         className={`${isPrimaryAction ? "button button-primary" : "button button-secondary"} phaseone-checkin-action`}
-        disabled={isSaving || outcome === "success"}
+        disabled={isSaving || currentOutcome === "success"}
         onClick={submit}
         type="button"
       >
-        {isSaving ? copy.pending : outcome === "success" ? copy.success : copy.idle}
+        {isSaving ? <><span className="km-roster-spinner" aria-hidden="true" />{copy.pending}</> : currentOutcome === "success" ? copy.success : copy.idle}
       </button>
-      {message ? (
+      {currentMessage ? (
         <p
-          className={outcome === "error" ? "phaseone-inline-action-error" : "phaseone-inline-action-success"}
-          role={outcome === "error" ? "alert" : "status"}
+          className={currentOutcome === "error" ? "phaseone-inline-action-error" : "phaseone-inline-action-success"}
+          role={currentOutcome === "error" ? "alert" : "status"}
         >
-          {message}
+          {currentMessage}
         </p>
       ) : null}
     </div>
@@ -153,6 +167,7 @@ export function ExtendAttendanceButton({
     setOutcome("idle");
     setMessage(null);
     startSaving(async () => {
+      try {
       const result = await extendAttendanceToShift({
         eventId,
         sourceRosterId: rosterId,
@@ -173,6 +188,10 @@ export function ExtendAttendanceButton({
           : `Extended into ${targetLabel}. No second check-in is needed.`,
       );
       startRefresh(() => router.refresh());
+      } catch {
+        setOutcome("error");
+        setMessage("The request could not be completed. Please try again.");
+      }
     });
   }
 
@@ -203,6 +222,7 @@ export function BulkCheckoutButton({
   eventId,
   timeslotId,
   checkedInCount,
+  shiftLabel,
 }: BulkCheckoutButtonProps) {
   const router = useRouter();
   const [isSaving, startSaving] = useTransition();
@@ -214,13 +234,14 @@ export function BulkCheckoutButton({
     if (isSaving || checkedInCount === 0) return;
 
     const confirmed = window.confirm(
-      `Check out all ${checkedInCount} currently checked-in volunteer${checkedInCount === 1 ? "" : "s"} for this shift? Continuous volunteers will be checked out of their whole event-day session.`,
+      `Check out all ${checkedInCount} currently checked-in volunteer${checkedInCount === 1 ? "" : "s"} for ${shiftLabel ?? "this shift"}? Continuous volunteers will be checked out of their whole event-day session.`,
     );
     if (!confirmed) return;
 
     setOutcome("idle");
     setMessage(null);
     startSaving(async () => {
+      try {
       const result = await checkoutAllCurrentParticipants({ eventId, timeslotId });
 
       if (!result.ok) {
@@ -237,6 +258,10 @@ export function BulkCheckoutButton({
           : `${result.checkedOut} volunteer${result.checkedOut === 1 ? "" : "s"} checked out.`,
       );
       startRefresh(() => router.refresh());
+      } catch {
+        setOutcome("error");
+        setMessage("The request could not be completed. Please try again.");
+      }
     });
   }
 

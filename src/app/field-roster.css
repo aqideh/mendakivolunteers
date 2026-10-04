@@ -1117,3 +1117,169 @@
     width: 100%;
   }
 }
+
+/* Event Operations: compact roster workspace */
+.km-operations-workspace { max-width: 1200px; }
+.km-operations-workspace .phaseone-operations-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin-bottom: 1rem; padding: 0; border: 0; border-radius: 0;
+  background: transparent; box-shadow: none;
+}
+.km-operations-workspace .phaseone-operations-header::after { display: none; }
+.km-operations-workspace .phaseone-operations-header h1 { font-size: clamp(1.35rem, 3vw, 1.85rem); margin: 0 0 .25rem; }
+.km-operations-workspace .phaseone-operations-header p { margin: 0; }
+.km-operations-workspace .km-operations-header-actions { flex-wrap: nowrap; flex-shrink: 0; gap: .5rem; }
+.km-operations-workspace .button { box-shadow: none; }
+.km-operations-menu { position: relative; }
+.km-operations-menu > summary { list-style: none; cursor: pointer; }
+.km-operations-menu > summary::-webkit-details-marker { display: none; }
+.km-operations-menu-panel {
+  position: absolute; right: 0; top: calc(100% + .4rem); z-index: 45;
+  width: min(20rem, calc(100vw - 2rem)); display: grid; gap: .2rem;
+  padding: .55rem; border: 1px solid var(--border); border-radius: .65rem;
+  background: var(--surface); box-shadow: 0 12px 30px rgb(0 0 0 / .1);
+}
+.km-operations-menu-panel > a { padding: .65rem .7rem; text-decoration: none; border-radius: .35rem; }
+.km-operations-menu-panel > a:hover { background: var(--surface-subtle); }
+.km-operations-menu-panel .phaseone-bulk-checkout { border-top: 1px solid var(--border); padding-top: .6rem; margin-top: .3rem; }
+.km-operations-menu-panel .phaseone-bulk-checkout-button { width: 100%; }
+.km-operations-workspace .phaseone-admin-section { padding: 0; margin-top: 0; overflow: visible; border-radius: .8rem; }
+.km-roster-sr-only {
+  position: absolute!important; width: 1px; height: 1px; padding: 0!important;
+  margin: -1px!important; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.km-roster-toolbar {
+  position: sticky; top: 0; z-index: 35; background: var(--surface);
+  padding: .85rem 1rem; border-bottom: 1px solid var(--border);
+  border-radius: .8rem .8rem 0 0; box-shadow: 0 5px 12px rgb(0 0 0 / .035);
+}
+.km-roster-toolbar:has(.phaseone-walk-in[open]) { position: relative; }
+.km-roster-shift-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.km-roster-shift { display: flex; align-items: center; gap: .65rem; min-width: 0; }
+.km-roster-shift > span { font-size: .75rem; font-weight: 650; white-space: nowrap; }
+.km-roster-shift select { max-width: 100%; min-width: 0; width: auto; padding: .45rem .65rem; font-size: .82rem; }
+.km-roster-count { color: var(--muted); font-size: .75rem; white-space: nowrap; }
+.km-roster-views { display: flex; align-items: center; flex-wrap: wrap; gap: .3rem; padding: .7rem 0; }
+.km-roster-view {
+  display: inline-flex; align-items: center; gap: .45rem; min-height: 2.25rem;
+  border: 1px solid transparent; border-radius: .45rem; padding: .4rem .65rem;
+  background: transparent; color: var(--muted); font: inherit; font-size: .8rem; cursor: pointer;
+}
+.km-roster-view > span { font-variant-numeric: tabular-nums; font-weight: 650; }
+.km-roster-view[aria-pressed="true"] { color: var(--ink); background: #fff2a8; border-color: #dcc347; }
+.km-roster-view:hover { color: var(--ink); }
+.km-roster-search-row { display: flex; align-items: flex-start; gap: .5rem; flex-wrap: wrap; }
+.km-roster-search { flex: 1 1 12rem; min-width: 0; }
+.km-roster-search input { width: 100%; min-height: 2.65rem; margin: 0; padding: .55rem .75rem; }
+.km-roster-filter-menu { position: relative; }
+.km-roster-filter-menu > summary,
+.km-operations-workspace .phaseone-walk-in-summary {
+  display: flex; align-items: center; justify-content: center; min-height: 2.65rem;
+  list-style: none; cursor: pointer; font-size: .82rem; font-weight: 650;
+  padding: .5rem .75rem; border: 1px solid var(--border); border-radius: .5rem;
+  background: var(--surface); color: var(--ink);
+}
+.km-roster-filter-menu > summary::-webkit-details-marker { display: none; }
+.km-roster-filter-panel {
+  position: absolute; right: 0; top: calc(100% + .4rem); z-index: 40;
+  width: min(18rem, calc(100vw - 3rem)); padding: .9rem; display: grid; gap: .7rem;
+  border: 1px solid var(--border); border-radius: .65rem; background: var(--surface);
+  box-shadow: 0 12px 30px rgb(0 0 0 / .1);
+}
+.km-roster-filter-panel > label:not(.km-roster-check) { display: grid; gap: .4rem; font-size: .8rem; }
+.km-roster-filter-panel select { width: 100%; }
+.km-roster-check { display: flex; align-items: center; gap: .6rem; font-size: .85rem; cursor: pointer; }
+.km-roster-check input { width: 1.1rem; height: 1.1rem; min-height: 0; padding: 0; margin: 0; accent-color: var(--ink); }
+.km-roster-active-filters { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .6rem; }
+.km-roster-active-filters button {
+  max-width: 100%; overflow-wrap: anywhere; padding: .3rem .55rem; border: 1px solid var(--border);
+  border-radius: 1rem; background: var(--surface-subtle); color: var(--ink);
+  font: inherit; font-size: .75rem; cursor: pointer;
+}
+.km-operations-workspace .phaseone-walk-in { margin: 0; padding: 0; border: 0; background: transparent; }
+.km-operations-workspace .phaseone-walk-in-summary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.km-operations-workspace .phaseone-walk-in[open] { flex: 1 0 100%; }
+.km-operations-workspace .phaseone-walk-in[open] > summary { width: fit-content; }
+.km-operations-workspace .phaseone-walk-in-body { margin-top: .7rem; padding: .9rem; background: var(--surface-subtle); border: 1px solid var(--border); border-radius: .6rem; }
+.km-roster-handover { padding: .65rem 1rem; border-bottom: 1px solid var(--border); font-size: .8rem; }
+.km-roster-handover > summary { cursor: pointer; color: var(--muted); }
+.km-roster-handover p { max-width: 65rem; margin: .6rem 0; }
+.km-operations-workspace .phaseone-attendance-list { display: block; margin: 0; }
+.km-operations-workspace .phaseone-checkin-card {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(9rem, 12rem);
+  gap: .5rem 1.25rem; padding: 1rem; margin: 0;
+  border: 0; border-top: 1px solid var(--border); border-radius: 0; box-shadow: none;
+}
+.km-operations-workspace .phaseone-checkin-card[hidden],
+.km-operations-workspace [data-roster-empty-state][hidden] { display: none!important; }
+.km-operations-workspace .phaseone-checkin-card[data-underage="true"]:not([data-status="anomaly"]) { box-shadow: inset 3px 0 0 #c58a18; }
+.km-operations-workspace .phaseone-checkin-card[data-status="withdrawn"],
+.km-operations-workspace .phaseone-checkin-card[data-status="absent"] { background: var(--surface-subtle); }
+.km-operations-workspace .phaseone-checkin-card > .phaseone-attendance-summary { grid-column: 1; grid-row: 1; display: flex; align-items: start; gap: .65rem; }
+.km-operations-workspace .phaseone-attendance-summary > div { display: flex; flex-direction: column; min-width: 0; }
+.km-operations-workspace .phaseone-attendance-summary h3 { order: -1; font-size: 1rem; margin: 0 0 .15rem; overflow-wrap: anywhere; }
+.km-operations-workspace .phaseone-roster-meta { gap: .35rem; }
+.km-operations-workspace .phaseone-roster-meta .record-kicker { font-size: .7rem; margin: 0; }
+.km-operations-workspace .phaseone-checkin-card > .phaseone-shirt-status { grid-column: 1; grid-row: 2; }
+.km-operations-workspace .phaseone-checkin-card > .phaseone-attendance-times { grid-column: 1; grid-row: 3; margin: 0; display: flex; flex-wrap: wrap; gap: .65rem; }
+.km-operations-workspace .phaseone-checkin-card > .phaseone-pending-actions,
+.km-operations-workspace .phaseone-checkin-card > .phaseone-continuous-actions,
+.km-operations-workspace .phaseone-checkin-card > .phaseone-quick-action-wrap {
+  grid-column: 2; grid-row: 1 / span 3; display: flex; flex-direction: column; align-items: stretch; gap: .45rem; margin: 0;
+}
+.km-operations-workspace .phaseone-checkin-action { min-height: 2.65rem; width: 100%; font-size: .85rem; }
+.km-operations-workspace .phaseone-shirt-disclosure[open] { width: 100%; }
+.km-operations-workspace .phaseone-shirt-choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.km-operations-workspace .phaseone-shirt-choice-grid > :last-child { grid-column: 1 / -1; }
+.km-roster-contact > summary { cursor: pointer; font-size: .72rem; color: var(--muted); margin-top: .3rem; width: fit-content; }
+.km-roster-secondary-actions > summary { cursor: pointer; font-size: .75rem; text-align: center; padding: .45rem; color: var(--muted); list-style: none; }
+.km-roster-secondary-actions > div { display: grid; gap: .4rem; padding-top: .3rem; }
+.km-operations-workspace .phaseone-staff-tools { grid-column: 1 / -1; grid-row: auto; display: flex; align-items: start; flex-wrap: wrap; border: 0; padding: .3rem 0 0; gap: .4rem; }
+.km-operations-workspace .phaseone-staff-tools > details > summary { min-height: 2.1rem; padding: .4rem .65rem; font-size: .75rem; }
+.km-operations-workspace .km-roster-more-actions > div { display: flex; flex-wrap: wrap; align-items: start; gap: .5rem; margin-top: .65rem; }
+.km-operations-workspace .km-roster-more-actions[open] { flex: 1 0 100%; padding: .6rem; background: var(--surface-subtle); border-radius: .6rem; }
+.km-operations-workspace .km-roster-more-actions > div > details { margin: 0; padding: .4rem; }
+.km-operations-workspace .km-roster-more-actions > div > details[open] { flex: 1 0 100%; width: 100%; }
+.km-roster-attention-note { grid-column: 1 / -1; font-size: .75rem; color: #765515; margin: .2rem 0 0; }
+.km-roster-audit { margin-top: 1.25rem; }
+.km-roster-audit > summary { padding: .7rem 0; cursor: pointer; font-size: .85rem; color: var(--muted); }
+.km-roster-audit .section { margin-top: .5rem; }
+.km-roster-spinner { width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: km-roster-spin .7s linear infinite; }
+@keyframes km-roster-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .km-roster-spinner { animation: none; } }
+@media (max-width: 700px) {
+  .km-operations-workspace .phaseone-operations-header { align-items: start; flex-direction: column; gap: .7rem; }
+  .km-roster-toolbar { padding: .7rem; }
+  .km-roster-shift-row { align-items: start; flex-wrap: wrap; gap: .35rem; }
+  .km-roster-shift { flex: 1 1 100%; display: grid; gap: .25rem; }
+  .km-roster-shift select { width: 100%; font-size: 1rem; }
+  .km-roster-count { font-size: .7rem; }
+  .km-roster-views { gap: .15rem; padding: .4rem 0; }
+  .km-roster-view { padding: .4rem .5rem; min-height: 2.65rem; font-size: .75rem; }
+  .km-roster-search input { font-size: 1rem; }
+  .km-operations-workspace .phaseone-checkin-card { grid-template-columns: minmax(0, 1fr); padding: .85rem .7rem; gap: .6rem; }
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-attendance-summary { grid-column: 1; grid-row: auto; flex-wrap: wrap; }
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-shirt-status,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-attendance-times,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-pending-actions,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-continuous-actions,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-quick-action-wrap { grid-column: 1; grid-row: auto; }
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-pending-actions,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-continuous-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .km-operations-workspace .phaseone-staff-tools > details > summary,
+  .km-roster-secondary-actions > summary { min-height: 2.75rem; display: flex; align-items: center; justify-content: center; }
+  .km-operations-workspace .phaseone-shirt-choice-grid { grid-template-columns: minmax(0, 1fr); }
+  .km-operations-workspace .phaseone-shirt-choice-grid > :last-child { grid-column: auto; }
+  .km-operations-workspace .phaseone-shirt-chip { min-height: 2.4rem; }
+  .km-roster-active-filters button { min-height: 2.4rem; }
+  .km-roster-filter-panel { right: 0; }
+}
+@media (max-width: 420px) {
+  .km-roster-search { flex-basis: 100%; }
+  .km-roster-filter-menu { position: static; }
+  .km-roster-filter-panel { left: .7rem; right: .7rem; top: auto; width: auto; margin-top: .4rem; }
+}
+@media print {
+  .km-roster-toolbar { position: static; }
+  .km-operations-header-actions, .km-roster-search-row, .phaseone-staff-tools { display: none!important; }
+}

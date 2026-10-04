@@ -1,264 +1,191 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { matchesRosterFilter } from "@/lib/phaseone/roster-filter";
 
-const STATUS_OPTIONS = [
+const VIEWS = [
   { value: "all", label: "All" },
   { value: "pending", label: "Not arrived" },
   { value: "signed_in", label: "Checked in" },
   { value: "signed_out", label: "Checked out" },
+  { value: "attention", label: "Needs attention" },
+] as const;
+const STATUSES = [
+  ...VIEWS,
   { value: "withdrawn", label: "Withdrawn" },
   { value: "absent", label: "Absent" },
-  { value: "anomaly", label: "Needs review" },
-] as const;
-
-type RosterFiltersProps = {
+  { value: "anomaly", label: "Attendance anomaly" },
+];
+type Props = {
   initialHideWithdrawn: boolean;
   initialHideAbsent: boolean;
   initialQuery: string;
   initialShownCount: number;
   initialStatus: string;
+  initialCounts: Record<string, number>;
   timeslotId: string;
+  shifts: { id: string; label: string }[];
+  children?: ReactNode;
 };
 
 export function RosterFilters({
-  initialHideWithdrawn,
-  initialHideAbsent,
-  initialQuery,
-  initialShownCount,
-  initialStatus,
-  timeslotId,
-}: RosterFiltersProps) {
+  initialHideWithdrawn, initialHideAbsent, initialQuery, initialShownCount,
+  initialStatus, initialCounts, timeslotId, shifts, children,
+}: Props) {
+  const router = useRouter();
+  const [changingShift, startShiftChange] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
-  const [hideWithdrawn, setHideWithdrawn] = useState(initialHideWithdrawn);
-  const [hideAbsent, setHideAbsent] = useState(initialHideAbsent);
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState(initialStatus);
+  const [hideWithdrawn, setHideWithdrawn] = useState(initialHideWithdrawn);
+  const [hideAbsent, setHideAbsent] = useState(initialHideAbsent);
   const [shownCount, setShownCount] = useState(initialShownCount);
+  const [counts, setCounts] = useState(initialCounts);
+
+  useEffect(() => {
+    const section = rootRef.current?.closest<HTMLElement>(".phaseone-admin-section");
+    if (!section) return;
+    const storageKey = `keluarga:roster-return:v1:${window.location.pathname}:${timeslotId}`;
+    // Only restore a one-use snapshot after a roster form's redirect.
+    const url = new URL(window.location.href);
+    let saved: string | null = null;
+    try {
+      saved = sessionStorage.getItem(storageKey);
+      sessionStorage.removeItem(storageKey);
+    } catch { /* Browser storage may be unavailable. */ }
+    if (saved && (url.searchParams.has("success") || url.searchParams.has("error"))) {
+      try {
+        const snapshot = JSON.parse(saved) as Record<string, unknown>;
+        if (typeof snapshot.query === "string") setQuery(snapshot.query);
+        if (typeof snapshot.status === "string" && STATUSES.some(option => option.value === snapshot.status)) setStatus(snapshot.status);
+        if (typeof snapshot.hideWithdrawn === "boolean") setHideWithdrawn(snapshot.hideWithdrawn);
+        if (typeof snapshot.hideAbsent === "boolean") setHideAbsent(snapshot.hideAbsent);
+        const y = snapshot.y;
+        if (typeof y === "number" && Number.isFinite(y)) {
+          requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" })));
+        }
+      } catch { /* Ignore invalid presentation state. */ }
+    }
+  }, [timeslotId, initialCounts]);
 
   useEffect(() => {
     const section = rootRef.current?.closest<HTMLElement>(".phaseone-admin-section");
     const list = section?.querySelector<HTMLElement>("#roster-list");
     if (!section || !list) return;
-
     const applyFilters = () => {
-      const normalizedQuery = query.trim().toLowerCase();
-      let nextShownCount = 0;
-
-      list
-        .querySelectorAll<HTMLElement>(".phaseone-checkin-card[data-roster-filterable='true']")
-        .forEach((card) => {
-          const matchesStatus = status === "all" || card.dataset.status === status;
-          const matchesQuery =
-            !normalizedQuery ||
-            (card.dataset.filterText ?? "").includes(normalizedQuery);
-          const matchesExclusions =
-            !(hideWithdrawn && card.dataset.status === "withdrawn") &&
-            !(hideAbsent && card.dataset.status === "absent");
-          const visible = matchesStatus && matchesQuery && matchesExclusions;
-
-          card.hidden = !visible;
-          if (visible) nextShownCount += 1;
-        });
-
-      setShownCount(nextShownCount);
-
-      const emptyState = list.querySelector<HTMLElement>("[data-roster-empty-state]");
-      if (emptyState) emptyState.hidden = nextShownCount > 0;
-
-      const count = section.querySelector<HTMLElement>("[data-roster-visible-count]");
-      if (count) count.textContent = String(nextShownCount);
+      let shown = 0;
+      const totals: Record<string, number> = { all: 0, pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0, attention: 0 };
+      list.querySelectorAll<HTMLElement>("[data-roster-filterable]").forEach(card => {
+        const row = {
+          status: card.dataset.status ?? "pending",
+          filterText: card.dataset.filterText ?? "",
+          needsAttention: card.dataset.needsAttention === "true",
+        };
+        totals.all = (totals.all ?? 0) + 1;
+        totals[row.status] = (totals[row.status] ?? 0) + 1;
+        if (row.needsAttention) totals.attention = (totals.attention ?? 0) + 1;
+        const visible = matchesRosterFilter(row, { query, status, hideWithdrawn, hideAbsent });
+        card.hidden = !visible;
+        if (visible) shown += 1;
+      });
+      setShownCount(shown);
+      setCounts(previous => JSON.stringify(previous) === JSON.stringify(totals) ? previous : totals);
+      const empty = list.querySelector<HTMLElement>("[data-roster-empty-state]");
+      if (empty) empty.hidden = shown > 0;
     };
-
     applyFilters();
-
-    const observer = new MutationObserver(() => applyFilters());
+    const observer = new MutationObserver(applyFilters);
     observer.observe(list, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["data-status", "data-filter-text"],
+      childList: true, subtree: true, attributes: true,
+      attributeFilter: ["data-status", "data-filter-text", "data-needs-attention"],
     });
-
     const url = new URL(window.location.href);
     url.searchParams.set("timeslot", timeslotId);
-
-    if (query.trim()) {
-      url.searchParams.set("q", query.trim());
-    } else {
-      url.searchParams.delete("q");
-    }
-
-    if (status !== "all") {
-      url.searchParams.set("status", status);
-    } else {
-      url.searchParams.delete("status");
-    }
-
-    for (const [key, hidden] of [
-      ["hideWithdrawn", hideWithdrawn],
-      ["hideAbsent", hideAbsent],
+    for (const [key, value] of [
+      ["q", query.trim()], ["status", status === "all" ? "" : status],
+      ["hideWithdrawn", hideWithdrawn ? "1" : ""], ["hideAbsent", hideAbsent ? "1" : ""],
     ] as const) {
-      if (hidden) url.searchParams.set(key, "1");
-      else url.searchParams.delete(key);
+      if (value) url.searchParams.set(key, value); else url.searchParams.delete(key);
     }
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    const saveView = () => {
+      try {
+      sessionStorage.setItem(
+        `keluarga:roster-return:v1:${window.location.pathname}:${timeslotId}`,
+        JSON.stringify({ query, status, hideWithdrawn, hideAbsent, y: window.scrollY }),
+      );
+      } catch { /* Saving attendance does not depend on presentation storage. */ }
+    };
+    section.addEventListener("submit", saveView, true);
+    return () => {
+      observer.disconnect();
+      section.removeEventListener("submit", saveView, true);
+    };
+  }, [query, status, hideWithdrawn, hideAbsent, timeslotId]);
 
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${url.pathname}${url.search}${url.hash}`,
-    );
-
-    return () => observer.disconnect();
-  }, [query, status, timeslotId, hideWithdrawn, hideAbsent]);
-
-  const filtersActive = status !== "all" || query.trim().length > 0 || hideWithdrawn || hideAbsent;
-
-  const clearFilters = () => {
-    setQuery("");
-    setStatus("all");
-    setHideWithdrawn(false);
-    setHideAbsent(false);
-  };
-
+  const active = Boolean(query.trim() || status !== "all" || hideWithdrawn || hideAbsent);
+  const clear = () => { setQuery(""); setStatus("all"); setHideWithdrawn(false); setHideAbsent(false); };
+  function selectView(value: string) {
+    setStatus(value);
+    if (value === "withdrawn") setHideWithdrawn(false);
+    if (value === "absent") setHideAbsent(false);
+  }
   return (
-    <div className="phaseone-roster-filter-shell" ref={rootRef}>
-      <div className="phaseone-attendance-filters phaseone-roster-filter-controls phaseone-desktop-filters">
-        <div className="form-field">
-          <label htmlFor="q">Search</label>
-          <input
-            aria-controls="roster-list"
-            id="q"
-            name="q"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Name, volunteer ID or contact number"
-            type="search"
-            value={query}
-          />
-        </div>
-        <div className="form-field">
-          <label htmlFor="status">Status</label>
-          <select
-            aria-controls="roster-list"
-            id="status"
-            name="status"
-            onChange={(event) => setStatus(event.target.value)}
-            value={status}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+    <div className="km-roster-toolbar" ref={rootRef} aria-label="Roster controls">
+      <div className="km-roster-shift-row">
+        <label className="km-roster-shift">
+          <span>Deployment shift</span>
+          <select aria-busy={changingShift} disabled={changingShift} value={timeslotId}
+            onChange={event => {
+              const url = new URL(window.location.href);
+              url.searchParams.set("timeslot", event.target.value);
+              for (const key of ["success", "error", "highlight"]) url.searchParams.delete(key);
+              startShiftChange(() => router.push(`${url.pathname}${url.search}`, { scroll: false }));
+            }}>
+            {shifts.map(shift => <option key={shift.id} value={shift.id}>{shift.label}</option>)}
           </select>
-        </div>
-        <div className="phaseone-roster-exclusions" role="group" aria-label="Hide roster statuses">
-          <label>
-            <input
-              aria-controls="roster-list"
-              checked={hideWithdrawn}
-              onChange={(event) => setHideWithdrawn(event.target.checked)}
-              type="checkbox"
-            />
-            Hide withdrawn
-          </label>
-          <label>
-            <input
-              aria-controls="roster-list"
-              checked={hideAbsent}
-              onChange={(event) => setHideAbsent(event.target.checked)}
-              type="checkbox"
-            />
-            Hide absent
-          </label>
-        </div>
-        <button
-          className="button button-secondary"
-          disabled={!filtersActive}
-          onClick={clearFilters}
-          type="button"
-        >
-          Clear filters
-        </button>
+        </label>
+        <span className="km-roster-count" role="status">{changingShift ? "Loading shift…" : `${shownCount} of ${counts.all ?? 0} shown`}</span>
       </div>
-
-      <details
-        className="phaseone-mobile-filter"
-        data-active={filtersActive ? "true" : undefined}
-      >
-        <summary aria-label="Filter roster" title="Filter roster">
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <path d="M4 5h16l-6.25 7.1v5.15l-3.5 1.75v-6.9L4 5Z" />
-          </svg>
-          <span className="phaseone-mobile-filter-dot" aria-hidden="true" />
-        </summary>
-        <div className="phaseone-mobile-filter-panel">
-          <div className="phaseone-mobile-filter-heading">
-            <strong>Filter roster</strong>
-            <span className="muted">{shownCount} shown</span>
-          </div>
-          <div className="phaseone-mobile-filter-form">
-            <div className="form-field">
-              <label htmlFor="mobile-q">Search</label>
-              <input
-                aria-controls="roster-list"
-                id="mobile-q"
-                name="mobile-q"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Name, ID or contact"
-                type="search"
-                value={query}
-              />
-            </div>
-            <div className="form-field">
-              <label htmlFor="mobile-status">Status</label>
-              <select
-                aria-controls="roster-list"
-                id="mobile-status"
-                name="mobile-status"
-                onChange={(event) => setStatus(event.target.value)}
-                value={status}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+      <div className="km-roster-views" role="group" aria-label="Attendance views">
+        {VIEWS.map(view => (
+          <button type="button" key={view.value} aria-pressed={status === view.value}
+            onClick={() => selectView(view.value)} className="km-roster-view">
+            {view.label}<span>{counts[view.value] ?? 0}</span>
+          </button>
+        ))}
+      </div>
+      <div className="km-roster-search-row">
+        <label className="km-roster-search">
+          <span className="km-roster-sr-only">Search roster</span>
+          <input type="search" aria-controls="roster-list" value={query}
+            onChange={event => setQuery(event.target.value)} placeholder="Search name, ID or contact…" />
+        </label>
+        <details className="km-roster-filter-menu">
+          <summary>Filters{active ? " •" : ""}</summary>
+          <div className="km-roster-filter-panel">
+            <label>Status
+              <select value={status} onChange={event => selectView(event.target.value)}>
+                {STATUSES.map(option => <option key={option.value} value={option.value}>{option.label} ({counts[option.value] ?? 0})</option>)}
               </select>
-            </div>
-            <div className="phaseone-roster-exclusions" role="group" aria-label="Hide roster statuses">
-              <label>
-                <input
-                  aria-controls="roster-list"
-                  checked={hideWithdrawn}
-                  onChange={(event) => setHideWithdrawn(event.target.checked)}
-                  type="checkbox"
-                />
-                Hide withdrawn
-              </label>
-              <label>
-                <input
-                  aria-controls="roster-list"
-                  checked={hideAbsent}
-                  onChange={(event) => setHideAbsent(event.target.checked)}
-                  type="checkbox"
-                />
-                Hide absent
-              </label>
-            </div>
-            <div className="phaseone-mobile-filter-actions">
-              <button
-                className="button button-secondary"
-                disabled={!filtersActive}
-                onClick={clearFilters}
-                type="button"
-              >
-                Clear filters
-              </button>
-            </div>
+            </label>
+            <label className="km-roster-check"><input type="checkbox" checked={hideWithdrawn} onChange={event => setHideWithdrawn(event.target.checked)} />Hide withdrawn</label>
+            <label className="km-roster-check"><input type="checkbox" checked={hideAbsent} onChange={event => setHideAbsent(event.target.checked)} />Hide absent</label>
+            <button type="button" className="button button-secondary" onClick={clear} disabled={!active}>Clear filters</button>
           </div>
+        </details>
+        {children}
+      </div>
+      {active ? (
+        <div className="km-roster-active-filters" aria-label="Active filters">
+          {query.trim() ? <button type="button" onClick={() => setQuery("")} aria-label="Remove search filter">Search: {query.trim()} ×</button> : null}
+          {status !== "all" ? <button type="button" onClick={() => setStatus("all")} aria-label="Remove status filter">{STATUSES.find(option => option.value === status)?.label} ×</button> : null}
+          {hideWithdrawn ? <button type="button" onClick={() => setHideWithdrawn(false)} aria-label="Show withdrawn volunteers">Withdrawn hidden ×</button> : null}
+          {hideAbsent ? <button type="button" onClick={() => setHideAbsent(false)} aria-label="Show absent volunteers">Absent hidden ×</button> : null}
+          <button type="button" onClick={clear}>Clear all</button>
         </div>
-      </details>
+      ) : null}
     </div>
   );
 }
