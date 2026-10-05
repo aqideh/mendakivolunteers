@@ -74,7 +74,7 @@ otp_length = 8
 otp_expiry = 3600
 
 [auth.email.template.magic_link]
-subject = "Your KELUARGA verification code"
+subject = "Your Keluarga MENDAKI access code"
 content_path = "./supabase/templates/magic_link.html"
 
 [analytics]
