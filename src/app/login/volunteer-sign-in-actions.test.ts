@@ -79,7 +79,7 @@ describe("unified email sign-in", () => {
     expect(result).toEqual({
       status: "success",
       step: "otp",
-      message: expect.stringContaining("6-digit verification code"),
+      message: expect.stringContaining("8-digit verification code"),
       email: "new.volunteer@example.test",
     });
     expect(signInWithOtpMock).not.toHaveBeenCalled();
