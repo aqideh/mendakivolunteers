@@ -3,12 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   afterMock,
   createEmailLinkClientMock,
-  getPublicConfigMock,
   signInWithOtpMock,
 } = vi.hoisted(() => ({
   afterMock: vi.fn(),
   createEmailLinkClientMock: vi.fn(),
-  getPublicConfigMock: vi.fn(),
   signInWithOtpMock: vi.fn(),
 }));
 
@@ -22,16 +20,17 @@ vi.mock("@/lib/supabase/email-link", () => ({
   createEmailLinkClient: createEmailLinkClientMock,
 }));
 
-vi.mock("@/lib/env", () => ({
-  getPublicConfig: getPublicConfigMock,
-}));
-
 import * as volunteerSignInActions from "@/app/login/volunteer-sign-in-actions";
 
-function formData(email: string, next = "/dashboard") {
+function formData(
+  email: string,
+  next = "/dashboard",
+  password?: string,
+) {
   const data = new FormData();
   data.set("email", email);
   data.set("next", next);
+  if (password) data.set("password", password);
   return data;
 }
 
@@ -42,7 +41,7 @@ async function runBackgroundTask() {
   await task?.();
 }
 
-describe("volunteer email sign-in", () => {
+describe("unified email sign-in", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     backgroundTasks.length = 0;
@@ -52,29 +51,37 @@ describe("volunteer email sign-in", () => {
     createEmailLinkClientMock.mockReturnValue({
       auth: { signInWithOtp: signInWithOtpMock },
     });
-    getPublicConfigMock.mockReturnValue({
-      appUrl: "https://mendakivolunteers.vercel.app",
-    });
     signInWithOtpMock.mockResolvedValue({ error: null });
   });
 
-  it("only exposes the async server action at runtime", () => {
-    expect(Object.keys(volunteerSignInActions)).toEqual([
-      "requestVolunteerSignInLink",
+  it("only exposes async server actions at runtime", () => {
+    expect(Object.keys(volunteerSignInActions).sort()).toEqual([
+      "continueWithEmail",
+      "verifyVolunteerEmailOtp",
     ]);
+    expect(volunteerSignInActions.continueWithEmail.constructor.name).toBe(
+      "AsyncFunction",
+    );
     expect(
-      volunteerSignInActions.requestVolunteerSignInLink.constructor.name,
+      volunteerSignInActions.verifyVolunteerEmailOtp.constructor.name,
     ).toBe("AsyncFunction");
   });
 
-  it("responds immediately, then sends a normalized email without creating a new volunteer account", async () => {
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
-      formData(" New.Volunteer@Example.Test ", "/opportunities/community-day"),
+  it("sends a normalized volunteer OTP and permits first-time account creation", async () => {
+    const result = await volunteerSignInActions.continueWithEmail(
+      { status: "idle", step: "email", message: "" },
+      formData(
+        " New.Volunteer@Example.Test ",
+        "/opportunities/community-day",
+      ),
     );
 
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("If the email is linked to a Keluarga profile");
+    expect(result).toEqual({
+      status: "success",
+      step: "otp",
+      message: expect.stringContaining("6-digit verification code"),
+      email: "new.volunteer@example.test",
+    });
     expect(signInWithOtpMock).not.toHaveBeenCalled();
 
     await runBackgroundTask();
@@ -82,46 +89,54 @@ describe("volunteer email sign-in", () => {
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "new.volunteer@example.test",
       options: {
-        shouldCreateUser: false,
-        emailRedirectTo:
-          "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fopportunities%2Fcommunity-day",
+        shouldCreateUser: true,
       },
     });
   });
 
-  it("rejects unsafe return destinations", async () => {
-    await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
-      formData("volunteer@example.test", "https://attacker.example/path"),
+  it("routes every MENDAKI-domain address to the password step without checking account existence", async () => {
+    const result = await volunteerSignInActions.continueWithEmail(
+      { status: "idle", step: "email", message: "" },
+      formData(" Staff.User@MENDAKI.ORG.SG "),
     );
 
-    await runBackgroundTask();
-
-    expect(signInWithOtpMock).toHaveBeenCalledWith({
-      email: "volunteer@example.test",
-      options: expect.objectContaining({
-        shouldCreateUser: false,
-        emailRedirectTo:
-          "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fdashboard",
-      }),
+    expect(result).toEqual({
+      status: "idle",
+      step: "staff_password",
+      message: "",
+      email: "staff.user@mendaki.org.sg",
     });
+    expect(afterMock).not.toHaveBeenCalled();
+    expect(signInWithOtpMock).not.toHaveBeenCalled();
   });
 
-  it("rejects an invalid email before scheduling Supabase delivery", async () => {
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
+  it("does not classify lookalike domains as MENDAKI staff", async () => {
+    const result = await volunteerSignInActions.continueWithEmail(
+      { status: "idle", step: "email", message: "" },
+      formData("staff@mendaki.org.sg.attacker.example"),
+    );
+
+    expect(result.step).toBe("otp");
+    await runBackgroundTask();
+    expect(signInWithOtpMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects an invalid email before scheduling delivery", async () => {
+    const result = await volunteerSignInActions.continueWithEmail(
+      { status: "idle", step: "email", message: "" },
       formData("not-an-email"),
     );
 
     expect(result).toEqual({
       status: "error",
+      step: "email",
       message: "Enter a valid email address.",
     });
     expect(afterMock).not.toHaveBeenCalled();
     expect(signInWithOtpMock).not.toHaveBeenCalled();
   });
 
-  it("keeps delivery failures non-disclosing while retaining diagnostics", async () => {
+  it("keeps volunteer delivery failures non-disclosing", async () => {
     signInWithOtpMock.mockResolvedValue({
       error: { code: "over_email_send_rate_limit", status: 429 },
     });
@@ -129,42 +144,22 @@ describe("volunteer email sign-in", () => {
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
 
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
+    const result = await volunteerSignInActions.continueWithEmail(
+      { status: "idle", step: "email", message: "" },
       formData("volunteer@example.test"),
     );
 
     expect(result.status).toBe("success");
-    expect(result.message).toContain("If the email is linked to a Keluarga profile");
     expect(result.message).not.toContain("volunteer@example.test");
 
     await runBackgroundTask();
 
     expect(consoleError).toHaveBeenCalledWith(
-      "Volunteer magic-link request was not delivered",
+      "Volunteer email OTP request was not delivered",
       expect.objectContaining({
         code: "over_email_send_rate_limit",
         status: 429,
       }),
     );
-  });
-
-  it("reports missing public configuration without scheduling delivery", async () => {
-    getPublicConfigMock.mockImplementation(() => {
-      throw new Error("NEXT_PUBLIC_APP_URL missing");
-    });
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-
-    const result = await volunteerSignInActions.requestVolunteerSignInLink(
-      { status: "idle", message: "" },
-      formData("volunteer@example.test"),
-    );
-
-    expect(result).toEqual({
-      status: "error",
-      message: "Volunteer sign-in is not configured in this environment.",
-    });
-    expect(afterMock).not.toHaveBeenCalled();
-    expect(signInWithOtpMock).not.toHaveBeenCalled();
   });
 });
