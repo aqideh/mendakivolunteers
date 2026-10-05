@@ -105,8 +105,7 @@ export default async function VolunteerOnboardingInvitePage({
       if (
         !contextResult.error &&
         contextResult.data &&
-        !contextResult.data.consumed_at &&
-        new Date(contextResult.data.expires_at).getTime() > Date.now()
+        !contextResult.data.consumed_at
       ) {
         const inviteResult = await admin
           .schema("core")
@@ -120,8 +119,7 @@ export default async function VolunteerOnboardingInvitePage({
           inviteResult.data &&
           ["pending", "sent"].includes(inviteResult.data.status) &&
           !inviteResult.data.revoked_at &&
-          inviteResult.data.expires_at &&
-          new Date(inviteResult.data.expires_at).getTime() > Date.now()
+          inviteResult.data.expires_at
         ) {
           const volunteerResult = await admin
             .schema("core")
