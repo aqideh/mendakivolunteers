@@ -18,7 +18,7 @@ function getLoginErrorMessage(errorCode: string | undefined): string | undefined
     case "account_inactive":
       return "This Keluarga MENDAKI account is not active. Contact the volunteer team.";
     case "staff_access_required":
-      return "This work email isn’t set up for Keluarga staff access yet. Please contact the Volunteer Management team if you need access.";
+      return "This MENDAKI staff email has not been granted Keluarga staff access. Please approach the Volunteer Management team for access.";
     case "volunteer_onboarding_conflict":
       return "This email is already connected to a different volunteer identity. Please contact the Volunteer Management team so they can review it.";
     case "volunteer_onboarding_unavailable":
@@ -42,11 +42,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const passwordReset = Array.isArray(parameters.password_reset)
     ? parameters.password_reset[0]
     : parameters.password_reset;
-  const requestedMode = Array.isArray(parameters.mode)
-    ? parameters.mode[0]
-    : parameters.mode;
   const nextPath = getSafeRedirectPath(requestedNext);
-  const initialMode = requestedMode === "signup" ? "signup" : "signin";
   const initialError = getLoginErrorMessage(errorCode);
 
   return (
@@ -72,7 +68,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
           ) : null}
 
-          <VolunteerAuthPanel initialMode={initialMode} nextPath={nextPath} />
+          <VolunteerAuthPanel nextPath={nextPath} />
 
           <p className="auth-browse-link">
             <Link className="text-link" href="/opportunities">
