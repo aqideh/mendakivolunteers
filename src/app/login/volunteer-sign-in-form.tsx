@@ -3,11 +3,19 @@
 import { useActionState, useState } from "react";
 
 import {
-  requestVolunteerSignInLink,
+  continueWithEmail,
+  type VolunteerOtpState,
   type VolunteerSignInState,
+  verifyVolunteerEmailOtp,
 } from "@/app/login/volunteer-sign-in-actions";
 
 const initialState: VolunteerSignInState = {
+  status: "idle",
+  step: "email",
+  message: "",
+};
+
+const initialOtpState: VolunteerOtpState = {
   status: "idle",
   message: "",
 };
@@ -16,17 +24,105 @@ type VolunteerSignInFormProps = Readonly<{
   nextPath: string;
 }>;
 
+function isMendakiEmail(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  const at = normalized.lastIndexOf("@");
+  return at > 0 && normalized.slice(at + 1) === "mendaki.org.sg";
+}
+
 export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
   const [email, setEmail] = useState("");
   const [state, formAction, pending] = useActionState(
-    requestVolunteerSignInLink,
+    continueWithEmail,
     initialState,
   );
-  const staffEmail = email.trim().toLowerCase().endsWith("@mendaki.org.sg");
+  const [otpState, otpAction, otpPending] = useActionState(
+    verifyVolunteerEmailOtp,
+    initialOtpState,
+  );
+
+  const submittedEmail = state.email ?? email.trim().toLowerCase();
+  const staffPasswordVisible =
+    state.step === "staff_password" && isMendakiEmail(email);
+
+  if (state.step === "otp" && state.email) {
+    return (
+      <div className="auth-verification-state">
+        <div>
+          <h2>Check your email</h2>
+          <p className="auth-verification-email">
+            We sent a 6-digit verification code to <strong>{state.email}</strong>.
+          </p>
+        </div>
+
+        <form action={otpAction} className="auth-primary-form" noValidate>
+          <input type="hidden" name="email" value={state.email} />
+          <input type="hidden" name="next" value={nextPath} />
+          <div className="form-field">
+            <label htmlFor="volunteer-email-code">Verification code</label>
+            <input
+              id="volunteer-email-code"
+              name="token"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              minLength={6}
+              maxLength={6}
+              placeholder="000000"
+              required
+              autoFocus
+              disabled={otpPending}
+            />
+            <span className="form-help">
+              Enter the six digits from the Keluarga MENDAKI email.
+            </span>
+          </div>
+
+          <button
+            className="button button-primary"
+            type="submit"
+            disabled={otpPending}
+          >
+            {otpPending ? "Verifying…" : "Verify and continue"}
+          </button>
+
+          <p
+            className="form-message"
+            data-status={otpState.status}
+            aria-live="polite"
+          >
+            {otpState.message}
+          </p>
+        </form>
+
+        <form action={formAction} className="auth-resend-form auth-resend-form-compact">
+          <input type="hidden" name="email" value={state.email} />
+          <input type="hidden" name="next" value={nextPath} />
+          <button className="button button-secondary" type="submit" disabled={pending}>
+            {pending ? "Sending…" : "Send a new code"}
+          </button>
+        </form>
+
+        <button
+          className="text-link auth-change-email"
+          type="button"
+          onClick={() =>
+            window.location.replace(
+              `/login?next=${encodeURIComponent(nextPath)}`,
+            )
+          }
+        >
+          Use a different email
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="auth-primary-form" noValidate>
       <input type="hidden" name="next" value={nextPath} />
+
       <div className="form-field">
         <label htmlFor="volunteer-email">Email address</label>
         <input
@@ -34,24 +130,22 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
           name="email"
           type="email"
           inputMode="email"
-          autoComplete="email"
+          autoComplete="username"
           maxLength={254}
           placeholder="you@example.com"
           required
           disabled={pending}
           aria-describedby="volunteer-email-help"
-          value={email}
+          value={email || submittedEmail}
           onChange={(event) => setEmail(event.target.value)}
         />
         <span className="form-help" id="volunteer-email-help">
-          {staffEmail
-            ? "MENDAKI staff use their work email and password."
-            : "Use the email linked to your Keluarga profile."}
+          Continue with the email you use for Keluarga MENDAKI.
         </span>
       </div>
 
-      {staffEmail ? (
-        <div className="form-field">
+      {staffPasswordVisible ? (
+        <div className="form-field auth-staff-password-field">
           <label htmlFor="staff-password">Password</label>
           <input
             id="staff-password"
@@ -60,8 +154,12 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
             autoComplete="current-password"
             maxLength={128}
             required
+            autoFocus
             disabled={pending}
           />
+          <span className="form-help">
+            MENDAKI staff use their Keluarga staff password.
+          </span>
         </div>
       ) : null}
 
@@ -71,12 +169,12 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
         disabled={pending}
       >
         {pending
-          ? staffEmail
+          ? staffPasswordVisible
             ? "Signing in…"
-            : "Sending link…"
-          : staffEmail
-            ? "Sign in with password"
-            : "Send sign-in link"}
+            : "Continuing…"
+          : staffPasswordVisible
+            ? "Sign in"
+            : "Continue with email"}
       </button>
 
       <p
