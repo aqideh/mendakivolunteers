@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { PasswordForm } from "@/app/account/password/password-form";
 import { PortalHeader } from "@/components/portal-header";
-import { requireActiveAccount } from "@/lib/auth/account-access";
+import { requireInternalStaff } from "@/lib/auth/staff-access";
 
 export const metadata: Metadata = {
   title: "Change password",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PasswordPage() {
-  await requireActiveAccount("/account/password");
+  await requireInternalStaff("/account/password");
 
   return (
     <div className="site-shell">

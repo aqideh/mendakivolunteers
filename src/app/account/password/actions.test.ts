@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { requireActiveAccountMock, updateUserMock } = vi.hoisted(() => ({
-  requireActiveAccountMock: vi.fn(),
+const { requireInternalStaffMock, updateUserMock } = vi.hoisted(() => ({
+  requireInternalStaffMock: vi.fn(),
   updateUserMock: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/account-access", () => ({
-  requireActiveAccount: requireActiveAccountMock,
+vi.mock("@/lib/auth/staff-access", () => ({
+  requireInternalStaff: requireInternalStaffMock,
 }));
 
 import * as passwordActions from "@/app/account/password/actions";
@@ -37,7 +37,7 @@ describe("staff password change server action", () => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
     updateUserMock.mockResolvedValue({ error: null });
-    requireActiveAccountMock.mockResolvedValue({
+    requireInternalStaffMock.mockResolvedValue({
       userId: "60000000-0000-4000-8000-000000000001",
       supabase: { auth: { updateUser: updateUserMock } },
     });
@@ -59,7 +59,7 @@ describe("staff password change server action", () => {
       message: "Your password has been changed.",
     });
 
-    expect(requireActiveAccountMock).toHaveBeenCalledWith("/account/password");
+    expect(requireInternalStaffMock).toHaveBeenCalledWith("/account/password");
     expect(updateUserMock).toHaveBeenCalledWith({
       password: "new correct horse battery staple",
       current_password: "old correct password",
@@ -76,7 +76,7 @@ describe("staff password change server action", () => {
       status: "error",
       message: "The new passwords do not match.",
     });
-    expect(requireActiveAccountMock).not.toHaveBeenCalled();
+    expect(requireInternalStaffMock).not.toHaveBeenCalled();
   });
 
   it("does not expose whether the current password or policy caused rejection", async () => {
