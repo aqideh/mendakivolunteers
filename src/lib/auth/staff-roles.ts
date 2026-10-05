@@ -16,7 +16,9 @@ export const internalStaffRoleValues = [
 ] as const satisfies readonly StaffInviteRole[];
 
 export function isMendakiWorkEmail(email: string): boolean {
-  return email.trim().toLowerCase().endsWith("@mendaki.org.sg");
+  const normalized = email.trim().toLowerCase();
+  const separator = normalized.lastIndexOf("@");
+  return separator > 0 && normalized.slice(separator + 1) === "mendaki.org.sg";
 }
 
 export function roleRequiresMendakiWorkEmail(role: StaffInviteRole): boolean {
