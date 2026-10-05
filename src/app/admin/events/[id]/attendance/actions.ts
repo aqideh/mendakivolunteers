@@ -53,6 +53,12 @@ const bulkCheckoutSchema = z.object({
   timeslotId: z.string().uuid(),
 });
 
+const bulkWithdrawalSchema = z.object({
+  eventId: z.string().uuid(),
+  rosterId: z.string().uuid(),
+  timeslotId: z.string().uuid().optional(),
+});
+
 const extendAttendanceSchema = z.object({
   eventId: z.string().uuid(),
   sourceRosterId: z.string().uuid(),
@@ -97,6 +103,21 @@ export type QuickAttendanceResult =
 export type BulkCheckoutResult =
   | { ok: true; checkedOut: number }
   | { ok: false; checkedOut: number; error: string };
+
+export type BulkWithdrawalResult =
+  | {
+      ok: true;
+      batchId: string | null;
+      totalShifts: number;
+      withdrawn: number;
+      alreadyWithdrawn: number;
+      skipped: number;
+      skippedActiveCheckIn: number;
+      skippedAttendanceRecorded: number;
+      skippedAbsent: number;
+      skippedCancelled: number;
+    }
+  | { ok: false; error: string };
 
 export type ExtendAttendanceResult =
   | {
@@ -326,6 +347,67 @@ export async function recordAttendanceQuickAction(input: {
     signedOutAt: attendance?.signed_out_at ?? null,
     nonAttendanceStatus: attendance?.non_attendance_status ?? null,
     updatedAt: attendance?.updated_at ?? null,
+  };
+}
+
+export async function withdrawVolunteerAcrossEventShifts(input: {
+  eventId: string;
+  rosterId: string;
+  timeslotId?: string | undefined;
+}): Promise<BulkWithdrawalResult> {
+  const parsed = bulkWithdrawalSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Withdrawal scope could not be read." };
+  }
+
+  const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
+  const { userId } = await requireAttendanceOperatorForEvent(
+    parsed.data.eventId,
+    returnPath,
+  );
+  const admin = getPhaseOneAdminClient();
+  const { data, error } = await admin.rpc("phaseone_withdraw_volunteer_shifts", {
+    p_event_id: parsed.data.eventId,
+    p_roster_id: parsed.data.rosterId,
+    p_changed_by: userId,
+  });
+
+  if (error) {
+    console.error("Unable to withdraw volunteer across event shifts", {
+      code: error.code,
+      eventId: parsed.data.eventId,
+      rosterId: parsed.data.rosterId,
+    });
+    return {
+      ok: false,
+      error: error.message || "Volunteer shifts could not be withdrawn.",
+    };
+  }
+
+  const result = data as {
+    batch_id?: string | null;
+    total_shifts?: number;
+    withdrawn?: number;
+    already_withdrawn?: number;
+    skipped?: number;
+    skipped_active_check_in?: number;
+    skipped_attendance_recorded?: number;
+    skipped_absent?: number;
+    skipped_cancelled?: number;
+  } | null;
+
+  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+  return {
+    ok: true,
+    batchId: result?.batch_id ?? null,
+    totalShifts: result?.total_shifts ?? 0,
+    withdrawn: result?.withdrawn ?? 0,
+    alreadyWithdrawn: result?.already_withdrawn ?? 0,
+    skipped: result?.skipped ?? 0,
+    skippedActiveCheckIn: result?.skipped_active_check_in ?? 0,
+    skippedAttendanceRecorded: result?.skipped_attendance_recorded ?? 0,
+    skippedAbsent: result?.skipped_absent ?? 0,
+    skippedCancelled: result?.skipped_cancelled ?? 0,
   };
 }
 
