@@ -1296,3 +1296,92 @@
   .km-roster-toolbar { position: static; }
   .km-operations-header-actions, .km-roster-search-row, .phaseone-staff-tools { display: none!important; }
 }
+
+
+/* Event Operations: scoped withdrawal confirmation */
+.km-withdraw-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / .42);
+}
+.km-withdraw-modal {
+  width: min(34rem, 100%);
+  max-height: min(42rem, calc(100vh - 2rem));
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: .9rem;
+  padding: 1.1rem;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgb(0 0 0 / .22);
+}
+.km-withdraw-modal-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.km-withdraw-modal-header h2 { margin: .1rem 0 .35rem; }
+.km-withdraw-modal-header .eyebrow { margin: 0; }
+.km-withdraw-modal-close {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.km-withdraw-modal h3 { margin: 1rem 0 .55rem; font-size: 1rem; }
+.km-withdraw-shift-list {
+  display: grid;
+  gap: .4rem;
+  margin: .5rem 0 .7rem;
+}
+.km-withdraw-shift-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  border: 1px solid var(--border);
+  border-radius: .6rem;
+  padding: .65rem .7rem;
+  background: var(--surface-subtle);
+  font-size: .82rem;
+}
+.km-withdraw-shift-row > span:first-child { min-width: 0; }
+.km-withdraw-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  margin-top: 1rem;
+  padding-top: .85rem;
+  border-top: 1px solid var(--border);
+}
+.km-withdraw-modal-actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+}
+.km-withdraw-modal-actions .km-withdraw-cancel {
+  margin-right: auto;
+}
+@media (max-width: 560px) {
+  .km-withdraw-modal { padding: .9rem; }
+  .km-withdraw-shift-row { align-items: flex-start; flex-direction: column; }
+  .km-withdraw-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .km-withdraw-modal-actions .button { width: 100%; }
+  .km-withdraw-modal-actions .km-withdraw-cancel { margin-right: 0; }
+}
