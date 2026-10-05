@@ -37,6 +37,7 @@ type InviteRow = Readonly<{
   accepted_at: string | null;
   send_count: number;
   last_error: string | null;
+  expires_at: string | null;
 }>;
 
 type StatusKey =
@@ -65,7 +66,7 @@ function statusFor(
 ): StatusKey {
   if (volunteer.auth_user_id && onboardingCompletedAt) return "active";
   if (volunteer.auth_user_id) return "onboarding";
-  if (invite?.status === "sent" || invite?.status === "pending") return "sent";
+  if (["sent", "pending", "redeeming"].includes(invite?.status ?? "")) return "sent";
   if (invite?.status === "failed") return "attention";
   return "not_invited";
 }
@@ -102,6 +103,8 @@ function messageFor(code: string | undefined, volunteerCode: string | undefined)
       return "The volunteer auth account could not be prepared.";
     case "invite_record":
       return "The onboarding invitation could not be created or updated.";
+    case "invite_busy":
+      return "This onboarding invitation is currently being verified. Wait for that attempt to finish before resending.";
     case "email_send":
       return "The onboarding invitation was prepared, but the auth email could not be sent. Check email delivery and try again.";
     case "invite_save":
@@ -138,7 +141,7 @@ export default async function VolunteerOnboardingPage({ searchParams }: PageProp
       .schema("core")
       .from("volunteer_onboarding_invites")
       .select(
-        "id, volunteer_id, auth_user_id, email_normalized, status, invited_at, last_sent_at, accepted_at, send_count, last_error",
+        "id, volunteer_id, auth_user_id, email_normalized, status, invited_at, last_sent_at, accepted_at, send_count, last_error, expires_at",
       )
       .order("invited_at", { ascending: false })
       .limit(2000),
@@ -279,9 +282,9 @@ export default async function VolunteerOnboardingPage({ searchParams }: PageProp
           <p className={styles.eyebrow}>Volunteer accounts</p>
           <h1>Volunteer onboarding</h1>
           <p>
-            Select the canonical KEL identity first, then send a secure auth email.
-            The verified account will attach to that volunteer and keep their
-            existing history.
+            Select the canonical KEL identity first, then send a secure seven-day
+            onboarding invitation. The verified account will attach to that
+            volunteer and keep their existing history.
           </p>
         </div>
         <Link className={styles.secondaryLink} href="/admin/reconciliation">
@@ -291,7 +294,7 @@ export default async function VolunteerOnboardingPage({ searchParams }: PageProp
 
       {success === "sent" ? (
         <div className="notice notice-success" role="status">
-          Onboarding email sent{volunteerCode ? ` for ${volunteerCode}` : ""}.
+          Onboarding invitation sent{volunteerCode ? ` for ${volunteerCode}` : ""}.
         </div>
       ) : null}
       {error ? (
