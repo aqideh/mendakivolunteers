@@ -51,7 +51,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
         <div>
           <h2>Check your email</h2>
           <p className="auth-verification-email">
-            We sent a 6-digit verification code to <strong>{state.email}</strong>.
+            We sent a 8-digit verification code to <strong>{state.email}</strong>.
           </p>
         </div>
 
@@ -66,16 +66,16 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              minLength={6}
-              maxLength={6}
-              placeholder="000000"
+              pattern="[0-9]{8}"
+              minLength={8}
+              maxLength={8}
+              placeholder="00000000"
               required
               autoFocus
               disabled={otpPending}
             />
             <span className="form-help">
-              Enter the six digits from the Keluarga MENDAKI email.
+              Enter the eight digits from the Keluarga MENDAKI email.
             </span>
           </div>
 
