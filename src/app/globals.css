@@ -632,6 +632,18 @@ h3 {
   letter-spacing: -0.045em;
 }
 
+.auth-login-title {
+  font-size: clamp(2rem, 8.5vw, 2.6rem);
+}
+
+.auth-login-title > span {
+  display: block;
+}
+
+.auth-login-brand {
+  white-space: nowrap;
+}
+
 .auth-login-copy {
   margin-bottom: 0;
   color: var(--muted);
