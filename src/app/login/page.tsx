@@ -6,7 +6,7 @@ import { BrandLockup } from "@/components/brand-lockup";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 
 export const metadata: Metadata = {
-  title: "Login",
+  title: "Continue to Keluarga MENDAKI",
 };
 
 type LoginPageProps = Readonly<{
@@ -72,7 +72,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           <p className="auth-browse-link">
             <Link className="text-link" href="/opportunities">
-              Continue without signing in
+              Browse opportunities
             </Link>
           </p>
         </section>
