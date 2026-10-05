@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth/staff-roles";
 import { getPublicConfig } from "@/lib/env";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import { createClient } from "@/lib/supabase/server";
 
 const emailSchema = z.string().trim().email().max(254);
 
@@ -121,4 +122,49 @@ export async function requestStaffPasswordReset(
   }
 
   return { status: "success", message: genericSuccessMessage };
+}
+
+
+export async function validateCurrentStaffRecovery(): Promise<boolean> {
+  const supabase = await createClient();
+  const { data: userResult, error: userError } = await supabase.auth.getUser();
+  const user = userResult.user;
+
+  if (
+    userError ||
+    !user ||
+    !user.email ||
+    !isMendakiWorkEmail(user.email)
+  ) {
+    return false;
+  }
+
+  const admin = getPhaseOneAdminClient();
+  const [accountResult, rolesResult] = await Promise.all([
+    admin
+      .schema("core")
+      .from("user_accounts")
+      .select("status")
+      .eq("id", user.id)
+      .maybeSingle(),
+    admin
+      .schema("core")
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", [...internalStaffRoleValues]),
+  ]);
+
+  if (accountResult.error || rolesResult.error) {
+    console.error("Staff password recovery eligibility check failed", {
+      accountCode: accountResult.error?.code,
+      roleCode: rolesResult.error?.code,
+    });
+    return false;
+  }
+
+  return (
+    accountResult.data?.status === "active" &&
+    (rolesResult.data ?? []).length > 0
+  );
 }
