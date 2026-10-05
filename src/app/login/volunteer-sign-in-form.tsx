@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import {
@@ -160,6 +161,14 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
           <span className="form-help">
             MENDAKI staff use their Keluarga staff password.
           </span>
+          <Link
+            className="text-link"
+            href={`/staff/forgot-password?email=${encodeURIComponent(
+              submittedEmail,
+            )}`}
+          >
+            Forgot password?
+          </Link>
         </div>
       ) : null}
 
