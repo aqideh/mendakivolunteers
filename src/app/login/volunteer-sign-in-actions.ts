@@ -30,7 +30,7 @@ export type VolunteerOtpState = Readonly<{
 }>;
 
 const genericOtpMessage =
-  "We sent a 6-digit verification code to your email. Enter it below to continue.";
+  "We sent a 8-digit verification code to your email. Enter it below to continue.";
 
 function volunteerDestination(
   nextPath: string,
@@ -188,7 +188,7 @@ export async function verifyVolunteerEmailOtp(
   if (!parsedOtp.success) {
     return {
       status: "error",
-      message: "Enter the 6-digit code from your email.",
+      message: "Enter the 8-digit code from your email.",
     };
   }
 
