@@ -70,11 +70,11 @@ double_confirm_changes = true
 enable_confirmations = false
 secure_password_change = true
 max_frequency = "1m"
-otp_length = 6
+otp_length = 8
 otp_expiry = 3600
 
 [auth.email.template.magic_link]
-subject = "Your KELUARGA sign-in link"
+subject = "Your KELUARGA verification code"
 content_path = "./supabase/templates/magic_link.html"
 
 [analytics]
