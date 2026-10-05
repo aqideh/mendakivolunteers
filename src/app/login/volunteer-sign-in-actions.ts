@@ -61,8 +61,9 @@ async function findAuthUserByEmail(email: string): Promise<User | null> {
 function withoutEmailPurpose(
   metadata: Record<string, unknown> | undefined,
 ): Record<string, unknown> {
-  const { email_purpose: _emailPurpose, ...rest } = metadata ?? {};
-  return rest;
+  const cleaned = { ...(metadata ?? {}) };
+  delete cleaned.email_purpose;
+  return cleaned;
 }
 
 async function prepareVolunteerEmailPurpose(email: string) {
