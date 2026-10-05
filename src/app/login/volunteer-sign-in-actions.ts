@@ -67,11 +67,17 @@ function withoutEmailPurpose(
 
 async function prepareVolunteerEmailPurpose(email: string) {
   const admin = getPhaseOneAdminClient();
+  const existingUser = await findAuthUserByEmail(email);
+
+  if (!existingUser) {
+    return { email_purpose: "volunteer_signup" };
+  }
+
   const accountResult = await admin
     .schema("core")
     .from("user_accounts")
     .select("id")
-    .eq("claimed_email_normalized", email)
+    .eq("id", existingUser.id)
     .maybeSingle();
 
   if (accountResult.error) {
@@ -81,16 +87,10 @@ async function prepareVolunteerEmailPurpose(email: string) {
     return undefined;
   }
 
-  if (accountResult.data) {
-    return undefined;
-  }
-
-  const existingUser = await findAuthUserByEmail(email);
-  if (!existingUser) {
-    return { email_purpose: "volunteer_signup" };
-  }
-
-  if (existingUser.app_metadata?.onboarding_invite_pending === true) {
+  if (
+    accountResult.data ||
+    existingUser.app_metadata?.onboarding_invite_pending === true
+  ) {
     return undefined;
   }
 
