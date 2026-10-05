@@ -5,8 +5,8 @@ const { requireInternalStaffMock, updateUserMock } = vi.hoisted(() => ({
   updateUserMock: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/account-access", () => ({
-  requireActiveAccount: requireInternalStaffMock,
+vi.mock("@/lib/auth/staff-access", () => ({
+  requireInternalStaff: requireInternalStaffMock,
 }));
 
 import * as passwordActions from "@/app/account/password/actions";
