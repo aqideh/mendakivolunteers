@@ -129,6 +129,8 @@ export async function redeemVolunteerOnboardingInvite(formData: FormData) {
   const email = redemption.email_normalized;
   let authUser: User | null = null;
   let createdDuringRedemption = false;
+  let accountCreatedDuringRedemption = false;
+  let originalAppMetadata: Record<string, unknown> | null = null;
 
   try {
     if (redemption.auth_user_id) {
@@ -140,6 +142,10 @@ export async function redeemVolunteerOnboardingInvite(formData: FormData) {
 
     if (!authUser) {
       authUser = await findAuthUserByEmail(email);
+    }
+
+    if (authUser) {
+      originalAppMetadata = { ...(authUser.app_metadata ?? {}) };
     }
 
     if (!authUser) {
@@ -163,6 +169,7 @@ export async function redeemVolunteerOnboardingInvite(formData: FormData) {
       }
       authUser = createResult.data.user;
       createdDuringRedemption = true;
+      originalAppMetadata = null;
     } else {
       const updateResult = await admin.auth.admin.updateUserById(authUser.id, {
         email_confirm: true,
@@ -208,6 +215,7 @@ export async function redeemVolunteerOnboardingInvite(formData: FormData) {
       if (insertAccountResult.error) {
         throw new Error("Unable to create Keluarga account record");
       }
+      accountCreatedDuringRedemption = true;
     }
 
     const roleResult = await admin
@@ -285,7 +293,6 @@ export async function redeemVolunteerOnboardingInvite(formData: FormData) {
     }
 
     cookieStore.delete(volunteerOnboardingContextCookie);
-    redirect("/profile/setup");
   } catch (error) {
     console.error("Volunteer onboarding redemption failed", {
       message: error instanceof Error ? error.message : "unknown",
@@ -302,25 +309,25 @@ export async function redeemVolunteerOnboardingInvite(formData: FormData) {
     );
 
     if (authUser) {
-      if (createdDuringRedemption) {
+      if (accountCreatedDuringRedemption) {
         await admin
           .schema("core")
           .from("user_accounts")
           .delete()
           .eq("id", authUser.id);
+      }
+
+      if (createdDuringRedemption) {
         await admin.auth.admin.deleteUser(authUser.id);
-      } else {
+      } else if (originalAppMetadata) {
         await admin.auth.admin.updateUserById(authUser.id, {
-          app_metadata: {
-            ...(authUser.app_metadata ?? {}),
-            keluarga_transport_only: true,
-            onboarding_invite_pending: true,
-            onboarding_invite_id: inviteId,
-          },
+          app_metadata: originalAppMetadata,
         });
       }
     }
 
     redirect(inviteDestination("unavailable"));
   }
+
+  redirect("/profile/setup");
 }
