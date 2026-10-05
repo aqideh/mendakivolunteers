@@ -3,12 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   createEmailLinkClientMock,
   getPublicConfigMock,
-  resendMock,
   signInWithOtpMock,
 } = vi.hoisted(() => ({
   createEmailLinkClientMock: vi.fn(),
   getPublicConfigMock: vi.fn(),
-  resendMock: vi.fn(),
   signInWithOtpMock: vi.fn(),
 }));
 
@@ -34,7 +32,6 @@ describe("volunteer email sign-up", () => {
     vi.clearAllMocks();
     createEmailLinkClientMock.mockReturnValue({
       auth: {
-        resend: resendMock,
         signInWithOtp: signInWithOtpMock,
       },
     });
@@ -42,7 +39,6 @@ describe("volunteer email sign-up", () => {
       appUrl: "https://mendakivolunteers.vercel.app",
     });
     signInWithOtpMock.mockResolvedValue({ error: null });
-    resendMock.mockResolvedValue({ error: null });
   });
 
   it("only exposes the two async server actions at runtime", () => {
@@ -69,13 +65,16 @@ describe("volunteer email sign-up", () => {
       email: "new.volunteer@example.test",
       options: {
         shouldCreateUser: true,
+        data: {
+          email_purpose: "volunteer_signup",
+        },
         emailRedirectTo:
           "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fopportunities%2Fcommunity-day",
       },
     });
   });
 
-  it("resends signup verification without creating another account", async () => {
+  it("resends signup verification through the same passwordless email path", async () => {
     const result =
       await volunteerSignUpActions.resendVolunteerVerificationLink(
         { status: "idle", message: "" },
@@ -83,19 +82,21 @@ describe("volunteer email sign-up", () => {
       );
 
     expect(result.status).toBe("success");
-    expect(resendMock).toHaveBeenCalledWith({
-      type: "signup",
+    expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "pending.volunteer@example.test",
       options: {
+        shouldCreateUser: true,
+        data: {
+          email_purpose: "volunteer_signup",
+        },
         emailRedirectTo:
           "https://mendakivolunteers.vercel.app/auth/confirm?next=%2Fprofile%2Fsetup",
       },
     });
-    expect(signInWithOtpMock).not.toHaveBeenCalled();
   });
 
   it("keeps resend responses generic when Supabase cannot send", async () => {
-    resendMock.mockResolvedValue({
+    signInWithOtpMock.mockResolvedValue({
       error: { code: "user_not_found", status: 400 },
     });
 
@@ -110,7 +111,7 @@ describe("volunteer email sign-up", () => {
   });
 
   it("surfaces email rate limiting without exposing account state", async () => {
-    resendMock.mockResolvedValue({
+    signInWithOtpMock.mockResolvedValue({
       error: { code: "over_email_send_rate_limit", status: 429 },
     });
 
@@ -154,6 +155,5 @@ describe("volunteer email sign-up", () => {
       message: "Enter a valid email address.",
     });
     expect(signInWithOtpMock).not.toHaveBeenCalled();
-    expect(resendMock).not.toHaveBeenCalled();
   });
 });
