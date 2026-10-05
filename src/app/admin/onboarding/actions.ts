@@ -106,6 +106,7 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
 
   let targetUser: User | null = null;
   let createdTransportUser = false;
+  let originalAppMetadata: Record<string, unknown> | null = null;
 
   if (volunteer.auth_user_id) {
     const authResult = await admin.auth.admin.getUserById(volunteer.auth_user_id);
@@ -172,6 +173,8 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
   if (!targetUser) {
     redirect(destination(formData, "error", "auth_lookup"));
   }
+
+  originalAppMetadata = { ...(targetUser.app_metadata ?? {}) };
 
   const rolesResult = await admin
     .schema("core")
@@ -378,6 +381,10 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
 
     if (createdTransportUser) {
       await admin.auth.admin.deleteUser(targetUser.id);
+    } else if (originalAppMetadata) {
+      await admin.auth.admin.updateUserById(targetUser.id, {
+        app_metadata: originalAppMetadata,
+      });
     }
 
     redirect(destination(formData, "error", "email_send"));
