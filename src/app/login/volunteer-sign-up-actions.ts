@@ -72,6 +72,9 @@ export async function requestVolunteerSignUpLink(
       email,
       options: {
         shouldCreateUser: true,
+        data: {
+          email_purpose: "volunteer_signup",
+        },
         emailRedirectTo: getEmailRedirectTo(nextPath),
       },
     });
@@ -122,10 +125,13 @@ export async function resendVolunteerVerificationLink(
 
   try {
     const supabase = createEmailLinkClient();
-    const { error } = await supabase.auth.resend({
-      type: "signup",
+    const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
+        shouldCreateUser: true,
+        data: {
+          email_purpose: "volunteer_signup",
+        },
         emailRedirectTo: getEmailRedirectTo(nextPath),
       },
     });
