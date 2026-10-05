@@ -10,11 +10,9 @@ export function VolunteerAuthPanel({ nextPath }: VolunteerAuthPanelProps) {
   return (
     <div className="volunteer-auth-panel">
       <div className="auth-login-intro">
-        <h1 id="volunteer-auth-title">Continue with email</h1>
+        <h1 id="volunteer-auth-title">Continue to Keluarga MENDAKI</h1>
         <p className="auth-login-copy">
-          Enter your email address to continue to Keluarga MENDAKI. Volunteers
-          use a one-time email code; MENDAKI staff will be prompted for their
-          password.
+          Enter your email to get started.
         </p>
       </div>
 
