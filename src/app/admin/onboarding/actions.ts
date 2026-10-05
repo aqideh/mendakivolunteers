@@ -107,6 +107,7 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
   let targetUser: User | null = null;
   let createdTransportUser = false;
   let originalAppMetadata: Record<string, unknown> | null = null;
+  let originalUserMetadata: Record<string, unknown> | null = null;
 
   if (volunteer.auth_user_id) {
     const authResult = await admin.auth.admin.getUserById(volunteer.auth_user_id);
@@ -175,6 +176,7 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
   }
 
   originalAppMetadata = { ...(targetUser.app_metadata ?? {}) };
+  originalUserMetadata = { ...(targetUser.user_metadata ?? {}) };
 
   const rolesResult = await admin
     .schema("core")
@@ -350,6 +352,33 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
     redirect(destination(formData, "error", "account_create"));
   }
 
+  const emailPurposeResult = await admin.auth.admin.updateUserById(
+    targetUser.id,
+    {
+      user_metadata: {
+        ...(targetUser.user_metadata ?? {}),
+        email_purpose: "volunteer_onboarding",
+      },
+    },
+  );
+
+  if (emailPurposeResult.error) {
+    await admin
+      .schema("core")
+      .from("volunteer_onboarding_invites")
+      .update({
+        status: "failed",
+        last_error: "email_purpose_tag_failed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", inviteId);
+
+    if (createdTransportUser) {
+      await admin.auth.admin.deleteUser(targetUser.id);
+    }
+    redirect(destination(formData, "error", "email_send"));
+  }
+
   const { appUrl } = getPublicConfig();
   const redirectTo = new URL("/onboarding/invite/open", appUrl);
   redirectTo.searchParams.set("t", rawToken);
@@ -381,13 +410,31 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
 
     if (createdTransportUser) {
       await admin.auth.admin.deleteUser(targetUser.id);
-    } else if (originalAppMetadata) {
+    } else {
       await admin.auth.admin.updateUserById(targetUser.id, {
-        app_metadata: originalAppMetadata,
+        ...(originalAppMetadata ? { app_metadata: originalAppMetadata } : {}),
+        ...(originalUserMetadata ? { user_metadata: originalUserMetadata } : {}),
       });
     }
 
     redirect(destination(formData, "error", "email_send"));
+  }
+
+  if (originalUserMetadata) {
+    const restoreMetadataResult = await admin.auth.admin.updateUserById(
+      targetUser.id,
+      {
+        user_metadata: originalUserMetadata,
+      },
+    );
+
+    if (restoreMetadataResult.error) {
+      console.error("Volunteer onboarding email purpose cleanup failed", {
+        code: restoreMetadataResult.error.code,
+        status: restoreMetadataResult.error.status,
+        inviteId,
+      });
+    }
   }
 
   const sentAt = new Date().toISOString();
