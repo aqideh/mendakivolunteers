@@ -790,3 +790,33 @@ h3 {
   font: inherit;
   font-weight: 700;
 }
+
+
+.auth-staff-password-field {
+  animation: auth-field-reveal 180ms ease-out both;
+  transform-origin: top;
+}
+
+#volunteer-email-code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.28em;
+  text-align: center;
+}
+
+@keyframes auth-field-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-staff-password-field {
+    animation: none;
+  }
+}
