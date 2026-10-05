@@ -78,22 +78,17 @@ export function OpportunityAuthOverlay({
           <button
             className="phaseone-opportunity-auth-close"
             type="button"
-            aria-label="Close sign in or sign up"
+            aria-label="Close sign in"
             onClick={closeDialog}
           >
             ×
           </button>
 
           <div id="opportunity-auth-copy" className="phaseone-opportunity-auth-copy">
-            Create a KELUARGA account or sign in to an existing account. Your
-            selected shifts will be kept.
+            Continue with your email address. Your selected shifts will be kept.
           </div>
 
-          <VolunteerAuthPanel
-            key={nextPath}
-            initialMode="signup"
-            nextPath={nextPath}
-          />
+          <VolunteerAuthPanel key={nextPath} nextPath={nextPath} />
         </div>
       </dialog>
     </>
