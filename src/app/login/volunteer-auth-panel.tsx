@@ -1,72 +1,24 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-
 import { VolunteerSignInForm } from "@/app/login/volunteer-sign-in-form";
-import { VolunteerSignUpForm } from "@/app/login/volunteer-sign-up-form";
-
-export type VolunteerAuthMode = "signin" | "signup";
 
 type VolunteerAuthPanelProps = Readonly<{
   nextPath: string;
-  initialMode?: VolunteerAuthMode;
 }>;
 
-export function VolunteerAuthPanel({
-  nextPath,
-  initialMode = "signin",
-}: VolunteerAuthPanelProps) {
-  const [mode, setMode] = useState<VolunteerAuthMode>(initialMode);
-  const signingUp = mode === "signup";
-
+export function VolunteerAuthPanel({ nextPath }: VolunteerAuthPanelProps) {
   return (
     <div className="volunteer-auth-panel">
-      <div
-        className="auth-mode-switch"
-        role="tablist"
-        aria-label="Volunteer account"
-      >
-        <button
-          aria-selected={!signingUp}
-          className="auth-mode-button"
-          onClick={() => setMode("signin")}
-          role="tab"
-          type="button"
-        >
-          Sign in
-        </button>
-        <button
-          aria-selected={signingUp}
-          className="auth-mode-button"
-          onClick={() => setMode("signup")}
-          role="tab"
-          type="button"
-        >
-          Sign up
-        </button>
-      </div>
-
       <div className="auth-login-intro">
-        <h1 id="volunteer-auth-title">
-          {signingUp ? "Create your account" : "Sign in"}
-        </h1>
+        <h1 id="volunteer-auth-title">Continue with email</h1>
         <p className="auth-login-copy">
-          {signingUp
-            ? "Create your KELUARGA account with your email address. No password is needed."
-            : "Enter the email linked to your KELUARGA account and we’ll send you a secure sign-in link."}
+          Enter your email address to continue to Keluarga MENDAKI. Volunteers
+          use a one-time email code; MENDAKI staff will be prompted for their
+          password.
         </p>
       </div>
 
-      {signingUp ? (
-        <VolunteerSignUpForm nextPath={nextPath} />
-      ) : (
-        <VolunteerSignInForm nextPath={nextPath} />
-      )}
-
-      <p className="form-help">
-        Keluarga staff? <Link href="/staff/login">Sign in with your staff password</Link>.
-      </p>
+      <VolunteerSignInForm nextPath={nextPath} />
     </div>
   );
 }
