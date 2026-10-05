@@ -23,6 +23,8 @@ import {
   ExtendAttendanceButton,
   QuickAttendanceButton,
   WalkInSubmitButtons,
+  WithdrawalButton,
+  type WithdrawalShiftPreview,
 } from "@/components/phaseone/attendance-quick-action";
 import { PortalHeader } from "@/components/portal-header";
 import {
@@ -379,6 +381,30 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const rosterNames = Object.fromEntries(
     rosterResult.data.map((item) => [item.id, item.volunteer_name]),
   );
+  const timeslotById = new Map(timeslots.map((timeslot) => [timeslot.id, timeslot]));
+  const withdrawalShiftsByPerson = new Map<string, WithdrawalShiftPreview[]>();
+  for (const rosterItem of rosterResult.data) {
+    const rosterTimeslot = timeslotById.get(rosterItem.timeslot_id);
+    if (!rosterTimeslot) continue;
+    const rosterAttendance = attendanceByRoster.get(rosterItem.id);
+    const rosterEffectiveAttendance = effectiveAttendanceByRoster.get(rosterItem.id);
+    const rosterStatus: WithdrawalShiftPreview["status"] =
+      rosterTimeslot.status === "cancelled"
+        ? "cancelled"
+        : statusFor(
+            rosterEffectiveAttendance?.signed_in_at ?? rosterAttendance?.signed_in_at ?? null,
+            rosterEffectiveAttendance?.signed_out_at ?? rosterAttendance?.signed_out_at ?? null,
+            rosterEffectiveAttendance?.non_attendance_status ?? rosterAttendance?.non_attendance_status ?? null,
+          );
+    const current = withdrawalShiftsByPerson.get(rosterItem.attendance_person_key) ?? [];
+    current.push({
+      timeslotId: rosterTimeslot.id,
+      label: `${singaporeDateLabel(rosterTimeslot.starts_at)} · ${timeslotLabel(rosterTimeslot)} · ${timeslotTime(rosterTimeslot)}`,
+      status: rosterStatus,
+    });
+    withdrawalShiftsByPerson.set(rosterItem.attendance_person_key, current);
+  }
+
   const records = rosterResult.data
     .filter((volunteer) => !selectedTimeslot || volunteer.timeslot_id === selectedTimeslot.id)
     .map((volunteer) => {
@@ -403,10 +429,10 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   if (selectedTimeslot) {
     const selectedStart = new Date(selectedTimeslot.starts_at).getTime();
     const selectedDate = singaporeDateKey(selectedTimeslot.starts_at);
-    const timeslotById = new Map(activeTimeslots.map((timeslot) => [timeslot.id, timeslot]));
+    const activeTimeslotById = new Map(activeTimeslots.map((timeslot) => [timeslot.id, timeslot]));
 
     for (const priorRoster of rosterResult.data) {
-      const priorTimeslot = timeslotById.get(priorRoster.timeslot_id);
+      const priorTimeslot = activeTimeslotById.get(priorRoster.timeslot_id);
       if (
         !priorTimeslot
         || singaporeDateKey(priorTimeslot.starts_at) !== selectedDate
@@ -706,6 +732,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   const priorNonAttendance = priorNonAttendanceByPerson.get(
                     volunteer.attendance_person_key,
                   );
+                  const withdrawalShifts =
+                    withdrawalShiftsByPerson.get(volunteer.attendance_person_key) ?? [];
 
                   return (
                     <article
@@ -872,11 +900,12 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                           <details className="km-roster-secondary-actions">
                             <summary>Other status ▾</summary>
                             <div>
-                          <QuickAttendanceButton
-                            action="mark_withdrawn"
+                          <WithdrawalButton
                             eventId={id}
                             rosterId={volunteer.id}
+                            shifts={withdrawalShifts}
                             timeslotId={selectedTimeslot.id}
+                            volunteerName={volunteer.volunteer_name}
                           />
                           <QuickAttendanceButton
                             action="mark_absent"
