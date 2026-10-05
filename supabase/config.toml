@@ -70,7 +70,7 @@ double_confirm_changes = true
 enable_confirmations = false
 secure_password_change = true
 max_frequency = "1m"
-otp_length = 6
+otp_length = 8
 otp_expiry = 3600
 
 [auth.email.template.magic_link]
