@@ -50,9 +50,26 @@ export async function updateSession(
 
   const { data } = await supabase.auth.getClaims();
   const isAuthenticated = Boolean(data?.claims?.sub);
+  const appMetadata = data?.claims?.app_metadata as
+    | Record<string, unknown>
+    | undefined;
+  const isTransportOnly =
+    appMetadata?.keluarga_transport_only === true;
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/admin");
+
+  if (
+    isAuthenticated &&
+    isTransportOnly &&
+    !request.nextUrl.pathname.startsWith("/onboarding/invite") &&
+    request.nextUrl.pathname !== "/auth/confirm"
+  ) {
+    const onboardingUrl = request.nextUrl.clone();
+    onboardingUrl.pathname = "/onboarding/invite";
+    onboardingUrl.search = "";
+    return NextResponse.redirect(onboardingUrl);
+  }
 
   if (!isAuthenticated && isProtectedRoute) {
     const loginUrl = request.nextUrl.clone();

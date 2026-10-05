@@ -6,11 +6,16 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/staff-access";
+import {
+  createSecureToken,
+  hashSecureToken,
+} from "@/lib/auth/volunteer-onboarding-invite";
 import { getPublicConfig } from "@/lib/env";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const volunteerIdSchema = z.string().uuid();
 const emailSchema = z.string().trim().email().max(254);
+const activeInviteStatuses = ["pending", "sent", "redeeming"];
 
 function readText(formData: FormData, key: string, max = 120) {
   const value = formData.get(key);
@@ -41,18 +46,14 @@ async function findAuthUserByEmail(email: string): Promise<User | null> {
 
   for (let page = 1; ; page += 1) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     const match =
       data.users.find(
         (user) => user.email?.trim().toLowerCase() === email,
       ) ?? null;
 
-    if (match || data.users.length < perPage) {
-      return match;
-    }
+    if (match || data.users.length < perPage) return match;
   }
 }
 
@@ -104,13 +105,14 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
   }
 
   let targetUser: User | null = null;
+  let createdTransportUser = false;
+  let originalAppMetadata: Record<string, unknown> | null = null;
 
   if (volunteer.auth_user_id) {
     const authResult = await admin.auth.admin.getUserById(volunteer.auth_user_id);
     if (authResult.error || !authResult.data.user) {
       redirect(destination(formData, "error", "auth_lookup"));
     }
-
     targetUser = authResult.data.user;
     if (targetUser.email?.trim().toLowerCase() !== email) {
       redirect(destination(formData, "error", "linked_email_mismatch"));
@@ -136,7 +138,6 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
       if (linkedVolunteerResult.error) {
         redirect(destination(formData, "error", "auth_lookup"));
       }
-
       if (
         linkedVolunteerResult.data &&
         linkedVolunteerResult.data.id !== volunteer.id
@@ -147,13 +148,17 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
       const createResult = await admin.auth.admin.createUser({
         email,
         email_confirm: false,
+        app_metadata: {
+          keluarga_transport_only: true,
+          onboarding_invite_pending: true,
+        },
         ...(volunteer.display_name
           ? { user_metadata: { full_name: volunteer.display_name } }
           : {}),
       });
 
       if (createResult.error || !createResult.data.user) {
-        console.error("Unable to create invited volunteer auth account", {
+        console.error("Unable to prepare onboarding email transport identity", {
           code: createResult.error?.code,
           status: createResult.error?.status,
         });
@@ -161,12 +166,15 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
       }
 
       targetUser = createResult.data.user;
+      createdTransportUser = true;
     }
   }
 
   if (!targetUser) {
     redirect(destination(formData, "error", "auth_lookup"));
   }
+
+  originalAppMetadata = { ...(targetUser.app_metadata ?? {}) };
 
   const rolesResult = await admin
     .schema("core")
@@ -180,6 +188,9 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
       ["volunteer_leader", "staff", "volteam", "admin"].includes(role),
     )
   ) {
+    if (createdTransportUser) {
+      await admin.auth.admin.deleteUser(targetUser.id);
+    }
     redirect(destination(formData, "error", "staff_account"));
   }
 
@@ -188,21 +199,31 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
       admin
         .schema("core")
         .from("volunteer_onboarding_invites")
-        .select("id, auth_user_id, email_normalized, send_count")
+        .select("id, auth_user_id, email_normalized, send_count, status")
         .eq("volunteer_id", volunteer.id)
-        .in("status", ["pending", "sent"])
+        .in("status", activeInviteStatuses)
         .maybeSingle(),
       admin
         .schema("core")
         .from("volunteer_onboarding_invites")
-        .select("id, volunteer_id")
+        .select("id, volunteer_id, status")
         .eq("auth_user_id", targetUser.id)
-        .in("status", ["pending", "sent"])
+        .in("status", activeInviteStatuses)
         .maybeSingle(),
     ]);
 
   if (activeVolunteerInviteResult.error || activeAuthInviteResult.error) {
+    if (createdTransportUser) {
+      await admin.auth.admin.deleteUser(targetUser.id);
+    }
     redirect(destination(formData, "error", "invite_record"));
+  }
+
+  if (
+    activeVolunteerInviteResult.data?.status === "redeeming" ||
+    activeAuthInviteResult.data?.status === "redeeming"
+  ) {
+    redirect(destination(formData, "error", "invite_busy"));
   }
 
   if (
@@ -212,35 +233,42 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
     redirect(destination(formData, "error", "identity_conflict"));
   }
 
-  const now = new Date().toISOString();
+  const rawToken = createSecureToken();
+  const tokenHash = hashSecureToken(rawToken);
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
+  const expiresAt = new Date(
+    nowDate.getTime() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
   let inviteId: string;
   let previousSendCount = 0;
 
-  if (
-    activeVolunteerInviteResult.data &&
-    activeVolunteerInviteResult.data.auth_user_id &&
-    activeVolunteerInviteResult.data.auth_user_id !== targetUser.id
-  ) {
+  const reusableInvite =
+    activeVolunteerInviteResult.data?.auth_user_id === targetUser.id
+      ? activeVolunteerInviteResult.data
+      : null;
+
+  if (activeVolunteerInviteResult.data && !reusableInvite) {
     const revokeResult = await admin
       .schema("core")
       .from("volunteer_onboarding_invites")
       .update({
         status: "revoked",
         revoked_at: now,
+        token_hash: null,
+        redemption_nonce: null,
+        redemption_started_at: null,
         updated_at: now,
         last_error: "superseded_by_new_admin_invitation",
       })
       .eq("id", activeVolunteerInviteResult.data.id);
 
     if (revokeResult.error) {
+      if (createdTransportUser) await admin.auth.admin.deleteUser(targetUser.id);
       redirect(destination(formData, "error", "invite_record"));
     }
   }
-
-  const reusableInvite =
-    activeVolunteerInviteResult.data?.auth_user_id === targetUser.id
-      ? activeVolunteerInviteResult.data
-      : null;
 
   if (reusableInvite) {
     inviteId = reusableInvite.id;
@@ -250,10 +278,18 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
       .schema("core")
       .from("volunteer_onboarding_invites")
       .update({
+        auth_user_id: targetUser.id,
         email_normalized: email,
         status: "pending",
         invited_by: invitedBy,
+        token_hash: tokenHash,
+        expires_at: expiresAt,
+        accepted_at: null,
         revoked_at: null,
+        redemption_nonce: null,
+        redemption_started_at: null,
+        verification_attempts: 0,
+        locked_until: null,
         last_error: null,
         updated_at: now,
       })
@@ -272,11 +308,14 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
         email_normalized: email,
         status: "pending",
         invited_by: invitedBy,
+        token_hash: tokenHash,
+        expires_at: expiresAt,
       })
       .select("id, send_count")
       .single();
 
     if (insertResult.error || !insertResult.data) {
+      if (createdTransportUser) await admin.auth.admin.deleteUser(targetUser.id);
       console.error("Unable to create volunteer onboarding invitation", {
         code: insertResult.error?.code,
       });
@@ -287,10 +326,33 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
     previousSendCount = insertResult.data.send_count ?? 0;
   }
 
+  const currentAppMetadata = targetUser.app_metadata ?? {};
+  const metadataResult = await admin.auth.admin.updateUserById(targetUser.id, {
+    app_metadata: {
+      ...currentAppMetadata,
+      keluarga_transport_only: true,
+      onboarding_invite_pending: true,
+      onboarding_invite_id: inviteId,
+    },
+  });
+
+  if (metadataResult.error) {
+    await admin
+      .schema("core")
+      .from("volunteer_onboarding_invites")
+      .update({
+        status: "failed",
+        last_error: "transport_identity_lock_failed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", inviteId);
+    if (createdTransportUser) await admin.auth.admin.deleteUser(targetUser.id);
+    redirect(destination(formData, "error", "account_create"));
+  }
+
   const { appUrl } = getPublicConfig();
-  const redirectTo = new URL("/auth/confirm", appUrl);
-  redirectTo.searchParams.set("flow", "volunteer_onboarding");
-  redirectTo.searchParams.set("next", "/profile/setup");
+  const redirectTo = new URL("/onboarding/invite/open", appUrl);
+  redirectTo.searchParams.set("t", rawToken);
 
   const emailResult = await admin.auth.signInWithOtp({
     email,
@@ -311,10 +373,19 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
       .from("volunteer_onboarding_invites")
       .update({
         status: "failed",
+        token_hash: null,
         last_error: `auth_email_send_failed:${emailResult.error.code ?? "unknown"}`,
         updated_at: new Date().toISOString(),
       })
       .eq("id", inviteId);
+
+    if (createdTransportUser) {
+      await admin.auth.admin.deleteUser(targetUser.id);
+    } else if (originalAppMetadata) {
+      await admin.auth.admin.updateUserById(targetUser.id, {
+        app_metadata: originalAppMetadata,
+      });
+    }
 
     redirect(destination(formData, "error", "email_send"));
   }
@@ -333,10 +404,10 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
     .eq("id", inviteId);
 
   if (saveResult.error) {
-    console.error("Volunteer onboarding email sent but invite status failed to save", {
-      code: saveResult.error.code,
-      inviteId,
-    });
+    console.error(
+      "Volunteer onboarding email sent but invite status failed to save",
+      { code: saveResult.error.code, inviteId },
+    );
     redirect(destination(formData, "error", "invite_save"));
   }
 
