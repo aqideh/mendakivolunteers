@@ -4,6 +4,7 @@ import type { EmailOtpType, SupabaseClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 
+import { validateCurrentStaffRecovery } from "@/app/staff/forgot-password/actions";
 import {
   getRecoveryLinkType,
   isValidRecoveryPassword,
@@ -31,6 +32,9 @@ export function MagicLinkConfirmation() {
   });
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [recoveryMode, setRecoveryMode] = useState<"setup" | "reset" | null>(
+    null,
+  );
 
   useEffect(() => {
     const currentUrl = new URL(window.location.href);
@@ -51,7 +55,9 @@ export function MagicLinkConfirmation() {
       "/dashboard",
     );
     const flow = currentUrl.searchParams.get("flow");
-    const isRecovery = rawType === "recovery" || flow === "recovery";
+    const isStaffRecovery = flow === "staff_recovery";
+    const isRecovery =
+      rawType === "recovery" || flow === "recovery" || isStaffRecovery;
     const isVolunteerOnboarding = flow === "volunteer_onboarding";
     const expectedRecoveryUserId = currentUrl.searchParams.get("account");
     const isInvite = rawType === "invite";
@@ -70,6 +76,29 @@ export function MagicLinkConfirmation() {
     );
 
     let cancelled = false;
+
+    async function enterRecoveryState(message: string) {
+      if (isStaffRecovery) {
+        const eligible = await validateCurrentStaffRecovery();
+        if (!eligible) {
+          await createClient().auth.signOut({ scope: "local" });
+          setState({
+            status: "error",
+            message:
+              "This password reset link can no longer be used. Staff access may have changed; request a new reset email if you still have access.",
+          });
+          return;
+        }
+        setRecoveryMode("reset");
+      } else {
+        setRecoveryMode("setup");
+      }
+
+      setState({
+        status: "recovery",
+        message,
+      });
+    }
 
     async function completeAuthentication() {
       let authError: { message: string } | null = errorDescription
@@ -120,10 +149,9 @@ export function MagicLinkConfirmation() {
           expectedRecoveryUserId &&
           existingUser.user.id === expectedRecoveryUserId
         ) {
-          setState({
-            status: "recovery",
-            message: "Recovery session verified. Choose a new password below.",
-          });
+          await enterRecoveryState(
+            "Recovery session verified. Choose a new password below.",
+          );
           return;
         }
       }
@@ -141,10 +169,9 @@ export function MagicLinkConfirmation() {
       }
 
       if (isRecovery) {
-        setState({
-          status: "recovery",
-          message: "Recovery link verified. Choose a new password below.",
-        });
+        await enterRecoveryState(
+          "Recovery link verified. Choose a new password below.",
+        );
         return;
       }
 
@@ -274,6 +301,20 @@ export function MagicLinkConfirmation() {
     });
 
     const supabase = createClient();
+
+    if (recoveryMode === "reset") {
+      const eligible = await validateCurrentStaffRecovery();
+      if (!eligible) {
+        await supabase.auth.signOut({ scope: "local" });
+        setState({
+          status: "error",
+          message:
+            "Staff access is no longer active for this account. The password was not changed.",
+        });
+        return;
+      }
+    }
+
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
@@ -289,15 +330,17 @@ export function MagicLinkConfirmation() {
       return;
     }
 
-    const { error: activationError } = await supabase
-      .schema("core")
-      .rpc("activate_current_staff_account");
+    if (recoveryMode === "setup") {
+      const { error: activationError } = await supabase
+        .schema("core")
+        .rpc("activate_current_staff_account");
 
-    if (activationError && activationError.code !== "P0001") {
-      console.error("Staff activation after password recovery failed", {
-        code: activationError.code,
-        message: activationError.message,
-      });
+      if (activationError && activationError.code !== "P0001") {
+        console.error("Staff activation after password setup failed", {
+          code: activationError.code,
+          message: activationError.message,
+        });
+      }
     }
 
     const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
@@ -307,7 +350,11 @@ export function MagicLinkConfirmation() {
       });
     }
 
-    window.location.replace("/staff/login?password_reset=success");
+    window.location.replace(
+      recoveryMode === "reset"
+        ? "/login?password_reset=success"
+        : "/staff/login?password_reset=success",
+    );
   }
 
   const resettingPassword = state.status === "recovery" || state.status === "saving";
@@ -377,8 +424,8 @@ export function MagicLinkConfirmation() {
       {state.status === "error" ? (
         <div className="auth-verification-recovery">
           <p className="muted">
-            Return to staff sign in. If this was a password-recovery link, ask
-            Volunteer Management to send a new setup email.
+            Return to sign in and request a new password reset email if the
+            previous recovery link is no longer valid.
           </p>
           <Link className="button button-secondary" href="/staff/login">
             Return to staff sign in
