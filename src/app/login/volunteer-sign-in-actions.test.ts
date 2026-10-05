@@ -3,11 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   afterMock,
   createEmailLinkClientMock,
+  getPhaseOneAdminClientMock,
+  listUsersMock,
   signInWithOtpMock,
+  updateUserByIdMock,
+  userAccountMaybeSingleMock,
 } = vi.hoisted(() => ({
   afterMock: vi.fn(),
   createEmailLinkClientMock: vi.fn(),
+  getPhaseOneAdminClientMock: vi.fn(),
+  listUsersMock: vi.fn(),
   signInWithOtpMock: vi.fn(),
+  updateUserByIdMock: vi.fn(),
+  userAccountMaybeSingleMock: vi.fn(),
 }));
 
 const backgroundTasks: Array<() => void | Promise<void>> = [];
@@ -18,6 +26,10 @@ vi.mock("next/server", () => ({
 
 vi.mock("@/lib/supabase/email-link", () => ({
   createEmailLinkClient: createEmailLinkClientMock,
+}));
+
+vi.mock("@/lib/phaseone/admin", () => ({
+  getPhaseOneAdminClient: getPhaseOneAdminClientMock,
 }));
 
 import * as volunteerSignInActions from "@/app/login/volunteer-sign-in-actions";
@@ -50,6 +62,26 @@ describe("unified email sign-in", () => {
     });
     createEmailLinkClientMock.mockReturnValue({
       auth: { signInWithOtp: signInWithOtpMock },
+    });
+    userAccountMaybeSingleMock.mockResolvedValue({ data: null, error: null });
+    listUsersMock.mockResolvedValue({ data: { users: [] }, error: null });
+    updateUserByIdMock.mockResolvedValue({ data: { user: null }, error: null });
+    getPhaseOneAdminClientMock.mockReturnValue({
+      auth: {
+        admin: {
+          listUsers: listUsersMock,
+          updateUserById: updateUserByIdMock,
+        },
+      },
+      schema: vi.fn(() => ({
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: userAccountMaybeSingleMock,
+            })),
+          })),
+        })),
+      })),
     });
     signInWithOtpMock.mockResolvedValue({ error: null });
   });
@@ -90,6 +122,9 @@ describe("unified email sign-in", () => {
       email: "new.volunteer@example.test",
       options: {
         shouldCreateUser: true,
+        data: {
+          email_purpose: "volunteer_signup",
+        },
       },
     });
   });

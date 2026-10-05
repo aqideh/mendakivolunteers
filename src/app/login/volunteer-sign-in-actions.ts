@@ -1,6 +1,6 @@
 "use server";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const emailSchema = z.string().trim().email().max(254);
 const passwordSchema = z.string().min(1).max(128);
-const otpSchema = z.string().trim().regex(/^\d{6}$/);
+const otpSchema = z.string().trim().regex(/^\d{8}$/);
 
 type AuthStep = "email" | "staff_password" | "otp";
 
@@ -30,7 +30,7 @@ export type VolunteerOtpState = Readonly<{
 }>;
 
 const genericOtpMessage =
-  "We sent a 8-digit verification code to your email. Enter it below to continue.";
+  "We sent an 8-digit verification code to your email. Enter it below to continue.";
 
 function volunteerDestination(
   nextPath: string,
@@ -39,6 +39,105 @@ function volunteerDestination(
   return nextPath === "/dashboard" && profileIncomplete
     ? "/profile/setup"
     : nextPath;
+}
+
+async function findAuthUserByEmail(email: string): Promise<User | null> {
+  const admin = getPhaseOneAdminClient();
+  const perPage = 1000;
+
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const match =
+      data.users.find(
+        (user) => user.email?.trim().toLowerCase() === email,
+      ) ?? null;
+
+    if (match || data.users.length < perPage) return match;
+  }
+}
+
+function withoutEmailPurpose(
+  metadata: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  const cleaned = { ...(metadata ?? {}) };
+  delete cleaned.email_purpose;
+  return cleaned;
+}
+
+async function prepareVolunteerEmailPurpose(email: string) {
+  const admin = getPhaseOneAdminClient();
+  const existingUser = await findAuthUserByEmail(email);
+
+  if (!existingUser) {
+    return { email_purpose: "volunteer_signup" };
+  }
+
+  const accountResult = await admin
+    .schema("core")
+    .from("user_accounts")
+    .select("id")
+    .eq("id", existingUser.id)
+    .maybeSingle();
+
+  if (accountResult.error) {
+    console.error("Unable to classify volunteer email purpose", {
+      code: accountResult.error.code,
+    });
+    return undefined;
+  }
+
+  if (
+    accountResult.data ||
+    existingUser.app_metadata?.onboarding_invite_pending === true
+  ) {
+    return undefined;
+  }
+
+  if (existingUser.user_metadata?.email_purpose !== "volunteer_signup") {
+    const metadataResult = await admin.auth.admin.updateUserById(
+      existingUser.id,
+      {
+        user_metadata: {
+          ...(existingUser.user_metadata ?? {}),
+          email_purpose: "volunteer_signup",
+        },
+      },
+    );
+
+    if (metadataResult.error) {
+      console.error("Unable to tag pending volunteer signup email", {
+        code: metadataResult.error.code,
+        status: metadataResult.error.status,
+      });
+    }
+  }
+
+  return undefined;
+}
+
+async function cleanupVolunteerEmailPurpose(user: User) {
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      user.user_metadata ?? {},
+      "email_purpose",
+    )
+  ) {
+    return;
+  }
+
+  const admin = getPhaseOneAdminClient();
+  const cleanupResult = await admin.auth.admin.updateUserById(user.id, {
+    user_metadata: withoutEmailPurpose(user.user_metadata),
+  });
+
+  if (cleanupResult.error) {
+    console.error("Unable to clean volunteer email purpose metadata", {
+      code: cleanupResult.error.code,
+      status: cleanupResult.error.status,
+    });
+  }
 }
 
 export async function continueWithEmail(
@@ -137,10 +236,12 @@ export async function continueWithEmail(
 
     after(async () => {
       try {
+        const signupData = await prepareVolunteerEmailPurpose(email);
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
             shouldCreateUser: true,
+            ...(signupData ? { data: signupData } : {}),
           },
         });
 
@@ -239,6 +340,8 @@ export async function verifyVolunteerEmailOtp(
   if (linkResult === "email_unverified" || linkResult === "needs_review") {
     redirect("/login?error=account_setup_unavailable");
   }
+
+  await cleanupVolunteerEmailPurpose(verifyResult.data.user);
 
   let profileIncomplete = false;
   if (nextPath === "/dashboard") {
