@@ -2,7 +2,26 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getPublicConfig } from "@/lib/env";
+import { getSafeRedirectPath } from "@/lib/security/redirects";
 import type { Database } from "@/types/database";
+
+function redirectWithSession(
+  destination: URL,
+  sessionResponse: NextResponse,
+): NextResponse {
+  const redirectResponse = NextResponse.redirect(destination);
+
+  for (const cookie of sessionResponse.cookies.getAll()) {
+    redirectResponse.cookies.set(cookie);
+  }
+
+  for (const header of ["Cache-Control", "Expires", "Pragma"]) {
+    const value = sessionResponse.headers.get(header);
+    if (value) redirectResponse.headers.set(header, value);
+  }
+
+  return redirectResponse;
+}
 
 export async function updateSession(
   request: NextRequest,
@@ -68,7 +87,7 @@ export async function updateSession(
     const onboardingUrl = request.nextUrl.clone();
     onboardingUrl.pathname = "/onboarding/invite";
     onboardingUrl.search = "";
-    return NextResponse.redirect(onboardingUrl);
+    return redirectWithSession(onboardingUrl, response);
   }
 
   if (!isAuthenticated && isProtectedRoute) {
@@ -79,14 +98,18 @@ export async function updateSession(
       "next",
       `${request.nextUrl.pathname}${request.nextUrl.search}`,
     );
-    return NextResponse.redirect(loginUrl);
+    return redirectWithSession(loginUrl, response);
   }
 
   if (isAuthenticated && request.nextUrl.pathname === "/login") {
+    const requestedNext = request.nextUrl.searchParams.get("next");
     const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = "/dashboard";
-    dashboardUrl.search = "";
-    return NextResponse.redirect(dashboardUrl);
+    const destination = getSafeRedirectPath(requestedNext, "/dashboard");
+    const parsedDestination = new URL(destination, request.nextUrl.origin);
+    dashboardUrl.pathname = parsedDestination.pathname;
+    dashboardUrl.search = parsedDestination.search;
+    dashboardUrl.hash = parsedDestination.hash;
+    return redirectWithSession(dashboardUrl, response);
   }
 
   return response;
