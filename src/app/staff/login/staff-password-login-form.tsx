@@ -51,6 +51,9 @@ export function StaffPasswordLoginForm({
           maxLength={128}
           required
         />
+        <Link className="text-link" href="/staff/forgot-password">
+          Forgot password?
+        </Link>
       </div>
 
       <button
