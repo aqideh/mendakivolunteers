@@ -12,7 +12,9 @@ const initialState: StaffForgotPasswordState = {
   message: "",
 };
 
-export function StaffForgotPasswordForm() {
+export function StaffForgotPasswordForm({
+  initialEmail,
+}: Readonly<{ initialEmail: string }>) {
   const [state, formAction, pending] = useActionState(
     requestStaffPasswordReset,
     initialState,
@@ -30,6 +32,7 @@ export function StaffForgotPasswordForm() {
           autoComplete="username"
           maxLength={254}
           placeholder="name@mendaki.org.sg"
+          defaultValue={initialEmail}
           required
           disabled={pending}
         />
