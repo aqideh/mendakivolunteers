@@ -8,7 +8,17 @@ export const metadata: Metadata = {
   title: "Forgot staff password",
 };
 
-export default function StaffForgotPasswordPage() {
+type StaffForgotPasswordPageProps = Readonly<{
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}>;
+
+export default async function StaffForgotPasswordPage({
+  searchParams,
+}: StaffForgotPasswordPageProps) {
+  const parameters = await searchParams;
+  const initialEmail = Array.isArray(parameters.email)
+    ? parameters.email[0]
+    : parameters.email;
   return (
     <div className="site-shell auth-page">
       <header className="site-header auth-header">
@@ -29,7 +39,7 @@ export default function StaffForgotPasswordPage() {
             </p>
           </div>
 
-          <StaffForgotPasswordForm />
+          <StaffForgotPasswordForm initialEmail={initialEmail ?? ""} />
 
           <p className="form-help">
             <Link href="/login">Return to Keluarga sign in</Link>
