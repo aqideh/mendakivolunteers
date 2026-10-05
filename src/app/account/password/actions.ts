@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 
-import { requireActiveAccount } from "@/lib/auth/account-access";
+import { requireInternalStaff } from "@/lib/auth/staff-access";
 
 const currentPasswordSchema = z.string().min(1).max(128);
 const newPasswordSchema = z.string().min(12).max(128);
@@ -50,7 +50,7 @@ export async function changePassword(
     };
   }
 
-  const { supabase } = await requireActiveAccount("/account/password");
+  const { supabase } = await requireInternalStaff("/account/password");
   const { error } = await supabase.auth.updateUser({
     password: newPassword.data,
     current_password: currentPassword.data,
