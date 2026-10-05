@@ -136,11 +136,9 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
           placeholder="you@example.com"
           required
           disabled={pending}
-          aria-describedby="volunteer-email-help"
           value={email || submittedEmail}
           onChange={(event) => setEmail(event.target.value)}
         />
-        
       </div>
 
       {staffPasswordVisible ? (
