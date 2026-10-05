@@ -9,6 +9,7 @@ import { KeluargaRegistrationSummary } from "@/components/keluarga-registration-
 import { PortalHeader } from "@/components/portal-header";
 import { ProfilePassportTabs } from "@/components/profile-passport-tabs";
 import { VolunteerJourneySummary } from "@/components/volunteer-journey-summary";
+import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { AccountStatus } from "@/types/database";
 
@@ -55,6 +56,40 @@ type PointsSnapshot = {
 type BadgeSnapshot = {
   badges?: Array<{ award_id: string }>;
 };
+
+type HistoricalAttendance = {
+  id: string;
+  event_name: string;
+  event_date: string;
+  duration_minutes: number | null;
+  calculated_duration_minutes: number | null;
+  staff_credited_duration_minutes: number | null;
+};
+
+function normalizeActivityTitle(value: string | null): string {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function singaporeDateKey(value: string): string {
+  const parts = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(value));
+
+  const year = parts.find(({ type }) => type === "year")?.value ?? "";
+  const month = parts.find(({ type }) => type === "month")?.value ?? "";
+  const day = parts.find(({ type }) => type === "day")?.value ?? "";
+  return `${year}-${month}-${day}`;
+}
+
+function activityDateKey(title: string | null, date: string): string {
+  return `${normalizeActivityTitle(title)}|${date}`;
+}
 
 const dashboardErrors: Record<string, string> = {
   profile_review_failed: "Your profile review could not be recorded. Please try again.",
@@ -251,6 +286,7 @@ export default async function DashboardPage({
     status: string;
     event_title: string | null;
   }> = [];
+  let historicalAttendance: HistoricalAttendance[] = [];
   let pointsBalance = 0;
   let badgeCount = 0;
 
@@ -311,6 +347,43 @@ export default async function DashboardPage({
         event_title: string | null;
       }> | null) ?? [];
 
+    const admin = getPhaseOneAdminClient();
+    const legacyProfileResult = await admin
+      .from("volunteers")
+      .select("id")
+      .eq("core_volunteer_id", volunteer.id)
+      .maybeSingle();
+
+    if (legacyProfileResult.error) {
+      console.error("Unable to resolve volunteer historical profile", {
+        code: legacyProfileResult.error.code,
+        volunteerId: volunteer.id,
+      });
+      throw new Error("Volunteer history could not be loaded");
+    }
+
+    if (legacyProfileResult.data?.id) {
+      const historicalAttendanceResult = await admin
+        .from("attendance_log")
+        .select(
+          "id, event_name, event_date, duration_minutes, calculated_duration_minutes, staff_credited_duration_minutes",
+        )
+        .eq("volunteer_id", legacyProfileResult.data.id)
+        .eq("attended", true)
+        .order("event_date", { ascending: false });
+
+      if (historicalAttendanceResult.error) {
+        console.error("Unable to load historical volunteer attendance", {
+          code: historicalAttendanceResult.error.code,
+          volunteerId: volunteer.id,
+        });
+        throw new Error("Volunteer history could not be loaded");
+      }
+
+      historicalAttendance =
+        (historicalAttendanceResult.data as HistoricalAttendance[] | null) ?? [];
+    }
+
     const points = pointsResult.data as PointsSnapshot | null;
     const badges = badgesResult.data as BadgeSnapshot | null;
     pointsBalance = Number(points?.balance ?? 0);
@@ -342,6 +415,20 @@ export default async function DashboardPage({
     0,
   );
   const approvedHours = approvedMinutes / 60;
+  const contributionActivityKeys = new Set(
+    contributions.map((contribution) =>
+      activityDateKey(
+        contribution.event_title,
+        singaporeDateKey(contribution.occurred_at),
+      ),
+    ),
+  );
+  const visibleHistoricalAttendance = historicalAttendance.filter(
+    (attendance) =>
+      !contributionActivityKeys.has(
+        activityDateKey(attendance.event_name, attendance.event_date),
+      ),
+  );
   const milestones = profileMilestones({
     avatarPath,
     displayName,
@@ -717,6 +804,48 @@ export default async function DashboardPage({
                           data-state={contribution.status === "approved" ? "verified" : contribution.status}
                         >
                           {label}
+                        </span>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {visibleHistoricalAttendance.length > 0 ? (
+              <section aria-labelledby="historical-attendance-title">
+                <div className="profile-passport-section-heading">
+                  <div>
+                    <h2 id="historical-attendance-title">Earlier volunteering history</h2>
+                    <p>
+                      Historical MakLom attendance linked to your volunteer identity. These records are shown for continuity and do not automatically count toward approved KELUARGA hours or points.
+                    </p>
+                  </div>
+                </div>
+                <div className="profile-passport-history">
+                  {visibleHistoricalAttendance.map((attendance) => {
+                    const minutes = Number(
+                      attendance.staff_credited_duration_minutes ??
+                        attendance.calculated_duration_minutes ??
+                        attendance.duration_minutes ??
+                        0,
+                    );
+                    return (
+                      <article key={attendance.id}>
+                        <div>
+                          <strong>{attendance.event_name || "Volunteer activity"}</strong>
+                          <span>
+                            {minutes > 0 ? `${(minutes / 60).toFixed(1)} hours · ` : ""}
+                            {new Intl.DateTimeFormat("en-SG", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              timeZone: "Asia/Singapore",
+                            }).format(new Date(`${attendance.event_date}T12:00:00+08:00`))}
+                          </span>
+                        </div>
+                        <span className="status-pill" data-state="verified">
+                          Historical record
                         </span>
                       </article>
                     );
