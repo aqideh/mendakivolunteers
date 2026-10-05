@@ -52,7 +52,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
         <div>
           <h2>Check your email</h2>
           <p className="auth-verification-email">
-            We sent a 8-digit verification code to <strong>{state.email}</strong>.
+            We sent an 8-digit verification code to <strong>{state.email}</strong>.
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
               disabled={otpPending}
             />
             <span className="form-help">
-              Enter the eight digits from the Keluarga MENDAKI email.
+              Enter the 8-digit code from your email.
             </span>
           </div>
 
@@ -140,9 +140,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
           value={email || submittedEmail}
           onChange={(event) => setEmail(event.target.value)}
         />
-        <span className="form-help" id="volunteer-email-help">
-          Continue with the email you use for Keluarga MENDAKI.
-        </span>
+        
       </div>
 
       {staffPasswordVisible ? (
@@ -158,9 +156,6 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
             autoFocus
             disabled={pending}
           />
-          <span className="form-help">
-            MENDAKI staff use their Keluarga staff password.
-          </span>
           <Link
             className="text-link"
             href={`/staff/forgot-password?email=${encodeURIComponent(
@@ -183,7 +178,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
             : "Continuing…"
           : staffPasswordVisible
             ? "Sign in"
-            : "Continue with email"}
+            : "Continue"}
       </button>
 
       <p
