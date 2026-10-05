@@ -10,7 +10,10 @@ export function VolunteerAuthPanel({ nextPath }: VolunteerAuthPanelProps) {
   return (
     <div className="volunteer-auth-panel">
       <div className="auth-login-intro">
-        <h1 id="volunteer-auth-title">Continue to Keluarga MENDAKI</h1>
+        <h1 className="auth-login-title" id="volunteer-auth-title">
+          <span>Continue to</span>
+          <span className="auth-login-brand">Keluarga MENDAKI</span>
+        </h1>
         <p className="auth-login-copy">
           Enter your email to get started.
         </p>
