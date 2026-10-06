@@ -507,9 +507,6 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     ].filter(Boolean).join(" ").toLowerCase(),
     needsAttention: needsAttentionIds.has(volunteer.id),
   }));
-  const rosterFilterTextById = new Map(
-    rosterFilterRows.map((row) => [row.rosterId, row.filterText]),
-  );
   const counts = records.reduce<Record<AttendanceStatus, number>>(
     (totals, record) => ({ ...totals, [record.status]: totals[record.status] + 1 }),
     { pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0 },
