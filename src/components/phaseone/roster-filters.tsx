@@ -21,6 +21,11 @@ import {
 } from "react";
 
 import { matchesRosterFilter } from "@/lib/phaseone/roster-filter";
+import {
+  useRosterRow,
+  useRosterShiftState,
+} from "@/components/phaseone/roster-shift-state";
+import { rosterNeedsAttention, type RosterRowDTO } from "@/lib/phaseone/roster-row";
 
 const VIEWS = [
   { value: "all", label: "All" },
@@ -37,13 +42,6 @@ const STATUSES = [
   { value: "anomaly", label: "Attendance anomaly" },
 ];
 
-export type RosterFilterRow = {
-  rosterId: string;
-  status: string;
-  filterText: string;
-  needsAttention: boolean;
-};
-
 type VisibilityFilter = {
   status: string;
   hideWithdrawn: boolean;
@@ -55,7 +53,7 @@ const features = tableFeatures({
   filteredRowModel: createFilteredRowModel(),
 });
 
-const columns: Array<ColumnDef<typeof features, RosterFilterRow>> = [
+const columns: Array<ColumnDef<typeof features, RosterRowDTO>> = [
   {
     id: "visibility",
     accessorFn: () => true,
@@ -65,7 +63,7 @@ const columns: Array<ColumnDef<typeof features, RosterFilterRow>> = [
         {
           status: row.original.status,
           filterText: row.original.filterText,
-          needsAttention: row.original.needsAttention,
+          needsAttention: rosterNeedsAttention(row.original),
         },
         {
           query: "",
@@ -87,17 +85,35 @@ type Props = {
   initialStatus: string;
   timeslotId: string;
   shifts: { id: string; label: string }[];
-  rows: RosterFilterRow[];
   children?: ReactNode;
 };
 
 export function RosterFilterCard({
   rosterId,
+  highlighted,
+  underage,
   children,
-}: Readonly<{ rosterId: string; children: ReactNode }>) {
+}: Readonly<{
+  rosterId: string;
+  highlighted: boolean;
+  underage: boolean;
+  children: ReactNode;
+}>) {
   const visibleRosterIds = useContext(RosterVisibilityContext);
+  const row = useRosterRow(rosterId);
   if (visibleRosterIds && !visibleRosterIds.has(rosterId)) return null;
-  return children;
+
+  return (
+    <article
+      className="phaseone-attendance-card phaseone-checkin-card"
+      data-highlighted={highlighted ? "true" : undefined}
+      data-status={row.status}
+      data-underage={underage ? "true" : undefined}
+      id={`roster-${rosterId}`}
+    >
+      {children}
+    </article>
+  );
 }
 
 export function RosterFilters({
@@ -107,10 +123,10 @@ export function RosterFilters({
   initialStatus,
   timeslotId,
   shifts,
-  rows,
   children,
 }: Props) {
   const router = useRouter();
+  const { rows } = useRosterShiftState();
   const [changingShift, startShiftChange] = useTransition();
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState(initialStatus);
@@ -172,7 +188,7 @@ export function RosterFilters({
     };
     for (const row of rows) {
       totals[row.status] = (totals[row.status] ?? 0) + 1;
-      if (row.needsAttention) totals.attention = (totals.attention ?? 0) + 1;
+      if (rosterNeedsAttention(row)) totals.attention = (totals.attention ?? 0) + 1;
     }
     return totals;
   }, [rows]);
