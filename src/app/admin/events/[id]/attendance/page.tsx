@@ -14,6 +14,13 @@ import {
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
 import { RosterFilterCard, RosterFilters } from "@/components/phaseone/roster-filters";
+import {
+  RosterAttendanceCorrection,
+  RosterAttendanceMeta,
+  RosterAttendanceOperations,
+  RosterAttendanceStatusBadge,
+} from "@/components/phaseone/roster-attendance-state";
+import { RosterShiftStateProvider } from "@/components/phaseone/roster-shift-state";
 import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
 import { RosterVolunteerMatchFixer } from "@/components/phaseone/roster-volunteer-match-fixer";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
@@ -33,6 +40,7 @@ import {
 } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import type { RosterRowDTO } from "@/lib/phaseone/roster-row";
 
 export const metadata: Metadata = { title: "Roster and check-in" };
 export const dynamic = "force-dynamic";
@@ -493,20 +501,75 @@ export default async function AttendancePage({ params, searchParams }: PageProps
   const filter = validFilters.has(requestedFilter) ? requestedFilter : "all";
   const hideWithdrawn = parameter(parameters, "hideWithdrawn") === "1";
   const hideAbsent = parameter(parameters, "hideAbsent") === "1";
-  const rosterFilterRows = records.map(({ volunteer, status }) => ({
-    rosterId: volunteer.id,
-    status,
-    filterText: [
-      volunteer.volunteer_key,
-      volunteer.volunteer_name,
-      volunteer.email,
-      volunteer.mobile,
-      volunteer.age == null ? null : String(volunteer.age),
-      volunteer.tshirt_size,
-      volunteer.dietary_requirements,
-    ].filter(Boolean).join(" ").toLowerCase(),
-    needsAttention: needsAttentionIds.has(volunteer.id),
-  }));
+  const initialRosterRows: RosterRowDTO[] = records.map(
+    ({ volunteer, attendance, effectiveAttendance, status }) => {
+      const effectiveNonAttendance =
+        effectiveAttendance?.non_attendance_status === "withdrawn" ||
+        effectiveAttendance?.non_attendance_status === "absent"
+          ? effectiveAttendance.non_attendance_status
+          : null;
+      const directNonAttendance =
+        attendance?.non_attendance_status === "withdrawn" ||
+        attendance?.non_attendance_status === "absent"
+          ? attendance.non_attendance_status
+          : null;
+      const sessionId = effectiveAttendance?.session_id ?? null;
+
+      return {
+        rosterId: volunteer.id,
+        status,
+        signedInAt:
+          effectiveAttendance?.signed_in_at ?? attendance?.signed_in_at ?? null,
+        signedOutAt:
+          effectiveAttendance?.signed_out_at ?? attendance?.signed_out_at ?? null,
+        nonAttendanceStatus: effectiveNonAttendance ?? directNonAttendance,
+        nonAttendanceMarkedAt:
+          effectiveAttendance?.non_attendance_marked_at ??
+          attendance?.non_attendance_marked_at ??
+          null,
+        updatedAt:
+          effectiveAttendance?.updated_at ?? attendance?.updated_at ?? null,
+        sessionId,
+        sessionCheckedInAt:
+          effectiveAttendance?.session_checked_in_at ?? null,
+        sessionCheckedOutAt:
+          effectiveAttendance?.session_checked_out_at ?? null,
+        continuationType: effectiveAttendance?.continuation_type ?? null,
+        directSignedInAt: attendance?.signed_in_at ?? null,
+        directSignedOutAt: attendance?.signed_out_at ?? null,
+        directNonAttendanceStatus: directNonAttendance,
+        directNonAttendanceMarkedAt:
+          attendance?.non_attendance_marked_at ?? null,
+        directUpdatedAt: attendance?.updated_at ?? null,
+        linkedShifts: sessionId
+          ? (linksBySession.get(sessionId) ?? []).map((link) => ({
+              timeslotId: link.timeslot_id,
+              continuationType: link.continuation_type,
+            }))
+          : [],
+        usesInheritedSession: Boolean(
+          effectiveAttendance?.session_id &&
+          effectiveAttendance.session_checked_in_at &&
+          !attendance?.signed_in_at
+        ),
+        filterText: [
+          volunteer.volunteer_key,
+          volunteer.volunteer_name,
+          volunteer.email,
+          volunteer.mobile,
+          volunteer.age == null ? null : String(volunteer.age),
+          volunteer.tshirt_size,
+          volunteer.dietary_requirements,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase(),
+        volunteerNeedsReview:
+          volunteer.volunteer_link_status === "needs_review",
+        nextTimeslotId: nextTimeslot?.id ?? null,
+      };
+    },
+  );
   const counts = records.reduce<Record<AttendanceStatus, number>>(
     (totals, record) => ({ ...totals, [record.status]: totals[record.status] + 1 }),
     { pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0 },
@@ -598,13 +661,17 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           <>
             <section className="section panel phaseone-admin-section" aria-labelledby="attendance-roster-title">
               <h2 id="attendance-roster-title" className="km-roster-sr-only">Volunteer roster</h2>
-              <RosterFilters
+              <RosterShiftStateProvider
+                eventId={id}
+                initialRows={initialRosterRows}
                 key={selectedTimeslot.id}
+                timeslotId={selectedTimeslot.id}
+              >
+              <RosterFilters
                 initialHideWithdrawn={hideWithdrawn}
                 initialHideAbsent={hideAbsent}
                 initialQuery={rawQuery}
                 initialStatus={filter}
-                rows={rosterFilterRows}
                 timeslotId={selectedTimeslot.id}
                 shifts={activeTimeslots.map(shift => ({
                   id: shift.id,
@@ -680,16 +747,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </details>
               ) : null}
               <div className="phaseone-attendance-list" id="roster-list">
-                {records.map(({ volunteer, attendance, effectiveAttendance, status }) => {
-                  const linkedNextShift = nextShiftLink(effectiveAttendance?.session_id);
-                  const isCarryover = effectiveAttendance?.continuation_type === "scheduled";
-                  const isExtended = effectiveAttendance?.continuation_type === "extended_on_site";
+                {records.map(({ volunteer }) => {
                   const isUnder18 = volunteer.age !== null && volunteer.age < 18;
-                  const usesInheritedSession = Boolean(
-                    effectiveAttendance?.session_id
-                    && effectiveAttendance.session_checked_in_at
-                    && !attendance?.signed_in_at,
-                  );
                   const canonicalVolunteerId = volunteer.volunteer_id as string | null;
                   const privateDetails = canonicalVolunteerId
                     ? privateDetailsByVolunteer.get(canonicalVolunteerId)
@@ -720,13 +779,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                     withdrawalShiftsByPerson.get(volunteer.attendance_person_key) ?? [];
 
                   return (
-                    <RosterFilterCard key={volunteer.id} rosterId={volunteer.id}>
-                    <article
-                      className="phaseone-attendance-card phaseone-checkin-card"
-                      data-highlighted={highlightedRosterId === volunteer.id ? "true" : undefined}
-                      data-status={status}
-                      data-underage={isUnder18 ? "true" : undefined}
-                      id={`roster-${volunteer.id}`}
+                    <RosterFilterCard
+                      highlighted={highlightedRosterId === volunteer.id}
+                      key={volunteer.id}
+                      rosterId={volunteer.id}
+                      underage={isUnder18}
                     >
                       <div className="phaseone-attendance-summary">
                         <div>
@@ -746,11 +803,13 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                                 {timeslotLabel(priorNonAttendance.timeslot)} {statusLabel(priorNonAttendance.status)}
                               </span>
                             ) : null}
-                            {isCarryover ? <span className="status-pill phaseone-continuation-badge">Continuing from earlier shift</span> : null}
-                            {isExtended ? <span className="status-pill phaseone-continuation-badge">Extended from earlier shift</span> : null}
-                            {linkedNextShift && status === "signed_in" ? (
-                              <span className="status-pill phaseone-continuation-badge">Also {timeslotLabel(nextTimeslot!)}</span>
-                            ) : null}
+                            <RosterAttendanceMeta
+                              nextTimeslot={nextTimeslot ? {
+                                id: nextTimeslot.id,
+                                label: timeslotLabel(nextTimeslot),
+                              } : null}
+                              rosterId={volunteer.id}
+                            />
                           </div>
                           <h3>{volunteer.volunteer_name}</h3>
                           <details className="km-roster-contact"><summary>Contact &amp; readiness</summary><p className="muted phaseone-roster-core-meta">
@@ -762,7 +821,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             <p className="phaseone-roster-alert"><strong>Food allergy:</strong> {allergySummary}</p>
                           ) : null}
                         </div>
-                        <span className="status-pill" data-state={status}>{statusLabel(status)}</span>
+                        <RosterAttendanceStatusBadge rosterId={volunteer.id} />
                       </div>
 
                       {canonicalVolunteerId ? (
@@ -854,76 +913,17 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         </div>
                       ) : null}
 
-                      {effectiveAttendance?.signed_in_at || effectiveAttendance?.signed_out_at || status === "withdrawn" || status === "absent" ? (
-                        <dl className="phaseone-attendance-times">
-                          {effectiveAttendance?.signed_in_at ? (
-                            <div>
-                              <dt>{usesInheritedSession ? "On site since" : "Check-in"}</dt>
-                              <dd>{formatSingaporeDateTime(effectiveAttendance.signed_in_at)}</dd>
-                            </div>
-                          ) : null}
-                          {effectiveAttendance?.signed_out_at ? <div><dt>Check-out</dt><dd>{formatSingaporeDateTime(effectiveAttendance.signed_out_at)}</dd></div> : null}
-                          {(status === "withdrawn" || status === "absent") ? (
-                            <div><dt>Status marked</dt><dd>{effectiveAttendance?.non_attendance_marked_at ? formatSingaporeDateTime(effectiveAttendance.non_attendance_marked_at) : "Not recorded"}</dd></div>
-                          ) : null}
-                        </dl>
-                      ) : null}
-
-                      {status === "pending" ? (
-                        <div className="phaseone-pending-actions">
-                          <QuickAttendanceButton
-                            action="mark_sign_in"
-                            eventId={id}
-                            rosterId={volunteer.id}
-                            timeslotId={selectedTimeslot.id}
-                          />
-                          <details className="km-roster-secondary-actions">
-                            <summary>Other status ▾</summary>
-                            <div>
-                          <WithdrawalButton
-                            eventId={id}
-                            rosterId={volunteer.id}
-                            shifts={withdrawalShifts}
-                            timeslotId={selectedTimeslot.id}
-                            volunteerName={volunteer.volunteer_name}
-                          />
-                          <QuickAttendanceButton
-                            action="mark_absent"
-                            eventId={id}
-                            rosterId={volunteer.id}
-                            timeslotId={selectedTimeslot.id}
-                          />
-                            </div>
-                          </details>
-                        </div>
-                      ) : status === "signed_in" ? (
-                        <div className="phaseone-continuous-actions">
-                          <QuickAttendanceButton
-                            action="mark_sign_out"
-                            eventId={id}
-                            rosterId={volunteer.id}
-                            timeslotId={selectedTimeslot.id}
-                          />
-                          {nextTimeslot && !linkedNextShift ? (
-                            <details className="km-roster-secondary-actions"><summary>Shift options ▾</summary><div>
-                            <ExtendAttendanceButton
-                              currentTimeslotId={selectedTimeslot.id}
-                              eventId={id}
-                              rosterId={volunteer.id}
-                              targetLabel={timeslotLabel(nextTimeslot)}
-                              targetTimeslotId={nextTimeslot.id}
-                            />
-                            </div></details>
-                          ) : null}
-                        </div>
-                      ) : status === "withdrawn" || status === "absent" ? (
-                        <QuickAttendanceButton
-                          action="clear_non_attendance"
-                          eventId={id}
-                          rosterId={volunteer.id}
-                          timeslotId={selectedTimeslot.id}
-                        />
-                      ) : null}
+                      <RosterAttendanceOperations
+                        eventId={id}
+                        nextTimeslot={nextTimeslot ? {
+                          id: nextTimeslot.id,
+                          label: timeslotLabel(nextTimeslot),
+                        } : null}
+                        rosterId={volunteer.id}
+                        timeslotId={selectedTimeslot.id}
+                        volunteerName={volunteer.volunteer_name}
+                        withdrawalShifts={withdrawalShifts}
+                      />
 
                       {canManageEvent ? (
                         <div className="phaseone-staff-tools" aria-label="Volunteer staff tools">
@@ -1105,61 +1105,22 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             />
                           ) : null}
 
-                          {usesInheritedSession ? (
-                            <p className="muted phaseone-inherited-note">
-                              Attendance corrections belong to the shift where this volunteer originally checked in.
-                            </p>
-                          ) : (
-                            <details className="phaseone-attendance-edit phaseone-attendance-correct" name={staffToolsName}>
-                              <summary>Correct attendance</summary>
-                              <form action={applyAttendanceChange} className="phaseone-attendance-correction">
-                                <input name="eventId" type="hidden" value={id} />
-                                <input name="rosterId" type="hidden" value={volunteer.id} />
-                                <input name="timeslotId" type="hidden" value={selectedTimeslot.id} />
-                                <div className="form-field">
-                                  <label htmlFor={`action-${volunteer.id}`}>Correction</label>
-                                  <select
-                                    id={`action-${volunteer.id}`}
-                                    name="action"
-                                    defaultValue={attendance?.non_attendance_status ? "clear_non_attendance" : attendance?.signed_in_at ? (attendance.signed_out_at ? "clear_sign_out" : "mark_sign_out") : "mark_sign_in"}
-                                  >
-                                    <option value="mark_sign_in">Set or correct check-in</option>
-                                    <option value="mark_sign_out">Set or correct check-out</option>
-                                    <option value="clear_sign_in">Clear check-in</option>
-                                    <option value="clear_sign_out">Clear check-out</option>
-                                    <option value="mark_withdrawn">Mark withdrawn</option>
-                                    <option value="mark_absent">Mark absent</option>
-                                    <option value="clear_non_attendance">Clear withdrawn/absent status</option>
-                                  </select>
-                                </div>
-                                <div className="form-field">
-                                  <label htmlFor={`timestamp-${volunteer.id}`}>Timestamp</label>
-                                  <input id={`timestamp-${volunteer.id}`} name="timestamp" type="datetime-local" defaultValue={toSingaporeDateTimeLocal(attendance?.non_attendance_marked_at ?? attendance?.signed_out_at ?? attendance?.signed_in_at ?? null)} />
-                                  <p className="muted">Leave blank to use the current time. Singapore time.</p>
-                                </div>
-                                <div className="form-field phaseone-attendance-reason">
-                                  <label htmlFor={`reason-${volunteer.id}`}>Reason</label>
-                                  <input id={`reason-${volunteer.id}`} name="reason" minLength={5} maxLength={500} required placeholder="Required audit reason" />
-                                </div>
-                                <button className="button button-secondary" type="submit">Save correction</button>
-                              </form>
-                            </details>
-                          )}
+                          <RosterAttendanceCorrection
+                            detailsName={staffToolsName}
+                            eventId={id}
+                            rosterId={volunteer.id}
+                            timeslotId={selectedTimeslot.id}
+                          />
                           </div></details>
                         </div>
                       ) : null}
 
-                      {nextTimeslot && status === "signed_in" && !linkedNextShift ? (
-                        <p className="km-roster-attention-note">Next shift decision pending · use Shift options to extend if they are staying.</p>
-                      ) : null}
-                      {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
-
-                    </article>
                     </RosterFilterCard>
                   );
                 })}
               </div>
               </RosterFilters>
+              </RosterShiftStateProvider>
             </section>
           </>
         ) : null}
