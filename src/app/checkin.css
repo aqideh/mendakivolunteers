@@ -940,3 +940,76 @@
 .phaseone-attendance-list > [data-roster-empty-state][hidden] {
   display: none !important;
 }
+
+
+/* In-app attendance QR scanner */
+.attendance-scanner {
+  display: grid;
+  gap: 0.85rem;
+  margin: 1rem 0;
+}
+
+.attendance-scanner-video-wrap {
+  position: relative;
+  overflow: hidden;
+  min-height: 18rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: #111;
+}
+
+.attendance-scanner-video {
+  display: block;
+  width: 100%;
+  min-height: 18rem;
+  max-height: 68vh;
+  object-fit: cover;
+}
+
+.attendance-scanner-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.55rem;
+  padding: 1.5rem;
+  text-align: center;
+  color: #fff;
+  background: #171717;
+}
+
+.attendance-scanner-placeholder span {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.attendance-scanner-placeholder p,
+.attendance-scanner-help {
+  margin-bottom: 0;
+}
+
+.attendance-scanner-actions {
+  margin-top: 0;
+}
+
+.attendance-scanner-actions .button {
+  flex: 1 1 11rem;
+}
+
+.km-table-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.km-table-sort:disabled {
+  cursor: default;
+}

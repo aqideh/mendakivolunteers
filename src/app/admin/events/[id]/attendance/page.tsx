@@ -13,8 +13,7 @@ import {
 } from "@/app/admin/events/[id]/attendance/shirt-actions";
 import { addVolunteerInsight } from "@/app/admin/events/[id]/insights/actions";
 import { VolunteerReviewForm } from "@/components/phaseone/volunteer-review-form";
-import { matchesRosterFilter } from "@/lib/phaseone/roster-filter";
-import { RosterFilters } from "@/components/phaseone/roster-filters";
+import { RosterFilterCard, RosterFilters } from "@/components/phaseone/roster-filters";
 import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
 import { RosterVolunteerMatchFixer } from "@/components/phaseone/roster-volunteer-match-fixer";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
@@ -489,14 +488,15 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     .map(record => record.volunteer.id));
 
   const rawQuery = (parameter(parameters, "q") ?? "").trim();
-  const query = rawQuery.toLowerCase();
   const requestedFilter = parameter(parameters, "status") ?? "all";
   const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "withdrawn", "absent", "anomaly", "attention"]);
   const filter = validFilters.has(requestedFilter) ? requestedFilter : "all";
   const hideWithdrawn = parameter(parameters, "hideWithdrawn") === "1";
   const hideAbsent = parameter(parameters, "hideAbsent") === "1";
-  const visible = records.filter(({ volunteer, status }) => {
-    const haystack = [
+  const rosterFilterRows = records.map(({ volunteer, status }) => ({
+    rosterId: volunteer.id,
+    status,
+    filterText: [
       volunteer.volunteer_key,
       volunteer.volunteer_name,
       volunteer.email,
@@ -504,13 +504,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       volunteer.age == null ? null : String(volunteer.age),
       volunteer.tshirt_size,
       volunteer.dietary_requirements,
-    ].filter(Boolean).join(" ").toLowerCase();
-    return matchesRosterFilter(
-      { status, filterText: haystack, needsAttention: needsAttentionIds.has(volunteer.id) },
-      { query, status: filter, hideWithdrawn, hideAbsent },
-    );
-  });
-  const visibleRosterIds = new Set(visible.map(({ volunteer }) => volunteer.id));
+    ].filter(Boolean).join(" ").toLowerCase(),
+    needsAttention: needsAttentionIds.has(volunteer.id),
+  }));
   const counts = records.reduce<Record<AttendanceStatus, number>>(
     (totals, record) => ({ ...totals, [record.status]: totals[record.status] + 1 }),
     { pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0 },
@@ -607,9 +603,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 initialHideWithdrawn={hideWithdrawn}
                 initialHideAbsent={hideAbsent}
                 initialQuery={rawQuery}
-                initialShownCount={visible.length}
                 initialStatus={filter}
-                initialCounts={{ ...counts, all: records.length, attention: needsAttentionIds.size }}
+                rows={rosterFilterRows}
                 timeslotId={selectedTimeslot.id}
                 shifts={activeTimeslots.map(shift => ({
                   id: shift.id,
@@ -675,7 +670,6 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 </div>
               </details>
               ) : null}
-              </RosterFilters>
               {nextTimeslot ? (
                 <details className="km-roster-handover">
                   <summary>Shift handover · {continuingToNext.length} continuing · {needsNextShiftDecision.length} awaiting decision ▾</summary>
@@ -719,16 +713,6 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                         ? shirtIssue.volunteer_shirt_skus[0]
                         : shirtIssue.volunteer_shirt_skus)
                     : null;
-                  const rosterFilterText = [
-                    volunteer.volunteer_key,
-                    volunteer.volunteer_name,
-                    volunteer.email,
-                    volunteer.mobile,
-                    volunteer.age == null ? null : String(volunteer.age),
-                    volunteer.tshirt_size,
-                    volunteer.dietary_requirements,
-                  ].filter(Boolean).join(" ").toLowerCase();
-
                   const priorNonAttendance = priorNonAttendanceByPerson.get(
                     volunteer.attendance_person_key,
                   );
@@ -736,17 +720,13 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                     withdrawalShiftsByPerson.get(volunteer.attendance_person_key) ?? [];
 
                   return (
+                    <RosterFilterCard key={volunteer.id} rosterId={volunteer.id}>
                     <article
                       className="phaseone-attendance-card phaseone-checkin-card"
-                      data-filter-text={rosterFilterText}
                       data-highlighted={highlightedRosterId === volunteer.id ? "true" : undefined}
-                      data-roster-filterable="true"
                       data-status={status}
-                      data-needs-attention={needsAttentionIds.has(volunteer.id) ? "true" : undefined}
                       data-underage={isUnder18 ? "true" : undefined}
-                      hidden={!visibleRosterIds.has(volunteer.id)}
                       id={`roster-${volunteer.id}`}
-                      key={volunteer.id}
                     >
                       <div className="phaseone-attendance-summary">
                         <div>
@@ -1175,10 +1155,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       {status === "anomaly" ? <p className="notice notice-error">Check-out exists without a check-in timestamp.</p> : null}
 
                     </article>
+                    </RosterFilterCard>
                   );
                 })}
-                <p className="empty-state" data-roster-empty-state hidden={visible.length > 0}>No volunteers match these filters.</p>
               </div>
+              </RosterFilters>
             </section>
           </>
         ) : null}

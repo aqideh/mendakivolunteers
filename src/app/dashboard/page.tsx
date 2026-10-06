@@ -698,6 +698,15 @@ export default async function DashboardPage({
                 </div>
               </div>
               <div className="profile-passport-action-list">
+                {volunteer ? (
+                  <Link href="/attendance">
+                    <span>
+                      <strong>Scan attendance QR</strong>
+                      <small>Check in or out using the QR shown by MENDAKI staff</small>
+                    </span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                ) : null}
                 <Link href="/journey">
                   <span>
                     <strong>Event Guides</strong>

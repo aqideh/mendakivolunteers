@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import {
+  VolunteerDirectoryTable,
+  type VolunteerDirectoryRow,
+} from "@/components/admin/volunteer-directory-table";
 import { PortalHeader } from "@/components/portal-header";
 import { requireActiveAccount } from "@/lib/auth/account-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -40,14 +43,31 @@ async function requireVolunteerDataAccess() {
   }
 }
 
+function ageFromDateOfBirth(value: string | null): number | null {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  const todayParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const today = {
+    year: Number(todayParts.find(({ type }) => type === "year")?.value),
+    month: Number(todayParts.find(({ type }) => type === "month")?.value),
+    day: Number(todayParts.find(({ type }) => type === "day")?.value),
+  };
+
+  let age = today.year - year;
+  if (today.month < month || (today.month === month && today.day < day)) age -= 1;
+  return age >= 0 && age <= 120 ? age : null;
+}
+
 export default async function VolunteerDirectoryPage({ searchParams }: PageProps) {
   await requireVolunteerDataAccess();
   const parameters = await searchParams;
-  const q = (parameter(parameters, "q") ?? "").trim().toLowerCase();
-  const planningArea = parameter(parameters, "planningArea") ?? "";
-  const electoralDivision = parameter(parameters, "electoralDivision") ?? "";
-  const tshirtSize = parameter(parameters, "tshirtSize") ?? "";
-  const qualification = parameter(parameters, "qualification") ?? "";
 
   const admin = getPhaseOneAdminClient();
   const [volunteerResult, privateResult] = await Promise.all([
@@ -73,51 +93,33 @@ export default async function VolunteerDirectoryPage({ searchParams }: PageProps
     (privateResult.data ?? []).map((row) => [row.volunteer_id, row]),
   );
 
-  const records = (volunteerResult.data ?? [])
-    .map((volunteer) => ({
-      volunteer,
-      details: detailsById.get(volunteer.id),
-    }))
-    .filter(({ volunteer, details }) => {
-      const haystack = [
-        volunteer.volunteer_code,
-        volunteer.display_name,
-        volunteer.primary_email_normalized,
-        volunteer.mobile,
-        details?.postal_code,
-        details?.neighbourhood,
-        details?.planning_area,
-        details?.electoral_division,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return (
-        (!q || haystack.includes(q)) &&
-        (!planningArea || details?.planning_area === planningArea) &&
-        (!electoralDivision || details?.electoral_division === electoralDivision) &&
-        (!tshirtSize || details?.tshirt_size === tshirtSize) &&
-        (!qualification || details?.highest_qualification === qualification)
-      );
-    });
+  const rows: VolunteerDirectoryRow[] = (volunteerResult.data ?? []).map((volunteer) => {
+    const details = detailsById.get(volunteer.id);
+    return {
+      id: volunteer.id,
+      volunteerCode: volunteer.volunteer_code,
+      displayName: volunteer.display_name ?? "Volunteer",
+      email: volunteer.primary_email_normalized,
+      mobile: volunteer.mobile,
+      postalCode: details?.postal_code ?? null,
+      neighbourhood: details?.neighbourhood ?? null,
+      planningArea: details?.planning_area ?? null,
+      electoralDivision: details?.electoral_division ?? null,
+      tshirtSize: details?.tshirt_size ?? null,
+      highestQualification: details?.highest_qualification ?? null,
+      age: ageFromDateOfBirth(details?.date_of_birth ?? null),
+    };
+  });
 
   const planningAreas = Array.from(
-    new Set((privateResult.data ?? []).map((row) => row.planning_area).filter(Boolean)),
+    new Set(rows.map((row) => row.planningArea).filter((value): value is string => Boolean(value))),
   ).sort();
   const electoralDivisions = Array.from(
-    new Set((privateResult.data ?? []).map((row) => row.electoral_division).filter(Boolean)),
+    new Set(rows.map((row) => row.electoralDivision).filter((value): value is string => Boolean(value))),
   ).sort();
   const qualifications = Array.from(
-    new Set((privateResult.data ?? []).map((row) => row.highest_qualification).filter(Boolean)),
+    new Set(rows.map((row) => row.highestQualification).filter((value): value is string => Boolean(value))),
   ).sort();
-
-  const exportQuery = new URLSearchParams();
-  if (q) exportQuery.set("q", q);
-  if (planningArea) exportQuery.set("planningArea", planningArea);
-  if (electoralDivision) exportQuery.set("electoralDivision", electoralDivision);
-  if (tshirtSize) exportQuery.set("tshirtSize", tshirtSize);
-  if (qualification) exportQuery.set("qualification", qualification);
 
   return (
     <div className="site-shell">
@@ -127,122 +129,26 @@ export default async function VolunteerDirectoryPage({ searchParams }: PageProps
           <div>
             <h1>Volunteer directory</h1>
             <p className="muted">
-              Find volunteers by location and profile information.
+              Find volunteers by name, location and profile information.
             </p>
           </div>
-          <a
-            className="button button-secondary"
-            href={`/admin/volunteers/export?${exportQuery.toString()}`}
-          >
-            Export filtered CSV
-          </a>
         </div>
 
-        <form className="phaseone-admin-form" method="get">
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="volunteer-search">Search</label>
-              <input
-                id="volunteer-search"
-                name="q"
-                defaultValue={q}
-                placeholder="Name, volunteer ID, email, postal code"
-              />
-            </div>
-            <div className="form-field">
-              <label htmlFor="volunteer-planning-area">Planning area</label>
-              <select id="volunteer-planning-area" name="planningArea" defaultValue={planningArea}>
-                <option value="">All</option>
-                {planningAreas.map((value) => (
-                  <option key={value} value={value!}>{value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-field">
-              <label htmlFor="volunteer-electoral-division">GRC / SMC</label>
-              <select
-                id="volunteer-electoral-division"
-                name="electoralDivision"
-                defaultValue={electoralDivision}
-              >
-                <option value="">All</option>
-                {electoralDivisions.map((value) => (
-                  <option key={value} value={value!}>{value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-field">
-              <label htmlFor="volunteer-shirt-size">T-shirt size</label>
-              <select id="volunteer-shirt-size" name="tshirtSize" defaultValue={tshirtSize}>
-                <option value="">All</option>
-                {["S","M","L","XL","2XL","3XL","5XL","7XL"].map((value) => (
-                  <option key={value} value={value}>{value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-field">
-              <label htmlFor="volunteer-qualification">Highest qualification</label>
-              <select
-                id="volunteer-qualification"
-                name="qualification"
-                defaultValue={qualification}
-              >
-                <option value="">All</option>
-                {qualifications.map((value) => (
-                  <option key={value} value={value!}>{String(value).replaceAll("_", " ")}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="actions">
-            <button className="button button-primary" type="submit">Apply filters</button>
-            <Link className="button button-secondary" href="/admin/volunteers">Clear</Link>
-          </div>
-        </form>
-
-        <section className="section" aria-labelledby="volunteer-results-title">
-          <div className="section-header">
-            <div>
-              <h2 id="volunteer-results-title">Volunteers</h2>
-              <p className="muted">{records.length} matching records</p>
-            </div>
-          </div>
-          <div className="table-wrap">
-            <table className="content-table">
-              <thead>
-                <tr>
-                  <th>Volunteer</th>
-                  <th>Postal code</th>
-                  <th>Neighbourhood / planning area</th>
-                  <th>GRC / SMC</th>
-                  <th>Shirt</th>
-                  <th>Qualification</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.map(({ volunteer, details }) => (
-                  <tr key={volunteer.id}>
-                    <td>
-                      <strong>{volunteer.display_name ?? "Volunteer"}</strong>
-                      <br />
-                      <span className="muted">{volunteer.volunteer_code}</span>
-                    </td>
-                    <td>{details?.postal_code ?? "—"}</td>
-                    <td>
-                      {details?.neighbourhood ?? details?.planning_area ?? "Pending location verification"}
-                    </td>
-                    <td>{details?.electoral_division ?? "Pending verification"}</td>
-                    <td>{details?.tshirt_size ?? "—"}</td>
-                    <td>{details?.highest_qualification?.replaceAll("_", " ") ?? "—"}</td>
-                  </tr>
-                ))}
-                {records.length === 0 ? (
-                  <tr><td colSpan={6}>No volunteers match these filters.</td></tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <VolunteerDirectoryTable
+          initialRows={rows}
+          planningAreas={planningAreas}
+          electoralDivisions={electoralDivisions}
+          qualifications={qualifications}
+          initialFilters={{
+            query: parameter(parameters, "q") ?? "",
+            planningArea: parameter(parameters, "planningArea") ?? "",
+            electoralDivision: parameter(parameters, "electoralDivision") ?? "",
+            tshirtSize: parameter(parameters, "tshirtSize") ?? "",
+            qualification: parameter(parameters, "qualification") ?? "",
+            minAge: parameter(parameters, "minAge") ?? "",
+            maxAge: parameter(parameters, "maxAge") ?? "",
+          }}
+        />
       </main>
     </div>
   );
