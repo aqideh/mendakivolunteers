@@ -19,17 +19,15 @@ import {
   RosterAttendanceMeta,
   RosterAttendanceOperations,
   RosterAttendanceStatusBadge,
+  RosterShiftHandover,
 } from "@/components/phaseone/roster-attendance-state";
-import { RosterShiftStateProvider } from "@/components/phaseone/roster-shift-state";
+import { RosterShiftStateBoundary } from "@/components/phaseone/roster-shift-state";
 import { RosterProfileDetailsEditor } from "@/components/phaseone/roster-profile-details-editor";
 import { RosterVolunteerMatchFixer } from "@/components/phaseone/roster-volunteer-match-fixer";
 import { WalkInEditForm } from "@/components/phaseone/walk-in-edit-form";
 import {
   BulkCheckoutButton,
-  ExtendAttendanceButton,
-  QuickAttendanceButton,
   WalkInSubmitButtons,
-  WithdrawalButton,
   type WithdrawalShiftPreview,
 } from "@/components/phaseone/attendance-quick-action";
 import { PortalHeader } from "@/components/portal-header";
@@ -178,24 +176,6 @@ function timeslotTime(timeslot: Timeslot): string {
   const start = singaporeTime(timeslot.starts_at);
   const end = timeslot.ends_at ? singaporeTime(timeslot.ends_at) : null;
   return end ? `${start}–${end}` : start;
-}
-
-function toSingaporeDateTimeLocal(value: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Singapore",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(date);
-  const get = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((part) => part.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
 }
 
 async function AttendanceAudit({
@@ -470,31 +450,6 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     }
   }
 
-  function nextShiftLink(sessionId: string | null | undefined): SessionShiftLink | undefined {
-    if (!sessionId || !nextTimeslot) return undefined;
-    return (linksBySession.get(sessionId) ?? []).find((link) => link.timeslot_id === nextTimeslot.id);
-  }
-
-  const continuingToNext = nextTimeslot
-    ? records.filter(({ status, effectiveAttendance }) =>
-        status === "signed_in" && Boolean(nextShiftLink(effectiveAttendance?.session_id)),
-      )
-    : [];
-  const extendedToNext = continuingToNext.filter(({ effectiveAttendance }) =>
-    nextShiftLink(effectiveAttendance?.session_id)?.continuation_type === "extended_on_site",
-  );
-  const needsNextShiftDecision = nextTimeslot
-    ? records.filter(({ status, effectiveAttendance }) =>
-        status === "signed_in" && !nextShiftLink(effectiveAttendance?.session_id),
-      )
-    : [];
-
-  const needsAttentionIds = new Set(records
-    .filter(record => record.status === "anomaly"
-      || record.volunteer.volunteer_link_status === "needs_review"
-      || needsNextShiftDecision.some(item => item.volunteer.id === record.volunteer.id))
-    .map(record => record.volunteer.id));
-
   const rawQuery = (parameter(parameters, "q") ?? "").trim();
   const requestedFilter = parameter(parameters, "status") ?? "all";
   const validFilters = new Set(["all", "pending", "signed_in", "signed_out", "withdrawn", "absent", "anomaly", "attention"]);
@@ -570,10 +525,6 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       };
     },
   );
-  const counts = records.reduce<Record<AttendanceStatus, number>>(
-    (totals, record) => ({ ...totals, [record.status]: totals[record.status] + 1 }),
-    { pending: 0, signed_in: 0, signed_out: 0, withdrawn: 0, absent: 0, anomaly: 0 },
-  );
   const successCode = parameter(parameters, "success");
   const successMessage = successCode === "attendance_recorded"
     ? "Attendance recorded."
@@ -616,6 +567,11 @@ export default async function AttendancePage({ params, searchParams }: PageProps
     <div className="site-shell">
       <PortalHeader status="Roster / check-in" dashboard />
       <main className="page-frame phaseone-operations-page km-operations-workspace">
+        <RosterShiftStateBoundary
+          eventId={id}
+          initialRows={initialRosterRows}
+          timeslotId={selectedTimeslot?.id ?? null}
+        >
         <div className="dashboard-header phaseone-operations-header">
           <div>
             <p className="eyebrow">Staff event operations</p>
@@ -642,7 +598,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   <a href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
                   <a href="#attendance-audit">Attendance history</a>
                   {selectedTimeslot ? (
-                    <BulkCheckoutButton checkedInCount={counts.signed_in} eventId={id}
+                    <BulkCheckoutButton eventId={id}
                       timeslotId={selectedTimeslot.id}
                       shiftLabel={`${singaporeDateLabel(selectedTimeslot.starts_at)} · ${timeslotLabel(selectedTimeslot)} · ${timeslotTime(selectedTimeslot)}`} />
                   ) : null}
@@ -661,13 +617,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           <>
             <section className="section panel phaseone-admin-section" aria-labelledby="attendance-roster-title">
               <h2 id="attendance-roster-title" className="km-roster-sr-only">Volunteer roster</h2>
-              <RosterShiftStateProvider
-                eventId={id}
-                initialRows={initialRosterRows}
-                key={selectedTimeslot.id}
-                timeslotId={selectedTimeslot.id}
-              >
-              <RosterFilters
+              <RosterFilters key={selectedTimeslot.id}
                 initialHideWithdrawn={hideWithdrawn}
                 initialHideAbsent={hideAbsent}
                 initialQuery={rawQuery}
@@ -738,13 +688,13 @@ export default async function AttendancePage({ params, searchParams }: PageProps
               </details>
               ) : null}
               {nextTimeslot ? (
-                <details className="km-roster-handover">
-                  <summary>Shift handover · {continuingToNext.length} continuing · {needsNextShiftDecision.length} awaiting decision ▾</summary>
-                  <div>
-                    <p>{extendedToNext.length} extended on site. Volunteers already registered for the next shift continue automatically. Open Shift options on a volunteer to extend their attendance. Their final check-out closes the whole event-day session.</p>
-                    <Link className="text-link" href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(nextTimeslot.id)}`}>Open {timeslotLabel(nextTimeslot)} roster</Link>
-                  </div>
-                </details>
+                <RosterShiftHandover
+                  href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(nextTimeslot.id)}`}
+                  nextTimeslot={{
+                    id: nextTimeslot.id,
+                    label: timeslotLabel(nextTimeslot),
+                  }}
+                />
               ) : null}
               <div className="phaseone-attendance-list" id="roster-list">
                 {records.map(({ volunteer }) => {
@@ -1120,7 +1070,6 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                 })}
               </div>
               </RosterFilters>
-              </RosterShiftStateProvider>
             </section>
           </>
         ) : null}
@@ -1133,6 +1082,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
             </Suspense>
           </details>
         ) : null}
+        </RosterShiftStateBoundary>
       </main>
     </div>
   );
