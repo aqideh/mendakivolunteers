@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin-shell";
+import { AdminQueryProvider } from "@/components/query/admin-query-provider";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminLayout({
@@ -27,8 +28,10 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminShell email={email} roles={roles}>
-      {children}
-    </AdminShell>
+    <AdminQueryProvider>
+      <AdminShell email={email} roles={roles}>
+        {children}
+      </AdminShell>
+    </AdminQueryProvider>
   );
 }
