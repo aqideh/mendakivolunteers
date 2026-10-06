@@ -26,13 +26,13 @@ export function AttendanceQrScanner() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<QrScanner | null>(null);
-  const activeRef = useRef(false);
   const handlingRef = useRef(false);
+  const pausedByVisibilityRef = useRef(false);
   const [state, setState] = useState<"idle" | "starting" | "scanning" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
 
-  async function stopScanner() {
-    activeRef.current = false;
+  function stopScanner() {
+    pausedByVisibilityRef.current = false;
     const scanner = scannerRef.current;
     scannerRef.current = null;
     if (!scanner) return;
@@ -43,6 +43,7 @@ export function AttendanceQrScanner() {
   async function startScanner() {
     if (state === "starting" || state === "scanning" || !videoRef.current) return;
 
+    stopScanner();
     setState("starting");
     setMessage(null);
     handlingRef.current = false;
@@ -65,7 +66,7 @@ export function AttendanceQrScanner() {
 
           handlingRef.current = true;
           setMessage("QR recognised. Opening attendance…");
-          await stopScanner();
+          stopScanner();
           router.push(path);
         },
         {
@@ -79,13 +80,12 @@ export function AttendanceQrScanner() {
 
       scannerRef.current = scanner;
       await scanner.start();
-      activeRef.current = true;
       setState("scanning");
     } catch (error) {
-      await stopScanner();
+      stopScanner();
       setState("error");
       setMessage(
-        error instanceof Error && /permission|denied/i.test(error.message)
+        error instanceof Error && /permission|denied|notallowed/i.test(error.message)
           ? "Camera access was not granted. You can still scan the attendance QR using your phone's Camera app."
           : "The camera could not be started. You can still use your phone's Camera app to scan the attendance QR.",
       );
@@ -98,16 +98,17 @@ export function AttendanceQrScanner() {
       if (!scanner || handlingRef.current) return;
 
       if (document.hidden) {
-        activeRef.current = false;
+        pausedByVisibilityRef.current = true;
         scanner.stop();
         return;
       }
 
-      if (state === "scanning" && !activeRef.current) {
+      if (pausedByVisibilityRef.current) {
         try {
           await scanner.start();
-          activeRef.current = true;
+          pausedByVisibilityRef.current = false;
         } catch {
+          stopScanner();
           setState("error");
           setMessage("The camera could not be resumed. Tap Start camera to try again.");
         }
@@ -117,15 +118,9 @@ export function AttendanceQrScanner() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      const scanner = scannerRef.current;
-      scannerRef.current = null;
-      activeRef.current = false;
-      if (scanner) {
-        scanner.stop();
-        scanner.destroy();
-      }
+      stopScanner();
     };
-  }, [state]);
+  }, []);
 
   return (
     <div className="attendance-scanner">
@@ -158,10 +153,9 @@ export function AttendanceQrScanner() {
           <button
             className="button button-secondary"
             onClick={() => {
-              void stopScanner().then(() => {
-                setState("idle");
-                setMessage(null);
-              });
+              stopScanner();
+              setState("idle");
+              setMessage(null);
             }}
             type="button"
           >
