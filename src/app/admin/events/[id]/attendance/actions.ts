@@ -126,6 +126,7 @@ export type ExtendAttendanceResult =
       ok: true;
       status: "extended" | "already_scheduled";
       targetRosterId: string | null;
+      attendance: AttendanceReadModelDTO;
     }
   | { ok: false; error: string };
 
@@ -405,7 +406,7 @@ export async function recordAttendanceQuickAction(input: {
   const returnPath = attendancePath(parsed.data.eventId, parsed.data.timeslotId);
   const { userId } = await requireAttendanceOperatorForEvent(parsed.data.eventId, returnPath);
   const admin = getPhaseOneAdminClient();
-  const { data, error } = await admin.rpc("phaseone_apply_attendance_transition", {
+  const { error } = await admin.rpc("phaseone_apply_attendance_transition", {
     p_event_id: parsed.data.eventId,
     p_roster_id: parsed.data.rosterId,
     p_action: parsed.data.action,
@@ -546,12 +547,34 @@ export async function extendAttendanceToShift(input: {
     target_roster_id?: string | null;
   } | null;
 
-  revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
-  return {
-    ok: true,
-    status: result?.status === "already_scheduled" ? "already_scheduled" : "extended",
-    targetRosterId: result?.target_roster_id ?? null,
-  };
+  try {
+    const attendance = await loadAttendanceReadModel(
+      parsed.data.eventId,
+      parsed.data.sourceRosterId,
+    );
+    revalidatePath(`/admin/events/${parsed.data.eventId}/attendance`);
+    return {
+      ok: true,
+      status:
+        result?.status === "already_scheduled"
+          ? "already_scheduled"
+          : "extended",
+      targetRosterId: result?.target_roster_id ?? null,
+      attendance,
+    };
+  } catch (readError) {
+    console.error("Shift extension saved but source attendance could not be reloaded", {
+      eventId: parsed.data.eventId,
+      sourceRosterId: parsed.data.sourceRosterId,
+      targetTimeslotId: parsed.data.targetTimeslotId,
+      message: readError instanceof Error ? readError.message : String(readError),
+    });
+    return {
+      ok: false,
+      error:
+        "The shift extension was saved, but the roster could not be refreshed. Reload the roster before making another change.",
+    };
+  }
 }
 
 export async function checkoutAllCurrentParticipants(input: {
