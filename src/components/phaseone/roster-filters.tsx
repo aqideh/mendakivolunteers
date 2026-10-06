@@ -132,27 +132,27 @@ export function RosterFilters({
     if (saved && (url.searchParams.has("success") || url.searchParams.has("error"))) {
       try {
         const snapshot = JSON.parse(saved) as Record<string, unknown>;
-        if (typeof snapshot.query === "string") setQuery(snapshot.query);
-        if (
-          typeof snapshot.status === "string" &&
-          STATUSES.some((option) => option.value === snapshot.status)
-        ) {
-          setStatus(snapshot.status);
-        }
-        if (typeof snapshot.hideWithdrawn === "boolean") {
-          setHideWithdrawn(snapshot.hideWithdrawn);
-        }
-        if (typeof snapshot.hideAbsent === "boolean") {
-          setHideAbsent(snapshot.hideAbsent);
-        }
-        const y = snapshot.y;
-        if (typeof y === "number" && Number.isFinite(y)) {
-          requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (typeof snapshot.query === "string") setQuery(snapshot.query);
+          if (
+            typeof snapshot.status === "string" &&
+            STATUSES.some((option) => option.value === snapshot.status)
+          ) {
+            setStatus(snapshot.status);
+          }
+          if (typeof snapshot.hideWithdrawn === "boolean") {
+            setHideWithdrawn(snapshot.hideWithdrawn);
+          }
+          if (typeof snapshot.hideAbsent === "boolean") {
+            setHideAbsent(snapshot.hideAbsent);
+          }
+          const y = snapshot.y;
+          if (typeof y === "number" && Number.isFinite(y)) {
             requestAnimationFrame(() =>
               window.scrollTo({ top: y, behavior: "instant" }),
-            ),
-          );
-        }
+            );
+          }
+        });
       } catch {
         // Ignore invalid presentation state.
       }
@@ -222,9 +222,8 @@ export function RosterFilters({
     state: { columnFilters },
   });
 
-  const visibleRosterIds = useMemo(
-    () => new Set(table.getRowModel().rows.map((row) => row.original.rosterId)),
-    [table, table.state.columnFilters, searchedRows],
+  const visibleRosterIds = new Set(
+    table.getRowModel().rows.map((row) => row.original.rosterId),
   );
   const shownCount = visibleRosterIds.size;
 
