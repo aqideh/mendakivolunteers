@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createPortal, useFormStatus } from "react-dom";
@@ -10,6 +11,7 @@ import {
   recordAttendanceQuickAction,
   withdrawVolunteerAcrossEventShifts,
 } from "@/app/admin/events/[id]/attendance/actions";
+import { patchRosterShiftCache } from "@/components/phaseone/roster-shift-state";
 
 export type AttendanceQuickAction =
   | "mark_sign_in"
@@ -93,9 +95,7 @@ export function QuickAttendanceButton({
   timeslotId,
   action,
 }: QuickAttendanceButtonProps) {
-  const router = useRouter();
-  const [isSaving, startSaving] = useTransition();
-  const [, startRefresh] = useTransition();
+  const queryClient = useQueryClient();
   const [outcome, setOutcome] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [recordedAction, setRecordedAction] = useState<AttendanceQuickAction | null>(null);
@@ -104,52 +104,65 @@ export function QuickAttendanceButton({
   const copy = labels[action];
   const isPrimaryAction = action === "mark_sign_in" || action === "mark_sign_out";
 
-  function submit() {
-    if (isSaving || currentOutcome === "success") return;
-
-    setRecordedAction(action);
-    setOutcome("idle");
-    setMessage(null);
-    startSaving(async () => {
-      try {
-      const result = await recordAttendanceQuickAction({
+  const mutation = useMutation({
+    mutationFn: () =>
+      recordAttendanceQuickAction({
         eventId,
         rosterId,
         timeslotId,
         action,
-      });
-
+      }),
+    onSuccess: (result) => {
       if (!result.ok) {
         setOutcome("error");
         setMessage(result.error);
         return;
       }
 
+      patchRosterShiftCache(
+        queryClient,
+        eventId,
+        timeslotId,
+        result.attendance,
+      );
       setOutcome("success");
-      const timestamp = result.signedOutAt ?? result.signedInAt ?? result.updatedAt;
-      const time = timestamp ? new Intl.DateTimeFormat("en-SG", {
-        timeZone: "Asia/Singapore", hour: "2-digit", minute: "2-digit",
-      }).format(new Date(timestamp)) : null;
+      const timestamp =
+        result.attendance.signedOutAt ??
+        result.attendance.signedInAt ??
+        result.attendance.updatedAt;
+      const time = timestamp
+        ? new Intl.DateTimeFormat("en-SG", {
+            timeZone: "Asia/Singapore",
+            hour: "2-digit",
+            minute: "2-digit",
+          }).format(new Date(timestamp))
+        : null;
       setMessage(time ? `${copy.message} ${time}` : copy.message);
+    },
+    onError: () => {
+      setOutcome("error");
+      setMessage("The request could not be completed. Please try again.");
+    },
+  });
 
-      startRefresh(() => router.refresh());
-      } catch {
-        setOutcome("error");
-        setMessage("The request could not be completed. Please try again.");
-      }
-    });
+  function submit() {
+    if (mutation.isPending || currentOutcome === "success") return;
+    setRecordedAction(action);
+    setOutcome("idle");
+    setMessage(null);
+    mutation.mutate();
   }
 
   return (
     <div className="phaseone-quick-action-wrap">
       <button
-        aria-busy={isSaving}
+        aria-busy={mutation.isPending}
         className={`${isPrimaryAction ? "button button-primary" : "button button-secondary"} phaseone-checkin-action`}
-        disabled={isSaving || currentOutcome === "success"}
+        disabled={mutation.isPending || currentOutcome === "success"}
         onClick={submit}
         type="button"
       >
-        {isSaving ? <><span className="km-roster-spinner" aria-hidden="true" />{copy.pending}</> : currentOutcome === "success" ? copy.success : copy.idle}
+        {mutation.isPending ? <><span className="km-roster-spinner" aria-hidden="true" />{copy.pending}</> : currentOutcome === "success" ? copy.success : copy.idle}
       </button>
       {currentMessage ? (
         <p
@@ -171,6 +184,7 @@ export function WithdrawalButton({
   shifts,
 }: WithdrawalButtonProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isSaving, startSaving] = useTransition();
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState<"single" | "all" | null>(null);
@@ -211,11 +225,11 @@ export function WithdrawalButton({
     return parts.length > 0 ? `${parts.join("; ")}.` : "No shifts were changed.";
   }
 
-  function finishSuccess(nextMessage: string) {
+  function finishSuccess(nextMessage: string, refresh = true) {
     setOutcome("success");
     setMessage(nextMessage);
     setOpen(false);
-    window.setTimeout(() => router.refresh(), 900);
+    if (refresh) window.setTimeout(() => router.refresh(), 900);
   }
 
   function withdrawSingle() {
@@ -237,7 +251,13 @@ export function WithdrawalButton({
           setOpen(false);
           return;
         }
-        finishSuccess("Withdrawn from this shift.");
+        patchRosterShiftCache(
+          queryClient,
+          eventId,
+          timeslotId,
+          result.attendance,
+        );
+        finishSuccess("Withdrawn from this shift.", false);
       } catch {
         setOutcome("error");
         setMessage("The request could not be completed. Please try again.");
@@ -463,7 +483,7 @@ export function ExtendAttendanceButton({
   return (
     <div className="phaseone-quick-action-wrap phaseone-extension-action">
       <button
-        aria-busy={isSaving}
+        aria-busy={mutation.isPending}
         className="button button-secondary phaseone-checkin-action"
         disabled={isSaving || outcome === "success"}
         onClick={submit}
@@ -533,7 +553,7 @@ export function BulkCheckoutButton({
   return (
     <div className="phaseone-bulk-checkout">
       <button
-        aria-busy={isSaving}
+        aria-busy={mutation.isPending}
         className="button button-secondary phaseone-bulk-checkout-button"
         disabled={isSaving || checkedInCount === 0}
         onClick={submit}
