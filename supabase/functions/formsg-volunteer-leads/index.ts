@@ -207,7 +207,7 @@ Deno.serve(async (req: Request) => {
     return Response.json({ message: "Webhook is not configured" }, { status: 503 });
   }
 
-  let payload: any;
+  // FormSG SDK payload is runtime-validated after JSON parsing.\n  // eslint-disable-next-line @typescript-eslint/no-explicit-any\n  let payload: any;
   try {
     payload = await req.json();
   } catch {
