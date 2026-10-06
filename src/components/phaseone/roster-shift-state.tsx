@@ -53,6 +53,29 @@ export function patchRosterShiftCache(
   );
 }
 
+export function RosterShiftStateBoundary({
+  eventId,
+  timeslotId,
+  initialRows,
+  children,
+}: Readonly<{
+  eventId: string;
+  timeslotId: string | null;
+  initialRows: RosterRowDTO[];
+  children: ReactNode;
+}>) {
+  if (!timeslotId) return children;
+  return (
+    <RosterShiftStateProvider
+      eventId={eventId}
+      timeslotId={timeslotId}
+      initialRows={initialRows}
+    >
+      {children}
+    </RosterShiftStateProvider>
+  );
+}
+
 export function RosterShiftStateProvider({
   eventId,
   timeslotId,
