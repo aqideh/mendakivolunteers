@@ -172,7 +172,7 @@ export function RosterFilters({
     };
     for (const row of rows) {
       totals[row.status] = (totals[row.status] ?? 0) + 1;
-      if (row.needsAttention) totals.attention += 1;
+      if (row.needsAttention) totals.attention = (totals.attention ?? 0) + 1;
     }
     return totals;
   }, [rows]);
