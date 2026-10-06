@@ -442,9 +442,8 @@ export function ExtendAttendanceButton({
   targetTimeslotId,
   targetLabel,
 }: ExtendAttendanceButtonProps) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [isSaving, startSaving] = useTransition();
-  const [, startRefresh] = useTransition();
   const [outcome, setOutcome] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
 
@@ -468,13 +467,18 @@ export function ExtendAttendanceButton({
         return;
       }
 
+      patchRosterShiftCache(
+        queryClient,
+        eventId,
+        currentTimeslotId,
+        result.attendance,
+      );
       setOutcome("success");
       setMessage(
         result.status === "already_scheduled"
           ? `Already scheduled for ${targetLabel}. Continuous attendance is active.`
           : `Extended into ${targetLabel}. No second check-in is needed.`,
       );
-      startRefresh(() => router.refresh());
       } catch {
         setOutcome("error");
         setMessage("The request could not be completed. Please try again.");
