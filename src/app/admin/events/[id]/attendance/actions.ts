@@ -9,6 +9,12 @@ import {
   requireEventManager,
 } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import {
+  attendanceStatusFor,
+  type AttendanceReadModelDTO,
+  type ContinuationType,
+  type NonAttendanceStatus,
+} from "@/lib/phaseone/roster-row";
 
 const attendanceActionSchema = z.object({
   eventId: z.string().uuid(),
@@ -87,16 +93,12 @@ const walkInSchema = z.object({
 });
 
 type QuickAttendanceAction = z.infer<typeof quickAttendanceActionSchema>;
-type NonAttendanceStatus = "withdrawn" | "absent";
 
 export type QuickAttendanceResult =
   | {
       ok: true;
       action: QuickAttendanceAction;
-      signedInAt: string | null;
-      signedOutAt: string | null;
-      nonAttendanceStatus: NonAttendanceStatus | null;
-      updatedAt: string | null;
+      attendance: AttendanceReadModelDTO;
     }
   | { ok: false; error: string };
 
@@ -147,6 +149,95 @@ function attendancePath(eventId: string, timeslotId?: string) {
 function appendParameter(path: string, key: string, value: string): string {
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}${key}=${encode(value)}`;
+}
+
+
+async function loadAttendanceReadModel(
+  eventId: string,
+  rosterId: string,
+): Promise<AttendanceReadModelDTO> {
+  const admin = getPhaseOneAdminClient();
+  const [directResult, effectiveResult] = await Promise.all([
+    admin
+      .from("phaseone_attendance")
+      .select("roster_id, signed_in_at, signed_out_at, non_attendance_status, non_attendance_marked_at, updated_at")
+      .eq("event_id", eventId)
+      .eq("roster_id", rosterId)
+      .maybeSingle(),
+    admin
+      .from("phaseone_attendance_effective")
+      .select("roster_id, signed_in_at, signed_out_at, non_attendance_status, non_attendance_marked_at, updated_at, session_id, session_checked_in_at, session_checked_out_at, continuation_type")
+      .eq("event_id", eventId)
+      .eq("roster_id", rosterId)
+      .maybeSingle(),
+  ]);
+
+  if (directResult.error || effectiveResult.error) {
+    throw new Error("Attendance read model could not be loaded.");
+  }
+
+  const direct = directResult.data;
+  const effective = effectiveResult.data;
+  const sessionId = effective?.session_id ?? null;
+  const linksResult = sessionId
+    ? await admin
+        .from("phaseone_attendance_session_shifts")
+        .select("timeslot_id, continuation_type")
+        .eq("event_id", eventId)
+        .eq("session_id", sessionId)
+    : { data: [], error: null };
+
+  if (linksResult.error) {
+    throw new Error("Attendance session links could not be loaded.");
+  }
+
+  const signedInAt = effective?.signed_in_at ?? direct?.signed_in_at ?? null;
+  const signedOutAt = effective?.signed_out_at ?? direct?.signed_out_at ?? null;
+  const nonAttendanceStatus =
+    effective?.non_attendance_status === "withdrawn" ||
+    effective?.non_attendance_status === "absent"
+      ? effective.non_attendance_status
+      : direct?.non_attendance_status === "withdrawn" ||
+          direct?.non_attendance_status === "absent"
+        ? direct.non_attendance_status
+        : null;
+
+  return {
+    rosterId,
+    status: attendanceStatusFor(signedInAt, signedOutAt, nonAttendanceStatus),
+    signedInAt,
+    signedOutAt,
+    nonAttendanceStatus,
+    nonAttendanceMarkedAt:
+      effective?.non_attendance_marked_at ??
+      direct?.non_attendance_marked_at ??
+      null,
+    updatedAt: effective?.updated_at ?? direct?.updated_at ?? null,
+    sessionId,
+    sessionCheckedInAt: effective?.session_checked_in_at ?? null,
+    sessionCheckedOutAt: effective?.session_checked_out_at ?? null,
+    continuationType:
+      (effective?.continuation_type as ContinuationType | null | undefined) ??
+      null,
+    directSignedInAt: direct?.signed_in_at ?? null,
+    directSignedOutAt: direct?.signed_out_at ?? null,
+    directNonAttendanceStatus:
+      direct?.non_attendance_status === "withdrawn" ||
+      direct?.non_attendance_status === "absent"
+        ? direct.non_attendance_status
+        : null,
+    directNonAttendanceMarkedAt: direct?.non_attendance_marked_at ?? null,
+    directUpdatedAt: direct?.updated_at ?? null,
+    linkedShifts: (linksResult.data ?? []).map((link) => ({
+      timeslotId: link.timeslot_id,
+      continuationType: link.continuation_type as ContinuationType,
+    })),
+    usesInheritedSession: Boolean(
+      effective?.session_id &&
+      effective?.session_checked_in_at &&
+      !direct?.signed_in_at
+    ),
+  };
 }
 
 export async function addWalkInVolunteer(formData: FormData) {
@@ -333,21 +424,29 @@ export async function recordAttendanceQuickAction(input: {
     return { ok: false, error: error.message || "Attendance could not be recorded." };
   }
 
-  const attendance = data as {
-    signed_in_at?: string | null;
-    signed_out_at?: string | null;
-    non_attendance_status?: NonAttendanceStatus | null;
-    updated_at?: string | null;
-  } | null;
+  try {
+    const attendance = await loadAttendanceReadModel(
+      parsed.data.eventId,
+      parsed.data.rosterId,
+    );
 
-  return {
-    ok: true,
-    action: parsed.data.action,
-    signedInAt: attendance?.signed_in_at ?? null,
-    signedOutAt: attendance?.signed_out_at ?? null,
-    nonAttendanceStatus: attendance?.non_attendance_status ?? null,
-    updatedAt: attendance?.updated_at ?? null,
-  };
+    return {
+      ok: true,
+      action: parsed.data.action,
+      attendance,
+    };
+  } catch (readError) {
+    console.error("Attendance changed but refreshed row could not be loaded", {
+      eventId: parsed.data.eventId,
+      rosterId: parsed.data.rosterId,
+      action: parsed.data.action,
+      message: readError instanceof Error ? readError.message : String(readError),
+    });
+    return {
+      ok: false,
+      error: "Attendance was changed, but the roster could not be refreshed. Reload the roster before making another change.",
+    };
+  }
 }
 
 export async function withdrawVolunteerAcrossEventShifts(input: {
