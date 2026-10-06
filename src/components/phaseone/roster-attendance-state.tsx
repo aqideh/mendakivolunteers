@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   applyAttendanceChange,
 } from "@/app/admin/events/[id]/attendance/actions";
@@ -23,6 +25,47 @@ type NextTimeslot = {
   id: string;
   label: string;
 } | null;
+
+export function RosterShiftHandover({
+  nextTimeslot,
+  href,
+}: Readonly<{
+  nextTimeslot: { id: string; label: string };
+  href: string;
+}>) {
+  const { rows } = useRosterShiftState();
+  const continuing = rows.filter(
+    (row) => row.status === "signed_in" && linkedShiftFor(row, nextTimeslot.id),
+  );
+  const extended = continuing.filter(
+    (row) =>
+      linkedShiftFor(row, nextTimeslot.id)?.continuationType ===
+      "extended_on_site",
+  );
+  const awaiting = rows.filter(
+    (row) => row.status === "signed_in" && !linkedShiftFor(row, nextTimeslot.id),
+  );
+
+  return (
+    <details className="km-roster-handover">
+      <summary>
+        Shift handover · {continuing.length} continuing · {awaiting.length} awaiting
+        decision ▾
+      </summary>
+      <div>
+        <p>
+          {extended.length} extended on site. Volunteers already registered for the
+          next shift continue automatically. Open Shift options on a volunteer to
+          extend their attendance. Their final check-out closes the whole event-day
+          session.
+        </p>
+        <Link className="text-link" href={href}>
+          Open {nextTimeslot.label} roster
+        </Link>
+      </div>
+    </details>
+  );
+}
 
 export function RosterAttendanceMeta({
   rosterId,
