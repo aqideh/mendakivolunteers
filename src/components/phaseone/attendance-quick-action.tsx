@@ -483,7 +483,7 @@ export function ExtendAttendanceButton({
   return (
     <div className="phaseone-quick-action-wrap phaseone-extension-action">
       <button
-        aria-busy={mutation.isPending}
+        aria-busy={isSaving}
         className="button button-secondary phaseone-checkin-action"
         disabled={isSaving || outcome === "success"}
         onClick={submit}
@@ -553,7 +553,7 @@ export function BulkCheckoutButton({
   return (
     <div className="phaseone-bulk-checkout">
       <button
-        aria-busy={mutation.isPending}
+        aria-busy={isSaving}
         className="button button-secondary phaseone-bulk-checkout-button"
         disabled={isSaving || checkedInCount === 0}
         onClick={submit}
