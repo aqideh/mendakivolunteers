@@ -11,7 +11,10 @@ import {
   recordAttendanceQuickAction,
   withdrawVolunteerAcrossEventShifts,
 } from "@/app/admin/events/[id]/attendance/actions";
-import { patchRosterShiftCache } from "@/components/phaseone/roster-shift-state";
+import {
+  patchRosterShiftCache,
+  useRosterShiftState,
+} from "@/components/phaseone/roster-shift-state";
 
 export type AttendanceQuickAction =
   | "mark_sign_in"
@@ -44,7 +47,6 @@ type WithdrawalButtonProps = {
 type BulkCheckoutButtonProps = {
   eventId: string;
   timeslotId: string;
-  checkedInCount: number;
   shiftLabel?: string;
 };
 
@@ -506,10 +508,11 @@ export function ExtendAttendanceButton({
 export function BulkCheckoutButton({
   eventId,
   timeslotId,
-  checkedInCount,
   shiftLabel,
 }: BulkCheckoutButtonProps) {
   const router = useRouter();
+  const { rows } = useRosterShiftState();
+  const checkedInCount = rows.filter((row) => row.status === "signed_in").length;
   const [isSaving, startSaving] = useTransition();
   const [, startRefresh] = useTransition();
   const [outcome, setOutcome] = useState<"idle" | "success" | "error">("idle");
