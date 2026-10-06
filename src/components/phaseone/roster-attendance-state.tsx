@@ -11,7 +11,7 @@ import {
   WithdrawalButton,
   type WithdrawalShiftPreview,
 } from "@/components/phaseone/attendance-quick-action";
-import { useRosterRow } from "@/components/phaseone/roster-shift-state";
+import { useRosterRow, useRosterShiftState } from "@/components/phaseone/roster-shift-state";
 import {
   attendanceStatusLabel,
   linkedShiftFor,
