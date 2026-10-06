@@ -322,10 +322,27 @@ export function MagicLinkConfirmation() {
         code: error.code,
         status: error.status,
       });
+
+      let message =
+        "We couldn't update your password. Try again. If the problem continues, request a new password reset email.";
+
+      if (error.code === "same_password") {
+        message =
+          "Your new password must be different from your current password.";
+      } else if (error.code === "weak_password") {
+        message = recoveryPasswordRequirements;
+      } else if (
+        error.status === 401 ||
+        error.status === 403 ||
+        error.code === "session_not_found"
+      ) {
+        message =
+          "This password reset session has expired or is no longer valid. Request a new password reset email.";
+      }
+
       setState({
         status: "recovery",
-        message:
-          "The password could not be updated. The recovery link may have expired; request a new one and try again.",
+        message,
       });
       return;
     }
