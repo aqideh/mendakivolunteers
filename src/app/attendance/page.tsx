@@ -24,7 +24,7 @@ export default function AttendanceScannerPage() {
           <AttendanceQrScanner />
 
           <p className="muted attendance-scanner-help">
-            You can also use your phone's normal Camera app. If you are asked to sign in,
+            You can also use your phone&apos;s normal Camera app. If you are asked to sign in,
             Keluarga will return you to the attendance confirmation afterwards.
           </p>
 
