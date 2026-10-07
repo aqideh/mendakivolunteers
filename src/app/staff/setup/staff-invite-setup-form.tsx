@@ -53,7 +53,9 @@ export function StaffInviteSetupForm() {
       setState({
         status: "error",
         message:
-          "The password could not be saved. Check the password requirements and try again.",
+          passwordError.code === "weak_password"
+            ? recoveryPasswordRequirements
+            : "The password could not be saved. Check the password requirements and try again.",
       });
       return;
     }
@@ -91,7 +93,13 @@ export function StaffInviteSetupForm() {
           minLength={12}
           maxLength={128}
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            if (state.status === "error") {
+              setState({ status: "idle", message: "" });
+            }
+          }}
+          aria-invalid={state.status === "error"}
           disabled={state.status === "saving"}
           required
         />
@@ -108,11 +116,28 @@ export function StaffInviteSetupForm() {
           minLength={12}
           maxLength={128}
           value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
+          onChange={(event) => {
+            setConfirmPassword(event.target.value);
+            if (state.status === "error") {
+              setState({ status: "idle", message: "" });
+            }
+          }}
+          aria-invalid={state.status === "error"}
           disabled={state.status === "saving"}
           required
         />
       </div>
+
+      {state.message ? (
+        <p
+          className="form-message"
+          data-status={state.status === "error" ? "error" : "idle"}
+          role={state.status === "error" ? "alert" : undefined}
+          aria-live="polite"
+        >
+          {state.message}
+        </p>
+      ) : null}
 
       <button
         className="button button-primary"
@@ -121,14 +146,6 @@ export function StaffInviteSetupForm() {
       >
         {state.status === "saving" ? "Finishing setup..." : "Finish setup"}
       </button>
-
-      <p
-        className="form-message"
-        data-status={state.status === "error" ? "error" : "idle"}
-        aria-live="polite"
-      >
-        {state.message}
-      </p>
 
       <p className="form-help">
         Already finished setup? <Link href="/staff/login">Return to staff sign in</Link>.

@@ -1,7 +1,7 @@
 export const recoveryPasswordRequirements =
-  "Use 12 to 128 characters with at least one uppercase letter, one lowercase letter, and one number.";
+  "Use 12 to 128 characters with at least one uppercase letter, one lowercase letter, one number, and one symbol (for example !, @, #, $, % or &).";
 
-const recoveryPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,128}$/;
+const recoveryPasswordSymbols = "!@#$%^&*()_+-=[]{};'\\:\"|<>?,./\`~";
 
 export function getRecoveryLinkType(
   queryType: string | null,
@@ -11,5 +11,12 @@ export function getRecoveryLinkType(
 }
 
 export function isValidRecoveryPassword(password: string): boolean {
-  return recoveryPasswordPattern.test(password);
+  return (
+    password.length >= 12 &&
+    password.length <= 128 &&
+    /[a-z]/.test(password) &&
+    /[A-Z]/.test(password) &&
+    /\d/.test(password) &&
+    [...password].some((character) => recoveryPasswordSymbols.includes(character))
+  );
 }
