@@ -146,7 +146,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
   const candidateRows = candidatesResult.data ?? [];
 
   return (
-    <main className="page-frame">
+    <div className="admin-page-frame page-frame">
       <div className="dashboard-header">
         <div>
           <h1>Volunteer reconciliation</h1>
@@ -355,6 +355,6 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
           {cases.length === 0 ? <p>No temporary volunteer accounts require review.</p> : null}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
