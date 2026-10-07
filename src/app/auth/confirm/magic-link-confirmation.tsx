@@ -130,6 +130,15 @@ export function MagicLinkConfirmation() {
         authError = { message: "No authentication credentials were supplied." };
       }
 
+      // Invite verification may trigger auth-state/cookie updates that cause this
+      // component's effect to clean up before the next render. Once Supabase has
+      // established the session, complete the invite navigation immediately so a
+      // transient cleanup cannot strand the user on the verification screen.
+      if (!authError && isInvite) {
+        window.location.replace(resolvedNextPath);
+        return;
+      }
+
       if (cancelled) {
         return;
       }
@@ -172,11 +181,6 @@ export function MagicLinkConfirmation() {
         await enterRecoveryState(
           "Recovery link verified. Choose a new password below.",
         );
-        return;
-      }
-
-      if (isInvite) {
-        window.location.replace(resolvedNextPath);
         return;
       }
 
@@ -269,7 +273,17 @@ export function MagicLinkConfirmation() {
       window.location.replace(resolvedNextPath);
     }
 
-    void completeAuthentication();
+    void completeAuthentication().catch((error: unknown) => {
+      if (cancelled) return;
+      console.error("Secure-link confirmation crashed", {
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+      setState({
+        status: "error",
+        message:
+          "This secure link could not be completed. Return to sign in and request a new link.",
+      });
+    });
 
     return () => {
       cancelled = true;
