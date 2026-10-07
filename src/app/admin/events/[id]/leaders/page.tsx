@@ -6,7 +6,6 @@ import {
   assignVolunteerLeader,
   removeVolunteerLeader,
 } from "@/app/admin/events/[id]/leaders/actions";
-import { PortalHeader } from "@/components/portal-header";
 import { requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import type { AccountStatus } from "@/types/database";
@@ -111,9 +110,8 @@ export default async function EventVolunteerLeadersPage({
   const error = parameter(query, "error");
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Volunteer Leaders" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Event operations</p>
@@ -220,7 +218,7 @@ export default async function EventVolunteerLeadersPage({
             </div>
           )}
         </section>
-      </main>
+      </div>
     </div>
   );
 }
