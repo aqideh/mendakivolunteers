@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requireProgrammeManager } from "@/lib/auth/event-access";
 import { createQuickEvent } from "./actions";
 
@@ -25,9 +24,8 @@ export default async function QuickEventPage({ searchParams }: PageProps) {
   const error = parameter(params, "error");
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Quick Event Operations" dashboard />
-      <main className="page-frame narrow-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame narrow-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Manual / last-minute event</p>
@@ -116,7 +114,7 @@ export default async function QuickEventPage({ searchParams }: PageProps) {
             Create event & upload roster
           </button>
         </form>
-      </main>
+      </div>
     </div>
   );
 }
