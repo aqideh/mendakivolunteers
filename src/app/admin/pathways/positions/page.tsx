@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requirePathwayManager } from "@/lib/auth/pathway-access";
 import { getPublishedPathwayMap } from "@/lib/pathways/data";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -115,9 +114,8 @@ export default async function PathwayPositionsPage({ searchParams }: PageProps) 
     });
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Pathway positions" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Volunteer development</p>
@@ -313,7 +311,7 @@ export default async function PathwayPositionsPage({ searchParams }: PageProps) 
             );
           })}
         </section>
-      </main>
+      </div>
     </div>
   );
 }
