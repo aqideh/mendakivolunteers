@@ -430,7 +430,7 @@ export default async function AdminPage() {
     unpublishedGuides.length;
 
   return (
-    <main className={`page-frame ${styles.page}`}>
+    <div className={`admin-page-frame page-frame ${styles.page}`}>
       <header className={styles.header}>
         <div>
           <h1>Admin dashboard</h1>
@@ -674,6 +674,6 @@ export default async function AdminPage() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }
