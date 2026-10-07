@@ -307,12 +307,13 @@
   }
 
   .sidebar {
-    position: sticky;
+    position: static;
+    top: auto;
     z-index: 50;
     height: auto;
     border-right: 0;
     border-bottom: 1px solid #d7dad6;
-    padding: 0.55rem;
+    padding: 0.5rem 0.55rem;
   }
 
   .brand {
@@ -334,7 +335,9 @@
     display: flex;
     gap: 0.35rem;
     overflow-x: auto;
-    padding-bottom: 0.15rem;
+    padding: 0 0.1rem 0.15rem;
+    scroll-padding-inline: 0.1rem;
+    scroll-snap-type: x proximity;
     scrollbar-width: none;
   }
 
@@ -361,9 +364,10 @@
 
   .navItem {
     grid-template-columns: auto auto;
-    min-height: 2.25rem;
+    min-height: 2.2rem;
     border-radius: 999px;
     padding: 0.3rem 0.65rem 0.3rem 0.35rem;
+    scroll-snap-align: start;
     white-space: nowrap;
   }
 

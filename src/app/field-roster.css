@@ -1766,3 +1766,287 @@
     transition: none;
   }
 }
+
+
+/* 2026-10-07: mobile roster alignment hotfix */
+@media (max-width: 700px) {
+  .km-operations-workspace {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .km-operations-workspace .phaseone-admin-section {
+    border-radius: 0;
+  }
+
+  .km-roster-toolbar {
+    padding: 0.45rem 0.55rem 0.5rem;
+  }
+
+  .km-roster-shift-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.4rem;
+  }
+
+  .km-roster-shift {
+    display: grid;
+    min-width: 0;
+    gap: 0.18rem;
+  }
+
+  .km-roster-shift select {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.25rem;
+    padding-block: 0.35rem;
+    font-size: 0.82rem;
+  }
+
+  .km-roster-count {
+    align-self: center;
+    padding-bottom: 0.1rem;
+    font-size: 0.65rem;
+  }
+
+  .km-roster-views {
+    flex-wrap: nowrap;
+    gap: 0.12rem;
+    overflow-x: auto;
+    padding: 0.3rem 0;
+  }
+
+  .km-roster-view {
+    min-height: 1.95rem;
+    flex: 0 0 auto;
+    padding: 0.25rem 0.42rem;
+    border-radius: 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  .km-roster-search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+
+  .km-roster-search {
+    min-width: 0;
+    flex: none;
+  }
+
+  .km-roster-search input {
+    min-height: 2.35rem;
+  }
+
+  .km-roster-filter-menu {
+    position: relative;
+  }
+
+  .km-roster-filter-menu > summary {
+    min-width: 4.4rem;
+    min-height: 2.35rem;
+    height: 100%;
+    padding-inline: 0.6rem;
+  }
+
+  .km-operations-workspace .phaseone-walk-in {
+    display: grid;
+    justify-items: end;
+    width: 100%;
+    padding: 0.42rem 0.55rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .km-operations-workspace .phaseone-walk-in-summary {
+    width: auto;
+    min-height: 2.1rem;
+    border-radius: 999px;
+    padding: 0.32rem 0.72rem;
+  }
+
+  .km-operations-workspace .phaseone-walk-in[open] {
+    justify-items: stretch;
+  }
+
+  .km-operations-workspace .phaseone-walk-in[open] > summary {
+    width: auto;
+    justify-self: end;
+  }
+
+  .km-operations-workspace .phaseone-walk-in-body {
+    width: 100%;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    min-height: 0;
+    align-items: center;
+    gap: 0.28rem 0.5rem;
+    padding: 0.62rem 0.6rem;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-attendance-summary {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.42rem;
+  }
+
+  .km-operations-workspace .phaseone-attendance-summary > div {
+    gap: 0.06rem;
+  }
+
+  .km-operations-workspace .phaseone-attendance-summary h3 {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.15;
+  }
+
+  .km-operations-workspace .phaseone-roster-meta {
+    min-height: 0;
+    gap: 0.2rem;
+  }
+
+  .km-operations-workspace .phaseone-roster-meta .record-kicker {
+    font-size: 0.62rem;
+    line-height: 1.1;
+  }
+
+  .km-operations-workspace .phaseone-attendance-summary > .status-pill {
+    min-height: 1.5rem;
+    align-self: start;
+    padding: 0.2rem 0.42rem;
+    font-size: 0.62rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-shirt-status {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: center;
+    margin: 0;
+  }
+
+  .km-operations-workspace .phaseone-shirt-disclosure,
+  .km-operations-workspace .phaseone-shirt-chip {
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .km-operations-workspace .phaseone-shirt-status > .phaseone-shirt-chip,
+  .km-operations-workspace .phaseone-shirt-disclosure:not([open]) > .phaseone-shirt-chip {
+    min-height: 1.7rem;
+    padding: 0.2rem 0.48rem;
+    font-size: 0.64rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-pending-actions,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-continuous-actions,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-quick-action-wrap {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    align-self: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.28rem;
+    margin: 0;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card .phaseone-checkin-action {
+    min-width: 5.5rem;
+    min-height: 2rem;
+    width: auto;
+    padding: 0.3rem 0.52rem;
+    border-radius: 0.58rem;
+    font-size: 0.7rem;
+    line-height: 1.1;
+  }
+
+  .km-roster-secondary-actions > summary {
+    min-width: 2rem;
+    min-height: 2rem !important;
+    padding: 0.25rem 0.38rem;
+    border-radius: 0.52rem;
+  }
+
+  .km-operations-workspace .phaseone-staff-tools {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: flex;
+    width: 100%;
+    min-height: 1.55rem;
+    justify-content: flex-end;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+  }
+
+  .km-operations-workspace .phaseone-staff-tools > details:not(.km-roster-more-actions) {
+    display: none;
+  }
+
+  .km-operations-workspace .km-roster-more-actions {
+    width: auto;
+    margin: 0;
+  }
+
+  .km-operations-workspace .km-roster-more-actions > summary {
+    min-height: 1.5rem;
+    padding: 0.1rem 0;
+    color: var(--muted);
+    background: transparent;
+    font-size: 0.63rem;
+    line-height: 1;
+  }
+
+  .km-operations-workspace .km-roster-more-actions[open] {
+    width: 100%;
+    padding: 0.45rem;
+  }
+
+  .km-operations-workspace .km-roster-more-actions[open] > summary {
+    padding-bottom: 0.35rem;
+  }
+
+  .km-operations-workspace .km-roster-more-actions > div {
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.45rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .km-roster-search {
+    flex-basis: auto;
+  }
+
+  .km-roster-filter-menu {
+    position: relative;
+  }
+
+  .km-roster-filter-panel {
+    left: auto;
+    right: 0;
+    width: min(18rem, calc(100vw - 1.2rem));
+  }
+
+  .km-operations-workspace .phaseone-attendance-summary h3 {
+    font-size: 0.88rem;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card .phaseone-checkin-action {
+    min-width: 5.1rem;
+    padding-inline: 0.42rem;
+  }
+}
