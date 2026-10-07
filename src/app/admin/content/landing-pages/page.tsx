@@ -5,7 +5,6 @@ import {
   LandingPagePhotoManager,
   type LandingPagePhotoItem,
 } from "@/components/landing-page-photo-manager";
-import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
 import { getLandingPageMedia } from "@/lib/content/landing-page-media";
 
@@ -28,9 +27,8 @@ export default async function LandingPagePhotosAdminPage() {
   }));
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Landing page photos" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <Link className="text-link" href="/admin">← Admin</Link>
@@ -49,7 +47,7 @@ export default async function LandingPagePhotosAdminPage() {
             original resolution. The page crops them visually to fill the hero area.
           </p>
         </section>
-      </main>
+      </div>
     </div>
   );
 }
