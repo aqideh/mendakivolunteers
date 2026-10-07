@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 
 import { updateNewsPost } from "@/app/admin/content/actions";
 import { NewsForm } from "@/app/admin/content/news-form";
-import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
 import { isUuid } from "@/lib/content/identifiers";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -68,9 +67,8 @@ export default async function EditNewsPage({
   const error = Array.isArray(errorValue) ? errorValue[0] : errorValue;
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Edit news post" dashboard />
-      <main className="page-frame narrow-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame narrow-frame">
         <section className="page-intro">
           <p className="eyebrow">Native CMS</p>
           <h1>Edit news post</h1>
@@ -84,7 +82,7 @@ export default async function EditNewsPage({
           canPublish={access.canPublish}
           error={error}
         />
-      </main>
+      </div>
     </div>
   );
 }
