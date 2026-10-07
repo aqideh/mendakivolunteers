@@ -5,7 +5,6 @@ import {
   recordPreviousShirtIssue,
   recordShirtStock,
 } from "@/app/admin/inventory/shirts/actions";
-import { PortalHeader } from "@/components/portal-header";
 import { requireActiveAccount } from "@/lib/auth/account-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
@@ -104,9 +103,8 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
   const error = parameter(parameters, "error");
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Shirt inventory" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <h1>Volunteer shirt inventory</h1>
@@ -386,7 +384,7 @@ export default async function ShirtInventoryPage({ searchParams }: PageProps) {
             </table>
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }

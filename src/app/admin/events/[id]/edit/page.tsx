@@ -9,7 +9,6 @@ import { DatabaseVolunteerRosterPicker } from "@/components/phaseone/database-vo
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
-import { PortalHeader } from "@/components/portal-header";
 import { hasProgrammeManagerRole, requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -167,9 +166,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   });
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Edit programme" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Event operations</p>
@@ -381,7 +379,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             </div>
           </details>
         ) : null}
-      </main>
+      </div>
     </div>
   );
 }

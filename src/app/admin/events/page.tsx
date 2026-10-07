@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
-import { PortalHeader } from "@/components/portal-header";
 import {
   getAttendanceOperatorEventIds,
   hasEventManagerRole,
@@ -197,9 +196,8 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
   const errorMessage = parameter(parameters, "error");
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Event operations" dashboard />
-      <main className="page-frame phaseone-events-admin-page">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame phaseone-events-admin-page">
         <div className="dashboard-header phaseone-events-admin-header">
           <div>
             <h1>Programmes &amp; events</h1>
@@ -334,7 +332,7 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
             </tbody>
           </table>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

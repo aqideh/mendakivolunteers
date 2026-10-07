@@ -30,7 +30,6 @@ import {
   WalkInSubmitButtons,
   type WithdrawalShiftPreview,
 } from "@/components/phaseone/attendance-quick-action";
-import { PortalHeader } from "@/components/portal-header";
 import {
   hasEventManagerRole,
   hasProgrammeManagerRole,
@@ -565,9 +564,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
 
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Roster / check-in" dashboard />
-      <main className="page-frame phaseone-operations-page km-operations-workspace">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame phaseone-operations-page km-operations-workspace">
         <RosterShiftStateBoundary
           eventId={id}
           initialRows={initialRosterRows}
@@ -1087,7 +1085,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
           </details>
         ) : null}
         </RosterShiftStateBoundary>
-      </main>
+      </div>
     </div>
   );
 }

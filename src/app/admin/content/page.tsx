@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
 import { hasEventManagerRole } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
@@ -98,9 +97,8 @@ export default async function ContentAdminPage({ searchParams }: ContentAdminPag
   const newsPosts = newsResult.data;
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Content management" dashboard />
-      <main className={`page-frame ${styles.page}`}>
+    <div className="admin-page site-shell">
+      <div className={`admin-page-frame page-frame ${styles.page}`}>
         <div className={`dashboard-header ${styles.header}`}>
           <div className={styles.headerCopy}>
             <h1>Manage volunteer content</h1>
@@ -234,7 +232,7 @@ export default async function ContentAdminPage({ searchParams }: ContentAdminPag
             </table>
           </div>
         </section>
-      </main>
+      </div>
       <footer className="site-footer">MENDAKI Volunteer Portal CMS</footer>
     </div>
   );

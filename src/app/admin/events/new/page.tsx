@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { EventForm } from "@/components/phaseone/event-form";
-import { PortalHeader } from "@/components/portal-header";
 import { SectionIndex } from "@/components/section-index";
 import { requireProgrammeManager } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -40,9 +39,8 @@ export default async function NewEventPage({ searchParams }: PageProps) {
   const errorMessage = parameter(parameters, "error");
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="New programme" dashboard />
-      <main className="page-frame narrow-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame narrow-frame">
         <section className="page-intro">
           <p className="eyebrow">Volunteer programme</p>
           <h1>Create programme or event</h1>
@@ -67,7 +65,7 @@ export default async function NewEventPage({ searchParams }: PageProps) {
 
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
         {draft ? <EventForm draft={draft} /> : <EventForm />}
-      </main>
+      </div>
     </div>
   );
 }

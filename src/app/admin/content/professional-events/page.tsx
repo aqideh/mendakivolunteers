@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requireContentManager } from "@/lib/auth/content-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
@@ -49,9 +48,8 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
   const events = data as ProfessionalEventAdminValue[];
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Specialist events" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <h1>Specialist events</h1>
@@ -131,7 +129,7 @@ export default async function ProfessionalEventsAdminPage({ searchParams }: Page
 
           {events.length === 0 ? <p className="muted">No Professional Network events yet.</p> : null}
         </section>
-      </main>
+      </div>
     </div>
   );
 }

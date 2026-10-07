@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AttendanceLiveRefresh } from "@/components/phaseone/attendance-live-refresh";
-import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -105,9 +104,8 @@ export default async function AttendanceMonitorPage({ params }: Props) {
   const refreshedAt = new Date().toISOString();
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Live attendance monitor" dashboard />
-      <main className="page-frame phaseone-operations-page">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame phaseone-operations-page">
         <div className="dashboard-header phaseone-operations-header">
           <div><p className="eyebrow">Live attendance</p><h1>{event.title}</h1><p className="muted">{event.venue ?? "Venue not set"} · refreshes every 5 seconds</p></div>
           <div className="actions"><AttendanceLiveRefresh /><Link className="button button-secondary" href={`/admin/events/${id}/attendance`}>Roster</Link><Link className="button button-primary" href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link></div>
@@ -149,7 +147,7 @@ export default async function AttendanceMonitorPage({ params }: Props) {
             {shiftMetrics.map(({ slot, roster, counts }) => <article className={styles.shiftCard} key={slot.id}><div><strong>{shiftLabel(slot)}</strong><p>{timeLabel(slot.starts_at)}{slot.ends_at ? `–${timeLabel(slot.ends_at)}` : ""}</p></div><div className={styles.shiftStats}><span><b>{roster}</b> roster</span><span><b>{counts.checked_in}</b> in</span><span><b>{counts.checked_out}</b> out</span><span><b>{counts.pending}</b> pending</span></div><div className="actions"><Link className="button button-secondary" href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(slot.id)}`}>Open roster</Link><Link className="button button-secondary" href={`/admin/events/${id}/attendance/qr?timeslot=${encodeURIComponent(slot.id)}&action=check_in`}>QR</Link></div></article>)}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }

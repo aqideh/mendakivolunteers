@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { PortalHeader } from "@/components/portal-header";
 import { AttendanceQrPresenter } from "@/components/phaseone/attendance-qr-presenter";
 import { requireAttendanceOperatorForEvent } from "@/lib/auth/event-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -52,8 +51,7 @@ export default async function AttendanceQrPage({ params, searchParams }: Props) 
 
   return (
     <div className="site-shell attendance-qr-shell">
-      <PortalHeader status="Attendance QR" dashboard />
-      <main className="page-frame attendance-qr-staff-page">
+      <div className="admin-page-frame page-frame attendance-qr-staff-page">
         <div className="attendance-qr-topbar">
           <Link className="text-link" href={`/admin/events/${id}/attendance?timeslot=${encodeURIComponent(selected.id)}`}>← Back to roster</Link>
           <div className="actions">
@@ -84,7 +82,7 @@ export default async function AttendanceQrPage({ params, searchParams }: Props) 
             ))}
           </nav>
         ) : null}
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,37 @@
+/*
+ * Admin page contract.
+ *
+ * The admin shell owns the single <main> landmark and navigation. Individual
+ * routes provide content only, using these compatibility classes while older
+ * page-specific styles are migrated incrementally.
+ */
+
+.admin-page.site-shell {
+  min-height: 0;
+  display: block;
+  background: transparent;
+}
+
+.admin-page-frame.page-frame {
+  width: min(74rem, calc(100% - 3rem));
+  margin-inline: auto;
+  padding-top: var(--admin-page-top, 1.8rem);
+  padding-bottom: 3rem;
+}
+
+.admin-page-frame .dashboard-header {
+  margin-bottom: 1.3rem;
+}
+
+.admin-page-frame .dashboard-header h1 {
+  max-width: none;
+  font-size: clamp(1.75rem, 3vw, 2.65rem);
+}
+
+@media (max-width: 720px) {
+  .admin-page-frame.page-frame {
+    width: min(100% - 1.25rem, 74rem);
+    padding-top: var(--admin-page-top, 1rem);
+    padding-bottom: 2rem;
+  }
+}

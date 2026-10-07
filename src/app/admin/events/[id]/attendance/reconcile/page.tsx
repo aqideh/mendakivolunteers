@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { deriveAttendanceExceptions, type ReconciliationException } from "@/lib/phaseone/attendance-exceptions";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -133,9 +132,8 @@ export default async function AttendanceReconciliationPage({ params }: Props) {
   const event = eventResult.data;
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Attendance reconciliation" dashboard />
-      <main className="page-frame phaseone-operations-page">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame phaseone-operations-page">
         <div className="dashboard-header phaseone-operations-header">
           <div><p className="eyebrow">Attendance reconciliation</p><h1>{event.title}</h1><p className="muted">Resolve attendance exceptions before treating event hours as final.</p></div>
           <div className="actions"><Link className="button button-secondary" href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link><Link className="button button-primary" href={`/admin/events/${id}/attendance`}>Open roster</Link></div>
@@ -182,7 +180,7 @@ export default async function AttendanceReconciliationPage({ params }: Props) {
           </div>
           <p className="muted">There is no separate “resolve” button. Correct the underlying attendance or roster record and the exception disappears automatically, preserving one source of truth and the existing audit trail.</p>
         </section>
-      </main>
+      </div>
     </div>
   );
 }

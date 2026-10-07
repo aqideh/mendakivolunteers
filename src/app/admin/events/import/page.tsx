@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requireProgrammeManager } from "@/lib/auth/event-access";
 
 import { OpportunityWorkbookImportForm } from "./import-form";
@@ -13,9 +12,8 @@ export default async function OpportunityImportPage() {
   await requireProgrammeManager("/admin/events/import");
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Import programmes" dashboard />
-      <main className="page-frame narrow-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame narrow-frame">
         <section className="page-intro">
           <h1>Import programmes from Excel</h1>
           <p className="lede">
@@ -39,7 +37,7 @@ export default async function OpportunityImportPage() {
         </div>
 
         <OpportunityWorkbookImportForm />
-      </main>
+      </div>
     </div>
   );
 }

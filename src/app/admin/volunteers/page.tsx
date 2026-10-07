@@ -5,7 +5,6 @@ import {
   VolunteerDirectoryTable,
   type VolunteerDirectoryRow,
 } from "@/components/admin/volunteer-directory-table";
-import { PortalHeader } from "@/components/portal-header";
 import { requireActiveAccount } from "@/lib/auth/account-access";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
@@ -122,9 +121,8 @@ export default async function VolunteerDirectoryPage({ searchParams }: PageProps
   ).sort();
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Volunteer directory" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <h1>Volunteer directory</h1>
@@ -149,7 +147,7 @@ export default async function VolunteerDirectoryPage({ searchParams }: PageProps
             maxAge: parameter(parameters, "maxAge") ?? "",
           }}
         />
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,14 @@
 "use client";
 
+import { Burger, Drawer } from "@mantine/core";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+
+import {
+  getAdminCapabilities,
+  type AdminCapability,
+} from "@/lib/auth/admin-capabilities";
 
 import styles from "./admin-shell.module.css";
 
@@ -17,8 +24,7 @@ type NavItem = Readonly<{
   icon: IconName;
   exact?: boolean;
   external?: boolean;
-  adminOnly?: boolean;
-  fullAdminOnly?: boolean;
+  capability: AdminCapability;
 }>;
 
 type IconName =
@@ -42,38 +48,120 @@ type IconName =
 
 const navGroups: ReadonlyArray<Readonly<{ title: string; items: readonly NavItem[] }>> = [
   {
-    title: "Manage",
+    title: "Overview",
     items: [
-      { href: "/admin", label: "Dashboard", icon: "dashboard", exact: true, fullAdminOnly: true },
-      { href: "/admin/events", label: "Event Operations", icon: "events" },
-      { href: "/admin/registrations", label: "Registrations", icon: "registrations", fullAdminOnly: true },
-      { href: "/admin/volunteers", label: "Volunteers", icon: "volunteers", fullAdminOnly: true },
-      { href: "/admin/onboarding", label: "Volunteer Onboarding", icon: "onboarding", adminOnly: true },
-      { href: "/admin/reconciliation", label: "Reconciliation", icon: "reconciliation", fullAdminOnly: true },
-      { href: "/admin/content", label: "Content & Opportunities", icon: "content", fullAdminOnly: true },
+      {
+        href: "/admin",
+        label: "Dashboard",
+        icon: "dashboard",
+        exact: true,
+        capability: "view_overview",
+      },
     ],
   },
   {
-    title: "Tools",
+    title: "Operations",
     items: [
-      { href: "/admin/content/landing-pages", label: "Landing Pages", icon: "image", fullAdminOnly: true },
-      { href: "/admin/content/professional-events", label: "Specialist Events", icon: "network", fullAdminOnly: true },
-      { href: "/admin/pathways", label: "Volunteer Pathways", icon: "pathways", fullAdminOnly: true },
-      { href: "/admin/inventory/shirts", label: "Shirt Inventory", icon: "shirt", fullAdminOnly: true },
-      { href: "/admin/points", label: "Points", icon: "points", fullAdminOnly: true },
-      { href: "/admin/badges", label: "Badges", icon: "badges", fullAdminOnly: true },
+      {
+        href: "/admin/events",
+        label: "Event Operations",
+        icon: "events",
+        capability: "operate_events",
+      },
+      {
+        href: "/admin/inventory/shirts",
+        label: "Shirt Inventory",
+        icon: "shirt",
+        capability: "manage_inventory",
+      },
     ],
   },
   {
-    title: "System",
+    title: "People & data",
     items: [
-      { href: "/admin/staff", label: "Staff Access", icon: "staff", adminOnly: true },
+      {
+        href: "/admin/registrations",
+        label: "Registrations",
+        icon: "registrations",
+        capability: "manage_volunteer_data",
+      },
+      {
+        href: "/admin/volunteers",
+        label: "Volunteers",
+        icon: "volunteers",
+        capability: "manage_volunteer_data",
+      },
+      {
+        href: "/admin/onboarding",
+        label: "Volunteer Onboarding",
+        icon: "onboarding",
+        capability: "onboard_volunteers",
+      },
+      {
+        href: "/admin/reconciliation",
+        label: "Reconciliation",
+        icon: "reconciliation",
+        capability: "manage_volunteer_data",
+      },
+      {
+        href: "/admin/points",
+        label: "Points",
+        icon: "points",
+        capability: "manage_recognition",
+      },
+      {
+        href: "/admin/badges",
+        label: "Badges",
+        icon: "badges",
+        capability: "manage_recognition",
+      },
+    ],
+  },
+  {
+    title: "Content",
+    items: [
+      {
+        href: "/admin/content",
+        label: "Content & Opportunities",
+        icon: "content",
+        exact: true,
+        capability: "manage_content",
+      },
+      {
+        href: "/admin/content/landing-pages",
+        label: "Landing Pages",
+        icon: "image",
+        capability: "manage_content",
+      },
+      {
+        href: "/admin/content/professional-events",
+        label: "Specialist Events",
+        icon: "network",
+        capability: "manage_content",
+      },
+      {
+        href: "/admin/pathways",
+        label: "Volunteer Pathways",
+        icon: "pathways",
+        capability: "manage_content",
+      },
+    ],
+  },
+  {
+    title: "Administration",
+    items: [
+      {
+        href: "/admin/staff",
+        label: "Staff Access",
+        icon: "staff",
+        capability: "manage_staff",
+      },
       {
         href: "https://voldatabasetool.vercel.app/",
         label: "MakLom",
         icon: "database",
         external: true,
-        adminOnly: true,
+        capability: "access_maklom",
       },
     ],
   },
@@ -144,101 +232,174 @@ function roleLabel(roles: readonly string[]) {
   return "Keluarga";
 }
 
+type NavigationProps = Readonly<{
+  groups: ReadonlyArray<Readonly<{ title: string; items: readonly NavItem[] }>>;
+  pathname: string;
+  roles: readonly string[];
+  email: string | undefined;
+  homeHref: string;
+  onNavigate?: () => void;
+}>;
+
+function AdminNavigation({
+  groups,
+  pathname,
+  roles,
+  email,
+  homeHref,
+  onNavigate,
+}: NavigationProps) {
+  const navigationClick = onNavigate ? { onClick: onNavigate } : {};
+
+  return (
+    <div className={styles.navigationLayout}>
+      <Link className={styles.brand} href={homeHref} {...navigationClick}>
+        <span className={styles.brandMark}>KM</span>
+        <span className={styles.brandCopy}>
+          <strong>Keluarga MENDAKI</strong>
+          <span>Admin workspace</span>
+        </span>
+      </Link>
+
+      <div className={styles.navigation}>
+        {groups.map((group) => (
+          <section className={styles.navGroup} key={group.title}>
+            <h2>{group.title}</h2>
+            <nav aria-label={group.title}>
+              {group.items.map((item) => {
+                const active = isItemActive(pathname, item);
+                const content = (
+                  <>
+                    <span className={styles.navIcon}><Icon name={item.icon} /></span>
+                    <span>{item.label}</span>
+                    {item.external ? <span className={styles.externalMark}>↗</span> : null}
+                  </>
+                );
+
+                return item.external ? (
+                  <a
+                    className={styles.navItem}
+                    href={item.href}
+                    key={item.href}
+                    {...navigationClick}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {content}
+                  </a>
+                ) : (
+                  <Link
+                    {...(active ? { "aria-current": "page" as const } : {})}
+                    className={`${styles.navItem} ${active ? styles.navItemActive : ""}`}
+                    href={item.href}
+                    key={item.href}
+                    {...navigationClick}
+                  >
+                    {content}
+                  </Link>
+                );
+              })}
+            </nav>
+          </section>
+        ))}
+      </div>
+
+      <div className={styles.sidebarBottom}>
+        <Link className={styles.utilityLink} href="/" {...navigationClick}>
+          <Icon name="home" />
+          <span>Back to Keluarga</span>
+        </Link>
+        <Link className={styles.account} href="/dashboard" {...navigationClick}>
+          <span className={styles.avatar} aria-hidden="true">
+            {(email?.trim().charAt(0) || "K").toUpperCase()}
+          </span>
+          <span className={styles.accountCopy}>
+            <strong>{roleLabel(roles)}</strong>
+            <span>{email ?? "My profile"}</span>
+          </span>
+          <Icon name="profile" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function AdminShell({ children, roles, email }: AdminShellProps) {
   const pathname = usePathname();
-  const isAdmin = roles.includes("admin");
-  const hasFullAdmin = isAdmin || roles.includes("volteam");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const capabilities = getAdminCapabilities(roles);
 
   const groups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => {
-        if (item.adminOnly && !isAdmin) return false;
-        if (item.fullAdminOnly && !hasFullAdmin) return false;
-        return true;
-      }),
+      items: group.items.filter((item) => capabilities[item.capability]),
     }))
     .filter((group) => group.items.length > 0);
 
-  const showBack = pathname !== "/admin" && hasFullAdmin;
+  const homeHref = capabilities.view_overview ? "/admin" : "/admin/events";
+  const showBack = pathname !== "/admin" && capabilities.view_overview;
+
 
   return (
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
-        <Link className={styles.brand} href={hasFullAdmin ? "/admin" : "/admin/events"}>
-          <span className={styles.brandMark}>KM</span>
-          <span className={styles.brandCopy}>
-            <strong>Keluarga MENDAKI</strong>
-            <span>Admin workspace</span>
-          </span>
-        </Link>
-
-        <div className={styles.navigation}>
-          {groups.map((group) => (
-            <section className={styles.navGroup} key={group.title}>
-              <h2>{group.title}</h2>
-              <nav aria-label={group.title}>
-                {group.items.map((item) => {
-                  const active = isItemActive(pathname, item);
-                  const content = (
-                    <>
-                      <span className={styles.navIcon}><Icon name={item.icon} /></span>
-                      <span>{item.label}</span>
-                      {item.external ? <span className={styles.externalMark}>↗</span> : null}
-                    </>
-                  );
-
-                  return item.external ? (
-                    <a
-                      className={styles.navItem}
-                      href={item.href}
-                      key={item.href}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {content}
-                    </a>
-                  ) : (
-                    <Link
-                      className={`${styles.navItem} ${active ? styles.navItemActive : ""}`}
-                      href={item.href}
-                      key={item.href}
-                    >
-                      {content}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </section>
-          ))}
-        </div>
-
-        <div className={styles.sidebarBottom}>
-          <Link className={styles.utilityLink} href="/">
-            <Icon name="home" />
-            <span>Back to Keluarga</span>
-          </Link>
-          <Link className={styles.account} href="/dashboard">
-            <span className={styles.avatar} aria-hidden="true">
-              {(email?.trim().charAt(0) || "K").toUpperCase()}
-            </span>
-            <span className={styles.accountCopy}>
-              <strong>{roleLabel(roles)}</strong>
-              <span>{email ?? "My profile"}</span>
-            </span>
-            <Icon name="profile" />
-          </Link>
-        </div>
+        <AdminNavigation
+          email={email}
+          groups={groups}
+          homeHref={homeHref}
+          pathname={pathname}
+          roles={roles}
+        />
       </aside>
 
-      <main className={styles.main}>
+      <header className={styles.mobileBar}>
+        <Link className={styles.mobileBrand} href={homeHref}>
+          <span className={styles.brandMark}>KM</span>
+          <span>Keluarga MENDAKI</span>
+        </Link>
+        <Burger
+          aria-label="Open admin navigation"
+          opened={mobileOpen}
+          onClick={() => setMobileOpen((opened) => !opened)}
+          size="sm"
+        />
+      </header>
+
+      <Drawer
+        classNames={{
+          body: styles.mobileDrawerBody,
+          content: styles.mobileDrawerContent,
+          header: styles.mobileDrawerHeader,
+        }}
+        opened={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        position="left"
+        size="min(22rem, 88vw)"
+        title="Admin workspace"
+      >
+        <AdminNavigation
+          email={email}
+          groups={groups}
+          homeHref={homeHref}
+          onNavigate={() => setMobileOpen(false)}
+          pathname={pathname}
+          roles={roles}
+        />
+      </Drawer>
+
+      <div className={styles.main}>
         {showBack ? (
           <div className={styles.backRow}>
             <Link href="/admin">← Back to dashboard</Link>
           </div>
         ) : null}
-        <div className={styles.content}>{children}</div>
-      </main>
+        <main
+          className={`${styles.content} ${showBack ? styles.contentAfterBack : ""}`}
+          id="admin-main-content"
+        >
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

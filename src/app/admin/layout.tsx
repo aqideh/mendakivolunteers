@@ -1,3 +1,5 @@
+import "./admin-foundation.css";
+
 import { AdminShell } from "@/components/admin-shell";
 import { AdminQueryProvider } from "@/components/query/admin-query-provider";
 import { createClient } from "@/lib/supabase/server";

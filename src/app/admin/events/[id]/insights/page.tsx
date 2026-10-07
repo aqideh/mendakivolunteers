@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { PortalHeader } from "@/components/portal-header";
 import { VolunteerInsightForm } from "@/components/phaseone/volunteer-insight-form";
 import { VolunteerReviewsSection } from "@/components/phaseone/volunteer-reviews-section";
 import { requireEventManager } from "@/lib/auth/event-access";
@@ -81,9 +80,8 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
   }
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Volunteer insights" dashboard />
-      <main className="page-frame compact-page volunteer-insights-page">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame compact-page volunteer-insights-page">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Event operations</p>
@@ -199,7 +197,7 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
             {dismissed.length === 0 ? <p className="empty-state">No dismissed insights.</p> : null}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }
