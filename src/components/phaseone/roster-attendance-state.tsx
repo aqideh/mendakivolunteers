@@ -26,6 +26,16 @@ type NextTimeslot = {
   label: string;
 } | null;
 
+function compactSingaporeTime(value: string | null): string | null {
+  if (!value) return null;
+  return new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(value));
+}
+
 export function RosterShiftHandover({
   nextTimeslot,
   href,
@@ -127,8 +137,19 @@ export function RosterAttendanceOperations({
   const row = useRosterRow(rosterId);
   const linkedNextShift = linkedShiftFor(row, nextTimeslot?.id);
 
+  const compactIn = compactSingaporeTime(row.signedInAt);
+  const compactOut = compactSingaporeTime(row.signedOutAt);
+
   return (
     <>
+      {compactIn || compactOut ? (
+        <p className="km-roster-mobile-time" aria-label="Attendance time">
+          {compactIn ? `In ${compactIn}` : ""}
+          {compactIn && compactOut ? " · " : ""}
+          {compactOut ? `Out ${compactOut}` : ""}
+        </p>
+      ) : null}
+
       {row.signedInAt ||
       row.signedOutAt ||
       row.status === "withdrawn" ||

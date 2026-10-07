@@ -1385,3 +1385,384 @@
   .km-withdraw-modal-actions .button { width: 100%; }
   .km-withdraw-modal-actions .km-withdraw-cancel { margin-right: 0; }
 }
+
+
+/* 2026-10-07: mobile roster density and progressive disclosure */
+.km-roster-toolbar-sentinel {
+  width: 100%;
+  height: 1px;
+  pointer-events: none;
+}
+
+.km-roster-mobile-time {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  /* The public app header should not permanently consume field-operation space. */
+  .site-shell:has(.km-operations-workspace) > .portal-header {
+    position: static;
+  }
+
+  .km-operations-workspace {
+    width: min(100%, calc(100% - 0.7rem));
+  }
+
+  .km-operations-workspace .phaseone-operations-header {
+    gap: 0.45rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .km-operations-workspace .phaseone-operations-header .eyebrow {
+    display: none;
+  }
+
+  .km-operations-workspace .phaseone-operations-header h1 {
+    font-size: 1.2rem;
+    line-height: 1.15;
+  }
+
+  .km-operations-workspace .phaseone-operations-header .muted {
+    font-size: 0.75rem;
+  }
+
+  .km-operations-workspace .km-operations-header-actions {
+    width: auto;
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .km-operations-workspace .km-operations-header-actions .button {
+    min-height: 2.15rem;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.72rem;
+  }
+
+  /* Full controls at the top; a single compact strip while scrolling. */
+  .km-roster-toolbar {
+    top: 0;
+    padding: 0.55rem 0.6rem;
+    border-radius: 0;
+    transition: padding 140ms ease, box-shadow 140ms ease;
+  }
+
+  .km-roster-toolbar[data-compact="true"] {
+    padding-block: 0.32rem;
+    box-shadow: 0 5px 16px rgb(0 0 0 / 0.09);
+  }
+
+  .km-roster-toolbar[data-compact="true"] .km-roster-shift-row {
+    align-items: center;
+    flex-wrap: nowrap;
+    min-height: 2.7rem;
+  }
+
+  .km-roster-toolbar[data-compact="true"] .km-roster-shift {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .km-roster-toolbar[data-compact="true"] .km-roster-shift > span {
+    display: none;
+  }
+
+  .km-roster-toolbar[data-compact="true"] .km-roster-shift select {
+    width: min(68vw, 20rem);
+    min-height: 2.35rem;
+    border-color: transparent;
+    padding: 0.3rem 1.7rem 0.3rem 0.35rem;
+    background-color: transparent;
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .km-roster-toolbar[data-compact="true"] .km-roster-count {
+    font-size: 0.68rem;
+    font-weight: 750;
+  }
+
+  .km-roster-toolbar[data-compact="true"] .km-roster-views,
+  .km-roster-toolbar[data-compact="true"] .km-roster-search-row,
+  .km-roster-toolbar[data-compact="true"] .km-roster-active-filters {
+    display: none;
+  }
+
+  .km-roster-shift-row {
+    gap: 0.35rem;
+  }
+
+  .km-roster-shift {
+    gap: 0.2rem;
+  }
+
+  .km-roster-shift > span {
+    font-size: 0.65rem;
+  }
+
+  .km-roster-shift select {
+    min-height: 2.45rem;
+    font-size: 0.84rem;
+  }
+
+  .km-roster-count {
+    font-size: 0.66rem;
+  }
+
+  .km-roster-views {
+    flex-wrap: nowrap;
+    gap: 0.15rem;
+    overflow-x: auto;
+    padding: 0.32rem 0;
+    scrollbar-width: none;
+  }
+
+  .km-roster-views::-webkit-scrollbar {
+    display: none;
+  }
+
+  .km-roster-view {
+    flex: 0 0 auto;
+    min-height: 2rem;
+    padding: 0.28rem 0.42rem;
+    font-size: 0.68rem;
+  }
+
+  .km-roster-search-row {
+    gap: 0.35rem;
+  }
+
+  .km-roster-search input {
+    min-height: 2.4rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .km-roster-filter-menu > summary,
+  .km-operations-workspace .phaseone-walk-in-summary {
+    min-height: 2.4rem;
+    padding: 0.4rem 0.58rem;
+    font-size: 0.72rem;
+  }
+
+  /* Treat the roster as a compact list, not a stack of cards. */
+  .km-operations-workspace .phaseone-attendance-list {
+    border-top: 1px solid var(--border);
+  }
+
+  .km-operations-workspace .phaseone-checkin-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 0.12rem 0.55rem;
+    min-height: 4.25rem;
+    padding: 0.52rem 0.58rem;
+    align-items: center;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-attendance-summary {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.4rem;
+  }
+
+  .km-operations-workspace .phaseone-attendance-summary > div {
+    gap: 0.08rem;
+  }
+
+  .km-operations-workspace .phaseone-attendance-summary h3 {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.15;
+  }
+
+  .km-operations-workspace .phaseone-roster-meta {
+    order: 2;
+    min-height: 1rem;
+    gap: 0.22rem;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .km-operations-workspace .phaseone-roster-meta .record-kicker {
+    flex: 0 0 auto;
+    font-size: 0.62rem;
+  }
+
+  .km-operations-workspace .phaseone-roster-meta .status-pill {
+    max-width: 9rem;
+    overflow: hidden;
+    padding: 0.16rem 0.3rem;
+    font-size: 0.58rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .km-operations-workspace .phaseone-attendance-summary > .status-pill {
+    min-height: 1.55rem;
+    align-self: start;
+    padding: 0.22rem 0.4rem;
+    font-size: 0.62rem;
+    white-space: nowrap;
+  }
+
+  .km-roster-contact {
+    display: none;
+  }
+
+  .phaseone-roster-alert {
+    margin-top: 0.08rem;
+    font-size: 0.68rem;
+    line-height: 1.25;
+  }
+
+  .km-roster-mobile-time {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.68rem;
+    line-height: 1.2;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-attendance-times {
+    display: none;
+  }
+
+  /* Primary attendance remains visible; secondary statuses collapse behind a small disclosure. */
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-pending-actions,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-continuous-actions,
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-quick-action-wrap {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card .phaseone-checkin-action {
+    width: auto;
+    min-width: 5.6rem;
+    min-height: 2rem;
+    padding: 0.3rem 0.48rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .km-roster-secondary-actions {
+    position: relative;
+  }
+
+  .km-roster-secondary-actions > summary {
+    min-width: 2rem;
+    min-height: 2rem !important;
+    padding: 0.25rem 0.38rem;
+    border: 1px solid var(--border);
+    border-radius: 0.45rem;
+    font-size: 0;
+  }
+
+  .km-roster-secondary-actions > summary::after {
+    content: "•••";
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+  }
+
+  .km-roster-secondary-actions > div {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.25rem);
+    z-index: 25;
+    width: 10rem;
+    padding: 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 0.55rem;
+    background: var(--surface);
+    box-shadow: 0 10px 26px rgb(0 0 0 / 0.14);
+  }
+
+  .km-roster-secondary-actions > div .phaseone-checkin-action {
+    width: 100%;
+  }
+
+  .km-roster-attention-note,
+  .km-operations-workspace .phaseone-checkin-card > .notice {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    margin: 0.18rem 0 0;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.66rem;
+  }
+
+  /* Shirt/admin controls remain available but stop expanding every row. */
+  .km-operations-workspace .phaseone-checkin-card > .phaseone-shirt-status {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    margin: 0;
+  }
+
+  .km-operations-workspace .phaseone-shirt-status > .phaseone-shirt-chip,
+  .km-operations-workspace .phaseone-shirt-disclosure:not([open]) > .phaseone-shirt-chip {
+    min-height: 1.45rem;
+    padding: 0.16rem 0.38rem;
+    font-size: 0.6rem;
+  }
+
+  .km-operations-workspace .phaseone-staff-tools {
+    grid-column: 1 / -1;
+    display: block;
+    padding: 0;
+    margin: 0;
+  }
+
+  .km-operations-workspace .phaseone-staff-tools > details:not(.km-roster-more-actions) {
+    display: none;
+  }
+
+  .km-operations-workspace .km-roster-more-actions {
+    width: 100%;
+    margin: 0;
+  }
+
+  .km-operations-workspace .km-roster-more-actions > summary {
+    display: inline-flex;
+    min-height: 1.6rem;
+    align-items: center;
+    padding: 0.18rem 0;
+    color: var(--muted);
+    background: transparent;
+    font-size: 0.64rem;
+  }
+
+  .km-operations-workspace .km-roster-more-actions > div {
+    margin-top: 0.35rem;
+    padding: 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 0.65rem;
+    background: var(--surface-subtle);
+  }
+
+  .km-operations-workspace .phaseone-checkin-card[data-status="withdrawn"],
+  .km-operations-workspace .phaseone-checkin-card[data-status="absent"],
+  .km-operations-workspace .phaseone-checkin-card[data-status="signed_out"] {
+    min-height: 3.75rem;
+  }
+
+  .km-operations-workspace .phaseone-checkin-card[data-status="withdrawn"] .phaseone-shirt-status,
+  .km-operations-workspace .phaseone-checkin-card[data-status="absent"] .phaseone-shirt-status,
+  .km-operations-workspace .phaseone-checkin-card[data-status="signed_out"] .phaseone-shirt-status {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .km-roster-toolbar {
+    transition: none;
+  }
+}
