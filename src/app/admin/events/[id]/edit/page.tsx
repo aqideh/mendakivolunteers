@@ -48,7 +48,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
   const [eventResult, timeslotsResult, rosterCountResult, importsResult, rosterLinksResult, rundownImagesResult] = await Promise.all([
     admin
       .from("phaseone_events")
-      .select("id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, has_sign_in_pin, has_sign_out_pin, is_published, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order, is_opportunity_published, operations_scope, credit_contribution_hours")
+      .select("id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, self_attendance_enabled, has_sign_in_pin, has_sign_out_pin, is_published, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order, is_opportunity_published, operations_scope, credit_contribution_hours")
       .eq("id", id)
       .maybeSingle(),
     admin

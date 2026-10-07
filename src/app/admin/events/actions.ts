@@ -55,7 +55,7 @@ export async function duplicateEvent(formData: FormData) {
     admin
       .from("phaseone_events")
       .select(
-        "id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order",
+        "id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, self_attendance_enabled, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order",
       )
       .eq("id", sourceId)
       .maybeSingle(),
@@ -123,6 +123,7 @@ export async function duplicateEvent(formData: FormData) {
         whatsapp_url: source.whatsapp_url,
         sign_in_url: source.sign_in_url,
         sign_out_url: source.sign_out_url,
+        self_attendance_enabled: source.self_attendance_enabled,
         is_published: false,
         created_by: userId,
         updated_by: userId,
@@ -302,6 +303,7 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
     whatsapp_url: parsed.data.whatsappUrl,
     sign_in_url: parsed.data.signInUrl,
     sign_out_url: parsed.data.signOutUrl,
+    self_attendance_enabled: parsed.data.selfAttendanceEnabled,
     is_published: parsed.data.isPublished,
     updated_by: userId,
   };
@@ -390,6 +392,7 @@ export async function saveEvent(formData: FormData): Promise<EventSaveResult> {
       whatsapp_url: parsed.data.whatsappUrl,
       sign_in_url: parsed.data.signInUrl,
       sign_out_url: parsed.data.signOutUrl,
+      self_attendance_enabled: parsed.data.selfAttendanceEnabled,
       is_published: false,
       updated_by: userId,
       created_by: userId,

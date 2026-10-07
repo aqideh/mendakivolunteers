@@ -41,6 +41,17 @@ describe("package form validation", () => {
     expect(parsed.data.timeslots[0]?.startsAt).toBe("2026-08-10T01:30:00.000Z");
     expect(parsed.data.timeslots[0]?.endsAt).toBe("2026-08-10T04:30:00.000Z");
     expect(parsed.data.briefingAvailableAt).toBe("2026-07-28T01:30:00.000Z");
+    expect(parsed.data.selfAttendanceEnabled).toBe(false);
+  });
+
+  it("parses the self-attendance toggle", () => {
+    const form = validForm();
+    form.set("selfAttendanceEnabled", "on");
+
+    const parsed = parseEventForm(form);
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.selfAttendanceEnabled).toBe(true);
   });
 
   it("trims volunteer flow fields", () => {
