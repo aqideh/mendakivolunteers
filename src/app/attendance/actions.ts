@@ -129,6 +129,7 @@ export async function submitEventFeedback(formData: FormData) {
     .select("id")
     .eq("event_id", parsed.data.eventId)
     .eq("attendance_person_key", device.personKey)
+    .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
     .limit(1)
     .maybeSingle();
 
