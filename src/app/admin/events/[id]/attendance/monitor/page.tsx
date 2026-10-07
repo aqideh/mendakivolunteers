@@ -41,7 +41,8 @@ export default async function AttendanceMonitorPage({ params }: Props) {
   const [eventResult, slotsResult, rosterResult, attendanceResult, auditResult] = await Promise.all([
     admin.from("phaseone_events").select("id, title, venue").eq("id", id).maybeSingle(),
     admin.from("phaseone_event_timeslots").select("id, label, starts_at, ends_at, status").eq("event_id", id).order("starts_at"),
-    admin.from("phaseone_roster").select("id, timeslot_id, volunteer_name, attendance_person_key, entry_method").eq("event_id", id).limit(5000),
+    admin.from("phaseone_roster").select("id, timeslot_id, volunteer_name, attendance_person_key, entry_method").eq("event_id", id)
+        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match").limit(5000),
     admin.from("phaseone_attendance_effective").select("roster_id, signed_in_at, signed_out_at, non_attendance_status, session_checked_in_at, session_checked_out_at").eq("event_id", id).limit(5000),
     admin.from("phaseone_attendance_audit").select("id, roster_id, action, reason, source_type, changed_at").eq("event_id", id).order("changed_at", { ascending: false }).limit(20),
   ]);
