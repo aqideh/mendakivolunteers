@@ -93,6 +93,7 @@ export async function resolveAuthenticatedAttendancePerson(
     .select("id, volunteer_name, attendance_person_key")
     .eq("event_id", eventId)
     .eq("volunteer_id", identity.volunteerId)
+    .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
     .limit(20);
 
   if (timeslotId) {
