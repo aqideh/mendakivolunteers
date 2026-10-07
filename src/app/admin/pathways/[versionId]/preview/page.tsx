@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requirePathwayManager } from "@/lib/auth/pathway-access";
 import { isUuid } from "@/lib/content/identifiers";
 import {
@@ -52,10 +51,6 @@ export default async function PathwayPreviewPage({
 
   return (
     <div className="site-shell phaseone-shell">
-      <PortalHeader
-        status={`Pathway ${pathwayMap.status} v${pathwayMap.versionNumber}`}
-        dashboard
-      />
       <div className="page-frame">
         <Link className="text-link" href="/admin/pathways">
           ← Return to pathway editor
