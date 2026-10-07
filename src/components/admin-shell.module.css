@@ -2,19 +2,25 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: 17.25rem minmax(0, 1fr);
-  background: #f4f5f3;
+  color: var(--ink);
+  background: var(--surface-subtle);
 }
 
 .sidebar {
   position: sticky;
   top: 0;
-  display: flex;
   height: 100vh;
   min-width: 0;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-subtle) 88%, var(--ink) 12%);
+}
+
+.navigationLayout {
+  display: flex;
+  height: 100%;
+  min-height: 0;
   flex-direction: column;
-  border-right: 1px solid #d7dad6;
   padding: 1.2rem 1rem 1rem;
-  background: #e9edeb;
 }
 
 .brand {
@@ -22,9 +28,9 @@
   align-items: center;
   gap: 0.75rem;
   margin: -1.2rem -1rem 1.15rem;
-  border-bottom: 1px solid #d7dad6;
+  border-bottom: 1px solid var(--border);
   padding: 1.15rem 1rem;
-  color: #171815;
+  color: var(--ink);
   text-decoration: none;
 }
 
@@ -35,7 +41,7 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 0.65rem;
-  color: #171815;
+  color: var(--ink);
   background: var(--primary);
   font-size: 0.8rem;
   font-weight: 900;
@@ -55,7 +61,7 @@
 }
 
 .brandCopy span {
-  color: #747872;
+  color: var(--muted);
   font-size: 0.7rem;
 }
 
@@ -68,13 +74,13 @@
 
 .navGroup + .navGroup {
   margin-top: 1.15rem;
-  border-top: 1px solid #d4d8d4;
+  border-top: 1px solid var(--border);
   padding-top: 1.05rem;
 }
 
 .navGroup h2 {
   margin: 0 0 0.45rem 0.7rem;
-  color: #747872;
+  color: var(--muted);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -92,9 +98,9 @@
   align-items: center;
   min-height: 2.7rem;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 0.75rem;
   padding: 0.42rem 0.72rem 0.42rem 0.55rem;
-  color: #2c2f2a;
+  color: var(--ink);
   text-decoration: none;
   font-size: 0.84rem;
   font-weight: 650;
@@ -106,18 +112,18 @@
 
 .navItem:hover,
 .navItem:focus-visible {
-  border-color: #cdd1cc;
-  background: rgba(255, 255, 255, 0.62);
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
 }
 
 .navItemActive {
-  border-color: #c9cdc8;
-  background: #ffffff;
-  box-shadow: 0 4px 16px rgba(45, 49, 43, 0.06);
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 7%, transparent);
 }
 
 .navItemActive .navIcon {
-  color: #171815;
+  color: var(--ink);
   background: var(--primary);
 }
 
@@ -127,12 +133,12 @@
   height: 1.75rem;
   place-items: center;
   border-radius: 0.5rem;
-  color: #4a4e48;
+  color: color-mix(in srgb, var(--ink) 82%, var(--surface));
   transition: background-color 130ms ease;
 }
 
 .externalMark {
-  color: #83877f;
+  color: var(--muted);
   font-size: 0.78rem;
 }
 
@@ -140,7 +146,7 @@
   display: grid;
   gap: 0.7rem;
   margin-top: auto;
-  border-top: 1px solid #d4d8d4;
+  border-top: 1px solid var(--border);
   padding-top: 0.85rem;
 }
 
@@ -150,14 +156,14 @@
   gap: 0.65rem;
   min-height: 2.5rem;
   padding: 0 0.55rem;
-  color: #555a53;
+  color: var(--muted);
   text-decoration: none;
   font-size: 0.78rem;
   font-weight: 650;
 }
 
 .utilityLink:hover {
-  color: #171815;
+  color: var(--ink);
 }
 
 .account {
@@ -167,12 +173,12 @@
   align-items: center;
   border-radius: 0.75rem;
   padding: 0.6rem;
-  color: #1c1e1a;
+  color: var(--ink);
   text-decoration: none;
 }
 
 .account:hover {
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
 }
 
 .avatar {
@@ -180,9 +186,9 @@
   width: 2rem;
   height: 2rem;
   place-items: center;
-  border: 1px solid #ced2cc;
+  border: 1px solid var(--border);
   border-radius: 0.55rem;
-  background: #ffffff;
+  background: var(--surface);
   font-size: 0.78rem;
   font-weight: 850;
 }
@@ -205,20 +211,20 @@
 }
 
 .accountCopy span {
-  color: #777b74;
+  color: var(--muted);
   font-size: 0.68rem;
 }
 
 .account > svg {
   width: 1rem;
   height: 1rem;
-  color: #767a73;
+  color: var(--muted);
 }
 
 .main {
   min-width: 0;
   min-height: 100vh;
-  background: #f5f6f4;
+  background: var(--surface-subtle);
 }
 
 .backRow {
@@ -228,7 +234,7 @@
 }
 
 .backRow a {
-  color: #2c2f2a;
+  color: var(--ink);
   text-decoration: none;
   font-size: 0.83rem;
   font-weight: 700;
@@ -241,41 +247,39 @@
 
 .content {
   min-width: 0;
+  --admin-page-top: 1.8rem;
 }
 
-/* Existing admin pages become the content area of this shell. */
-.content :global(.portal-header) {
-  display: none !important;
+.contentAfterBack {
+  --admin-page-top: 1rem;
 }
 
-.content :global(.site-shell) {
-  min-height: 0;
-  display: block;
-  background: transparent;
+.mobileBar {
+  display: none;
 }
 
-.content :global(.page-frame) {
-  width: min(74rem, calc(100% - 3rem));
-  margin-inline: auto;
-  padding-top: 1.8rem;
-  padding-bottom: 3rem;
+.mobileDrawerBody {
+  height: calc(100dvh - 3.75rem);
+  padding: 0;
 }
 
-.backRow + .content :global(.page-frame) {
+.mobileDrawerContent {
+  background: var(--surface-subtle);
+}
+
+.mobileDrawerHeader {
+  min-height: 3.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-subtle);
+}
+
+.mobileDrawerBody .navigationLayout {
+  height: 100%;
   padding-top: 1rem;
 }
 
-.content :global(.dashboard-header) {
-  margin-bottom: 1.3rem;
-}
-
-.content :global(.dashboard-header h1) {
-  font-size: clamp(1.75rem, 3vw, 2.65rem);
-}
-
-.content :global(.eyebrow),
-.content :global([class*="eyebrow"]) {
-  display: none !important;
+.mobileDrawerBody .brand {
+  display: none;
 }
 
 @media (max-width: 900px) {
@@ -283,7 +287,7 @@
     grid-template-columns: 14.5rem minmax(0, 1fr);
   }
 
-  .sidebar {
+  .navigationLayout {
     padding-inline: 0.7rem;
   }
 
@@ -304,93 +308,66 @@
 @media (max-width: 720px) {
   .shell {
     display: block;
+    padding-top: 3.75rem;
   }
 
   .sidebar {
-    position: static;
-    top: auto;
-    z-index: 50;
-    height: auto;
-    border-right: 0;
-    border-bottom: 1px solid #d7dad6;
-    padding: 0.5rem 0.55rem;
-  }
-
-  .brand {
-    margin: 0;
-    border: 0;
-    padding: 0.15rem 0.2rem 0.55rem;
-  }
-
-  .brandMark {
-    width: 2.1rem;
-    height: 2.1rem;
-  }
-
-  .brandCopy span {
     display: none;
   }
 
-  .navigation {
+  .mobileBar {
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    right: 0;
+    left: 0;
     display: flex;
-    gap: 0.35rem;
-    overflow-x: auto;
-    padding: 0 0.1rem 0.15rem;
-    scroll-padding-inline: 0.1rem;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
+    min-height: 3.75rem;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding: 0.55rem 0.8rem;
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    backdrop-filter: blur(14px);
   }
 
-  .navigation::-webkit-scrollbar {
-    display: none;
-  }
-
-  .navGroup,
-  .navGroup + .navGroup {
-    margin: 0;
-    border: 0;
-    padding: 0;
-  }
-
-  .navGroup h2,
-  .sidebarBottom {
-    display: none;
-  }
-
-  .navGroup nav {
+  .mobileBrand {
     display: flex;
-    gap: 0.25rem;
+    min-width: 0;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.86rem;
+    font-weight: 800;
   }
 
-  .navItem {
-    grid-template-columns: auto auto;
-    min-height: 2.2rem;
-    border-radius: 999px;
-    padding: 0.3rem 0.65rem 0.3rem 0.35rem;
-    scroll-snap-align: start;
-    white-space: nowrap;
+  .mobileBrand .brandMark {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 0.55rem;
   }
 
-  .navIcon {
-    width: 1.6rem;
-    height: 1.6rem;
-  }
-
-  .externalMark {
-    display: none;
-  }
-
-  .backRow,
-  .content :global(.page-frame) {
-    width: min(100% - 1.25rem, 74rem);
+  .main {
+    min-height: calc(100vh - 3.75rem);
   }
 
   .backRow {
+    width: min(100% - 1.25rem, 74rem);
     padding-top: 1rem;
   }
 
-  .content :global(.page-frame) {
-    padding-top: 1rem;
-    padding-bottom: 2rem;
+  .content,
+  .contentAfterBack {
+    --admin-page-top: 1rem;
+  }
+
+  .mobileDrawerBody .navigation {
+    padding-bottom: 1rem;
+  }
+
+  .mobileDrawerBody .navItem {
+    min-height: 2.85rem;
+    font-size: 0.86rem;
   }
 }
