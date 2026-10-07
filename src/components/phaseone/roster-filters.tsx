@@ -141,7 +141,9 @@ export function RosterFilters({
     if (!sentinel || typeof IntersectionObserver === "undefined") return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => setCompactToolbar(!entry.isIntersecting),
+      ([entry]) => {
+        if (entry) setCompactToolbar(!entry.isIntersecting);
+      },
       { rootMargin: "-8px 0px 0px 0px", threshold: 0 },
     );
     observer.observe(sentinel);
