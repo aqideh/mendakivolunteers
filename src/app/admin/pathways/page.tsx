@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PortalHeader } from "@/components/portal-header";
 import { SectionIndex } from "@/components/section-index";
 import { requirePathwayManager } from "@/lib/auth/pathway-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
@@ -91,9 +90,8 @@ export default async function AdminPathwaysPage({
   ];
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Pathway management" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Volunteer development</p>
@@ -224,7 +222,7 @@ export default async function AdminPathwaysPage({
             </table>
           </div>
         </section>
-      </main>
+      </div>
       <footer className="site-footer">MENDAKI Volunteer Pathway Management</footer>
     </div>
   );
