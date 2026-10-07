@@ -78,18 +78,37 @@ export function splitAdminEvents(
   return { current, past };
 }
 
+export type AdminEventSort =
+  | "date_asc"
+  | "date_desc"
+  | "name_asc"
+  | "name_desc";
+
 export function sortCurrentAdminEvents(
   events: readonly AdminEventSummary[],
+  sort: AdminEventSort = "date_asc",
 ): AdminEventSummary[] {
   return [...events].sort((left, right) => {
+    if (sort === "name_asc") {
+      return left.title.localeCompare(right.title, "en-SG");
+    }
+    if (sort === "name_desc") {
+      return right.title.localeCompare(left.title, "en-SG");
+    }
+
     const leftStart = getAdminEventFirstScheduledTimeslot(left)?.starts_at;
     const rightStart = getAdminEventFirstScheduledTimeslot(right)?.starts_at;
 
     if (leftStart && rightStart) {
-      return leftStart.localeCompare(rightStart) || left.title.localeCompare(right.title);
+      const dateComparison =
+        sort === "date_desc"
+          ? rightStart.localeCompare(leftStart)
+          : leftStart.localeCompare(rightStart);
+      return dateComparison || left.title.localeCompare(right.title, "en-SG");
     }
+
     if (leftStart) return -1;
     if (rightStart) return 1;
-    return left.title.localeCompare(right.title);
+    return left.title.localeCompare(right.title, "en-SG");
   });
 }

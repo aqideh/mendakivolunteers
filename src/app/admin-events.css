@@ -2,6 +2,42 @@
   display: none;
 }
 
+.phaseone-events-sortbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.8rem;
+}
+
+.phaseone-events-sort-form {
+  display: flex;
+  align-items: end;
+  gap: 0.4rem;
+}
+
+.phaseone-events-sort-field {
+  min-width: 11rem;
+  margin: 0;
+}
+
+.phaseone-events-sort-field label {
+  font-size: 0.68rem;
+}
+
+.phaseone-events-sort-field select,
+.phaseone-events-sort-form .button {
+  min-height: 2.15rem;
+}
+
+.phaseone-events-sort-field select {
+  padding-block: 0.35rem;
+  font-size: 0.76rem;
+}
+
+.phaseone-events-sort-form .button {
+  padding: 0.4rem 0.58rem;
+  font-size: 0.76rem;
+}
+
 @media (max-width: 759px) {
   .phaseone-events-admin-page {
     width: min(100% - 1rem, 44rem);
@@ -44,6 +80,26 @@
     padding: 0.35rem 0.5rem;
     font-size: 0.75rem;
     line-height: 1.1;
+  }
+
+  .phaseone-events-sortbar {
+    justify-content: stretch;
+    margin-bottom: 0.55rem;
+  }
+
+  .phaseone-events-sort-form {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem;
+  }
+
+  .phaseone-events-sort-field {
+    min-width: 0;
+  }
+
+  .phaseone-events-sort-field select {
+    width: 100%;
   }
 
   .phaseone-events-desktop-table {
