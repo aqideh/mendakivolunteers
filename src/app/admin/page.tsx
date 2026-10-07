@@ -310,6 +310,7 @@ export default async function AdminPage() {
           .from("phaseone_roster")
           .select("id, event_id, timeslot_id, volunteer_name")
           .in("event_id", rosterEventIds)
+          .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
           .limit(20000)
       : Promise.resolve({ data: [] as RosterRow[], error: null }),
     recentVolunteerIds.length
