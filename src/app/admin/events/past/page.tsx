@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
-import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import {
   getAdminEventEffectiveEnd,
@@ -177,9 +176,8 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Past events" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Event operations archive</p>
@@ -301,7 +299,7 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
             {page < totalPages ? <Link className="button button-secondary" href={pageHref(linkParameters, page + 1)}>Next</Link> : null}
           </nav>
         ) : null}
-      </main>
+      </div>
     </div>
   );
 }
