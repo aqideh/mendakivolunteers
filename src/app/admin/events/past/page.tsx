@@ -133,6 +133,7 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
           .from("phaseone_roster")
           .select("id, event_id, volunteer_id, attendance_person_key, volunteer_key")
           .in("event_id", visibleEventIds)
+        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
           .limit(50000)
       : Promise.resolve({ data: [], error: null }),
     visibleEventIds.length

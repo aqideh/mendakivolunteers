@@ -45,6 +45,7 @@ export default async function VolunteerInsightsPage({ params }: PageProps) {
       .from("phaseone_roster")
       .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, attendance_person_key")
       .eq("event_id", id)
+      .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
       .order("volunteer_name")
       .limit(2000),
     admin

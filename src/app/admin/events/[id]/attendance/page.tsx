@@ -257,6 +257,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
       .from("phaseone_roster")
       .select("id, timeslot_id, volunteer_id, volunteer_key, volunteer_name, email, mobile, age, tshirt_size, dietary_requirements, entry_method, attendance_person_key, volunteer_link_status, volunteer_link_note")
       .eq("event_id", id)
+        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
       .order("volunteer_name")
       .limit(2000),
     admin

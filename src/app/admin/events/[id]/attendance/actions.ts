@@ -595,6 +595,7 @@ export async function checkoutAllCurrentParticipants(input: {
       .select("id")
       .eq("event_id", parsed.data.eventId)
       .eq("timeslot_id", parsed.data.timeslotId)
+      .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
       .limit(2000),
     admin
       .from("phaseone_attendance_effective")

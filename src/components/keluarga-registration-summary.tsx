@@ -50,6 +50,7 @@ export async function KeluargaRegistrationSummary({
       .from("phaseone_roster")
       .select("id, event_id, timeslot_id, registration_id")
       .eq("volunteer_id", volunteerId)
+        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
       .limit(100),
   ]);
 

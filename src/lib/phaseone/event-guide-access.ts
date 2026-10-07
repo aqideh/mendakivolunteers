@@ -161,6 +161,7 @@ export async function getEventGuideViewer(): Promise<EventGuideViewerResult> {
         .from("phaseone_roster")
         .select("event_id")
         .eq("volunteer_id", volunteerResult.data.id)
+        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
         .limit(2000)
     : Promise.resolve({ data: [], error: null });
   const syncPromise = volunteerResult.data
