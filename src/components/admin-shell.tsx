@@ -103,6 +103,18 @@ const navGroups: ReadonlyArray<Readonly<{ title: string; items: readonly NavItem
         icon: "reconciliation",
         capability: "manage_volunteer_data",
       },
+      {
+        href: "/admin/points",
+        label: "Points",
+        icon: "points",
+        capability: "manage_recognition",
+      },
+      {
+        href: "/admin/badges",
+        label: "Badges",
+        icon: "badges",
+        capability: "manage_recognition",
+      },
     ],
   },
   {
@@ -132,23 +144,6 @@ const navGroups: ReadonlyArray<Readonly<{ title: string; items: readonly NavItem
         label: "Volunteer Pathways",
         icon: "pathways",
         capability: "manage_content",
-      },
-    ],
-  },
-  {
-    title: "Recognition",
-    items: [
-      {
-        href: "/admin/points",
-        label: "Points",
-        icon: "points",
-        capability: "manage_recognition",
-      },
-      {
-        href: "/admin/badges",
-        label: "Badges",
-        icon: "badges",
-        capability: "manage_recognition",
       },
     ],
   },
