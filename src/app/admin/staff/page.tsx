@@ -4,7 +4,6 @@ import Link from "next/link";
 import { StaffInviteForm } from "@/app/admin/staff/staff-invite-form";
 import { StaffRoleEditor } from "@/app/admin/staff/staff-role-editor";
 import { StaffSetupLinkForm } from "@/app/admin/staff/staff-setup-link-form";
-import { PortalHeader } from "@/components/portal-header";
 import { requireAdmin } from "@/lib/auth/staff-access";
 import {
   staffInviteRoleOptions,
@@ -87,9 +86,8 @@ export default async function StaffAccessPage() {
   const staffAccounts = await loadStaffAccounts();
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Staff access" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <h1>Manage staff access</h1>
@@ -183,7 +181,7 @@ export default async function StaffAccessPage() {
             </tbody>
           </table>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
