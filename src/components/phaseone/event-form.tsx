@@ -44,6 +44,7 @@ export type EventFormValue = Readonly<{
   whatsapp_url: string | null;
   sign_in_url: string | null;
   sign_out_url: string | null;
+  self_attendance_enabled: boolean;
   has_sign_in_pin: boolean;
   has_sign_out_pin: boolean;
   is_published: boolean;
@@ -158,6 +159,8 @@ export function EventForm({
       (form.elements.namedItem("isOpportunityPublished") as HTMLInputElement | null)?.checked ?? false;
     payload.isPublished =
       (form.elements.namedItem("isPublished") as HTMLInputElement | null)?.checked ?? false;
+    payload.selfAttendanceEnabled =
+      (form.elements.namedItem("selfAttendanceEnabled") as HTMLInputElement | null)?.checked ?? false;
     return payload;
   }
 
@@ -427,10 +430,21 @@ export function EventForm({
       <details
         className="phaseone-disclosure event-form-anchor"
         id="event-attendance-settings"
-        open={Boolean(event?.sign_in_url || event?.sign_out_url)}
+        open={Boolean(event?.sign_in_url || event?.sign_out_url || event?.self_attendance_enabled)}
       >
         <summary>Attendance settings</summary>
         <div className="phaseone-disclosure-body">
+          <label className="checkbox-row">
+            <input
+              defaultChecked={event?.self_attendance_enabled ?? false}
+              name="selfAttendanceEnabled"
+              type="checkbox"
+            />
+            Enable self-attendance mode
+          </label>
+          <p className="form-help">
+            Use this for events where volunteers may need to mark their own attendance because no staff are present.
+          </p>
           <p className="muted">Optional links for volunteer check-in and check-out. PINs are no longer used.</p>
           <div className="phaseone-admin-grid">
             <div className="form-field">
