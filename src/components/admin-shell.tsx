@@ -3,7 +3,7 @@
 import { Burger, Drawer } from "@mantine/core";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   getAdminCapabilities,
@@ -339,9 +339,6 @@ export function AdminShell({ children, roles, email }: AdminShellProps) {
   const homeHref = capabilities.view_overview ? "/admin" : "/admin/events";
   const showBack = pathname !== "/admin" && capabilities.view_overview;
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   return (
     <div className={styles.shell}>
