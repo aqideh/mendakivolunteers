@@ -60,7 +60,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
     admin
       .from("phaseone_roster")
       .select("id", { count: "exact", head: true })
-      .eq("event_id", id),
+      .eq("event_id", id)
+        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match"),
     admin
       .from("phaseone_roster_imports")
       .select("id, mode, file_name, row_count, replaced_count, integration_mode, linked_volunteer_count, created_volunteer_count, review_volunteer_count, uploaded_at")
@@ -71,6 +72,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
       .from("phaseone_roster")
       .select("id, volunteer_name, volunteer_key, email, mobile, volunteer_link_status, volunteer_link_note")
       .eq("event_id", id)
+        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
       .not("volunteer_link_status", "is", null)
       .order("volunteer_name", { ascending: true }),
     admin
