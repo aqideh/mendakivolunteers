@@ -418,10 +418,7 @@ export function MagicLinkConfirmation() {
               required
               disabled={state.status === "saving"}
             />
-            <span className="form-help">
-              Use 12 to 128 characters with uppercase and lowercase letters and at
-              least one number.
-            </span>
+            <span className="form-help">{recoveryPasswordRequirements}</span>
           </div>
 
           <div className="form-field">
@@ -447,7 +444,11 @@ export function MagicLinkConfirmation() {
             type="submit"
             disabled={state.status === "saving"}
           >
-            {state.status === "saving" ? "Updating password..." : "Reset password"}
+            {state.status === "saving"
+              ? "Updating password..."
+              : recoveryMode === "setup"
+                ? "Set password"
+                : "Reset password"}
           </button>
         </form>
       ) : null}
