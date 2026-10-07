@@ -53,6 +53,7 @@ export async function GET(
       .from("phaseone_roster")
       .select("id, timeslot_id, volunteer_key, volunteer_name, email, mobile, tshirt_size, dietary_requirements, entry_method")
       .eq("event_id", id)
+        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
       .order("volunteer_name"),
     admin
       .from("phaseone_attendance_effective")
