@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -139,9 +138,8 @@ export default async function RegistrationsAdminPage({
   });
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Volunteer registrations" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Community volunteer workflow</p>
@@ -347,7 +345,7 @@ export default async function RegistrationsAdminPage({
             </div>
           ) : null}
         </section>
-      </main>
+      </div>
     </div>
   );
 }
