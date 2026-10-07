@@ -249,9 +249,11 @@ function AdminNavigation({
   homeHref,
   onNavigate,
 }: NavigationProps) {
+  const navigationClick = onNavigate ? { onClick: onNavigate } : {};
+
   return (
     <div className={styles.navigationLayout}>
-      <Link className={styles.brand} href={homeHref} onClick={onNavigate}>
+      <Link className={styles.brand} href={homeHref} {...navigationClick}>
         <span className={styles.brandMark}>KM</span>
         <span className={styles.brandCopy}>
           <strong>Keluarga MENDAKI</strong>
@@ -279,7 +281,7 @@ function AdminNavigation({
                     className={styles.navItem}
                     href={item.href}
                     key={item.href}
-                    onClick={onNavigate}
+                    {...navigationClick}
                     rel="noreferrer"
                     target="_blank"
                   >
@@ -287,11 +289,11 @@ function AdminNavigation({
                   </a>
                 ) : (
                   <Link
-                    aria-current={active ? "page" : undefined}
+                    {...(active ? { "aria-current": "page" as const } : {})}
                     className={`${styles.navItem} ${active ? styles.navItemActive : ""}`}
                     href={item.href}
                     key={item.href}
-                    onClick={onNavigate}
+                    {...navigationClick}
                   >
                     {content}
                   </Link>
@@ -303,11 +305,11 @@ function AdminNavigation({
       </div>
 
       <div className={styles.sidebarBottom}>
-        <Link className={styles.utilityLink} href="/" onClick={onNavigate}>
+        <Link className={styles.utilityLink} href="/" {...navigationClick}>
           <Icon name="home" />
           <span>Back to Keluarga</span>
         </Link>
-        <Link className={styles.account} href="/dashboard" onClick={onNavigate}>
+        <Link className={styles.account} href="/dashboard" {...navigationClick}>
           <span className={styles.avatar} aria-hidden="true">
             {(email?.trim().charAt(0) || "K").toUpperCase()}
           </span>
