@@ -296,6 +296,26 @@
   font: inherit;
 }
 
+.phaseone-admin-form label.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  cursor: pointer;
+}
+
+.phaseone-admin-form label.checkbox-row input[type="checkbox"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  min-height: 0;
+  flex: 0 0 1.15rem;
+  margin: 0;
+  padding: 0;
+}
+
 .phaseone-admin-fieldset {
   display: grid;
   gap: 0.9rem;
