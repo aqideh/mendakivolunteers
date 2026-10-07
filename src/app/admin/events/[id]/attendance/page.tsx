@@ -878,6 +878,9 @@ export default async function AttendancePage({ params, searchParams }: PageProps
 
                       {canManageEvent ? (
                         <div className="phaseone-staff-tools" aria-label="Volunteer staff tools">
+                          <details className="km-roster-more-actions">
+                            <summary>Details &amp; tools ▾</summary>
+                            <div>
                           <VolunteerReviewForm
                             detailsName={staffToolsName}
                             eventId={id}
@@ -964,7 +967,6 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             />
                           ) : null}
 
-                          <details className="km-roster-more-actions"><summary>More details ▾</summary><div>
                           {canIssueAdditionalShirt && canonicalVolunteerId && shirtIssue ? (
                             <details className="phaseone-attendance-edit phaseone-additional-shirt" name={staffToolsName}>
                               <summary>Another shirt</summary>
@@ -1062,7 +1064,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                             rosterId={volunteer.id}
                             timeslotId={selectedTimeslot.id}
                           />
-                          </div></details>
+                            </div>
+                          </details>
                         </div>
                       ) : null}
 
