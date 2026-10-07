@@ -15,6 +15,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type ReactNode,
@@ -132,6 +133,20 @@ export function RosterFilters({
   const [status, setStatus] = useState(initialStatus);
   const [hideWithdrawn, setHideWithdrawn] = useState(initialHideWithdrawn);
   const [hideAbsent, setHideAbsent] = useState(initialHideAbsent);
+  const [compactToolbar, setCompactToolbar] = useState(false);
+  const toolbarSentinel = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = toolbarSentinel.current;
+    if (!sentinel || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setCompactToolbar(!entry.isIntersecting),
+      { rootMargin: "-8px 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const storageKey = `keluarga:roster-return:v2:${window.location.pathname}:${timeslotId}`;
@@ -309,7 +324,12 @@ export function RosterFilters({
 
   return (
     <RosterVisibilityContext.Provider value={visibleRosterIds}>
-      <div className="km-roster-toolbar" aria-label="Roster controls">
+      <div className="km-roster-toolbar-sentinel" ref={toolbarSentinel} aria-hidden="true" />
+      <div
+        className="km-roster-toolbar"
+        aria-label="Roster controls"
+        data-compact={compactToolbar ? "true" : "false"}
+      >
         <div className="km-roster-shift-row">
           <label className="km-roster-shift">
             <span>Deployment shift</span>
