@@ -3,7 +3,6 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PortalHeader } from "@/components/portal-header";
 import { requireGamificationManager } from "@/lib/auth/gamification-access";
 import { formatPoints } from "@/lib/gamification/read-model";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -85,9 +84,8 @@ export default async function PointsAdminPage({ searchParams }: PageProps) {
   );
 
   return (
-    <div className="site-shell">
-      <PortalHeader status="Points management" dashboard />
-      <main className="page-frame">
+    <div className="admin-page site-shell">
+      <div className="admin-page-frame page-frame">
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">KELUARGA recognition</p>
@@ -219,7 +217,7 @@ export default async function PointsAdminPage({ searchParams }: PageProps) {
             </div>
           ) : null}
         </section>
-      </main>
+      </div>
     </div>
   );
 }
