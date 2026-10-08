@@ -203,6 +203,7 @@ async function AttendanceAudit({
       </div>
       <div className="table-wrap">
         <table className="content-table">
+          <caption className="sr-only">Recent attendance changes</caption>
           <thead><tr><th>Changed</th><th>Volunteer</th><th>Action</th><th>Reason</th><th>Before</th><th>After</th></tr></thead>
           <tbody>
             {auditResult.data.map((audit) => (
@@ -669,7 +670,8 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                       </div>
                       <div className="form-field">
                         <label htmlFor="walk-in-shirt">T-shirt size</label>
-                        <input id="walk-in-shirt" name="tshirtSize" maxLength={20} placeholder="e.g. M" />
+                        <span id="walk-in-shirt-hint" className="sr-only">Enter the issued T-shirt size, such as S, M or L.</span>
+                        <input id="walk-in-shirt" name="tshirtSize" maxLength={20} placeholder="e.g. M" aria-describedby="walk-in-shirt-hint" />
                       </div>
                       <div className="form-field">
                         <label htmlFor="walk-in-dietary">Meal / dietary requirements</label>
