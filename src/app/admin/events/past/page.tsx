@@ -226,8 +226,9 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
 
         <div className="table-wrap">
           <table className="content-table">
+            <caption className="sr-only">Past events with attendance totals and available actions</caption>
             <thead>
-              <tr><th>Event</th><th>Final date</th><th>Attendance</th><th>Venue</th><th>Actions</th></tr>
+              <tr><th scope="col">Event</th><th scope="col">Final date</th><th scope="col">Attendance</th><th scope="col">Venue</th><th scope="col">Actions</th></tr>
             </thead>
             <tbody>
               {visible.map((event) => {
