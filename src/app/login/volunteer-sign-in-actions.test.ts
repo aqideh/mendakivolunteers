@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  afterMock,
   createEmailLinkClientMock,
   getPhaseOneAdminClientMock,
   listUsersMock,
@@ -9,19 +8,12 @@ const {
   updateUserByIdMock,
   userAccountMaybeSingleMock,
 } = vi.hoisted(() => ({
-  afterMock: vi.fn(),
   createEmailLinkClientMock: vi.fn(),
   getPhaseOneAdminClientMock: vi.fn(),
   listUsersMock: vi.fn(),
   signInWithOtpMock: vi.fn(),
   updateUserByIdMock: vi.fn(),
   userAccountMaybeSingleMock: vi.fn(),
-}));
-
-const backgroundTasks: Array<() => void | Promise<void>> = [];
-
-vi.mock("next/server", () => ({
-  after: afterMock,
 }));
 
 vi.mock("@/lib/supabase/email-link", () => ({
@@ -46,20 +38,9 @@ function formData(
   return data;
 }
 
-async function runBackgroundTask() {
-  expect(afterMock).toHaveBeenCalledTimes(1);
-  const task = backgroundTasks.shift();
-  expect(task).toBeDefined();
-  await task?.();
-}
-
 describe("unified email sign-in", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    backgroundTasks.length = 0;
-    afterMock.mockImplementation((callback: () => void | Promise<void>) => {
-      backgroundTasks.push(callback);
-    });
     createEmailLinkClientMock.mockReturnValue({
       auth: { signInWithOtp: signInWithOtpMock },
     });
@@ -111,12 +92,9 @@ describe("unified email sign-in", () => {
     expect(result).toEqual({
       status: "success",
       step: "otp",
-      message: expect.stringContaining("8-digit verification code"),
+      message: expect.stringContaining("verification email"),
       email: "new.volunteer@example.test",
     });
-    expect(signInWithOtpMock).not.toHaveBeenCalled();
-
-    await runBackgroundTask();
 
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "new.volunteer@example.test",
@@ -141,7 +119,6 @@ describe("unified email sign-in", () => {
       message: "",
       email: "staff.user@mendaki.org.sg",
     });
-    expect(afterMock).not.toHaveBeenCalled();
     expect(signInWithOtpMock).not.toHaveBeenCalled();
   });
 
@@ -152,7 +129,6 @@ describe("unified email sign-in", () => {
     );
 
     expect(result.step).toBe("otp");
-    await runBackgroundTask();
     expect(signInWithOtpMock).toHaveBeenCalledTimes(1);
   });
 
@@ -167,11 +143,10 @@ describe("unified email sign-in", () => {
       step: "email",
       message: "Enter a valid email address.",
     });
-    expect(afterMock).not.toHaveBeenCalled();
     expect(signInWithOtpMock).not.toHaveBeenCalled();
   });
 
-  it("keeps volunteer delivery failures non-disclosing", async () => {
+  it("does not claim delivery when Supabase rejects the verification email", async () => {
     signInWithOtpMock.mockResolvedValue({
       error: { code: "over_email_send_rate_limit", status: 429 },
     });
@@ -184,13 +159,15 @@ describe("unified email sign-in", () => {
       formData("volunteer@example.test"),
     );
 
-    expect(result.status).toBe("success");
-    expect(result.message).not.toContain("volunteer@example.test");
-
-    await runBackgroundTask();
-
+    expect(result).toEqual({
+      status: "error",
+      step: "email",
+      message:
+        "Please wait a minute before requesting another verification email.",
+      email: "volunteer@example.test",
+    });
     expect(consoleError).toHaveBeenCalledWith(
-      "Volunteer email OTP request was not delivered",
+      "Volunteer verification email was not delivered",
       expect.objectContaining({
         code: "over_email_send_rate_limit",
         status: 429,
