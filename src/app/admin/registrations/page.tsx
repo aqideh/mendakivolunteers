@@ -52,7 +52,7 @@ export default async function RegistrationsAdminPage({
   let registrationsQuery = admin
     .from("keluarga_registrations")
     .select(
-      "id, volunteer_id, event_id, status, submitted_at, reviewed_at, review_note",
+      "id, volunteer_id, auth_user_id, event_id, status, submitted_at, reviewed_at, review_note, identity_state",
     )
     .order("submitted_at", { ascending: true })
     .limit(2000);
@@ -68,11 +68,22 @@ export default async function RegistrationsAdminPage({
   const registrations = registrationsResult.data;
   const eventIds = Array.from(new Set(registrations.map(({ event_id }) => event_id)));
   const volunteerIds = Array.from(
-    new Set(registrations.map(({ volunteer_id }) => volunteer_id)),
+    new Set(
+      registrations
+        .map(({ volunteer_id }) => volunteer_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const authUserIds = Array.from(
+    new Set(
+      registrations
+        .map(({ auth_user_id }) => auth_user_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
   );
   const registrationIds = registrations.map(({ id }) => id);
 
-  const [eventsResult, volunteersResult, selectionsResult] = await Promise.all([
+  const [eventsResult, volunteersResult, accountsResult, selectionsResult] = await Promise.all([
     eventIds.length
       ? admin.from("phaseone_events").select("id, title, slug").in("id", eventIds)
       : Promise.resolve({ data: [], error: null }),
@@ -85,6 +96,13 @@ export default async function RegistrationsAdminPage({
           )
           .in("id", volunteerIds)
       : Promise.resolve({ data: [], error: null }),
+    authUserIds.length
+      ? admin
+          .schema("core")
+          .from("user_accounts")
+          .select("id, display_name, claimed_email_normalized, email_ownership_verified")
+          .in("id", authUserIds)
+      : Promise.resolve({ data: [], error: null }),
     registrationIds.length
       ? admin
           .from("keluarga_registration_shifts")
@@ -93,7 +111,12 @@ export default async function RegistrationsAdminPage({
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (eventsResult.error || volunteersResult.error || selectionsResult.error) {
+  if (
+    eventsResult.error ||
+    volunteersResult.error ||
+    accountsResult.error ||
+    selectionsResult.error
+  ) {
     throw new Error("Registration review data could not be loaded");
   }
 
@@ -117,6 +140,9 @@ export default async function RegistrationsAdminPage({
   );
   const volunteerById = new Map(
     (volunteersResult.data ?? []).map((volunteer) => [volunteer.id, volunteer]),
+  );
+  const accountById = new Map(
+    (accountsResult.data ?? []).map((account) => [account.id, account]),
   );
   const timeslotById = new Map(
     (timeslotsResult.data ?? []).map((timeslot) => [timeslot.id, timeslot]),
@@ -145,8 +171,9 @@ export default async function RegistrationsAdminPage({
             <p className="eyebrow">Community volunteer workflow</p>
             <h1>Registration review</h1>
             <p className="muted">
-              Confirmed registrations flow directly into Event Operations. Capacity
-              is checked transactionally when you confirm a volunteer.
+              Pending registrations reserve shift capacity transactionally. Confirmed
+              registrations flow into Event Operations only after canonical volunteer
+              identity is resolved.
             </p>
           </div>
           <div className="actions">
@@ -175,7 +202,15 @@ export default async function RegistrationsAdminPage({
         <section className="record-list" aria-label="Volunteer registrations">
           {sorted.map((registration) => {
             const event = eventById.get(registration.event_id);
-            const volunteer = volunteerById.get(registration.volunteer_id);
+            const volunteer = registration.volunteer_id
+              ? volunteerById.get(registration.volunteer_id)
+              : undefined;
+            const account = registration.auth_user_id
+              ? accountById.get(registration.auth_user_id)
+              : undefined;
+            const identityResolved =
+              registration.identity_state === "resolved" &&
+              Boolean(registration.volunteer_id);
             const shifts = (shiftIdsByRegistration.get(registration.id) ?? [])
               .map((id) => timeslotById.get(id))
               .filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -188,17 +223,31 @@ export default async function RegistrationsAdminPage({
                 <div className="section-header">
                   <div>
                     <p className="eyebrow">
-                      {volunteer?.volunteer_code ?? "KEL volunteer"}
+                      {volunteer?.volunteer_code ??
+                        (identityResolved ? "KEL volunteer" : "Identity review")}
                     </p>
-                    <h2>{volunteer?.display_name ?? "Volunteer"}</h2>
+                    <h2>
+                      {volunteer?.display_name ??
+                        account?.display_name ??
+                        "Volunteer"}
+                    </h2>
                     <p className="muted">
-                      {volunteer?.primary_email_normalized ?? "No email"} ·{" "}
-                      {volunteer?.mobile ?? "No mobile"}
+                      {volunteer?.primary_email_normalized ??
+                        account?.claimed_email_normalized ??
+                        "No email"}{" "}
+                      · {volunteer?.mobile ?? "No mobile"}
                     </p>
                   </div>
-                  <span className="status-pill" data-state={registration.status}>
-                    {statusLabel(registration.status)}
-                  </span>
+                  <div className="actions">
+                    {!identityResolved ? (
+                      <span className="status-pill" data-state="pending">
+                        Identity review required
+                      </span>
+                    ) : null}
+                    <span className="status-pill" data-state={registration.status}>
+                      {statusLabel(registration.status)}
+                    </span>
+                  </div>
                 </div>
 
                 <dl className="data-list">
@@ -253,15 +302,29 @@ export default async function RegistrationsAdminPage({
                         name="note"
                       />
                     </div>
+                    {!identityResolved ? (
+                      <div className="notice">
+                        This registration is saved and reserving capacity, but it cannot
+                        be confirmed until Volunteer Management resolves the canonical
+                        volunteer identity.
+                        <div className="actions">
+                          <Link className="text-link" href="/admin/reconciliation">
+                            Open identity review
+                          </Link>
+                        </div>
+                      </div>
+                    ) : null}
                     <div className="actions">
-                      <button
-                        className="button button-primary"
-                        name="decision"
-                        type="submit"
-                        value="confirmed"
-                      >
-                        Confirm
-                      </button>
+                      {identityResolved ? (
+                        <button
+                          className="button button-primary"
+                          name="decision"
+                          type="submit"
+                          value="confirmed"
+                        >
+                          Confirm
+                        </button>
+                      ) : null}
                       <button
                         className="button button-secondary"
                         name="decision"
