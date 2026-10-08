@@ -1,5 +1,6 @@
 export type AdminCapability =
   | "view_overview"
+  | "view_website_analytics"
   | "operate_events"
   | "manage_inventory"
   | "manage_volunteer_data"
@@ -24,6 +25,7 @@ export function getAdminCapabilities(roles: readonly string[]): AdminCapabilitie
 
   return {
     view_overview: fullAdmin,
+    view_website_analytics: fullAdmin,
     operate_events: fullAdmin || isStaff || isVolunteerLeader,
     manage_inventory: fullAdmin,
     manage_volunteer_data: fullAdmin,
