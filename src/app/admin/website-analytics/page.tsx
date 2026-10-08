@@ -365,6 +365,7 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
     `Visitor-to-registrant indicator: ${registrationConversion}`,
   ].join("\n");
 
+  const trackingStartKey = summary.tracking_started_at?.slice(0, 10) ?? null;
   const trackingStarted = summary.tracking_started_at
     ? new Intl.DateTimeFormat("en-SG", {
         day: "numeric",
@@ -416,7 +417,7 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
         <button type="submit">Apply</button>
       </form>
 
-      {trackingStarted && start < summary.tracking_started_at.slice(0, 10) ? (
+      {trackingStarted && trackingStartKey && start < trackingStartKey ? (
         <div className={styles.notice}>
           Visitor tracking began on <strong>{trackingStarted}</strong>. Sign-ups and
           registrations before that date remain complete, but visitor metrics do not.
