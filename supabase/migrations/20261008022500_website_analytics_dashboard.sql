@@ -116,6 +116,7 @@ top_pages as (
 sources as (
   select source, count(*)::bigint as pageviews, count(distinct visitor_id)::bigint as visitors
   from pageviews
+  where source <> 'internal'
   group by source
   order by visitors desc, pageviews desc, source
   limit 8
