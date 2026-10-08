@@ -134,6 +134,19 @@ export function MagicLinkConfirmation() {
         return;
       }
 
+      if (authError && !isRecovery) {
+        // Email clients and mobile browsers can reopen a one-time link after it
+        // has already established a valid session. If this browser already has
+        // that session, continue instead of showing an expired-link error.
+        const existingSessionClient = createClient();
+        const { data: existingUser, error: existingUserError } =
+          await existingSessionClient.auth.getUser();
+
+        if (!existingUserError && existingUser.user) {
+          authError = null;
+        }
+      }
+
       if (authError && isRecovery) {
         // A recovery URL is one-time, but the first successful verification may
         // already have established the user's recovery session. This commonly
@@ -180,7 +193,31 @@ export function MagicLinkConfirmation() {
         return;
       }
 
-      const accountClient = supabase as unknown as SupabaseClient;
+      const sessionClient = createClient();
+      const accountClient = sessionClient as unknown as SupabaseClient;
+
+      if (!isVolunteerOnboarding) {
+        const { data: currentUser } = await sessionClient.auth.getUser();
+        if (
+          currentUser.user &&
+          Object.prototype.hasOwnProperty.call(
+            currentUser.user.user_metadata ?? {},
+            "email_purpose",
+          )
+        ) {
+          const cleanedMetadata = { ...(currentUser.user.user_metadata ?? {}) };
+          delete cleanedMetadata.email_purpose;
+          const { error: cleanupError } = await sessionClient.auth.updateUser({
+            data: cleanedMetadata,
+          });
+          if (cleanupError) {
+            console.error("Unable to clean stale volunteer email purpose metadata", {
+              code: cleanupError.code,
+              status: cleanupError.status,
+            });
+          }
+        }
+      }
 
       if (isVolunteerOnboarding) {
         const { data: inviteResult, error: inviteError } = await accountClient
@@ -441,11 +478,11 @@ export function MagicLinkConfirmation() {
       {state.status === "error" ? (
         <div className="auth-verification-recovery">
           <p className="muted">
-            Return to sign in and request a new password reset email if the
-            previous recovery link is no longer valid.
+            This one-time link may already have been used. Return to Keluarga sign
+            in and request a fresh verification email if needed.
           </p>
-          <Link className="button button-secondary" href="/staff/login">
-            Return to staff sign in
+          <Link className="button button-secondary" href="/login">
+            Return to Keluarga sign in
           </Link>
         </div>
       ) : null}
