@@ -758,17 +758,21 @@ export default async function DashboardPage({
               </div>
             </section>
 
-            {volunteer ? (
-              <KeluargaRegistrationSummary volunteerId={volunteer.id} />
-            ) : (
+            <KeluargaRegistrationSummary
+              volunteerId={volunteer?.id ?? null}
+              authUserId={userId}
+            />
+
+            {!volunteer ? (
               <section className="notice" aria-labelledby="profile-setup-title">
-                <h2 id="profile-setup-title">Volunteer profile setup incomplete</h2>
+                <h2 id="profile-setup-title">Volunteer identity review in progress</h2>
                 <p>
-                  Contact Volunteer Management so your account can be linked to a
-                  KELUARGA volunteer profile.
+                  Your account is active, but Volunteer Management must resolve your
+                  canonical volunteer record before confirmed assignments can be
+                  created.
                 </p>
               </section>
-            )}
+            ) : null}
 
             {contributions.length > 0 ? (
               <section aria-labelledby="contribution-history-title">
