@@ -10,6 +10,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Golos_Text } from "next/font/google";
 
 import { InteractionFeedback } from "@/components/interaction-feedback";
+import { SkipToContent } from "@/components/skip-to-content";
 import { WebsiteAnalyticsTracker } from "@/components/website-analytics-tracker";
 import { keluargaTheme } from "@/lib/ui/theme";
 
@@ -60,6 +61,7 @@ export default function RootLayout({
       </head>
       <body>
         <MantineProvider forceColorScheme="light" theme={keluargaTheme}>
+          <SkipToContent />
           <InteractionFeedback />
           <WebsiteAnalyticsTracker />
           {children}

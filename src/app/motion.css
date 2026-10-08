@@ -397,7 +397,6 @@ body {
   border-color: var(--focus);
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(11, 120, 165, 0.12);
-  outline: 0;
 }
 
 .phaseone-admin-section,

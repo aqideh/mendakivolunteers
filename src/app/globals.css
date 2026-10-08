@@ -76,8 +76,39 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Visible on keyboard focus, then skips directly to the rendered <main>. */
+.skip-to-content {
+  position: fixed;
+  z-index: 3000;
+  top: 0.5rem;
+  left: 0.5rem;
+  transform: translateY(-180%);
+  border: 2px solid var(--ink);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  color: var(--ink);
+  background: var(--primary);
+  font-weight: 800;
+  text-decoration: none;
+}
+.skip-to-content:focus {
+  transform: translateY(0);
+}
+.button-danger {
+  border-color: var(--danger);
+  color: #fff;
+  background: var(--danger);
+}
+.button-danger:hover {
+  background: #782020;
+}
+.button-danger:focus-visible,
+[style*="background-color: var(--ink)"]:focus-visible {
+  outline-color: var(--primary);
 }
 
 .site-shell {
@@ -1009,7 +1040,7 @@ h3 {
 
 .registration-filter-row select,
 .registration-search {
-  min-height: 2.35rem;
+  min-height: 2.75rem;
   border: 1px solid var(--border);
   border-radius: 0.55rem;
   background: var(--surface);
@@ -1019,7 +1050,7 @@ h3 {
   width: 100%;
   padding: 0 0.65rem;
   color: var(--ink);
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 
 .registration-search {
@@ -1034,9 +1065,15 @@ h3 {
 .registration-search input {
   min-width: 0;
   border: 0;
-  outline: 0;
   background: transparent;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
+}
+.registration-search:focus-within {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+.registration-search input:focus-visible {
+  outline: none; /* The whole search field has the visible keyboard focus ring. */
 }
 
 .registration-search kbd {
@@ -1067,7 +1104,8 @@ h3 {
 
 .registration-bulk-button,
 .registration-clear-selection {
-  min-height: 2rem;
+  min-height: 2.75rem;
+  font-size: 0.875rem;
   border: 1px solid rgba(22, 139, 152, 0.25);
   border-radius: 0.45rem;
   padding: 0.28rem 0.62rem;
@@ -1079,6 +1117,7 @@ h3 {
 }
 
 .registration-bulk-button-danger {
+  border-color: var(--danger);
   color: var(--danger);
 }
 
@@ -1129,8 +1168,7 @@ h3 {
 }
 
 .registration-table-row:hover,
-.registration-table-row:focus {
-  outline: none;
+.registration-table-row:focus-visible {
   background: #fafaf7;
 }
 
@@ -1145,8 +1183,8 @@ h3 {
 
 .registration-select-cell input,
 .registration-table-head input {
-  width: 1rem;
-  height: 1rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .registration-volunteer-cell,
@@ -1155,6 +1193,7 @@ h3 {
 }
 
 .registration-name-button {
+  min-height: 2.75rem;
   max-width: 100%;
   overflow: hidden;
   border: 0;
@@ -1219,7 +1258,7 @@ h3 {
 .registration-signal {
   display: inline-flex;
   align-items: center;
-  min-height: 1.45rem;
+  min-height: 1.75rem;
   border-radius: 999px;
   padding: 0.08rem 0.48rem;
   color: var(--muted);
@@ -1260,8 +1299,8 @@ h3 {
 
 .registration-icon-button {
   display: inline-flex;
-  min-width: 2rem;
-  min-height: 2rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
@@ -1631,7 +1670,7 @@ h3 {
   }
 
   .registration-icon-button {
-    min-height: 2.15rem;
+    min-height: 2.75rem;
   }
 
   .registration-table-footer {
