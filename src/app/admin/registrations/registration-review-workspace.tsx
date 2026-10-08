@@ -72,7 +72,7 @@ export type RegistrationCapacityItem = {
 type Props = {
   rows: RegistrationReviewRow[];
   capacityItems: RegistrationCapacityItem[];
-  eventFilter?: string;
+  eventFilter: string | undefined;
 };
 
 type StatusFilter =
@@ -266,14 +266,14 @@ export function RegistrationReviewWorkspace({
         event.preventDefault();
         setFocusedIndex((current) => {
           const next = Math.min(current + 1, visibleRows.length - 1);
-          document.getElementById("registration-row-" + visibleRows[next].id)?.focus();
+          const row = visibleRows[next];\n          if (row) document.getElementById("registration-row-" + row.id)?.focus();
           return next;
         });
       } else if (event.key.toLowerCase() === "k") {
         event.preventDefault();
         setFocusedIndex((current) => {
           const next = Math.max(current - 1, 0);
-          document.getElementById("registration-row-" + visibleRows[next].id)?.focus();
+          const row = visibleRows[next];\n          if (row) document.getElementById("registration-row-" + row.id)?.focus();
           return next;
         });
       } else if (event.key === " " && visibleRows[focusedIndex]?.canReview) {
