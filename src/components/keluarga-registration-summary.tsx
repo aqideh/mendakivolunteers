@@ -29,29 +29,42 @@ function statusLabel(status: string): string {
 
 export async function KeluargaRegistrationSummary({
   volunteerId,
+  authUserId,
 }: {
-  volunteerId: string;
+  volunteerId: string | null;
+  authUserId: string;
 }) {
   const admin = getPhaseOneAdminClient();
+  let registrationsQuery = admin
+    .from("keluarga_registrations")
+    .select("id, event_id, status, submitted_at, review_note, identity_state");
+
+  registrationsQuery = volunteerId
+    ? registrationsQuery.or(
+        `auth_user_id.eq.${authUserId},volunteer_id.eq.${volunteerId}`,
+      )
+    : registrationsQuery.eq("auth_user_id", authUserId);
+
   const [registrationsResult, notificationsResult, rosterResult] = await Promise.all([
-    admin
-      .from("keluarga_registrations")
-      .select("id, event_id, status, submitted_at, review_note")
-      .eq("volunteer_id", volunteerId)
-      .order("submitted_at", { ascending: false })
-      .limit(50),
-    admin
-      .from("keluarga_notifications")
-      .select("id, event_id, title, message, created_at")
-      .eq("volunteer_id", volunteerId)
-      .order("created_at", { ascending: false })
-      .limit(5),
-    admin
-      .from("phaseone_roster")
-      .select("id, event_id, timeslot_id, registration_id")
-      .eq("volunteer_id", volunteerId)
-        .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
-      .limit(100),
+    registrationsQuery.order("submitted_at", { ascending: false }).limit(50),
+    volunteerId
+      ? admin
+          .from("keluarga_notifications")
+          .select("id, event_id, title, message, created_at")
+          .eq("volunteer_id", volunteerId)
+          .order("created_at", { ascending: false })
+          .limit(5)
+      : Promise.resolve({ data: [], error: null }),
+    volunteerId
+      ? admin
+          .from("phaseone_roster")
+          .select("id, event_id, timeslot_id, registration_id")
+          .eq("volunteer_id", volunteerId)
+          .or(
+            "source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match",
+          )
+          .limit(100)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (
@@ -64,6 +77,7 @@ export async function KeluargaRegistrationSummary({
       notificationsCode: notificationsResult.error?.code,
       rosterCode: rosterResult.error?.code,
       volunteerId,
+      authUserId,
     });
     return (
       <section className="section notice notice-error">
@@ -111,6 +125,7 @@ export async function KeluargaRegistrationSummary({
       eventsCode: eventsResult.error?.code,
       timeslotsCode: timeslotsResult.error?.code,
       volunteerId,
+      authUserId,
     });
   }
 
@@ -214,6 +229,13 @@ export async function KeluargaRegistrationSummary({
                     <h3>{event?.title ?? "Volunteer programme"}</h3>
                     {registration.review_note ? (
                       <p className="record-meta">{registration.review_note}</p>
+                    ) : null}
+                    {registration.identity_state === "needs_review" ? (
+                      <p className="record-meta">
+                        Your registration is saved while Volunteer Management verifies
+                        your volunteer identity. It cannot be confirmed or moved into
+                        Event Operations until that review is complete.
+                      </p>
                     ) : null}
                     {["pending", "waitlisted", "confirmed"].includes(
                       registration.status,

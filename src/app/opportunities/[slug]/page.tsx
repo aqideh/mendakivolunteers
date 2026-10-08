@@ -154,53 +154,45 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
     status: string;
     review_note: string | null;
     submitted_at: string;
+    identity_state: string;
   } | null = null;
   let selectedIds = new Set(
     [...requestedShiftIds].filter((timeslotId) => validShiftIds.has(timeslotId)),
   );
 
   if (userId) {
-    const volunteerResult = await supabase
-      .schema("core")
-      .from("volunteers")
-      .select("id")
+    const admin = getPhaseOneAdminClient();
+    const registrationResult = await admin
+      .from("keluarga_registrations")
+      .select("id, status, review_note, submitted_at, identity_state")
       .eq("auth_user_id", userId)
+      .eq("event_id", event.id)
       .maybeSingle();
 
-    if (volunteerResult.data) {
-      const admin = getPhaseOneAdminClient();
-      const registrationResult = await admin
-        .from("keluarga_registrations")
-        .select("id, status, review_note, submitted_at")
-        .eq("volunteer_id", volunteerResult.data.id)
-        .eq("event_id", event.id)
-        .maybeSingle();
+    if (registrationResult.error) {
+      console.error("Unable to load current KELUARGA registration", {
+        code: registrationResult.error.code,
+        eventId: event.id,
+        userId,
+      });
+      throw new Error("Registration status could not be loaded");
+    }
 
-      if (registrationResult.error) {
-        console.error("Unable to load current KELUARGA registration", {
-          code: registrationResult.error.code,
-          eventId: event.id,
-          userId,
-        });
-        throw new Error("Registration status could not be loaded");
+    registration = registrationResult.data;
+
+    if (registration) {
+      const selectedResult = await admin
+        .from("keluarga_registration_shifts")
+        .select("timeslot_id")
+        .eq("registration_id", registration.id);
+
+      if (selectedResult.error) {
+        throw new Error("Registration shifts could not be loaded");
       }
 
-      registration = registrationResult.data;
-
-      if (registration) {
-        const selectedResult = await admin
-          .from("keluarga_registration_shifts")
-          .select("timeslot_id")
-          .eq("registration_id", registration.id);
-
-        if (selectedResult.error) {
-          throw new Error("Registration shifts could not be loaded");
-        }
-
-        selectedIds = new Set(
-          (selectedResult.data ?? []).map(({ timeslot_id }) => String(timeslot_id)),
-        );
-      }
+      selectedIds = new Set(
+        (selectedResult.data ?? []).map(({ timeslot_id }) => String(timeslot_id)),
+      );
     }
   }
 
@@ -323,7 +315,9 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
                       </h2>
                       <p>
                         {registration
-                          ? "Review your status or update your shift selection while registration is still pending."
+                          ? registration.identity_state === "needs_review"
+                            ? "Your place is recorded while Volunteer Management verifies your volunteer identity. You can still update your shift selection while the registration is pending."
+                            : "Review your status or update your shift selection while registration is still pending."
                           : "Choose the shift or shifts that work for you."}
                       </p>
                     </div>
@@ -336,8 +330,8 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
 
                   {success === "registration_submitted" ? (
                     <div className="notice notice-success" role="status">
-                      Registration submitted. Volunteer Management will review it in
-                      KELUARGA.
+                      Registration submitted. Your selected shift(s) are recorded while
+                      Volunteer Management reviews the registration.
                     </div>
                   ) : null}
 
@@ -348,12 +342,21 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
                   ) : null}
 
                   {registration ? (
-                    <p className="phaseone-opportunity-registration-meta">
-                      Submitted {formatSingaporeDateTime(registration.submitted_at)}.
-                      {registration.review_note
-                        ? ` Staff note: ${registration.review_note}`
-                        : ""}
-                    </p>
+                    <>
+                      <p className="phaseone-opportunity-registration-meta">
+                        Submitted {formatSingaporeDateTime(registration.submitted_at)}.
+                        {registration.review_note
+                          ? ` Staff note: ${registration.review_note}`
+                          : ""}
+                      </p>
+                      {registration.identity_state === "needs_review" ? (
+                        <div className="notice" role="status">
+                          Your registration is saved, but it cannot be confirmed or moved
+                          into Event Operations until Volunteer Management resolves your
+                          volunteer identity.
+                        </div>
+                      ) : null}
+                    </>
                   ) : null}
 
                   {!userId ? (

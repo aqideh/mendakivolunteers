@@ -61,32 +61,30 @@ export async function approveTemporaryVolunteer(formData: FormData) {
   if (!parsedCaseId.success) redirect("/admin/reconciliation?error=invalid");
 
   const admin = getPhaseOneAdminClient();
-  const result = await admin
-    .schema("core")
-    .from("account_link_cases")
-    .update({
-      status: "resolved",
-      reason_code: "temporary_profile_approved",
-      review_outcome: "approved_new",
-      requested_sections: [],
-      volunteer_message: null,
-      resolution_notes: note(formData),
-      resolved_by: userId,
-      resolved_at: new Date().toISOString(),
-    })
-    .eq("id", parsedCaseId.data)
-    .in("status", ["pending", "needs_review"]);
+  const result = await admin.schema("core").rpc(
+    "approve_reconciled_account_as_new_volunteer",
+    {
+      p_case_id: parsedCaseId.data,
+      p_actor_user_id: userId,
+      p_notes: note(formData),
+    },
+  );
 
   if (result.error) {
-    console.error("Temporary volunteer approval failed", { code: result.error.code });
+    console.error("Temporary volunteer approval failed", {
+      code: result.error.code,
+      message: result.error.message,
+    });
     redirect("/admin/reconciliation?error=save");
   }
 
   refresh();
+  revalidatePath("/admin/registrations");
+  revalidatePath("/dashboard");
   redirect("/admin/reconciliation?success=approved");
 }
 
-export async function deferExistingVolunteerMatch(formData: FormData) {
+export async function linkExistingVolunteerIdentity(formData: FormData) {
   const { userId } = await requireReviewManager();
   const parsedCaseId = uuidSchema.safeParse(formData.get("caseId"));
   const parsedCandidateId = uuidSchema.safeParse(formData.get("candidateVolunteerId"));
@@ -95,45 +93,28 @@ export async function deferExistingVolunteerMatch(formData: FormData) {
   }
 
   const admin = getPhaseOneAdminClient();
-  const candidateResult = await admin
-    .schema("core")
-    .from("volunteers")
-    .select("id, auth_user_id")
-    .eq("id", parsedCandidateId.data)
-    .maybeSingle();
+  const result = await admin.schema("core").rpc(
+    "link_reconciled_account_to_existing_volunteer",
+    {
+      p_case_id: parsedCaseId.data,
+      p_candidate_volunteer_id: parsedCandidateId.data,
+      p_actor_user_id: userId,
+      p_notes: note(formData),
+    },
+  );
 
-  if (
-    candidateResult.error ||
-    !candidateResult.data ||
-    candidateResult.data.auth_user_id
-  ) {
+  if (result.error) {
+    console.error("Volunteer identity link failed", {
+      code: result.error.code,
+      message: result.error.message,
+    });
     redirect("/admin/reconciliation?error=candidate");
   }
 
-  const result = await admin
-    .schema("core")
-    .from("account_link_cases")
-    .update({
-      status: "resolved",
-      reason_code: "existing_match_deferred_until_verified_auth",
-      review_outcome: "matched_existing_deferred",
-      candidate_volunteer_id: parsedCandidateId.data,
-      requested_sections: [],
-      volunteer_message: null,
-      resolution_notes: note(formData),
-      resolved_by: userId,
-      resolved_at: new Date().toISOString(),
-    })
-    .eq("id", parsedCaseId.data)
-    .in("status", ["pending", "needs_review"]);
-
-  if (result.error) {
-    console.error("Deferred volunteer match failed", { code: result.error.code });
-    redirect("/admin/reconciliation?error=save");
-  }
-
   refresh();
-  redirect("/admin/reconciliation?success=matched");
+  revalidatePath("/admin/registrations");
+  revalidatePath("/dashboard");
+  redirect("/admin/reconciliation?success=linked");
 }
 
 export async function mergeExistingVolunteerIdentity(formData: FormData) {

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import {
   approveTemporaryVolunteer,
-  deferExistingVolunteerMatch,
+  linkExistingVolunteerIdentity,
   mergeExistingVolunteerIdentity,
   rejectAndRequestProfileRefill,
 } from "@/app/admin/reconciliation/actions";
@@ -260,13 +260,19 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                   <form action={approveTemporaryVolunteer} className="phaseone-admin-form">
                     <input type="hidden" name="caseId" value={reviewCase.id} />
                     <h4>Approve as new volunteer</h4>
+                    <p className="muted">
+                      Use this only after confirming none of the suggested canonical
+                      records belongs to this person. The verified account will become
+                      the new canonical volunteer and saved registrations will attach
+                      automatically.
+                    </p>
                     <textarea name="notes" rows={2} maxLength={2000} placeholder="Optional internal notes" />
-                    <button className="button button-primary" type="submit">Approve new record</button>
+                    <button className="button button-primary" type="submit">Approve new volunteer</button>
                   </form>
 
-                  <form action={deferExistingVolunteerMatch} className="phaseone-admin-form">
+                  <form action={linkExistingVolunteerIdentity} className="phaseone-admin-form">
                     <input type="hidden" name="caseId" value={reviewCase.id} />
-                    <h4>Record existing volunteer match</h4>
+                    <h4>Link to existing volunteer</h4>
                     <select name="candidateVolunteerId" required defaultValue={reviewCase.candidate_volunteer_id ?? ""}>
                       <option value="" disabled>Select a likely record</option>
                       {candidates.map(({ candidate }) => (
@@ -275,9 +281,13 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                         </option>
                       ))}
                     </select>
-                    <textarea name="notes" rows={2} maxLength={2000} placeholder="Why this appears to be the same volunteer" />
+                    <textarea name="notes" rows={2} maxLength={2000} placeholder="Why this is the same volunteer" />
+                    <p className="muted">
+                      Linking resolves the account immediately and attaches any saved
+                      registrations to the selected canonical KEL record.
+                    </p>
                     <button className="button button-secondary" type="submit" disabled={candidates.length === 0}>
-                      Save match for later reconciliation
+                      Link account to this volunteer
                     </button>
                   </form>
 
