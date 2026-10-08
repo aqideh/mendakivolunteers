@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { saveEvent } from "@/app/admin/events/actions";
@@ -8,7 +8,39 @@ import { saveEventFormDraft } from "@/app/admin/events/draft-actions";
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
 import { EventImageUploader } from "./event-image-uploader";
-import { TimeslotEditor } from "./timeslot-editor";
+import { TimeslotEditor, type TimeslotEditorValue } from "./timeslot-editor";
+
+type SetupStepKey = "details" | "shifts" | "location" | "preparation" | "visibility";
+
+function SetupStep({
+  id, title, summary, expanded, onToggle, children,
+}: {
+  id: string;
+  title: string;
+  summary: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="km-setup-section event-form-anchor" id={id}>
+      <button
+        aria-controls={`${id}-fields`}
+        aria-expanded={expanded}
+        className="km-setup-section-toggle"
+        onClick={onToggle}
+        type="button"
+      >
+        <span className="km-setup-section-title">{title}</span>
+        <span className="km-setup-section-summary">{summary}</span>
+        <span className="km-setup-section-edit">{expanded ? "Close" : "Edit"}</span>
+      </button>
+      <div className="km-setup-section-body" hidden={!expanded} id={`${id}-fields`}>
+        {children}
+      </div>
+    </section>
+  );
+}
 
 const defaultAttireNotes = "Wear your MENDAKI volunteer shirt if you have one.";
 
@@ -135,7 +167,59 @@ export function EventForm({
   const [titlePreview, setTitlePreview] = useState(event?.title ?? draftString(draft, "title"));
   const [venuePreview, setVenuePreview] = useState(event?.venue ?? draftString(draft, "venue"));
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [categoryPreview, setCategoryPreview] = useState(event?.opportunity_category ?? draftString(draft, "opportunityCategory"));
+  const [directionsPreview, setDirectionsPreview] = useState(event?.navigation_destination ?? draftString(draft, "navigationDestination"));
+  const [attirePreview, setAttirePreview] = useState(event?.attire_notes ?? (draftString(draft, "attireNotes") || defaultAttireNotes));
+  const [preparationPreview, setPreparationPreview] = useState(event?.preparation_notes ?? draftString(draft, "preparationNotes"));
+  const [opportunityPublishedPreview, setOpportunityPublishedPreview] = useState(event?.is_opportunity_published ?? (draft?.payload.isOpportunityPublished === true));
+  const [guidePublishedPreview, setGuidePublishedPreview] = useState(event?.is_published ?? (draft?.payload.isPublished === true));
+  const [shiftPreview, setShiftPreview] = useState<TimeslotEditorValue[]>(effectiveInitialTimeslots);
+  const firstIncompleteStep: SetupStepKey =
+    !titlePreview.trim() || !summaryPreview.trim() ? "details"
+    : !effectiveInitialTimeslots.some((slot) => slot.startsAt && slot.status === "scheduled") ? "shifts"
+    : !venuePreview.trim() || !directionsPreview.trim() ? "location"
+    : !preparationPreview.trim() ? "preparation"
+    : "visibility";
+  const [expandedStep, setExpandedStep] = useState<SetupStepKey | null>(firstIncompleteStep);
+  const [focusedStep, setFocusedStep] = useState<SetupStepKey>(firstIncompleteStep);
   const currentEventId = event?.id ?? recoveryEventId;
+
+  const setupSteps: { key: SetupStepKey; id: string; title: string; done: boolean }[] = [
+    { key: "details", id: "event-schedule", title: "Details", done: Boolean(titlePreview.trim() && summaryPreview.trim()) },
+    { key: "shifts", id: "event-shifts", title: "Schedule & shifts", done: shiftPreview.some((slot) => Boolean(slot.startsAt) && slot.status === "scheduled") },
+    { key: "location", id: "event-location", title: "Location", done: Boolean(venuePreview.trim() && directionsPreview.trim()) },
+    { key: "preparation", id: "event-preparation", title: "Volunteer prep", done: Boolean(attirePreview.trim() && preparationPreview.trim()) },
+    { key: "visibility", id: "event-visibility", title: "Visibility", done: true },
+  ];
+
+  function openStep(step: SetupStepKey, shouldScroll = false) {
+    setExpandedStep(step);
+    setFocusedStep(step);
+    if (shouldScroll) {
+      requestAnimationFrame(() => {
+        const id = setupSteps.find((item) => item.key === step)?.id;
+        if (id) document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }
+
+  useEffect(() => {
+    const ids: Record<string, SetupStepKey> = {
+      "event-schedule": "details", "event-opportunity": "details", "event-shifts": "shifts",
+      "event-location": "location", "event-preparation": "preparation",
+      "event-links": "preparation", "event-attendance-settings": "preparation",
+      "event-advanced": "preparation", "event-visibility": "visibility",
+    };
+    const onScroll = () => {
+      const match = Object.entries(ids).filter(([id]) => id.startsWith("event-") && !["event-opportunity","event-links","event-attendance-settings","event-advanced"].includes(id)).find(([id]) => {
+        const bounds = document.getElementById(id)?.getBoundingClientRect();
+        return bounds && bounds.top <= 200 && bounds.bottom > 180;
+      });
+      if (match) setFocusedStep((prev) => prev === match[1] ? prev : match[1]);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (event || !draft || !formRef.current) return;
@@ -227,36 +311,40 @@ export function EventForm({
   }
 
   return (
-    <form
-      className="phaseone-admin-form"
-      noValidate
+    <form className="phaseone-admin-form km-programme-form" noValidate
       onChange={(e) => {
-        scheduleAutosave();
-        setDirty(true);
-        const control = e.target as unknown as HTMLInputElement | HTMLTextAreaElement;
+        scheduleAutosave(); setDirty(true);
+        const control = e.target as unknown as HTMLInputElement;
         if (control.name === "title") setTitlePreview(control.value);
         if (control.name === "opportunitySummary") setSummaryPreview(control.value);
         if (control.name === "venue") setVenuePreview(control.value);
-      }}
-      onInput={scheduleAutosave}
-      onSubmit={handleSubmit}
-      ref={formRef}
-    >
-      {event?.id || recoveryEventId ? (
-        <input name="id" type="hidden" value={event?.id ?? recoveryEventId ?? ""} />
-      ) : null}
-
+        if (control.name === "opportunityCategory") setCategoryPreview(control.value);
+        if (control.name === "navigationDestination") setDirectionsPreview(control.value);
+        if (control.name === "attireNotes") setAttirePreview(control.value);
+        if (control.name === "preparationNotes") setPreparationPreview(control.value);
+        if (control.name === "isOpportunityPublished") setOpportunityPublishedPreview(control.checked);
+        if (control.name === "isPublished") setGuidePublishedPreview(control.checked);
+      }} onInput={scheduleAutosave} onSubmit={handleSubmit} ref={formRef}>
+      {event?.id || recoveryEventId ? <input name="id" type="hidden" value={event?.id ?? recoveryEventId ?? ""} /> : null}
       <div className="km-setup-layout">
-      <aside className="km-setup-steps" aria-label="Programme setup steps">
-        <h2>Setup progress</h2>
-        <a href="#event-schedule"><span>{titlePreview.trim() ? "✓" : "○"}</span> Details</a>
-        <a href="#event-shifts"><span>○</span> Schedule & shifts</a>
-        <a href="#event-location"><span>{venuePreview.trim() ? "✓" : "○"}</span> Location</a>
-        <a href="#event-preparation"><span>○</span> Volunteer prep</a>
-        <a href="#event-visibility"><span>○</span> Visibility</a>
-      </aside>
-      <div className="km-setup-fields">
-      <div className="form-field event-form-anchor" id="event-schedule">
+        <aside className="km-setup-steps" aria-label="Programme setup steps">
+          <h2>Setup progress</h2>
+          <nav aria-label="Jump to setup section">
+            {setupSteps.map((step,index) => (
+              <button type="button" className="km-setup-step-button" data-active={focusedStep===step.key}
+                aria-current={focusedStep===step.key ? "step" : undefined}
+                aria-label={`Step ${index+1}: ${step.title}, ${step.done ? "configured" : "needs attention"}`}
+                onClick={() => openStep(step.key,true)} key={step.key}>
+                <span aria-hidden="true">{step.done ? "✓" : index+1}</span>{step.title}
+              </button>
+            ))}
+          </nav>
+        </aside>
+        <div className="km-setup-fields">
+          <SetupStep id="event-schedule" title="Details" expanded={expandedStep==="details"}
+            summary={`${categoryPreview || "No category"} · ${opportunityImageUrl ? "1 image" : "No image"} · ${summaryPreview ? "Summary added" : "Summary needed"}`}
+            onToggle={() => setExpandedStep(expandedStep==="details" ? null : "details")}>
+<div className="form-field">
         <label htmlFor="title">Event title</label>
         <input
           defaultValue={event?.title ?? draftString(draft, "title")}
@@ -270,17 +358,9 @@ export function EventForm({
         />
       </div>
 
-      <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-opportunity">
-        <legend>Opportunity listing</legend>
-        <label className="checkbox-row">
-          <input
-            defaultChecked={event?.is_opportunity_published}
-            name="isOpportunityPublished"
-            type="checkbox"
-          />
-          Show on Opportunities page
-        </label>
-        <div className="form-field">
+      <div className="km-editor-listing" id="event-opportunity">
+        <h3>Opportunity listing</h3>
+<div className="form-field">
           <label htmlFor="opportunitySummary">Short summary</label>
           <textarea
             defaultValue={event?.opportunity_summary ?? ""}
@@ -302,7 +382,9 @@ export function EventForm({
             rows={6}
           />
         </div>
-        <div className="form-field">
+        
+        <div className="km-editor-two km-editor-category-deadline">
+<div className="form-field">
           <label htmlFor="opportunityCategory">Category</label>
           <input
             defaultValue={event?.opportunity_category ?? ""}
@@ -312,7 +394,17 @@ export function EventForm({
             placeholder="Community event, mentoring, learning support…"
           />
         </div>
-        <div className="form-field">
+<div className="form-field">
+            <label htmlFor="registrationDeadline">Registration deadline</label>
+            <input
+              defaultValue={toSingaporeDateTimeLocal(event?.registration_deadline ?? null)}
+              id="registrationDeadline"
+              name="registrationDeadline"
+              type="datetime-local"
+            />
+          </div>
+        </div>
+        <div className="form-field km-editor-image">
           <label>Card image</label>
           <input
             id="opportunityImageUrl"
@@ -322,6 +414,7 @@ export function EventForm({
           />
           {currentEventId ? (
             <EventImageUploader
+              compact
               eventId={currentEventId}
               imageUrl={opportunityImageUrl || null}
               onImageChange={(url) => setOpportunityImageUrl(url ?? "")}
@@ -345,15 +438,7 @@ export function EventForm({
           />
         </div>
         <div className="phaseone-admin-grid">
-          <div className="form-field">
-            <label htmlFor="registrationDeadline">Registration deadline</label>
-            <input
-              defaultValue={toSingaporeDateTimeLocal(event?.registration_deadline ?? null)}
-              id="registrationDeadline"
-              name="registrationDeadline"
-              type="datetime-local"
-            />
-          </div>
+          
           <div className="form-field">
             <label htmlFor="opportunitySortOrder">Display order (lower numbers appear first)</label>
             <input
@@ -366,12 +451,18 @@ export function EventForm({
             />
           </div>
         </div>
-      </fieldset>
+      </div>
 
-      <div id="event-shifts" className="event-form-anchor"><TimeslotEditor initialTimeslots={effectiveInitialTimeslots} /></div>
-
-      <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-location">
-        <legend>Location</legend>
+          </SetupStep>
+          <SetupStep id="event-shifts" title="Schedule & shifts" expanded={expandedStep==="shifts"}
+            summary={`${shiftPreview.length || 1} shift(s) · ${shiftPreview.filter(s=>s.startsAt && s.status==="scheduled").length} scheduled`}
+            onToggle={() => setExpandedStep(expandedStep==="shifts" ? null : "shifts")}>
+            <TimeslotEditor initialTimeslots={effectiveInitialTimeslots} onChange={timeslots=>{setShiftPreview(timeslots);setDirty(true);scheduleAutosave();}} />
+          </SetupStep>
+          <SetupStep id="event-location" title="Location" expanded={expandedStep==="location"}
+            summary={`${venuePreview || "Venue needed"} · ${directionsPreview ? "Directions added" : "Address needed"}`}
+            onToggle={() => setExpandedStep(expandedStep==="location" ? null : "location")}>
+<div className="km-editor-two">
         <div className="form-field">
           <label htmlFor="venue">Venue</label>
           <input defaultValue={event?.venue ?? ""} id="venue" maxLength={240} name="venue" />
@@ -386,10 +477,12 @@ export function EventForm({
             placeholder="Venue, street address or postal code"
           />
         </div>
-      </fieldset>
-
-      <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-preparation">
-        <legend>Volunteer preparation</legend>
+      </div>
+          </SetupStep>
+          <SetupStep id="event-preparation" title="Volunteer preparation" expanded={expandedStep==="preparation"}
+            summary={`${attirePreview ? "Attire reminder" : "Attire needed"} · ${preparationPreview ? "Instructions added" : "Instructions needed"}`}
+            onToggle={() => setExpandedStep(expandedStep==="preparation" ? null : "preparation")}>
+<div className="km-editor-two">
         <div className="form-field">
           <label htmlFor="attireNotes">Attire reminder</label>
           <textarea
@@ -412,9 +505,8 @@ export function EventForm({
             rows={4}
           />
         </div>
-      </fieldset>
-
-      <details className="phaseone-disclosure event-form-anchor" id="event-links">
+      </div>
+<details className="phaseone-disclosure event-form-anchor" id="event-links">
         <summary>Volunteer links</summary>
         <div className="phaseone-disclosure-body">
           <div className="form-field">
@@ -501,50 +593,34 @@ export function EventForm({
         </div>
       </details>
 
-      <div className="phaseone-publish-row" id="event-visibility"><h2>Visibility</h2>
-        <label className="checkbox-row">
-          <input defaultChecked={event?.is_published} name="isPublished" type="checkbox" />
-          Share Event Guide with assigned volunteers
-        </label>
-        <p className="muted">Publishing needs a scheduled shift, venue and directions address. Other features are optional.</p>
-      </div>
-
-      </div>
-      <aside className="km-setup-preview">
-        <div className="km-preview-heading"><h2>Opportunities page preview</h2><button type="button" className="button button-secondary km-preview-mobile-button" onClick={() => setShowMobilePreview(!showMobilePreview)}>{showMobilePreview ? "Hide preview" : "Preview"}</button></div>
-        <div className={showMobilePreview ? "km-setup-preview-content is-open" : "km-setup-preview-content"}>
-          {opportunityImageUrl ? <img alt="" src={opportunityImageUrl} /> : <div className="km-preview-image-placeholder">Opportunity image</div>}
-          <strong>{titlePreview || "Programme title"}</strong>
-          <p>{summaryPreview || "Your public summary will appear here."}</p>
-          <p className="muted">{venuePreview || "Location to be confirmed"}</p>
-          <p className="form-help">Preview only. Public visibility is controlled below.</p>
+      
+          </SetupStep>
+          <SetupStep id="event-visibility" title="Visibility" expanded={expandedStep==="visibility"}
+            summary={`${opportunityPublishedPreview ? "On Opportunities" : "Not on Opportunities"} · ${guidePublishedPreview ? "Guide shared" : "Guide private"}`}
+            onToggle={() => setExpandedStep(expandedStep==="visibility" ? null : "visibility")}>
+            <div className="km-editor-visibility">
+              <label className="checkbox-row"><input defaultChecked={event?.is_opportunity_published ?? false} name="isOpportunityPublished" type="checkbox"/>Show on Opportunities page</label>
+              <label className="checkbox-row"><input defaultChecked={event?.is_published ?? false} name="isPublished" type="checkbox"/>Share Event Guide with assigned volunteers</label>
+              <p className="form-help">Publishing requires a scheduled shift, venue and directions address.</p>
+            </div>
+          </SetupStep>
         </div>
-      </aside></div>
-      {!event ? (
-        <p className="muted phaseone-draft-status" aria-live="polite">
-          {draftStatus === "saving"
-            ? "Saving draft…"
-            : draftStatus === "saved"
-              ? draft
-                ? "Recovered draft · changes autosave"
-                : "Draft saved"
-              : draftStatus === "error"
-                ? "Draft autosave unavailable — keep this page open until saved."
-                : "Changes will autosave as you work."}
-        </p>
-      ) : null}
-
-      {saveState.status === "error" ? (
-        <div className="notice notice-error" role="alert" aria-live="polite">{saveState.message}</div>
-      ) : null}
-
+        <aside className="km-setup-preview">
+          <div className="km-preview-heading"><h2>Live preview</h2><button type="button" className="button button-secondary km-preview-mobile-button"
+            aria-expanded={showMobilePreview} aria-controls="km-live-preview" onClick={()=>setShowMobilePreview(!showMobilePreview)}>{showMobilePreview?"Hide preview":"Preview"}</button></div>
+          <div id="km-live-preview" className={showMobilePreview?"km-setup-preview-content is-open":"km-setup-preview-content"}>
+            {opportunityImageUrl ? <img alt="" src={opportunityImageUrl}/> : <div className="km-preview-image-placeholder">Opportunity image</div>}
+            <span className="status-pill">{opportunityPublishedPreview ? "Shown on Opportunities" : "Not yet public"}</span>
+            <strong>{titlePreview || "Programme title"}</strong><span className="muted">{categoryPreview}</span>
+            <p>{summaryPreview || "Public summary preview"}</p><p className="muted">{venuePreview || "Location to be confirmed"}</p>
+          </div>
+        </aside>
+      </div>
+      {!event ? <p className="muted phaseone-draft-status" aria-live="polite">{draftStatus==="saving"?"Saving draft…":draftStatus==="saved"?"Draft saved":draftStatus==="error"?"Draft autosave unavailable. Save manually.":"Changes autosave as you work."}</p> : null}
+      {saveState.status==="error" ? <div className="notice notice-error" role="alert">{saveState.message}</div> : null}
       <div className="actions phaseone-sticky-actions km-setup-save-bar">
         <span role="status" className="km-setup-save-label">{isSaving ? "Saving…" : dirty ? "Unsaved changes" : event ? "No unsaved changes" : "Draft programme"}</span>
-        <button className="button button-primary" disabled={isSaving} type="submit">
-          {isSaving
-            ? event || recoveryEventId ? "Saving…" : "Creating…"
-            : event || recoveryEventId ? "Save programme" : "Create programme"}
-        </button>
+        <button className="button button-primary" disabled={isSaving} type="submit">{isSaving?"Saving…":event||recoveryEventId?"Save programme":"Create programme"}</button>
       </div>
     </form>
   );

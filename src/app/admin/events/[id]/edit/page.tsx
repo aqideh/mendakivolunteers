@@ -7,6 +7,7 @@ import { submitManualEventHoursForReview } from "@/app/admin/events/manual-actio
 import { ManualRosterVolunteerForm } from "@/components/phaseone/manual-roster-volunteer-form";
 import { DatabaseVolunteerRosterPicker } from "@/components/phaseone/database-volunteer-roster-picker";
 import { EventForm, type EventFormValue } from "@/components/phaseone/event-form";
+import { ProgrammeEditorWorkspace } from "@/components/phaseone/programme-editor-workspace";
 import { ProgrammeRundownManager } from "@/components/phaseone/programme-rundown-manager";
 import { RosterUpload } from "@/components/phaseone/roster-upload";
 import { hasProgrammeManagerRole, requireEventManager } from "@/lib/auth/event-access";
@@ -72,7 +73,6 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
       .select("id, volunteer_name, volunteer_key, email, mobile, volunteer_link_status, volunteer_link_note")
       .eq("event_id", id)
         .or("source_assignment_status.is.null,source_assignment_status.neq.invalidated_historical_shift_match")
-      .not("volunteer_link_status", "is", null)
       .order("volunteer_name", { ascending: true }),
     admin
       .from("phaseone_event_rundown_images")
@@ -171,10 +171,10 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         <div className="dashboard-header">
           <div>
             <p className="eyebrow">Event operations</p>
-            <h1>{event.title}</h1>
+            <h1 className="km-programme-page-title" title={event.title}>{event.title}</h1>
             <p className="muted">Manage the opportunity listing, Event Guide, roster and attendance from one programme record.</p>
           </div>
-          <div className="actions">
+          <div className="actions km-programme-external-links">
             <Link className="button button-secondary" href="/admin/events">All events</Link>
             {canManageProgramme ? (
               <Link className="button button-secondary" href={`/admin/events/${id}/leaders`}>
@@ -188,23 +188,11 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </div>
         </div>
 
-        <nav className="phaseone-task-nav km-programme-nav" aria-label="Event editor sections">
-          {canManageProgramme ? <a href="#guide" aria-current="page">Setup</a> : null}
-          <a href="#roster">Roster · {rosterCountResult.count ?? 0}</a>
-          <Link href={`/admin/events/${id}/attendance`}>Attendance</Link>
-          <Link href={`/admin/events/${id}/attendance/monitor`}>Live</Link>
-          <details className="km-programme-more"><summary>More</summary><div className="km-programme-more-items">
-            <Link href={`/admin/registrations?event=${id}`}>Registrations</Link>
-            {canManageProgramme ? <Link href={`/admin/events/${id}/leaders`}>Volunteer leaders</Link> : null}
-            <Link href={`/admin/events/${id}/insights`}>Insights</Link>
-            <Link href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
-          </div></details>
-        </nav>
-
         {successMessage ? <div className="notice notice-success" role="status">{successMessage}</div> : null}
         {errorMessage ? <div className="notice notice-error" role="alert">{errorMessage}</div> : null}
 
-        {canManageProgramme ? (
+        <ProgrammeEditorWorkspace eventId={id} canManageProgramme={canManageProgramme} rosterCount={rosterCountResult.count ?? 0}
+          setup={<>{/* Keep Setup mounted when switching to Roster */}        {canManageProgramme ? (
           <>
         <section className="panel phaseone-admin-section" id="guide" aria-labelledby="event-details-title">
           <div className="section-header">
@@ -217,20 +205,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           <EventForm event={event} />
         </section>
 
-        <section className="section panel phaseone-admin-section" id="programme" aria-labelledby="rundown-title">
-          <div className="section-header">
-            <div>
-              <p className="eyebrow">Programme</p>
-              <h2 id="rundown-title">Programme rundown</h2>
-            </div>
-            <span className="status-pill">{rundownImages.length} images</span>
-          </div>
-          <ProgrammeRundownManager
-            eventId={event.id}
-            images={rundownImages}
-            legacyUrl={event.programme_rundown_url}
-          />
-        </section>
+
 
           </>
         ) : (
@@ -239,11 +214,13 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </div>
         )}
 
-        <section className="section panel phaseone-admin-section" id="roster" aria-labelledby="roster-title">
+</>}
+          roster={<>
+        <section className="section panel phaseone-admin-section" aria-labelledby="roster-title">
           <div className="section-header">
             <div>
               <p className="eyebrow">Roster</p>
-              <h2 id="roster-title">Add volunteers</h2>
+              <h2 id="roster-title">Volunteer roster</h2>
             </div>
             <span className="status-pill">{rosterCountResult.count ?? 0} assignments</span>
           </div>
@@ -264,7 +241,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             </div>
           ) : null}
 
-          <div className="km-roster-methods">
+          <details className="km-roster-add-drawer"><summary>Add volunteers</summary><div className="km-roster-add-drawer-body">          <div className="km-roster-methods">
             <p className="muted">Choose how to add volunteers. Database search links people to their existing KELUARGA record.</p>
             {operationsScope !== "manual_isolated" ? (
               <div className="km-roster-add-methods">
@@ -274,6 +251,38 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             ) : null}
           </div>
 
+
+            <details className="km-roster-import"><summary>Import CSV / paste</summary>
+              <RosterUpload eventId={event.id} operationsScope={operationsScope} timeslots={timeslotsResult.data}/>
+            </details></div></details>
+          <div className="table-wrap km-roster-assignment-table">
+            <table className="content-table">
+              <caption className="sr-only">Assigned volunteers for this programme</caption>
+              <thead><tr><th scope="col">Volunteer</th><th scope="col">Contact</th><th scope="col">Database link</th></tr></thead>
+              <tbody>
+                {rosterLinkRows.map(row=><tr key={row.id}><td><strong>{row.volunteer_name || "Unnamed volunteer"}</strong></td>
+                  <td>{row.email || row.mobile || row.volunteer_key || "—"}</td>
+                  <td>{row.volunteer_link_status === "needs_review" ? "Needs review" : row.volunteer_link_status === "matched_existing" ? "Matched" : row.volunteer_link_status === "created_new" ? "New ID" : "Event roster"}</td></tr>)}
+                {rosterLinkRows.length === 0 ? <tr><td colSpan={3}>No volunteers assigned yet.</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+          <details className="km-rundown-compact" id="programme"><summary>Programme rundown · {rundownImages.length} images</summary>
+                    <section className="panel phaseone-admin-section" aria-labelledby="rundown-title">
+          <div className="section-header">
+            <div>
+              <p className="eyebrow">Programme</p>
+              <h2 id="rundown-title">Programme rundown</h2>
+            </div>
+            <span className="status-pill">{rundownImages.length} images</span>
+          </div>
+          <ProgrammeRundownManager
+            eventId={event.id}
+            images={rundownImages}
+            legacyUrl={event.programme_rundown_url}
+          />
+        </section>
+          </details>
           {operationsScope !== "manual_isolated" && rosterLinkRows.length > 0 ? (
             <div className="panel">
               <div className="section-header">
@@ -310,11 +319,6 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             </div>
           ) : null}
 
-          <details className="km-roster-import"><summary>Import CSV / paste</summary><RosterUpload
-            eventId={event.id}
-            operationsScope={operationsScope}
-            timeslots={timeslotsResult.data}
-          /></details>
 
           {operationsScope === "manual_integrated" && creditContributionHours ? (
             <div className="panel">
@@ -362,6 +366,9 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </details>
         </section>
 
+
+          </>}
+        />
         {canManageProgramme ? (
           <details className="phaseone-disclosure phaseone-page-tools">
             <summary>More event actions</summary>

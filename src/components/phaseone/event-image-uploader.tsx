@@ -26,10 +26,12 @@ export function EventImageUploader({
   eventId,
   imageUrl,
   onImageChange,
+  compact = false,
 }: {
   eventId: string;
   imageUrl: string | null;
   onImageChange: (url: string | null) => void;
+  compact?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
@@ -153,7 +155,7 @@ export function EventImageUploader({
   }
 
   return (
-    <div className={styles.eventImage}>
+    <div className={compact ? `${styles.eventImage} ${styles.eventImageCompact}` : styles.eventImage}>
       <div
         aria-busy={isBusy}
         aria-disabled={isBusy}

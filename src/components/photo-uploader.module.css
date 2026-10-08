@@ -87,3 +87,9 @@
   text-align: center;
   pointer-events: none;
 }
+
+.eventImageCompact { grid-template-columns:minmax(0,220px) minmax(0,1fr); align-items:start; gap:.6rem 1rem; }
+.eventImageCompact .eventPreview { grid-row:1/4; width:100%; }
+.eventImageCompact .actions { grid-column:2; }
+.eventImageCompact > p { grid-column:2; margin:0; }
+@media(max-width:639px) { .eventImageCompact { grid-template-columns:minmax(0,1fr); } .eventImageCompact .eventPreview,.eventImageCompact .actions,.eventImageCompact > p { grid-column:1; grid-row:auto; } }
