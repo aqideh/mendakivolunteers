@@ -52,7 +52,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
         <div>
           <h2>Check your email</h2>
           <p className="auth-verification-email">
-            We sent an 8-digit verification code to <strong>{state.email}</strong>.
+            We sent a verification email to <strong>{state.email}</strong>.
           </p>
         </div>
 
@@ -76,7 +76,8 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
               disabled={otpPending}
             />
             <span className="form-help">
-              Enter the 8-digit code from your email.
+              If your email contains an 8-digit code, enter it here. If it contains
+              a Keluarga verification button instead, open that button to continue.
             </span>
           </div>
 
@@ -101,7 +102,7 @@ export function VolunteerSignInForm({ nextPath }: VolunteerSignInFormProps) {
           <input type="hidden" name="email" value={state.email} />
           <input type="hidden" name="next" value={nextPath} />
           <button className="button button-secondary" type="submit" disabled={pending}>
-            {pending ? "Sending…" : "Send a new code"}
+            {pending ? "Sending…" : "Send a new verification email"}
           </button>
         </form>
 
