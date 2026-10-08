@@ -118,7 +118,6 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
           .select("id, event_id, label, starts_at, ends_at, status, sort_order, registration_capacity")
           .in("event_id", upcomingEventIds)
           .eq("status", "scheduled")
-          .gte("ends_at", todayStart)
           .order("starts_at", { ascending: true })
           .order("sort_order", { ascending: true })
           .limit(20000)
