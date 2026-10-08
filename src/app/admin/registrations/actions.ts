@@ -13,7 +13,7 @@ const cancellationSchema = z.object({
   reason: z.string().trim().min(3).max(1000),
 });
 
-const reviewSchema = z.object({
+const bulkReviewSchema = z.object({\n  registrationIds: z.array(z.string().uuid()).min(1).max(100),\n  decision: z.enum(["confirmed", "waitlisted", "rejected"]),\n  returnTo: z.string().startsWith("/admin/registrations"),\n});\n\nconst reviewSchema = z.object({
   registrationId: z.string().uuid(),
   eventId: z.string().uuid(),
   decision: z.enum(["confirmed", "waitlisted", "rejected"]),
