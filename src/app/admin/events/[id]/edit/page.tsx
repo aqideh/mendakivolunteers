@@ -188,20 +188,17 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </div>
         </div>
 
-        <nav className="phaseone-task-nav" aria-label="Event editor sections">
-          {canManageProgramme ? (
-            <>
-              <a href="#guide">Guide · {event.is_published ? "Published" : "Draft"}</a>
-              <a href="#programme">Programme · {rundownImages.length}</a>
-              <Link href={`/admin/events/${id}/leaders`}>Volunteer Leaders</Link>
-            </>
-          ) : null}
+        <nav className="phaseone-task-nav km-programme-nav" aria-label="Event editor sections">
+          {canManageProgramme ? <a href="#guide" aria-current="page">Setup</a> : null}
           <a href="#roster">Roster · {rosterCountResult.count ?? 0}</a>
-          <Link href={`/admin/registrations?event=${id}`}>Registrations</Link>
-          <Link href={`/admin/events/${id}/insights`}>Insights</Link>
           <Link href={`/admin/events/${id}/attendance`}>Attendance</Link>
-          <Link href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
-          <Link href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
+          <Link href={`/admin/events/${id}/attendance/monitor`}>Live</Link>
+          <details className="km-programme-more"><summary>More</summary><div className="km-programme-more-items">
+            <Link href={`/admin/registrations?event=${id}`}>Registrations</Link>
+            {canManageProgramme ? <Link href={`/admin/events/${id}/leaders`}>Volunteer leaders</Link> : null}
+            <Link href={`/admin/events/${id}/insights`}>Insights</Link>
+            <Link href={`/admin/events/${id}/attendance/reconcile`}>Reconcile</Link>
+          </div></details>
         </nav>
 
         {successMessage ? <div className="notice notice-success" role="status">{successMessage}</div> : null}
@@ -212,8 +209,8 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
         <section className="panel phaseone-admin-section" id="guide" aria-labelledby="event-details-title">
           <div className="section-header">
             <div>
-              <p className="eyebrow">Guide details</p>
-              <h2 id="event-details-title">What volunteers need to know</h2>
+              <p className="eyebrow">Programme setup</p>
+              <h2 id="event-details-title">Details, shifts and visibility</h2>
             </div>
             <span className="status-pill">{event.is_published ? "Published" : "Draft"}</span>
           </div>
@@ -267,18 +264,15 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             </div>
           ) : null}
 
-          {operationsScope !== "manual_isolated" ? (
-            <>
-              <DatabaseVolunteerRosterPicker
-                eventId={event.id}
-                timeslots={timeslotsResult.data}
-              />
-              <ManualRosterVolunteerForm
-                eventId={event.id}
-                timeslots={timeslotsResult.data}
-              />
-            </>
-          ) : null}
+          <div className="km-roster-methods">
+            <p className="muted">Choose how to add volunteers. Database search links people to their existing KELUARGA record.</p>
+            {operationsScope !== "manual_isolated" ? (
+              <div className="km-roster-add-methods">
+                <details open><summary>Search database</summary><DatabaseVolunteerRosterPicker eventId={event.id} timeslots={timeslotsResult.data} /></details>
+                <details><summary>Add new</summary><ManualRosterVolunteerForm eventId={event.id} timeslots={timeslotsResult.data} /></details>
+              </div>
+            ) : null}
+          </div>
 
           {operationsScope !== "manual_isolated" && rosterLinkRows.length > 0 ? (
             <div className="panel">
@@ -316,11 +310,11 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
             </div>
           ) : null}
 
-          <RosterUpload
+          <details className="km-roster-import"><summary>Import CSV / paste</summary><RosterUpload
             eventId={event.id}
             operationsScope={operationsScope}
             timeslots={timeslotsResult.data}
-          />
+          /></details>
 
           {operationsScope === "manual_integrated" && creditContributionHours ? (
             <div className="panel">
