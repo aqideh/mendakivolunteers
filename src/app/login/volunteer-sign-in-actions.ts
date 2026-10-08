@@ -2,7 +2,6 @@
 
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
-import { after } from "next/server";
 import { z } from "zod";
 
 import { isMendakiWorkEmail, staffInviteRoleValues } from "@/lib/auth/staff-roles";
@@ -30,7 +29,7 @@ export type VolunteerOtpState = Readonly<{
 }>;
 
 const genericOtpMessage =
-  "We sent an 8-digit verification code to your email. Enter it below to continue.";
+  "We sent a verification email. Open the latest Keluarga MENDAKI email to continue.";
 
 function volunteerDestination(
   nextPath: string,
@@ -88,10 +87,32 @@ async function prepareVolunteerEmailPurpose(email: string) {
     return undefined;
   }
 
-  if (
-    accountResult.data ||
-    existingUser.app_metadata?.onboarding_invite_pending === true
-  ) {
+  if (accountResult.data) {
+    if (
+      Object.prototype.hasOwnProperty.call(
+        existingUser.user_metadata ?? {},
+        "email_purpose",
+      )
+    ) {
+      const cleanupResult = await admin.auth.admin.updateUserById(
+        existingUser.id,
+        {
+          user_metadata: withoutEmailPurpose(existingUser.user_metadata),
+        },
+      );
+
+      if (cleanupResult.error) {
+        console.error("Unable to clean stale volunteer email purpose metadata", {
+          code: cleanupResult.error.code,
+          status: cleanupResult.error.status,
+        });
+      }
+    }
+
+    return undefined;
+  }
+
+  if (existingUser.app_metadata?.onboarding_invite_pending === true) {
     return undefined;
   }
 
@@ -233,34 +254,51 @@ export async function continueWithEmail(
 
   try {
     const supabase = createEmailLinkClient();
-
-    after(async () => {
-      try {
-        const signupData = await prepareVolunteerEmailPurpose(email);
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: true,
-            ...(signupData ? { data: signupData } : {}),
-          },
-        });
-
-        if (error) {
-          console.error("Volunteer email OTP request was not delivered", {
-            code: error.code,
-            status: error.status,
-          });
-        }
-      } catch (error) {
-        console.error("Volunteer email OTP background delivery failed", error);
-      }
+    const signupData = await prepareVolunteerEmailPurpose(email);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+        ...(signupData ? { data: signupData } : {}),
+      },
     });
+
+    if (error) {
+      console.error("Volunteer verification email was not delivered", {
+        code: error.code,
+        status: error.status,
+      });
+
+      if (
+        error.status === 429 ||
+        error.code === "email_rate_limit_exceeded" ||
+        error.code === "over_email_send_rate_limit"
+      ) {
+        return {
+          status: "error",
+          step: "email",
+          message:
+            "Please wait a minute before requesting another verification email.",
+          email,
+        };
+      }
+
+      return {
+        status: "error",
+        step: "email",
+        message:
+          "We couldn't send the verification email. Please try again.",
+        email,
+      };
+    }
   } catch (error) {
-    console.error("Volunteer email OTP is not configured", error);
+    console.error("Volunteer verification email could not be sent", error);
     return {
       status: "error",
       step: "email",
-      message: "Volunteer sign-in is not configured in this environment.",
+      message:
+        "We couldn't send the verification email. Please try again.",
+      email,
     };
   }
 
