@@ -130,6 +130,11 @@ export function EventForm({
   const [slug, setSlug] = useState(event?.slug ?? draftString(draft, "slug"));
   const [slugTouched, setSlugTouched] = useState(Boolean(event?.slug || draftString(draft, "slug")));
   const [isSaving, startSaving] = useTransition();
+  const [dirty, setDirty] = useState(false);
+  const [summaryPreview, setSummaryPreview] = useState(event?.opportunity_summary ?? draftString(draft, "opportunitySummary"));
+  const [titlePreview, setTitlePreview] = useState(event?.title ?? draftString(draft, "title"));
+  const [venuePreview, setVenuePreview] = useState(event?.venue ?? draftString(draft, "venue"));
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const currentEventId = event?.id ?? recoveryEventId;
 
   useEffect(() => {
@@ -225,7 +230,14 @@ export function EventForm({
     <form
       className="phaseone-admin-form"
       noValidate
-      onChange={scheduleAutosave}
+      onChange={(e) => {
+        scheduleAutosave();
+        setDirty(true);
+        const control = e.target as unknown as HTMLInputElement | HTMLTextAreaElement;
+        if (control.name === "title") setTitlePreview(control.value);
+        if (control.name === "opportunitySummary") setSummaryPreview(control.value);
+        if (control.name === "venue") setVenuePreview(control.value);
+      }}
       onInput={scheduleAutosave}
       onSubmit={handleSubmit}
       ref={formRef}
@@ -234,6 +246,16 @@ export function EventForm({
         <input name="id" type="hidden" value={event?.id ?? recoveryEventId ?? ""} />
       ) : null}
 
+      <div className="km-setup-layout">
+      <aside className="km-setup-steps" aria-label="Programme setup steps">
+        <h2>Setup progress</h2>
+        <a href="#event-schedule"><span>{titlePreview.trim() ? "✓" : "○"}</span> Details</a>
+        <a href="#event-shifts"><span>○</span> Schedule & shifts</a>
+        <a href="#event-location"><span>{venuePreview.trim() ? "✓" : "○"}</span> Location</a>
+        <a href="#event-preparation"><span>○</span> Volunteer prep</a>
+        <a href="#event-visibility"><span>○</span> Visibility</a>
+      </aside>
+      <div className="km-setup-fields">
       <div className="form-field event-form-anchor" id="event-schedule">
         <label htmlFor="title">Event title</label>
         <input
@@ -256,7 +278,7 @@ export function EventForm({
             name="isOpportunityPublished"
             type="checkbox"
           />
-          Publish this programme on the Opportunities page
+          Show on Opportunities page
         </label>
         <div className="form-field">
           <label htmlFor="opportunitySummary">Short summary</label>
@@ -333,7 +355,7 @@ export function EventForm({
             />
           </div>
           <div className="form-field">
-            <label htmlFor="opportunitySortOrder">Display order</label>
+            <label htmlFor="opportunitySortOrder">Display order (lower numbers appear first)</label>
             <input
               defaultValue={event?.opportunity_sort_order ?? ""}
               id="opportunitySortOrder"
@@ -346,7 +368,7 @@ export function EventForm({
         </div>
       </fieldset>
 
-      <TimeslotEditor initialTimeslots={effectiveInitialTimeslots} />
+      <div id="event-shifts" className="event-form-anchor"><TimeslotEditor initialTimeslots={effectiveInitialTimeslots} /></div>
 
       <fieldset className="phaseone-admin-fieldset event-form-anchor" id="event-location">
         <legend>Location</legend>
@@ -479,14 +501,25 @@ export function EventForm({
         </div>
       </details>
 
-      <div className="phaseone-publish-row">
+      <div className="phaseone-publish-row" id="event-visibility"><h2>Visibility</h2>
         <label className="checkbox-row">
           <input defaultChecked={event?.is_published} name="isPublished" type="checkbox" />
-          Publish Event Guide to assigned volunteers
+          Share Event Guide with assigned volunteers
         </label>
         <p className="muted">Publishing needs a scheduled shift, venue and directions address. Other features are optional.</p>
       </div>
 
+      </div>
+      <aside className="km-setup-preview">
+        <div className="km-preview-heading"><h2>Opportunities page preview</h2><button type="button" className="button button-secondary km-preview-mobile-button" onClick={() => setShowMobilePreview(!showMobilePreview)}>{showMobilePreview ? "Hide preview" : "Preview"}</button></div>
+        <div className={showMobilePreview ? "km-setup-preview-content is-open" : "km-setup-preview-content"}>
+          {opportunityImageUrl ? <img alt="" src={opportunityImageUrl} /> : <div className="km-preview-image-placeholder">Opportunity image</div>}
+          <strong>{titlePreview || "Programme title"}</strong>
+          <p>{summaryPreview || "Your public summary will appear here."}</p>
+          <p className="muted">{venuePreview || "Location to be confirmed"}</p>
+          <p className="form-help">Preview only. Public visibility is controlled below.</p>
+        </div>
+      </aside></div>
       {!event ? (
         <p className="muted phaseone-draft-status" aria-live="polite">
           {draftStatus === "saving"
@@ -505,7 +538,8 @@ export function EventForm({
         <div className="notice notice-error" role="alert" aria-live="polite">{saveState.message}</div>
       ) : null}
 
-      <div className="actions phaseone-sticky-actions">
+      <div className="actions phaseone-sticky-actions km-setup-save-bar">
+        <span role="status" className="km-setup-save-label">{isSaving ? "Saving…" : dirty ? "Unsaved changes" : event ? "No unsaved changes" : "Draft programme"}</span>
         <button className="button button-primary" disabled={isSaving} type="submit">
           {isSaving
             ? event || recoveryEventId ? "Saving…" : "Creating…"
