@@ -62,11 +62,11 @@ export type RegistrationCapacityItem = {
   label: string;
   dateLabel: string;
   timeLabel: string;
-  capacity: number;
+  capacity: number | null;
   reserved: number;
   pending: number;
   confirmed: number;
-  left: number;
+  left: number | null;
 };
 
 type Props = {
@@ -140,10 +140,13 @@ export function RegistrationReviewWorkspace({
 
   const programmes = useMemo(
     () =>
-      Array.from(new Set(rows.map((row) => row.eventTitle))).sort((a, b) =>
-        a.localeCompare(b),
-      ),
-    [rows],
+      Array.from(
+        new Set([
+          ...rows.map((row) => row.eventTitle),
+          ...capacityItems.map((item) => item.eventTitle),
+        ]),
+      ).sort((a, b) => a.localeCompare(b)),
+    [rows, capacityItems],
   );
 
   const counts = useMemo(() => {
@@ -300,29 +303,53 @@ export function RegistrationReviewWorkspace({
         <div className="registration-capacity-strip" aria-label="Shift capacity">
           {capacityItems.map((item) => {
             const ratio =
-              item.capacity > 0
+              item.capacity !== null && item.capacity > 0
                 ? Math.min(100, Math.round((item.reserved / item.capacity) * 100))
-                : 100;
+                : 0;
             const state =
-              item.left <= 0 ? "full" : item.left <= 3 ? "tight" : "open";
+              item.capacity === null
+                ? "uncapped"
+                : item.left !== null && item.left <= 0
+                  ? "full"
+                  : item.left !== null && item.left <= 3
+                    ? "tight"
+                    : "open";
             return (
               <article className="registration-capacity-card" data-state={state} key={item.id}>
                 <div className="registration-capacity-title">
                   <span>{item.eventTitle}</span>
-                  <strong>{item.reserved} / {item.capacity}</strong>
+                  <strong>
+                    {item.capacity === null
+                      ? item.reserved + " registered"
+                      : item.reserved + " / " + item.capacity}
+                  </strong>
                 </div>
                 <p>
                   {item.label} · {item.dateLabel} · {item.timeLabel}
                 </p>
-                <div
-                  className="registration-capacity-meter"
-                  aria-label={item.reserved + " of " + item.capacity + " places reserved"}
-                >
-                  <span style={{ width: ratio + "%" }} />
-                </div>
+                {item.capacity !== null ? (
+                  <div
+                    className="registration-capacity-meter"
+                    aria-label={item.reserved + " of " + item.capacity + " places reserved"}
+                  >
+                    <span style={{ width: ratio + "%" }} />
+                  </div>
+                ) : (
+                  <div className="registration-capacity-meter registration-capacity-meter-uncapped" aria-hidden="true" />
+                )}
                 <div className="registration-capacity-meta">
-                  <span>{item.pending} pending · {item.confirmed} confirmed</span>
-                  <strong>{item.left <= 0 ? "Full" : item.left + " left"}</strong>
+                  <span>
+                    {item.reserved === 0
+                      ? "No registrations yet"
+                      : item.pending + " pending · " + item.confirmed + " confirmed"}
+                  </span>
+                  <strong>
+                    {item.capacity === null
+                      ? "No cap"
+                      : item.left !== null && item.left <= 0
+                        ? "Full"
+                        : item.left + " left"}
+                  </strong>
                 </div>
               </article>
             );
