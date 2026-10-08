@@ -95,10 +95,6 @@ function dateFromSingaporeKey(value: string) {
   return new Date(`${value}T00:00:00+08:00`);
 }
 
-function dateKeyFromUtc(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-SG", {
     day: "numeric",
@@ -309,8 +305,15 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
 
   const requestedStart = parameter(params, "start");
   const requestedEnd = parameter(params, "end");
+  const requestedRange = parameter(params, "range");
   let start = validDate(requestedStart) ? requestedStart! : defaultStart;
   let end = validDate(requestedEnd) ? requestedEnd! : today;
+
+  if (!requestedStart && !requestedEnd && requestedRange === "7") {
+    const sevenDayStart = new Date(`${today}T00:00:00+08:00`);
+    sevenDayStart.setDate(sevenDayStart.getDate() - 6);
+    start = singaporeDate(sevenDayStart);
+  }
 
   if (start > end) [start, end] = [end, start];
 
@@ -322,8 +325,8 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
   );
   const previousEndDate = new Date(startDate.getTime() - 86_400_000);
   const previousStartDate = new Date(previousEndDate.getTime() - (rangeDays - 1) * 86_400_000);
-  const previousStart = dateKeyFromUtc(previousStartDate);
-  const previousEnd = dateKeyFromUtc(previousEndDate);
+  const previousStart = singaporeDate(previousStartDate);
+  const previousEnd = singaporeDate(previousEndDate);
 
   const admin = getPhaseOneAdminClient();
   const [currentResult, previousResult] = await Promise.all([
