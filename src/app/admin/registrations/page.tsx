@@ -168,7 +168,10 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
         timeLabel: formatTimeslotTimeRange(shift),
         capacity,
         reserved: reservation.reserved,
-        left: capacity === null ? null : Math.max(0, capacity - reservation.reserved),
+        confirmed: reservation.confirmed,
+        // Pending applications reserve capacity for new sign-ups, but must not
+        // block staff from confirming an applicant while confirmed places remain.
+        left: capacity === null ? null : Math.max(0, capacity - reservation.confirmed),
       };
     });
 
@@ -199,7 +202,11 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
     if (tightShift) {
       signals.push({
         key: "capacity",
-        label: tightShift.left === 0 ? "Capacity full" : String(tightShift.left) + " left",
+        label: tightShift.left === 0
+          ? "Confirmed full"
+          : tightShift.capacity !== null && tightShift.reserved > tightShift.capacity
+            ? "Applications exceed capacity"
+            : String(tightShift.left) + " to confirm",
         tone: tightShift.left === 0 ? "danger" : "warning",
       });
     }
@@ -208,7 +215,7 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
       ? shiftViews.map((shift) =>
           shift.capacity === null
             ? shift.label + ": no cap"
-            : shift.label + ": " + (shift.left === 0 ? "full" : String(shift.left) + " left"),
+            : shift.label + ": " + shift.confirmed + "/" + shift.capacity + " confirmed",
         ).join(" · ")
       : "No shifts";
 
@@ -257,7 +264,7 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
         reserved: reservation.reserved,
         pending: reservation.pending,
         confirmed: reservation.confirmed,
-        left: Math.max(0, capacity - reservation.reserved),
+        left: Math.max(0, capacity - reservation.confirmed),
       };
     })
     .sort((left, right) => left.left - right.left || left.eventTitle.localeCompare(right.eventTitle))

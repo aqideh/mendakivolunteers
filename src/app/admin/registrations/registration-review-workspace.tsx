@@ -27,6 +27,7 @@ export type RegistrationShiftView = {
   timeLabel: string;
   capacity: number | null;
   reserved: number;
+  confirmed: number;
   left: number | null;
 };
 
@@ -215,9 +216,19 @@ export function RegistrationReviewWorkspace({
   const allVisibleSelected =
     visibleSelectableIds.length > 0 &&
     visibleSelectableIds.every((id) => selected.has(id));
-  const canBulkConfirm =
-    selectedRows.length > 0 &&
-    selectedRows.every((row) => row.canReview && row.identityResolved);
+  const selectedPerShift = new Map<string, number>();
+  for (const row of selectedRows) {
+    for (const shift of row.shifts) {
+      selectedPerShift.set(shift.id, (selectedPerShift.get(shift.id) ?? 0) + 1);
+    }
+  }
+  const identitiesReady = selectedRows.every((row) => row.canReview && row.identityResolved);
+  const bulkFitsCapacity = selectedRows.every((row) =>
+    row.shifts.every((shift) =>
+      shift.left === null || (selectedPerShift.get(shift.id) ?? 0) <= shift.left,
+    ),
+  );
+  const canBulkConfirm = selectedRows.length > 0 && identitiesReady && bulkFitsCapacity;
 
   const returnTo = eventFilter
     ? "/admin/registrations?event=" + encodeURIComponent(eventFilter)
@@ -299,31 +310,44 @@ export function RegistrationReviewWorkspace({
       {capacityItems.length > 0 ? (
         <div className="registration-capacity-strip" aria-label="Shift capacity">
           {capacityItems.map((item) => {
-            const ratio =
-              item.capacity > 0
-                ? Math.min(100, Math.round((item.reserved / item.capacity) * 100))
-                : 100;
-            const state =
-              item.left <= 0 ? "full" : item.left <= 3 ? "tight" : "open";
+            // Recruitment progress counts confirmed volunteers only.
+            // Pending applications remain visible, but never affect the bar.
+            const ratio = item.capacity > 0
+              ? Math.min(100, Math.round((item.confirmed / item.capacity) * 100))
+              : 0;
+            const state = item.capacity <= 0
+              ? "unavailable"
+              : ratio >= 100
+                ? "complete"
+                : ratio < 50
+                  ? "low"
+                  : "partial";
             return (
               <article className="registration-capacity-card" data-state={state} key={item.id}>
                 <div className="registration-capacity-title">
                   <span>{item.eventTitle}</span>
-                  <strong>{item.reserved} / {item.capacity}</strong>
+                  <strong>{item.confirmed} / {item.capacity} confirmed</strong>
                 </div>
                 <p>
                   {item.label} · {item.dateLabel} · {item.timeLabel}
                 </p>
                 <div
                   className="registration-capacity-meter"
-                  aria-label={item.reserved + " of " + item.capacity + " places reserved"}
+                  aria-label={item.confirmed + " of " + item.capacity + " places confirmed"}
                 >
                   <span style={{ width: ratio + "%" }} />
                 </div>
                 <div className="registration-capacity-meta">
                   <span>{item.pending} pending · {item.confirmed} confirmed</span>
-                  <strong>{item.left <= 0 ? "Full" : item.left + " left"}</strong>
+                  <strong>{state === "complete" ? "Fully recruited" : state === "unavailable" ? "No capacity" : item.left + " to confirm"}</strong>
                 </div>
+                {item.reserved > item.capacity ? (
+                  <p className="registration-capacity-overflow">
+                    {item.reserved} applications for {item.capacity} places. Review pending applications to allocate places.
+                  </p>
+                ) : item.reserved >= item.capacity && item.left > 0 ? (
+                  <p className="registration-capacity-overflow">New applications are waitlisted while pending places are held.</p>
+                ) : null}
               </article>
             );
           })}
@@ -466,7 +490,9 @@ export function RegistrationReviewWorkspace({
             </span>
             {!canBulkConfirm ? (
               <span className="registration-bulk-hint">
-                Confirm is unavailable when the selection includes unresolved identities.
+                {!identitiesReady
+                  ? "Resolve all selected volunteer identities before confirming."
+                  : "Selection exceeds the available confirmed places. Select fewer volunteers."}
               </span>
             ) : null}
             <button
@@ -681,8 +707,8 @@ export function RegistrationReviewWorkspace({
                         {shift.capacity === null
                           ? "No cap"
                           : shift.left !== null && shift.left <= 0
-                            ? "Full"
-                            : shift.left + " left"}
+                            ? "Confirmed full"
+                            : shift.left + " available to confirm"}
                       </span>
                     </div>
                   ))}
