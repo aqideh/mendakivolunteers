@@ -414,7 +414,22 @@ export function RegistrationReviewWorkspace({
         </div>
 
         {selected.size > 0 ? (
-          <form action={bulkReviewRegistrations} className="registration-bulk-bar">
+          <form
+            action={bulkReviewRegistrations}
+            className="registration-bulk-bar"
+            onSubmit={(event) => {
+              const nativeEvent = event.nativeEvent as SubmitEvent;
+              const submitter = nativeEvent.submitter as HTMLButtonElement | null;
+              if (
+                submitter?.value === "rejected" &&
+                !window.confirm(
+                  "Reject the selected registrations? This removes them from the active review queue.",
+                )
+              ) {
+                event.preventDefault();
+              }
+            }}
+          >
             {Array.from(selected).map((id) => (
               <input key={id} name="registrationIds" type="hidden" value={id} />
             ))}
