@@ -78,7 +78,10 @@
 
 .tabPanel {
   animation: tabFadeSlide 220ms ease both;
-  outline: none;
+}
+.tabPanel:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
 }
 
 @keyframes tabFadeSlide {
