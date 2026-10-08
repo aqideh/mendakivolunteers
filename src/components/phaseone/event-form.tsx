@@ -314,7 +314,7 @@ export function EventForm({
     <form className="phaseone-admin-form km-programme-form" noValidate
       onChange={(e) => {
         scheduleAutosave(); setDirty(true);
-        const control = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+        const control = e.target as unknown as HTMLInputElement;
         if (control.name === "title") setTitlePreview(control.value);
         if (control.name === "opportunitySummary") setSummaryPreview(control.value);
         if (control.name === "venue") setVenuePreview(control.value);
