@@ -63,11 +63,11 @@ export type RegistrationCapacityItem = {
   label: string;
   dateLabel: string;
   timeLabel: string;
-  capacity: number;
+  capacity: number | null;
   reserved: number;
   pending: number;
   confirmed: number;
-  left: number;
+  left: number | null;
 };
 
 type Props = {
@@ -141,10 +141,13 @@ export function RegistrationReviewWorkspace({
 
   const programmes = useMemo(
     () =>
-      Array.from(new Set(rows.map((row) => row.eventTitle))).sort((a, b) =>
-        a.localeCompare(b),
-      ),
-    [rows],
+      Array.from(
+        new Set([
+          ...rows.map((row) => row.eventTitle),
+          ...capacityItems.map((item) => item.eventTitle),
+        ]),
+      ).sort((a, b) => a.localeCompare(b)),
+    [rows, capacityItems],
   );
 
   const counts = useMemo(() => {
@@ -310,42 +313,59 @@ export function RegistrationReviewWorkspace({
       {capacityItems.length > 0 ? (
         <div className="registration-capacity-strip" aria-label="Shift capacity">
           {capacityItems.map((item) => {
-            // Recruitment progress counts confirmed volunteers only.
-            // Pending applications remain visible, but never affect the bar.
-            const ratio = item.capacity > 0
+            // Only confirmed placements contribute to recruitment completion.
+            const ratio = item.capacity !== null && item.capacity > 0
               ? Math.min(100, Math.round((item.confirmed / item.capacity) * 100))
               : 0;
-            const state = item.capacity <= 0
-              ? "unavailable"
-              : ratio >= 100
-                ? "complete"
-                : ratio < 50
-                  ? "low"
-                  : "partial";
+            const state = item.capacity === null
+              ? "uncapped"
+              : item.capacity <= 0
+                ? "unavailable"
+                : ratio >= 100
+                  ? "complete"
+                  : ratio < 50
+                    ? "low"
+                    : "partial";
             return (
               <article className="registration-capacity-card" data-state={state} key={item.id}>
                 <div className="registration-capacity-title">
                   <span>{item.eventTitle}</span>
-                  <strong>{item.confirmed} / {item.capacity} confirmed</strong>
+                  <strong>
+                    {item.capacity === null
+                      ? item.confirmed + " confirmed · No cap"
+                      : item.confirmed + " / " + item.capacity + " confirmed"}
+                  </strong>
                 </div>
                 <p>
                   {item.label} · {item.dateLabel} · {item.timeLabel}
                 </p>
-                <div
-                  className="registration-capacity-meter"
-                  aria-label={item.confirmed + " of " + item.capacity + " places confirmed"}
-                >
-                  <span style={{ width: ratio + "%" }} />
-                </div>
+                {item.capacity === null ? (
+                  <div className="registration-capacity-meter registration-capacity-meter-uncapped" aria-label="No recruitment target set" />
+                ) : (
+                  <div
+                    className="registration-capacity-meter"
+                    aria-label={item.confirmed + " of " + item.capacity + " places confirmed"}
+                  >
+                    <span style={{ width: ratio + "%" }} />
+                  </div>
+                )}
                 <div className="registration-capacity-meta">
-                  <span>{item.pending} pending · {item.confirmed} confirmed</span>
-                  <strong>{state === "complete" ? "Fully recruited" : state === "unavailable" ? "No capacity" : item.left + " to confirm"}</strong>
+                  <span>{item.reserved === 0 ? "No registrations yet" : item.pending + " pending · " + item.confirmed + " confirmed"}</span>
+                  <strong>
+                    {state === "uncapped"
+                      ? "No cap"
+                      : state === "complete"
+                        ? "Fully recruited"
+                        : state === "unavailable"
+                          ? "No capacity"
+                          : item.left + " to confirm"}
+                  </strong>
                 </div>
-                {item.reserved > item.capacity ? (
+                {item.capacity !== null && item.reserved > item.capacity ? (
                   <p className="registration-capacity-overflow">
                     {item.reserved} applications for {item.capacity} places. Review pending applications to allocate places.
                   </p>
-                ) : item.reserved >= item.capacity && item.left > 0 ? (
+                ) : item.capacity !== null && item.reserved >= item.capacity && item.left !== null && item.left > 0 ? (
                   <p className="registration-capacity-overflow">New applications are waitlisted while pending places are held.</p>
                 ) : null}
               </article>
