@@ -21,6 +21,11 @@ type DailyPoint = Readonly<{
   signups: number;
   registrations: number;
   registrants: number;
+  cumulative_pageviews: number;
+  cumulative_visitors: number;
+  cumulative_signups: number;
+  cumulative_registrations: number;
+  cumulative_registrants: number;
 }>;
 
 type RankedPage = Readonly<{
@@ -51,6 +56,13 @@ type AnalyticsSummary = Readonly<{
   tracking_started_at: string | null;
   daily: DailyPoint[];
   totals: {
+    pageviews: number;
+    visitors: number;
+    signups: number;
+    registrations: number;
+    registrants: number;
+  };
+  cumulative: {
     pageviews: number;
     visitors: number;
     signups: number;
@@ -233,6 +245,99 @@ function TrendChart({ daily }: { daily: DailyPoint[] }) {
   );
 }
 
+
+function CumulativeChart({ daily }: { daily: DailyPoint[] }) {
+  const width = 760;
+  const height = 210;
+  const left = 42;
+  const right = 18;
+  const top = 18;
+  const bottom = 34;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const max = maxValue(
+    daily.flatMap((point) => [point.cumulative_visitors, point.cumulative_signups]),
+  );
+  const x = (index: number) =>
+    left + (daily.length <= 1 ? plotWidth / 2 : (index / (daily.length - 1)) * plotWidth);
+  const y = (value: number) => top + plotHeight - (value / max) * plotHeight;
+  const visitorLine = daily
+    .map((point, index) => `${x(index)},${y(point.cumulative_visitors)}`)
+    .join(" ");
+  const signupLine = daily
+    .map((point, index) => `${x(index)},${y(point.cumulative_signups)}`)
+    .join(" ");
+  const labelIndexes = daily.length <= 4
+    ? daily.map((_, index) => index)
+    : [0, Math.floor((daily.length - 1) / 2), daily.length - 1];
+
+  return (
+    <div className={styles.chartWrap}>
+      <svg
+        aria-label="Cumulative unique visitors and completed sign-ups"
+        className={styles.chart}
+        role="img"
+        viewBox={`0 0 ${width} ${height}`}
+      >
+        {[0, 0.5, 1].map((ratio) => {
+          const gridY = top + plotHeight - ratio * plotHeight;
+          return (
+            <g key={ratio}>
+              <line
+                className={styles.gridLine}
+                x1={left}
+                x2={width - right}
+                y1={gridY}
+                y2={gridY}
+              />
+              <text className={styles.axisText} x={left - 8} y={gridY + 4} textAnchor="end">
+                {compactNumber(Math.round(max * ratio))}
+              </text>
+            </g>
+          );
+        })}
+        {daily.length ? (
+          <>
+            <polyline
+              className={styles.visitorLine}
+              fill="none"
+              points={visitorLine}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <polyline
+              className={styles.cumulativeSignupLine}
+              fill="none"
+              points={signupLine}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </>
+        ) : null}
+        {labelIndexes.map((index) => {
+          const point = daily[index];
+          if (!point) return null;
+          return (
+            <text
+              className={styles.axisText}
+              key={point.day}
+              textAnchor={index === 0 ? "start" : index === daily.length - 1 ? "end" : "middle"}
+              x={x(index)}
+              y={height - 8}
+            >
+              {formatShortDate(point.day)}
+            </text>
+          );
+        })}
+      </svg>
+      <div className={styles.legend}>
+        <span><i className={styles.legendLine} /> Cumulative visitors</span>
+        <span><i className={styles.legendCumulative} /> Cumulative sign-ups</span>
+      </div>
+    </div>
+  );
+}
+
 function HorizontalBars({
   rows,
   valueKey = "visitors",
@@ -350,6 +455,7 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
 
   const summary = currentResult.data as AnalyticsSummary;
   const previous = previousResult.data as AnalyticsSummary;
+  const latestDay = summary.daily[summary.daily.length - 1] ?? null;
   const visitorConversion = percentage(summary.totals.signups, summary.totals.visitors);
   const registrationConversion = percentage(
     summary.totals.registrants,
@@ -358,9 +464,9 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
 
   const summaryText = [
     `Keluarga MENDAKI website performance — ${formatDate(start)} to ${formatDate(end)}`,
-    `Unique visitors: ${summary.totals.visitors.toLocaleString("en-SG")} (${delta(summary.totals.visitors, previous.totals.visitors)} vs previous period)`,
-    `Completed sign-ups: ${summary.totals.signups.toLocaleString("en-SG")} (${delta(summary.totals.signups, previous.totals.signups)} vs previous period)`,
-    `Opportunity registrations: ${summary.totals.registrations.toLocaleString("en-SG")} across ${summary.totals.registrants.toLocaleString("en-SG")} unique volunteers`,
+    `Unique visitors — cumulative: ${summary.cumulative.visitors.toLocaleString("en-SG")}; ${formatDate(end)}: ${latestDay?.visitors.toLocaleString("en-SG") ?? "0"}`,
+    `Completed sign-ups — cumulative: ${summary.cumulative.signups.toLocaleString("en-SG")}; ${formatDate(end)}: ${latestDay?.signups.toLocaleString("en-SG") ?? "0"}`,
+    `Opportunity registrations — cumulative: ${summary.cumulative.registrations.toLocaleString("en-SG")}; ${formatDate(end)}: ${latestDay?.registrations.toLocaleString("en-SG") ?? "0"}`,
     `Visitor-to-sign-up indicator: ${visitorConversion}`,
     `Visitor-to-registrant indicator: ${registrationConversion}`,
   ].join("\n");
@@ -427,23 +533,32 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
       <section className={styles.kpis} aria-label="Website KPI summary">
         <article>
           <span>Unique visitors</span>
-          <strong>{summary.totals.visitors.toLocaleString("en-SG")}</strong>
-          <small>{delta(summary.totals.visitors, previous.totals.visitors)} vs previous period</small>
+          <div className={styles.kpiSplit}>
+            <div><small>Cumulative</small><strong>{summary.cumulative.visitors.toLocaleString("en-SG")}</strong></div>
+            <div><small>{formatShortDate(end)}</small><strong>{latestDay?.visitors.toLocaleString("en-SG") ?? "0"}</strong></div>
+          </div>
+          <small>{summary.totals.visitors.toLocaleString("en-SG")} in selected period · {delta(summary.totals.visitors, previous.totals.visitors)} vs previous</small>
         </article>
         <article>
           <span>Completed sign-ups</span>
-          <strong>{summary.totals.signups.toLocaleString("en-SG")}</strong>
-          <small>{delta(summary.totals.signups, previous.totals.signups)} vs previous period</small>
+          <div className={styles.kpiSplit}>
+            <div><small>Cumulative</small><strong>{summary.cumulative.signups.toLocaleString("en-SG")}</strong></div>
+            <div><small>{formatShortDate(end)}</small><strong>{latestDay?.signups.toLocaleString("en-SG") ?? "0"}</strong></div>
+          </div>
+          <small>{summary.totals.signups.toLocaleString("en-SG")} in selected period · {delta(summary.totals.signups, previous.totals.signups)} vs previous</small>
         </article>
         <article>
           <span>Opportunity registrations</span>
-          <strong>{summary.totals.registrations.toLocaleString("en-SG")}</strong>
-          <small>{summary.totals.registrants.toLocaleString("en-SG")} unique volunteers</small>
+          <div className={styles.kpiSplit}>
+            <div><small>Cumulative</small><strong>{summary.cumulative.registrations.toLocaleString("en-SG")}</strong></div>
+            <div><small>{formatShortDate(end)}</small><strong>{latestDay?.registrations.toLocaleString("en-SG") ?? "0"}</strong></div>
+          </div>
+          <small>{summary.totals.registrations.toLocaleString("en-SG")} in selected period · {summary.cumulative.registrants.toLocaleString("en-SG")} cumulative registrants</small>
         </article>
         <article>
           <span>Visitor → sign-up</span>
           <strong>{visitorConversion}</strong>
-          <small>Period-level conversion indicator</small>
+          <small>Selected-period conversion indicator</small>
         </article>
       </section>
 
@@ -456,7 +571,16 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
             </div>
             <span>{compactNumber(summary.totals.pageviews)} pageviews</span>
           </div>
-          <TrendChart daily={summary.daily} />
+          <div className={styles.dualCharts}>
+            <div>
+              <h3>Daily</h3>
+              <TrendChart daily={summary.daily} />
+            </div>
+            <div>
+              <h3>Cumulative</h3>
+              <CumulativeChart daily={summary.daily} />
+            </div>
+          </div>
         </article>
 
         <article className={styles.panel}>
