@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { saveEvent } from "@/app/admin/events/actions";
@@ -8,7 +8,39 @@ import { saveEventFormDraft } from "@/app/admin/events/draft-actions";
 import { toSingaporeDateTimeLocal } from "@/lib/content/dates";
 
 import { EventImageUploader } from "./event-image-uploader";
-import { TimeslotEditor } from "./timeslot-editor";
+import { TimeslotEditor, type TimeslotEditorValue } from "./timeslot-editor";
+
+type SetupStepKey = "details" | "shifts" | "location" | "preparation" | "visibility";
+
+function SetupStep({
+  id, title, summary, expanded, onToggle, children,
+}: {
+  id: string;
+  title: string;
+  summary: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="km-setup-section event-form-anchor" id={id}>
+      <button
+        aria-controls={`${id}-fields`}
+        aria-expanded={expanded}
+        className="km-setup-section-toggle"
+        onClick={onToggle}
+        type="button"
+      >
+        <span className="km-setup-section-title">{title}</span>
+        <span className="km-setup-section-summary">{summary}</span>
+        <span className="km-setup-section-edit">{expanded ? "Close" : "Edit"}</span>
+      </button>
+      <div className="km-setup-section-body" hidden={!expanded} id={`${id}-fields`}>
+        {children}
+      </div>
+    </section>
+  );
+}
 
 const defaultAttireNotes = "Wear your MENDAKI volunteer shirt if you have one.";
 
@@ -135,7 +167,65 @@ export function EventForm({
   const [titlePreview, setTitlePreview] = useState(event?.title ?? draftString(draft, "title"));
   const [venuePreview, setVenuePreview] = useState(event?.venue ?? draftString(draft, "venue"));
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [categoryPreview, setCategoryPreview] = useState(event?.opportunity_category ?? draftString(draft, "opportunityCategory"));
+  const [directionsPreview, setDirectionsPreview] = useState(event?.navigation_destination ?? draftString(draft, "navigationDestination"));
+  const [attirePreview, setAttirePreview] = useState(event?.attire_notes ?? (draftString(draft, "attireNotes") || defaultAttireNotes));
+  const [preparationPreview, setPreparationPreview] = useState(event?.preparation_notes ?? draftString(draft, "preparationNotes"));
+  const [opportunityPublishedPreview, setOpportunityPublishedPreview] = useState(event?.is_opportunity_published ?? (draft?.payload.isOpportunityPublished === true));
+  const [guidePublishedPreview, setGuidePublishedPreview] = useState(event?.is_published ?? (draft?.payload.isPublished === true));
+  const [shiftPreview, setShiftPreview] = useState<TimeslotEditorValue[]>(effectiveInitialTimeslots);
+  const firstIncompleteStep: SetupStepKey =
+    !titlePreview.trim() || !summaryPreview.trim() ? "details"
+    : !effectiveInitialTimeslots.some((slot) => slot.startsAt && slot.status === "scheduled") ? "shifts"
+    : !venuePreview.trim() || !directionsPreview.trim() ? "location"
+    : !preparationPreview.trim() ? "preparation"
+    : "visibility";
+  const [expandedStep, setExpandedStep] = useState<SetupStepKey | null>(firstIncompleteStep);
+  const [focusedStep, setFocusedStep] = useState<SetupStepKey>(firstIncompleteStep);
   const currentEventId = event?.id ?? recoveryEventId;
+
+  const setupSteps: { key: SetupStepKey; id: string; title: string; done: boolean }[] = [
+    { key: "details", id: "event-schedule", title: "Details", done: Boolean(titlePreview.trim() && summaryPreview.trim()) },
+    { key: "shifts", id: "event-shifts", title: "Schedule & shifts", done: shiftPreview.some((slot) => Boolean(slot.startsAt) && slot.status === "scheduled") },
+    { key: "location", id: "event-location", title: "Location", done: Boolean(venuePreview.trim() && directionsPreview.trim()) },
+    { key: "preparation", id: "event-preparation", title: "Volunteer prep", done: Boolean(attirePreview.trim() && preparationPreview.trim()) },
+    { key: "visibility", id: "event-visibility", title: "Visibility", done: true },
+  ];
+
+  function openStep(step: SetupStepKey, shouldScroll = false) {
+    setExpandedStep(step);
+    setFocusedStep(step);
+    if (shouldScroll) {
+      requestAnimationFrame(() => {
+        const id = setupSteps.find((item) => item.key === step)?.id;
+        if (id) document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }
+
+  useEffect(() => {
+    const ids: Record<string, SetupStepKey> = {
+      "event-schedule": "details", "event-opportunity": "details", "event-shifts": "shifts",
+      "event-location": "location", "event-preparation": "preparation",
+      "event-links": "preparation", "event-attendance-settings": "preparation",
+      "event-advanced": "preparation", "event-visibility": "visibility",
+    };
+    const hash = window.location.hash.slice(1);
+    if (hash in ids) {
+      const step = ids[hash];
+      setExpandedStep(step);
+      setFocusedStep(step);
+    }
+    const onScroll = () => {
+      const match = Object.entries(ids).filter(([id]) => id.startsWith("event-") && !["event-opportunity","event-links","event-attendance-settings","event-advanced"].includes(id)).find(([id]) => {
+        const bounds = document.getElementById(id)?.getBoundingClientRect();
+        return bounds && bounds.top <= 200 && bounds.bottom > 180;
+      });
+      if (match) setFocusedStep((prev) => prev === match[1] ? prev : match[1]);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (event || !draft || !formRef.current) return;
@@ -237,6 +327,12 @@ export function EventForm({
         if (control.name === "title") setTitlePreview(control.value);
         if (control.name === "opportunitySummary") setSummaryPreview(control.value);
         if (control.name === "venue") setVenuePreview(control.value);
+        if (control.name === "opportunityCategory") setCategoryPreview(control.value);
+        if (control.name === "navigationDestination") setDirectionsPreview(control.value);
+        if (control.name === "attireNotes") setAttirePreview(control.value);
+        if (control.name === "preparationNotes") setPreparationPreview(control.value);
+        if (control.name === "isOpportunityPublished") setOpportunityPublishedPreview((control as HTMLInputElement).checked);
+        if (control.name === "isPublished") setGuidePublishedPreview((control as HTMLInputElement).checked);
       }}
       onInput={scheduleAutosave}
       onSubmit={handleSubmit}
