@@ -30,7 +30,11 @@ function trackablePath(path: string) {
   );
 }
 
-function sourceLabel(referrer: string | null, utmSource: string | null) {
+function sourceLabel(
+  referrer: string | null,
+  utmSource: string | null,
+  currentHostname: string,
+) {
   const campaign = utmSource?.trim().toLowerCase();
   if (campaign) return campaign.slice(0, 80);
 
@@ -39,6 +43,7 @@ function sourceLabel(referrer: string | null, utmSource: string | null) {
   try {
     const hostname = new URL(referrer).hostname.toLowerCase();
     if (!hostname) return "direct";
+    if (hostname === currentHostname) return "internal";
     if (hostname.includes("google.")) return "google";
     if (hostname.includes("instagram.")) return "instagram";
     if (hostname.includes("facebook.") || hostname === "fb.com") return "facebook";
@@ -97,7 +102,11 @@ export async function POST(request: Request) {
   const { error } = await admin.schema("core").from("website_pageviews").insert({
     visitor_id: visitorId,
     path,
-    source: sourceLabel(referrer, utmSource),
+    source: sourceLabel(
+      referrer,
+      utmSource,
+      new URL(request.url).hostname.toLowerCase(),
+    ),
     device: deviceLabel(request.headers.get("user-agent") ?? ""),
   });
 
