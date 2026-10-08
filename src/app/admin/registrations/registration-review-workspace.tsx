@@ -310,12 +310,18 @@ export function RegistrationReviewWorkspace({
       {capacityItems.length > 0 ? (
         <div className="registration-capacity-strip" aria-label="Shift capacity">
           {capacityItems.map((item) => {
-            const ratio =
-              item.capacity > 0
-                ? Math.min(100, Math.round((item.confirmed / item.capacity) * 100))
-                : 100;
-            const state =
-              item.left <= 0 ? "full" : item.reserved >= item.capacity || item.left <= 3 ? "tight" : "open";
+            // Recruitment progress counts confirmed volunteers only.
+            // Pending applications remain visible, but never affect the bar.
+            const ratio = item.capacity > 0
+              ? Math.min(100, Math.round((item.confirmed / item.capacity) * 100))
+              : 0;
+            const state = item.capacity <= 0
+              ? "unavailable"
+              : ratio >= 100
+                ? "complete"
+                : ratio < 50
+                  ? "low"
+                  : "partial";
             return (
               <article className="registration-capacity-card" data-state={state} key={item.id}>
                 <div className="registration-capacity-title">
@@ -333,7 +339,7 @@ export function RegistrationReviewWorkspace({
                 </div>
                 <div className="registration-capacity-meta">
                   <span>{item.pending} pending · {item.confirmed} confirmed</span>
-                  <strong>{item.left <= 0 ? "Confirmed full" : item.left + " to confirm"}</strong>
+                  <strong>{state === "complete" ? "Fully recruited" : state === "unavailable" ? "No capacity" : item.left + " to confirm"}</strong>
                 </div>
                 {item.reserved > item.capacity ? (
                   <p className="registration-capacity-overflow">
