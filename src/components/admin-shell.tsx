@@ -29,6 +29,7 @@ type NavItem = Readonly<{
 
 type IconName =
   | "dashboard"
+  | "analytics"
   | "events"
   | "registrations"
   | "volunteers"
@@ -56,6 +57,12 @@ const navGroups: ReadonlyArray<Readonly<{ title: string; items: readonly NavItem
         icon: "dashboard",
         exact: true,
         capability: "view_overview",
+      },
+      {
+        href: "/admin/website-analytics",
+        label: "Website Analytics",
+        icon: "analytics",
+        capability: "view_website_analytics",
       },
     ],
   },
@@ -183,6 +190,8 @@ function Icon({ name }: { name: IconName }) {
   switch (name) {
     case "dashboard":
       return <svg {...common}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>;
+    case "analytics":
+      return <svg {...common}><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /><path d="m3 7 6-4 6 6 6-5" /></svg>;
     case "events":
       return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /><path d="m8.5 15 2 2 4-4" /></svg>;
     case "registrations":
