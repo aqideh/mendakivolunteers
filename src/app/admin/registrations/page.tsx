@@ -7,6 +7,7 @@ import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   formatTimeslotDate,
   formatTimeslotTimeRange,
+  startOfSingaporeDayIso,
 } from "@/lib/phaseone/packages";
 import {
   RegistrationReviewWorkspace,
@@ -71,15 +72,22 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
   }
 
   const registrations = registrationsResult.data;
-  const eventIds = Array.from(new Set(registrations.map((item) => item.event_id)));
+  const registeredEventIds = Array.from(new Set(registrations.map((item) => item.event_id)));
   const volunteerIds = Array.from(new Set(registrations.map((item) => item.volunteer_id).filter((id): id is string => Boolean(id))));
   const authUserIds = Array.from(new Set(registrations.map((item) => item.auth_user_id).filter((id): id is string => Boolean(id))));
   const registrationIds = registrations.map((item) => item.id);
+  const todayStart = startOfSingaporeDayIso();
 
-  const [eventsResult, volunteersResult, accountsResult, selectionsResult] = await Promise.all([
-    eventIds.length
-      ? admin.from("phaseone_events").select("id, title, slug").in("id", eventIds)
-      : Promise.resolve({ data: [], error: null }),
+  // An opportunity must appear in the recruitment overview even if nobody applied.
+  let upcomingEventsQuery = admin
+    .from("phaseone_events")
+    .select("id, title, slug, is_opportunity_published")
+    .eq("is_opportunity_published", true)
+    .limit(1000);
+  if (eventFilter) upcomingEventsQuery = upcomingEventsQuery.eq("id", eventFilter);
+
+  const [upcomingEventsResult, volunteersResult, accountsResult, selectionsResult] = await Promise.all([
+    upcomingEventsQuery,
     volunteerIds.length
       ? admin.schema("core").from("volunteers").select("id, volunteer_code, display_name, primary_email_normalized, mobile").in("id", volunteerIds)
       : Promise.resolve({ data: [], error: null }),
@@ -91,18 +99,42 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (eventsResult.error || volunteersResult.error || accountsResult.error || selectionsResult.error) {
+  if (upcomingEventsResult.error || volunteersResult.error || accountsResult.error || selectionsResult.error) {
     throw new Error("Registration review data could not be loaded");
   }
 
-  const selections = selectionsResult.data ?? [];
-  const timeslotIds = Array.from(new Set(selections.map((item) => item.timeslot_id)));
+  const upcomingEventIds = (upcomingEventsResult.data ?? []).map((event) => event.id);
+  const eventIds = Array.from(new Set([...registeredEventIds, ...upcomingEventIds]));
 
-  const [timeslotsResult, allReservationsResult] = await Promise.all([
-    timeslotIds.length
+  const [eventsResult, upcomingTimeslotsResult] = await Promise.all([
+    eventIds.length
+      ? admin.from("phaseone_events").select("id, title, slug, is_opportunity_published").in("id", eventIds)
+      : Promise.resolve({ data: [], error: null }),
+    upcomingEventIds.length
       ? admin.from("phaseone_event_timeslots")
           .select("id, event_id, label, starts_at, ends_at, status, sort_order, registration_capacity")
-          .in("id", timeslotIds)
+          .in("event_id", upcomingEventIds)
+          .eq("status", "scheduled")
+          .order("starts_at", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .limit(20000)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (eventsResult.error || upcomingTimeslotsResult.error) {
+    throw new Error("Registration opportunity data could not be loaded");
+  }
+
+  const selections = selectionsResult.data ?? [];
+  const selectedTimeslotIds = Array.from(new Set(selections.map((item) => item.timeslot_id)));
+  const upcomingTimeslotIds = (upcomingTimeslotsResult.data ?? []).map((item) => item.id);
+  const timeslotIds = Array.from(new Set([...selectedTimeslotIds, ...upcomingTimeslotIds]));
+
+  const [selectedTimeslotsResult, allReservationsResult] = await Promise.all([
+    selectedTimeslotIds.length
+      ? admin.from("phaseone_event_timeslots")
+          .select("id, event_id, label, starts_at, ends_at, status, sort_order, registration_capacity")
+          .in("id", selectedTimeslotIds)
       : Promise.resolve({ data: [], error: null }),
     timeslotIds.length
       ? admin.from("keluarga_registration_shifts")
@@ -112,9 +144,19 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (timeslotsResult.error || allReservationsResult.error) {
+  if (selectedTimeslotsResult.error || allReservationsResult.error) {
     throw new Error("Registration shifts could not be loaded");
   }
+
+  // Include historic selections in application details, but only upcoming shifts in trackers.
+  const timeslotsResult = {
+    data: [
+      ...(upcomingTimeslotsResult.data ?? []),
+      ...(selectedTimeslotsResult.data ?? []).filter(
+        (selected) => !(upcomingTimeslotsResult.data ?? []).some((upcoming) => upcoming.id === selected.id),
+      ),
+    ],
+  };
 
   const eventById = new Map((eventsResult.data ?? []).map((event) => [event.id, event]));
   const volunteerById = new Map((volunteersResult.data ?? []).map((volunteer) => [volunteer.id, volunteer]));
@@ -248,11 +290,12 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
     };
   });
 
-  const capacityItems: RegistrationCapacityItem[] = (timeslotsResult.data ?? [])
-    .filter((timeslot) => timeslot.registration_capacity !== null)
+  const capacityItems: RegistrationCapacityItem[] = (upcomingTimeslotsResult.data ?? [])
+    .filter((timeslot) => (timeslot.ends_at ?? timeslot.starts_at) >= todayStart)
+    .sort((left, right) => left.starts_at.localeCompare(right.starts_at) || left.sort_order - right.sort_order)
     .map((timeslot) => {
       const reservation = reservedByTimeslot.get(timeslot.id) ?? { reserved: 0, pending: 0, confirmed: 0 };
-      const capacity = timeslot.registration_capacity ?? 0;
+      const capacity = timeslot.registration_capacity;
       const event = eventById.get(timeslot.event_id);
       return {
         id: timeslot.id,
@@ -264,11 +307,10 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
         reserved: reservation.reserved,
         pending: reservation.pending,
         confirmed: reservation.confirmed,
-        left: Math.max(0, capacity - reservation.confirmed),
+        // Recruitment counts confirmed volunteers, not pending applications.
+        left: capacity === null ? null : Math.max(0, capacity - reservation.confirmed),
       };
-    })
-    .sort((left, right) => left.left - right.left || left.eventTitle.localeCompare(right.eventTitle))
-    .slice(0, 6);
+    });
 
   return (
     <div className="admin-page site-shell">
