@@ -956,23 +956,31 @@ h3 {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--success);
-}
-
-.registration-capacity-card[data-state="tight"] .registration-capacity-meter span {
   background: #bd8b00;
 }
 
-.registration-capacity-card[data-state="full"] .registration-capacity-meter span {
+.registration-capacity-card[data-state="low"] .registration-capacity-meter {
+  background: #f8e4e4;
+}
+
+.registration-capacity-card[data-state="low"] .registration-capacity-meter span {
   background: var(--danger);
 }
 
-.registration-capacity-card[data-state="tight"] .registration-capacity-meta strong {
+.registration-capacity-card[data-state="complete"] .registration-capacity-meter span {
+  background: var(--success);
+}
+
+.registration-capacity-card[data-state="low"] .registration-capacity-meta strong {
+  color: var(--danger);
+}
+
+.registration-capacity-card[data-state="partial"] .registration-capacity-meta strong {
   color: #745400;
 }
 
-.registration-capacity-card[data-state="full"] .registration-capacity-meta strong {
-  color: var(--danger);
+.registration-capacity-card[data-state="complete"] .registration-capacity-meta strong {
+  color: var(--success);
 }
 
 .registration-review-panel {
