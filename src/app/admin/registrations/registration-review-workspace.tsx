@@ -266,14 +266,16 @@ export function RegistrationReviewWorkspace({
         event.preventDefault();
         setFocusedIndex((current) => {
           const next = Math.min(current + 1, visibleRows.length - 1);
-          const row = visibleRows[next];\n          if (row) document.getElementById("registration-row-" + row.id)?.focus();
+          const row = visibleRows[next];
+          if (row) document.getElementById("registration-row-" + row.id)?.focus();
           return next;
         });
       } else if (event.key.toLowerCase() === "k") {
         event.preventDefault();
         setFocusedIndex((current) => {
           const next = Math.max(current - 1, 0);
-          const row = visibleRows[next];\n          if (row) document.getElementById("registration-row-" + row.id)?.focus();
+          const row = visibleRows[next];
+          if (row) document.getElementById("registration-row-" + row.id)?.focus();
           return next;
         });
       } else if (event.key === " " && visibleRows[focusedIndex]?.canReview) {
