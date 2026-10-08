@@ -210,12 +210,6 @@ export function EventForm({
       "event-links": "preparation", "event-attendance-settings": "preparation",
       "event-advanced": "preparation", "event-visibility": "visibility",
     };
-    const hash = window.location.hash.slice(1);
-    if (hash in ids) {
-      const step = ids[hash];
-      setExpandedStep(step);
-      setFocusedStep(step);
-    }
     const onScroll = () => {
       const match = Object.entries(ids).filter(([id]) => id.startsWith("event-") && !["event-opportunity","event-links","event-attendance-settings","event-advanced"].includes(id)).find(([id]) => {
         const bounds = document.getElementById(id)?.getBoundingClientRect();
