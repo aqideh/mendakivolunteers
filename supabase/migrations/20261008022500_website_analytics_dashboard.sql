@@ -130,10 +130,10 @@ devices as (
 pathways as (
   select
     case
-      when path = '/coach' or path like '/coach/%' then 'Coach'
-      when path = '/facilitator' or path like '/facilitator/%' then 'Facilitator'
-      when path = '/mentor' or path like '/mentor/%' then 'Mentor'
-      when path = '/contributor' or path like '/contributor/%' then 'Contributor'
+      when path = '/volunteer/coach' or path like '/volunteer/coach/%' then 'Coach'
+      when path = '/volunteer/facilitator' or path like '/volunteer/facilitator/%' then 'Facilitator'
+      when path = '/volunteer/mentor' or path like '/volunteer/mentor/%' then 'Mentor'
+      when path = '/opportunities' or path like '/opportunities/%' then 'Contributor'
       when path = '/specialist' or path like '/specialist/%' then 'Professional Networks'
       else null
     end as pathway,
