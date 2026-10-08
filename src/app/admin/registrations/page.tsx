@@ -7,8 +7,14 @@ import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 import {
   formatTimeslotDate,
   formatTimeslotTimeRange,
+  startOfSingaporeDayIso,
 } from "@/lib/phaseone/packages";
-import { cancelRegistration, reviewRegistration } from "./actions";
+import {
+  RegistrationReviewWorkspace,
+  type RegistrationCapacityItem,
+  type RegistrationReviewRow,
+  type RegistrationSignal,
+} from "./registration-review-workspace";
 
 export const metadata: Metadata = { title: "Volunteer registrations" };
 export const dynamic = "force-dynamic";
@@ -17,31 +23,34 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-function parameter(
-  values: Record<string, string | string[] | undefined>,
-  key: string,
-) {
+function parameter(values: Record<string, string | string[] | undefined>, key: string) {
   const value = values[key];
   return Array.isArray(value) ? value[0] : value;
 }
 
 function statusLabel(status: string) {
-  return status === "pending"
-    ? "Pending"
-    : status === "confirmed"
-      ? "Confirmed"
-      : status === "waitlisted"
-        ? "Waitlisted"
-        : status === "rejected"
-          ? "Not confirmed"
-          : status === "withdrawn"
-            ? "Withdrawn"
-            : "Cancelled";
+  if (status === "pending") return "Pending";
+  if (status === "confirmed") return "Confirmed";
+  if (status === "waitlisted") return "Waitlisted";
+  if (status === "rejected") return "Not confirmed";
+  if (status === "withdrawn") return "Withdrawn";
+  return "Cancelled";
 }
 
-export default async function RegistrationsAdminPage({
-  searchParams,
-}: PageProps) {
+function overlaps(
+  leftStart: string,
+  leftEnd: string | null,
+  rightStart: string,
+  rightEnd: string | null,
+) {
+  const leftStartMs = new Date(leftStart).getTime();
+  const leftEndMs = new Date(leftEnd ?? leftStart).getTime();
+  const rightStartMs = new Date(rightStart).getTime();
+  const rightEndMs = new Date(rightEnd ?? rightStart).getTime();
+  return leftStartMs < rightEndMs && rightStartMs < leftEndMs;
+}
+
+export default async function RegistrationsAdminPage({ searchParams }: PageProps) {
   await requireEventManager("/admin/registrations");
   const parameters = await searchParams;
   const eventFilter = parameter(parameters, "event");
@@ -51,14 +60,11 @@ export default async function RegistrationsAdminPage({
 
   let registrationsQuery = admin
     .from("keluarga_registrations")
-    .select(
-      "id, volunteer_id, auth_user_id, event_id, status, submitted_at, reviewed_at, review_note, identity_state",
-    )
+    .select("id, volunteer_id, auth_user_id, event_id, status, submitted_at, reviewed_at, review_note, identity_state")
     .order("submitted_at", { ascending: true })
     .limit(2000);
-  if (eventFilter) {
-    registrationsQuery = registrationsQuery.eq("event_id", eventFilter);
-  }
+
+  if (eventFilter) registrationsQuery = registrationsQuery.eq("event_id", eventFilter);
 
   const registrationsResult = await registrationsQuery;
   if (registrationsResult.error || !registrationsResult.data) {
@@ -66,87 +72,100 @@ export default async function RegistrationsAdminPage({
   }
 
   const registrations = registrationsResult.data;
-  const eventIds = Array.from(new Set(registrations.map(({ event_id }) => event_id)));
-  const volunteerIds = Array.from(
-    new Set(
-      registrations
-        .map(({ volunteer_id }) => volunteer_id)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  );
-  const authUserIds = Array.from(
-    new Set(
-      registrations
-        .map(({ auth_user_id }) => auth_user_id)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  );
-  const registrationIds = registrations.map(({ id }) => id);
+  const registeredEventIds = Array.from(new Set(registrations.map((item) => item.event_id)));
+  const volunteerIds = Array.from(new Set(registrations.map((item) => item.volunteer_id).filter((id): id is string => Boolean(id))));
+  const authUserIds = Array.from(new Set(registrations.map((item) => item.auth_user_id).filter((id): id is string => Boolean(id))));
+  const registrationIds = registrations.map((item) => item.id);
+  const todayStart = startOfSingaporeDayIso();
 
-  const [eventsResult, volunteersResult, accountsResult, selectionsResult] = await Promise.all([
-    eventIds.length
-      ? admin.from("phaseone_events").select("id, title, slug").in("id", eventIds)
-      : Promise.resolve({ data: [], error: null }),
+  let upcomingEventsQuery = admin
+    .from("phaseone_events")
+    .select("id, title, slug, is_opportunity_published")
+    .eq("is_opportunity_published", true)
+    .limit(1000);
+
+  if (eventFilter) {
+    upcomingEventsQuery = upcomingEventsQuery.eq("id", eventFilter);
+  }
+
+  const [upcomingEventsResult, volunteersResult, accountsResult, selectionsResult] = await Promise.all([
+    upcomingEventsQuery,
     volunteerIds.length
-      ? admin
-          .schema("core")
-          .from("volunteers")
-          .select(
-            "id, volunteer_code, display_name, primary_email_normalized, mobile",
-          )
-          .in("id", volunteerIds)
+      ? admin.schema("core").from("volunteers").select("id, volunteer_code, display_name, primary_email_normalized, mobile").in("id", volunteerIds)
       : Promise.resolve({ data: [], error: null }),
     authUserIds.length
-      ? admin
-          .schema("core")
-          .from("user_accounts")
-          .select("id, display_name, claimed_email_normalized, email_ownership_verified")
-          .in("id", authUserIds)
+      ? admin.schema("core").from("user_accounts").select("id, display_name, claimed_email_normalized, email_ownership_verified").in("id", authUserIds)
       : Promise.resolve({ data: [], error: null }),
     registrationIds.length
-      ? admin
-          .from("keluarga_registration_shifts")
-          .select("registration_id, timeslot_id")
-          .in("registration_id", registrationIds)
+      ? admin.from("keluarga_registration_shifts").select("registration_id, timeslot_id").in("registration_id", registrationIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (
-    eventsResult.error ||
-    volunteersResult.error ||
-    accountsResult.error ||
-    selectionsResult.error
-  ) {
+  if (upcomingEventsResult.error || volunteersResult.error || accountsResult.error || selectionsResult.error) {
     throw new Error("Registration review data could not be loaded");
   }
 
-  const selections = selectionsResult.data ?? [];
-  const timeslotIds = Array.from(
-    new Set(selections.map(({ timeslot_id }) => timeslot_id)),
-  );
-  const timeslotsResult = timeslotIds.length
-    ? await admin
-        .from("phaseone_event_timeslots")
-        .select("id, label, starts_at, ends_at, status, sort_order, registration_capacity")
-        .in("id", timeslotIds)
-    : { data: [], error: null };
+  const upcomingEventIds = (upcomingEventsResult.data ?? []).map((event) => event.id);
+  const eventIds = Array.from(new Set([...registeredEventIds, ...upcomingEventIds]));
 
-  if (timeslotsResult.error) {
+  const [eventsResult, upcomingTimeslotsResult] = await Promise.all([
+    eventIds.length
+      ? admin.from("phaseone_events").select("id, title, slug, is_opportunity_published").in("id", eventIds)
+      : Promise.resolve({ data: [], error: null }),
+    upcomingEventIds.length
+      ? admin
+          .from("phaseone_event_timeslots")
+          .select("id, event_id, label, starts_at, ends_at, status, sort_order, registration_capacity")
+          .in("event_id", upcomingEventIds)
+          .eq("status", "scheduled")
+          .order("starts_at", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .limit(20000)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (eventsResult.error || upcomingTimeslotsResult.error) {
+    throw new Error("Registration opportunity data could not be loaded");
+  }
+
+  const selections = selectionsResult.data ?? [];
+  const selectedTimeslotIds = Array.from(new Set(selections.map((item) => item.timeslot_id)));
+  const upcomingTimeslotIds = (upcomingTimeslotsResult.data ?? []).map((item) => item.id);
+  const timeslotIds = Array.from(new Set([...selectedTimeslotIds, ...upcomingTimeslotIds]));
+
+  const [selectedTimeslotsResult, allReservationsResult] = await Promise.all([
+    selectedTimeslotIds.length
+      ? admin.from("phaseone_event_timeslots")
+          .select("id, event_id, label, starts_at, ends_at, status, sort_order, registration_capacity")
+          .in("id", selectedTimeslotIds)
+      : Promise.resolve({ data: [], error: null }),
+    timeslotIds.length
+      ? admin.from("keluarga_registration_shifts")
+          .select("timeslot_id, registration:keluarga_registrations!inner(id, status)")
+          .in("timeslot_id", timeslotIds)
+          .in("registration.status", ["pending", "confirmed"])
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (selectedTimeslotsResult.error || allReservationsResult.error) {
     throw new Error("Registration shifts could not be loaded");
   }
 
-  const eventById = new Map(
-    (eventsResult.data ?? []).map((event) => [event.id, event]),
-  );
-  const volunteerById = new Map(
-    (volunteersResult.data ?? []).map((volunteer) => [volunteer.id, volunteer]),
-  );
-  const accountById = new Map(
-    (accountsResult.data ?? []).map((account) => [account.id, account]),
-  );
-  const timeslotById = new Map(
-    (timeslotsResult.data ?? []).map((timeslot) => [timeslot.id, timeslot]),
-  );
+  const timeslotsResult = {
+    data: [
+      ...(upcomingTimeslotsResult.data ?? []),
+      ...(selectedTimeslotsResult.data ?? []).filter(
+        (selected) => !(upcomingTimeslotsResult.data ?? []).some((upcoming) => upcoming.id === selected.id),
+      ),
+    ],
+    error: null,
+  };
+
+  const eventById = new Map((eventsResult.data ?? []).map((event) => [event.id, event]));
+  const volunteerById = new Map((volunteersResult.data ?? []).map((volunteer) => [volunteer.id, volunteer]));
+  const accountById = new Map((accountsResult.data ?? []).map((account) => [account.id, account]));
+  const timeslotById = new Map((timeslotsResult.data ?? []).map((timeslot) => [timeslot.id, timeslot]));
+
   const shiftIdsByRegistration = new Map<string, string[]>();
   for (const selection of selections) {
     const current = shiftIdsByRegistration.get(selection.registration_id) ?? [];
@@ -154,26 +173,168 @@ export default async function RegistrationsAdminPage({
     shiftIdsByRegistration.set(selection.registration_id, current);
   }
 
-  const sorted = [...registrations].sort((left, right) => {
-    const rank = (status: string) =>
-      status === "pending" ? 0 : status === "waitlisted" ? 1 : 2;
-    return (
-      rank(left.status) - rank(right.status) ||
-      left.submitted_at.localeCompare(right.submitted_at)
-    );
+  const reservedByTimeslot = new Map<string, { reserved: number; pending: number; confirmed: number }>();
+  for (const item of allReservationsResult.data ?? []) {
+    const registration = Array.isArray(item.registration) ? item.registration[0] : item.registration;
+    if (!registration) continue;
+    const current = reservedByTimeslot.get(item.timeslot_id) ?? { reserved: 0, pending: 0, confirmed: 0 };
+    current.reserved += 1;
+    if (registration.status === "pending") current.pending += 1;
+    if (registration.status === "confirmed") current.confirmed += 1;
+    reservedByTimeslot.set(item.timeslot_id, current);
+  }
+
+  const activeByVolunteer = new Map<string, typeof registrations>();
+  for (const registration of registrations) {
+    if (!registration.volunteer_id || !["pending", "waitlisted", "confirmed"].includes(registration.status)) continue;
+    const current = activeByVolunteer.get(registration.volunteer_id) ?? [];
+    current.push(registration);
+    activeByVolunteer.set(registration.volunteer_id, current);
+  }
+
+  const rows: RegistrationReviewRow[] = registrations.map((registration) => {
+    const event = eventById.get(registration.event_id);
+    const volunteer = registration.volunteer_id ? volunteerById.get(registration.volunteer_id) : undefined;
+    const account = registration.auth_user_id ? accountById.get(registration.auth_user_id) : undefined;
+    const identityResolved = registration.identity_state === "resolved" && Boolean(registration.volunteer_id);
+
+    const shifts = (shiftIdsByRegistration.get(registration.id) ?? [])
+      .map((id) => timeslotById.get(id))
+      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+      .sort((left, right) => left.starts_at.localeCompare(right.starts_at) || left.sort_order - right.sort_order);
+
+    const shiftViews = shifts.map((shift) => {
+      const reservation = reservedByTimeslot.get(shift.id) ?? { reserved: 0, pending: 0, confirmed: 0 };
+      const capacity = shift.registration_capacity;
+      return {
+        id: shift.id,
+        label: shift.label?.trim() || formatTimeslotDate(shift.starts_at),
+        dateLabel: formatTimeslotDate(shift.starts_at),
+        timeLabel: formatTimeslotTimeRange(shift),
+        capacity,
+        reserved: reservation.reserved,
+        left: capacity === null ? null : Math.max(0, capacity - reservation.reserved),
+      };
+    });
+
+    const signals: RegistrationSignal[] = [];
+    if (!identityResolved) signals.push({ key: "identity", label: "Identity review", tone: "warning" });
+    if (!volunteer?.mobile) signals.push({ key: "mobile", label: "Missing phone", tone: "warning" });
+
+    const otherActive = registration.volunteer_id
+      ? (activeByVolunteer.get(registration.volunteer_id) ?? []).filter((item) => item.id !== registration.id)
+      : [];
+
+    if (otherActive.length > 0) {
+      signals.push({ key: "duplicate", label: String(otherActive.length + 1) + " programmes", tone: "info" });
+    }
+
+    const hasClash = otherActive.some((other) => {
+      const otherShifts = (shiftIdsByRegistration.get(other.id) ?? [])
+        .map((id) => timeslotById.get(id))
+        .filter((item): item is NonNullable<typeof item> => Boolean(item));
+      return shifts.some((left) =>
+        otherShifts.some((right) => overlaps(left.starts_at, left.ends_at, right.starts_at, right.ends_at)),
+      );
+    });
+
+    if (hasClash) signals.push({ key: "clash", label: "Schedule clash", tone: "danger" });
+
+    const tightShift = shiftViews.find((shift) => shift.capacity !== null && shift.left !== null && shift.left <= 3);
+    if (tightShift) {
+      signals.push({
+        key: "capacity",
+        label: tightShift.left === 0 ? "Capacity full" : String(tightShift.left) + " left",
+        tone: tightShift.left === 0 ? "danger" : "warning",
+      });
+    }
+
+    const capacitySummary = shiftViews.length
+      ? shiftViews.map((shift) =>
+          shift.capacity === null
+            ? shift.label + ": no cap"
+            : shift.label + ": " + (shift.left === 0 ? "full" : String(shift.left) + " left"),
+        ).join(" · ")
+      : "No shifts";
+
+    return {
+      id: registration.id,
+      eventId: registration.event_id,
+      eventTitle: event?.title ?? registration.event_id,
+      status: registration.status,
+      statusLabel: statusLabel(registration.status),
+      submittedLabel: formatSingaporeDateTime(registration.submitted_at),
+      submittedAt: registration.submitted_at,
+      reviewedLabel: registration.reviewed_at ? formatSingaporeDateTime(registration.reviewed_at) : null,
+      volunteerName: volunteer?.display_name ?? account?.display_name ?? "Volunteer",
+      volunteerCode: volunteer?.volunteer_code ?? null,
+      email: volunteer?.primary_email_normalized ?? account?.claimed_email_normalized ?? null,
+      mobile: volunteer?.mobile ?? null,
+      identityResolved,
+      identityReviewHref: identityResolved ? null : "/admin/reconciliation",
+      shifts: shiftViews,
+      shiftSummary: shiftViews.length
+        ? shiftViews.map((shift) => shift.label + " · " + shift.dateLabel + " · " + shift.timeLabel).join(" | ")
+        : "No shifts",
+      capacitySummary,
+      signals,
+      reviewNote: registration.review_note,
+      canReview: registration.status === "pending" || registration.status === "waitlisted",
+      canCancel: ["pending", "waitlisted", "confirmed"].includes(registration.status),
+      programmeHref: event ? "/admin/events/" + event.id + "/edit" : null,
+      eventOpsHref: event && registration.status === "confirmed" ? "/admin/events/" + event.id + "/attendance" : null,
+    };
   });
+
+  const upcomingEventIdSet = new Set(upcomingEventIds);
+  const capacityItems: RegistrationCapacityItem[] = (timeslotsResult.data ?? [])
+    .filter(
+      (timeslot) =>
+        upcomingEventIdSet.has(timeslot.event_id) &&
+        timeslot.status === "scheduled" &&
+        (timeslot.ends_at ?? timeslot.starts_at) >= todayStart,
+    )
+    .map((timeslot) => {
+      const reservation = reservedByTimeslot.get(timeslot.id) ?? { reserved: 0, pending: 0, confirmed: 0 };
+      const capacity = timeslot.registration_capacity;
+      const event = eventById.get(timeslot.event_id);
+      return {
+        id: timeslot.id,
+        eventTitle: event?.title ?? timeslot.event_id,
+        label: timeslot.label?.trim() || formatTimeslotDate(timeslot.starts_at),
+        dateLabel: formatTimeslotDate(timeslot.starts_at),
+        timeLabel: formatTimeslotTimeRange(timeslot),
+        capacity,
+        reserved: reservation.reserved,
+        pending: reservation.pending,
+        confirmed: reservation.confirmed,
+        left: capacity === null ? null : Math.max(0, capacity - reservation.reserved),
+      };
+    })
+    .sort((left, right) => {
+      const leftFullness =
+        left.capacity === null || left.left === null
+          ? Number.POSITIVE_INFINITY
+          : left.left;
+      const rightFullness =
+        right.capacity === null || right.left === null
+          ? Number.POSITIVE_INFINITY
+          : right.left;
+      return (
+        leftFullness - rightFullness ||
+        left.dateLabel.localeCompare(right.dateLabel) ||
+        left.eventTitle.localeCompare(right.eventTitle)
+      );
+    });
 
   return (
     <div className="admin-page site-shell">
       <div className="admin-page-frame page-frame">
-        <div className="dashboard-header">
+        <div className="dashboard-header registration-review-header">
           <div>
-            <p className="eyebrow">Community volunteer workflow</p>
             <h1>Registration review</h1>
             <p className="muted">
-              Pending registrations reserve shift capacity transactionally. Confirmed
-              registrations flow into Event Operations only after canonical volunteer
-              identity is resolved.
+              Review applications, monitor reserved capacity, and move confirmed volunteers into Event Operations.
             </p>
           </div>
           <div className="actions">
@@ -188,226 +349,14 @@ export default async function RegistrationsAdminPage({
           </div>
         </div>
 
-        {success ? (
-          <div className="notice notice-success" role="status">
-            Registration updated.
-          </div>
-        ) : null}
-        {error ? (
-          <div className="notice notice-error" role="alert">
-            {error}
-          </div>
-        ) : null}
+        {success ? <div className="notice notice-success" role="status">Registration updated.</div> : null}
+        {error ? <div className="notice notice-error" role="alert">{error}</div> : null}
 
-        <section className="record-list" aria-label="Volunteer registrations">
-          {sorted.map((registration) => {
-            const event = eventById.get(registration.event_id);
-            const volunteer = registration.volunteer_id
-              ? volunteerById.get(registration.volunteer_id)
-              : undefined;
-            const account = registration.auth_user_id
-              ? accountById.get(registration.auth_user_id)
-              : undefined;
-            const identityResolved =
-              registration.identity_state === "resolved" &&
-              Boolean(registration.volunteer_id);
-            const shifts = (shiftIdsByRegistration.get(registration.id) ?? [])
-              .map((id) => timeslotById.get(id))
-              .filter((item): item is NonNullable<typeof item> => Boolean(item));
-            const canReview =
-              registration.status === "pending" ||
-              registration.status === "waitlisted";
-
-            return (
-              <article className="panel" key={registration.id}>
-                <div className="section-header">
-                  <div>
-                    <p className="eyebrow">
-                      {volunteer?.volunteer_code ??
-                        (identityResolved ? "KEL volunteer" : "Identity review")}
-                    </p>
-                    <h2>
-                      {volunteer?.display_name ??
-                        account?.display_name ??
-                        "Volunteer"}
-                    </h2>
-                    <p className="muted">
-                      {volunteer?.primary_email_normalized ??
-                        account?.claimed_email_normalized ??
-                        "No email"}{" "}
-                      · {volunteer?.mobile ?? "No mobile"}
-                    </p>
-                  </div>
-                  <div className="actions">
-                    {!identityResolved ? (
-                      <span className="status-pill" data-state="pending">
-                        Identity review required
-                      </span>
-                    ) : null}
-                    <span className="status-pill" data-state={registration.status}>
-                      {statusLabel(registration.status)}
-                    </span>
-                  </div>
-                </div>
-
-                <dl className="data-list">
-                  <div className="data-row">
-                    <dt>Programme</dt>
-                    <dd>{event?.title ?? registration.event_id}</dd>
-                  </div>
-                  <div className="data-row">
-                    <dt>Submitted</dt>
-                    <dd>{formatSingaporeDateTime(registration.submitted_at)}</dd>
-                  </div>
-                  <div className="data-row">
-                    <dt>Selected shifts</dt>
-                    <dd>
-                      {shifts.length
-                        ? shifts
-                            .map(
-                              (shift) =>
-                                `${shift.label?.trim() || formatTimeslotDate(shift.starts_at)} · ${formatTimeslotTimeRange(shift)}`,
-                            )
-                            .join(" | ")
-                        : "No shifts"}
-                    </dd>
-                  </div>
-                  {registration.review_note ? (
-                    <div className="data-row">
-                      <dt>Staff note</dt>
-                      <dd>{registration.review_note}</dd>
-                    </div>
-                  ) : null}
-                </dl>
-
-                {canReview ? (
-                  <form action={reviewRegistration} className="phaseone-admin-form">
-                    <input
-                      name="registrationId"
-                      type="hidden"
-                      value={registration.id}
-                    />
-                    <input
-                      name="eventId"
-                      type="hidden"
-                      value={registration.event_id}
-                    />
-                    <div className="form-field">
-                      <label htmlFor={`note-${registration.id}`}>
-                        Staff note (optional)
-                      </label>
-                      <input
-                        id={`note-${registration.id}`}
-                        maxLength={1000}
-                        name="note"
-                      />
-                    </div>
-                    {!identityResolved ? (
-                      <div className="notice">
-                        This registration is saved and reserving capacity, but it cannot
-                        be confirmed until Volunteer Management resolves the canonical
-                        volunteer identity.
-                        <div className="actions">
-                          <Link className="text-link" href="/admin/reconciliation">
-                            Open identity review
-                          </Link>
-                        </div>
-                      </div>
-                    ) : null}
-                    <div className="actions">
-                      {identityResolved ? (
-                        <button
-                          className="button button-primary"
-                          name="decision"
-                          type="submit"
-                          value="confirmed"
-                        >
-                          Confirm
-                        </button>
-                      ) : null}
-                      <button
-                        className="button button-secondary"
-                        name="decision"
-                        type="submit"
-                        value="waitlisted"
-                      >
-                        Waitlist
-                      </button>
-                      <button
-                        className="button"
-                        name="decision"
-                        type="submit"
-                        value="rejected"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </form>
-                ) : null}
-
-                {["pending", "waitlisted", "confirmed"].includes(
-                  registration.status,
-                ) ? (
-                  <details className="phaseone-inline-disclosure">
-                    <summary>Cancel registration</summary>
-                    <form action={cancelRegistration} className="phaseone-admin-form">
-                      <input
-                        name="registrationId"
-                        type="hidden"
-                        value={registration.id}
-                      />
-                      <input
-                        name="eventId"
-                        type="hidden"
-                        value={registration.event_id}
-                      />
-                      <div className="form-field">
-                        <label htmlFor={`cancel-reason-${registration.id}`}>
-                          Cancellation reason
-                        </label>
-                        <textarea
-                          id={`cancel-reason-${registration.id}`}
-                          maxLength={1000}
-                          minLength={3}
-                          name="reason"
-                          required
-                          rows={2}
-                        />
-                      </div>
-                      <button className="button button-secondary" type="submit">
-                        Cancel registration
-                      </button>
-                    </form>
-                  </details>
-                ) : null}
-
-                {event ? (
-                  <div className="actions">
-                    <Link
-                      className="text-link"
-                      href={`/admin/events/${event.id}/edit`}
-                    >
-                      Open programme
-                    </Link>
-                    {registration.status === "confirmed" ? (
-                      <Link
-                        className="text-link"
-                        href={`/admin/events/${event.id}/attendance`}
-                      >
-                        Open Event Operations
-                      </Link>
-                    ) : null}
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
-          {sorted.length === 0 ? (
-            <div className="panel empty-state">
-              No registrations match this view.
-            </div>
-          ) : null}
-        </section>
+        <RegistrationReviewWorkspace
+          capacityItems={capacityItems}
+          eventFilter={eventFilter}
+          rows={rows}
+        />
       </div>
     </div>
   );

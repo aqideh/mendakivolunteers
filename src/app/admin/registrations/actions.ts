@@ -13,6 +13,12 @@ const cancellationSchema = z.object({
   reason: z.string().trim().min(3).max(1000),
 });
 
+const bulkReviewSchema = z.object({
+  registrationIds: z.array(z.string().uuid()).min(1).max(100),
+  decision: z.enum(["confirmed", "waitlisted", "rejected"]),
+  returnTo: z.string().startsWith("/admin/registrations"),
+});
+
 const reviewSchema = z.object({
   registrationId: z.string().uuid(),
   eventId: z.string().uuid(),
@@ -83,6 +89,132 @@ export async function reviewRegistration(formData: FormData) {
   );
 }
 
+
+export async function bulkReviewRegistrations(formData: FormData) {
+  const parsed = bulkReviewSchema.safeParse({
+    registrationIds: formData.getAll("registrationIds"),
+    decision: formData.get("decision"),
+    returnTo: formData.get("returnTo"),
+  });
+
+  if (!parsed.success) {
+    redirect(
+      "/admin/registrations?error=Bulk%20registration%20review%20details%20are%20invalid.",
+    );
+  }
+
+  const { userId } = await requireEventManager(parsed.data.returnTo);
+  const admin = getPhaseOneAdminClient();
+  const uniqueIds = Array.from(new Set(parsed.data.registrationIds));
+
+  const registrationsResult = await admin
+    .from("keluarga_registrations")
+    .select("id, event_id, status, identity_state, volunteer_id")
+    .in("id", uniqueIds);
+
+  if (registrationsResult.error || !registrationsResult.data) {
+    redirect(
+      parsed.data.returnTo +
+        (parsed.data.returnTo.includes("?") ? "&" : "?") +
+        "error=The%20selected%20registrations%20could%20not%20be%20loaded.",
+    );
+  }
+
+  const selected = registrationsResult.data;
+  if (selected.length !== uniqueIds.length) {
+    redirect(
+      parsed.data.returnTo +
+        (parsed.data.returnTo.includes("?") ? "&" : "?") +
+        "error=One%20or%20more%20selected%20registrations%20no%20longer%20exist.",
+    );
+  }
+
+  const invalidStatus = selected.some(
+    (registration) =>
+      registration.status !== "pending" &&
+      registration.status !== "waitlisted",
+  );
+  if (invalidStatus) {
+    redirect(
+      parsed.data.returnTo +
+        (parsed.data.returnTo.includes("?") ? "&" : "?") +
+        "error=One%20or%20more%20selected%20registrations%20have%20already%20been%20reviewed.",
+    );
+  }
+
+  if (
+    parsed.data.decision === "confirmed" &&
+    selected.some(
+      (registration) =>
+        registration.identity_state !== "resolved" ||
+        !registration.volunteer_id,
+    )
+  ) {
+    redirect(
+      parsed.data.returnTo +
+        (parsed.data.returnTo.includes("?") ? "&" : "?") +
+        "error=Resolve%20all%20selected%20volunteer%20identities%20before%20confirming.",
+    );
+  }
+
+  let updated = 0;
+  let firstError: string | null = null;
+
+  for (const registration of selected) {
+    const { error } = await admin.schema("core").rpc(
+      "review_keluarga_registration",
+      {
+        p_registration_id: registration.id,
+        p_decision: parsed.data.decision,
+        p_note: null,
+        p_actor_user_id: userId,
+      },
+    );
+
+    if (error) {
+      firstError =
+        error.message.includes("full")
+          ? "A selected shift became full. Review the remaining registrations before confirming."
+          : error.message.includes("no longer available")
+            ? "A selected shift is no longer available. Review the programme schedule first."
+            : "One or more registrations could not be updated.";
+      break;
+    }
+
+    updated += 1;
+  }
+
+  revalidatePath("/admin/registrations");
+  for (const eventId of new Set(selected.map((registration) => registration.event_id))) {
+    revalidatePath("/admin/events/" + eventId + "/edit");
+    revalidatePath("/admin/events/" + eventId + "/attendance");
+  }
+  revalidatePath("/dashboard");
+  revalidatePath("/journey");
+
+  const separator = parsed.data.returnTo.includes("?") ? "&" : "?";
+  if (firstError) {
+    const message =
+      updated > 0
+        ? String(updated) +
+          " registration(s) were updated before the next item failed. " +
+          firstError
+        : firstError;
+    redirect(
+      parsed.data.returnTo +
+        separator +
+        "error=" +
+        encodeURIComponent(message),
+    );
+  }
+
+  redirect(
+    parsed.data.returnTo +
+      separator +
+      "success=" +
+      encodeURIComponent("bulk_" + parsed.data.decision),
+  );
+}
 
 export async function cancelRegistration(formData: FormData) {
   const parsed = cancellationSchema.safeParse({
