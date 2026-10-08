@@ -592,3 +592,62 @@ section[aria-labelledby="staff-tools-title"] .card .staff-tool-links .text-link 
     font-size: 0.8rem !important;
   }
 }
+
+
+/* Programme setup redesign */
+.km-programme-nav { position: relative; top: auto; overflow: visible; flex-wrap: wrap; gap: .4rem; padding: .4rem 0; }
+.km-programme-nav > a, .km-programme-more > summary { display:inline-flex; align-items:center; min-height:44px; padding:.65rem 1rem; border:1px solid var(--border); border-radius:999px; text-decoration:none; font-size:.875rem; font-weight:650; cursor:pointer; }
+.km-programme-nav > a[aria-current="page"] { background:var(--ink); color:var(--surface); }
+.km-programme-more { position:relative; }
+.km-programme-more > summary { list-style:none; }
+.km-programme-more > summary::-webkit-details-marker { display:none; }
+.km-programme-more-items { position:absolute; right:0; top:calc(100% + .35rem); z-index:35; min-width:190px; background:var(--surface); border:1px solid var(--border); border-radius:.65rem; padding:.4rem; box-shadow:0 8px 22px #0002; }
+.km-programme-more-items a { display:block; padding:.7rem; font-size:.875rem; color:var(--ink); }
+.km-setup-layout { display:grid; grid-template-columns:minmax(165px,.65fr) minmax(0,2fr) minmax(220px,1fr); gap:1rem; align-items:start; }
+.km-setup-fields { display:grid; min-width:0; gap:1rem; }
+.km-setup-steps, .km-setup-preview { border:1px solid var(--border); border-radius:.8rem; padding:1rem; background:var(--surface); }
+.km-setup-steps { position:sticky; top:1rem; display:grid; gap:.3rem; }
+.km-setup-steps h2, .km-setup-preview h2 { font-size:1rem; margin:0 0 .65rem; }
+.km-setup-steps a { display:flex; gap:.7rem; min-height:44px; align-items:center; padding:.4rem .5rem; border-radius:.4rem; text-decoration:none; color:var(--ink); font-size:.875rem; }
+.km-setup-steps a:hover, .km-setup-steps a:focus-visible { background:var(--surface-alt, #f5f5f5); }
+.km-setup-steps a span { font-size:1.15rem; width:1.2rem; text-align:center; }
+.km-setup-preview { position:sticky; top:1rem; min-width:0; }
+.km-setup-preview-content { display:grid; gap:.65rem; font-size:.875rem; }
+.km-setup-preview-content p { margin:0; overflow-wrap:anywhere; }
+.km-setup-preview-content img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:.55rem; }
+.km-preview-image-placeholder { background:var(--surface-alt, #eee); border-radius:.55rem; aspect-ratio:16/9; display:grid; place-items:center; color:var(--muted); }
+.km-preview-mobile-button { display:none; }
+.km-setup-save-bar { position:sticky; bottom:0; z-index:21; background:var(--ink); color:#fff; border-radius:.7rem .7rem 0 0; padding:.75rem 1rem; display:flex; justify-content:space-between; gap:.65rem; align-items:center; box-shadow:0 -4px 18px #0002; }
+.km-setup-save-bar .button-primary { background:#ffe600; color:#111; border-color:#ffe600; min-height:44px; }
+.km-setup-save-label { font-size:.875rem; }
+.km-shift-card { padding:1rem; background:var(--surface-alt, #fafafa); border-radius:.7rem; border:1px solid var(--border); }
+.km-shift-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.km-shift-card-heading { display:flex; justify-content:space-between; gap:.5rem; align-items:start; }
+.km-shift-meta { font-size:.875rem; margin:.3rem 0 0; }
+.km-shift-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.6rem; margin-top:.65rem; }
+.km-shift-actions button { min-height:44px; }
+.km-shift-cancel { display:inline-flex; align-items:center; gap:.45rem; font-size:.875rem; }
+.km-shift-cancel input { width:18px; height:18px; }
+.km-roster-add-methods, .km-roster-methods { display:grid; gap:.75rem; }
+.km-roster-add-methods > details, .km-roster-import { border:1px solid var(--border); border-radius:.7rem; padding:.75rem; }
+.km-roster-add-methods > details > summary, .km-roster-import > summary { font-size:.9rem; font-weight:700; cursor:pointer; min-height:44px; align-content:center; }
+.km-roster-add-methods > details[open] > summary, .km-roster-import[open] > summary { margin-bottom:.7rem; }
+.km-setup-fields > .phaseone-admin-fieldset, .km-setup-fields > .phaseone-disclosure { min-width:0; }
+@media(max-width:1100px) { .km-setup-layout { grid-template-columns:180px minmax(0,1fr); } .km-setup-preview { grid-column:2; position:static; } }
+@media(max-width:740px) {
+ .km-setup-layout { grid-template-columns:minmax(0,1fr); }
+ .km-setup-steps { position:static; display:flex; flex-wrap:wrap; gap:.25rem; }
+ .km-setup-steps h2 { flex-basis:100%; }
+ .km-setup-steps a { min-height:44px; padding:.35rem .55rem; border:1px solid var(--border); }
+ .km-setup-preview { grid-column:auto; }
+ .km-preview-mobile-button { display:inline-flex; }
+ .km-setup-preview-content { display:none; }
+ .km-setup-preview-content.is-open { display:grid; }
+ .km-preview-heading { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+ .km-shift-fields { grid-template-columns:minmax(0,1fr); }
+ .km-setup-save-bar { bottom:0; border-radius:.5rem .5rem 0 0; flex-wrap:wrap; }
+ .km-setup-save-bar > button { flex:1 1 130px; }
+ .km-programme-nav { flex-wrap:nowrap; overflow-x:auto; }
+ .km-programme-more { flex:0 0 auto; }
+ .km-programme-more-items { position:fixed; right:1rem; top:auto; }
+}
