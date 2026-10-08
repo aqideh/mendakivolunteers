@@ -13,6 +13,11 @@ type DailyPoint = {
   signups: number;
   registrations: number;
   registrants: number;
+  cumulative_pageviews: number;
+  cumulative_visitors: number;
+  cumulative_signups: number;
+  cumulative_registrations: number;
+  cumulative_registrants: number;
 };
 
 type AnalyticsSummary = {
@@ -74,14 +79,31 @@ export async function GET(request: NextRequest) {
 
   const summary = data as AnalyticsSummary;
   const rows = [
-    ["Date", "Unique visitors", "Pageviews", "Completed sign-ups", "Opportunity registrations", "Unique registrants"],
+    [
+      "Date",
+      "Daily unique visitors",
+      "Cumulative unique visitors",
+      "Daily pageviews",
+      "Cumulative pageviews",
+      "Daily completed sign-ups",
+      "Cumulative completed sign-ups",
+      "Daily opportunity registrations",
+      "Cumulative opportunity registrations",
+      "Daily unique registrants",
+      "Cumulative unique registrants",
+    ],
     ...summary.daily.map((point) => [
       point.day,
       point.visitors,
+      point.cumulative_visitors,
       point.pageviews,
+      point.cumulative_pageviews,
       point.signups,
+      point.cumulative_signups,
       point.registrations,
+      point.cumulative_registrations,
       point.registrants,
+      point.cumulative_registrants,
     ]),
   ];
 
