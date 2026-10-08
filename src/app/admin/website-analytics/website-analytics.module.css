@@ -166,6 +166,31 @@
   letter-spacing: -.04em;
 }
 
+.kpiSplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(72px, .8fr);
+  gap: .8rem;
+  align-items: end;
+}
+
+.kpiSplit > div + div {
+  border-left: 1px solid #ececec;
+  padding-left: .8rem;
+}
+
+.kpiSplit small {
+  margin: 0 0 .22rem;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+  font-size: .6rem;
+  font-weight: 800;
+}
+
+.kpiSplit > div + div strong {
+  font-size: clamp(1.08rem, 1.8vw, 1.45rem);
+  color: #444;
+}
+
 .kpis small {
   display: block;
   margin-top: .38rem;
@@ -249,6 +274,12 @@
   stroke-width: 2.4;
 }
 
+.cumulativeSignupLine {
+  stroke: #d3ad00;
+  stroke-width: 2.4;
+  stroke-dasharray: 5 4;
+}
+
 .signupBar {
   fill: #f2c900;
   opacity: .92;
@@ -281,6 +312,32 @@
   height: .5rem;
   background: #f2c900;
   border-radius: 2px;
+}
+
+.legendCumulative {
+  display: inline-block;
+  width: 1rem;
+  height: .18rem;
+  border-top: 2px dashed #d3ad00;
+}
+
+.dualCharts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .9rem;
+}
+
+.dualCharts > div + div {
+  border-left: 1px solid #ededed;
+  padding-left: .9rem;
+}
+
+.dualCharts h3 {
+  margin: 0 0 .15rem;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #707070;
 }
 
 .funnel {
@@ -447,6 +504,17 @@
   .mainGrid,
   .secondaryGrid {
     grid-template-columns: 1fr;
+  }
+
+  .dualCharts {
+    grid-template-columns: 1fr;
+  }
+
+  .dualCharts > div + div {
+    border-left: 0;
+    border-top: 1px solid #ededed;
+    padding-left: 0;
+    padding-top: .8rem;
   }
 }
 
