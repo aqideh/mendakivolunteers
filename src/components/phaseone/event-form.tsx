@@ -233,7 +233,7 @@ export function EventForm({
       onChange={(e) => {
         scheduleAutosave();
         setDirty(true);
-        const control = e.target as HTMLInputElement | HTMLTextAreaElement;
+        const control = e.target as unknown as HTMLInputElement | HTMLTextAreaElement;
         if (control.name === "title") setTitlePreview(control.value);
         if (control.name === "opportunitySummary") setSummaryPreview(control.value);
         if (control.name === "venue") setVenuePreview(control.value);
