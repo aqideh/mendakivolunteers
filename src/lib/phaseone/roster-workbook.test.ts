@@ -80,7 +80,7 @@ describe("programme roster Excel workbook", () => {
     expect(entries.get("xl/worksheets/sheet1.xml")).toContain('paperSize="9"');
     expect(entries.get("xl/worksheets/sheet1.xml")).toContain('ySplit="6"');
     expect(entries.get("xl/workbook.xml")).toContain("_xlnm.Print_Titles");
-    expect(entries.get("xl/worksheets/sheet2.xml")).toContain("No");
+    expect(entries.get("xl/worksheets/sheet2.xml")).toContain('ref="A6:H11"');
   });
 
   it("returns a printable empty roster for events without shifts", () => {
