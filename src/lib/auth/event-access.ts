@@ -139,15 +139,20 @@ export async function getAttendanceOperatorEventIds(
   }
 
   const admin = getPhaseOneAdminClient();
-  const [{ data: volunteer, error: volunteerError }, { data, error }] = await Promise.all([
-    admin.schema("core").from("volunteers").select("id")
-      .eq("auth_user_id", userId).maybeSingle(),
-    admin.from("phaseone_event_volunteer_leaders")
-      .select("event_id, user_id, volunteer_id").limit(5000),
-  ]);
+  const { data: volunteer, error: volunteerError } = await admin
+    .schema("core").from("volunteers").select("id")
+    .eq("auth_user_id", userId).maybeSingle();
+  if (volunteerError) throw new Error("Volunteer identity could not be loaded");
 
-  if (error || volunteerError) {
-    console.error("Unable to load scoped event assignments", { code: error?.code ?? volunteerError?.code });
+  const filter = volunteer
+    ? `user_id.eq.${userId},volunteer_id.eq.${volunteer.id}`
+    : `user_id.eq.${userId}`;
+  const { data, error } = await admin
+    .from("phaseone_event_volunteer_leaders")
+    .select("event_id, user_id, volunteer_id")
+    .or(filter);
+  if (error) {
+    console.error("Unable to load scoped event assignments", { code: error.code });
     throw new Error("Event assignments could not be loaded");
   }
   return new Set((data ?? []).filter((row) =>
