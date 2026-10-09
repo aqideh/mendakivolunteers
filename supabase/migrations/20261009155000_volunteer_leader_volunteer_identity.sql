@@ -22,12 +22,10 @@ alter table public.phaseone_event_volunteer_leaders
     check ((user_id is not null) <> (volunteer_id is not null));
 
 create unique index if not exists phaseone_event_volunteer_leaders_event_user_unique
-  on public.phaseone_event_volunteer_leaders(event_id, user_id)
-  where user_id is not null;
+  on public.phaseone_event_volunteer_leaders(event_id, user_id);
 
 create unique index if not exists phaseone_event_volunteer_leaders_event_volunteer_unique
-  on public.phaseone_event_volunteer_leaders(event_id, volunteer_id)
-  where volunteer_id is not null;
+  on public.phaseone_event_volunteer_leaders(event_id, volunteer_id);
 
 create index if not exists phaseone_event_volunteer_leaders_volunteer_idx
   on public.phaseone_event_volunteer_leaders(volunteer_id, event_id)
