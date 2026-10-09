@@ -222,7 +222,7 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
               <p className="eyebrow">Roster</p>
               <h2 id="roster-title">Volunteer roster</h2>
             </div>
-            <span className="status-pill">{rosterCountResult.count ?? 0} assignments</span>
+            <div className="actions"><span className="status-pill">{rosterCountResult.count ?? 0} assignments</span><a className="button button-secondary" href={`/admin/events/${id}/roster/export`}>Export roster (Excel)</a></div>
           </div>
           {operationsScope !== "canonical" ? (
             <div className={operationsScope === "manual_integrated" ? "notice notice-success" : "notice"}>
