@@ -28,6 +28,8 @@ export type RegistrationShiftView = {
   capacity: number | null;
   reserved: number;
   confirmed: number;
+  manual: number;
+  recruited: number;
   left: number | null;
 };
 
@@ -67,7 +69,10 @@ export type RegistrationCapacityItem = {
   reserved: number;
   pending: number;
   confirmed: number;
+  manual: number;
+  recruited: number;
   left: number | null;
+  remainingToRecruit: number | null;
 };
 
 type Props = {
@@ -315,7 +320,7 @@ export function RegistrationReviewWorkspace({
           {capacityItems.map((item) => {
             // Only confirmed placements contribute to recruitment completion.
             const ratio = item.capacity !== null && item.capacity > 0
-              ? Math.min(100, Math.round((item.confirmed / item.capacity) * 100))
+              ? Math.min(100, Math.round((item.recruited / item.capacity) * 100))
               : 0;
             const state = item.capacity === null
               ? "uncapped"
@@ -332,8 +337,8 @@ export function RegistrationReviewWorkspace({
                   <span>{item.eventTitle}</span>
                   <strong>
                     {item.capacity === null
-                      ? item.confirmed + " confirmed · No cap"
-                      : item.confirmed + " / " + item.capacity + " confirmed"}
+                      ? item.recruited + " recruited · No cap"
+                      : item.recruited + " / " + item.capacity + " recruited"}
                   </strong>
                 </div>
                 <p>
@@ -344,13 +349,13 @@ export function RegistrationReviewWorkspace({
                 ) : (
                   <div
                     className="registration-capacity-meter"
-                    aria-label={item.confirmed + " of " + item.capacity + " places confirmed"}
+                    aria-label={item.recruited + " of " + item.capacity + " places recruited"}
                   >
                     <span style={{ width: ratio + "%" }} />
                   </div>
                 )}
                 <div className="registration-capacity-meta">
-                  <span>{item.reserved === 0 ? "No registrations yet" : item.pending + " pending · " + item.confirmed + " confirmed"}</span>
+                  <span>{item.confirmed + " confirmed online · " + item.manual + " manual · " + item.pending + " pending"}</span>
                   <strong>
                     {state === "uncapped"
                       ? "No cap"
@@ -358,7 +363,7 @@ export function RegistrationReviewWorkspace({
                         ? "Fully recruited"
                         : state === "unavailable"
                           ? "No capacity"
-                          : item.left + " to confirm"}
+                          : item.remainingToRecruit + " still needed"}
                   </strong>
                 </div>
                 {item.capacity !== null && item.reserved > item.capacity ? (
