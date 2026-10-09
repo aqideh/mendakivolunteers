@@ -92,8 +92,8 @@ export default async function StaffAccessPage() {
           <div>
             <h1>Manage staff access</h1>
             <p className="muted">
-              Assign one KELUARGA access level to each staff account. Admin includes
-              MakLom administrator access; the other levels do not grant MakLom access.
+              Assign one KELUARGA access level to each staff account. MakLom access
+              is managed separately by the MakLom Superadmin.
             </p>
           </div>
           <div className="actions">
@@ -111,8 +111,8 @@ export default async function StaffAccessPage() {
             <div>
               <h2 id="role-reference-title">KELUARGA roles &amp; permissions</h2>
               <p className="muted">
-                Access levels are hierarchical. Admin is the only level that manages
-                staff access and receives MakLom access.
+                Access levels are hierarchical. KELUARGA Admin manages KELUARGA staff
+                access only; MakLom permissions are assigned separately.
               </p>
             </div>
           </div>
