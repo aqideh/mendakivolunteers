@@ -4,6 +4,7 @@ import Link from "next/link";
 import { requireEventManager } from "@/lib/auth/event-access";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
+import { recruitmentCountsByTimeslot } from "@/lib/phaseone/recruitment-progress";
 import {
   formatTimeslotDate,
   formatTimeslotTimeRange,
@@ -130,7 +131,7 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
   const upcomingTimeslotIds = (upcomingTimeslotsResult.data ?? []).map((item) => item.id);
   const timeslotIds = Array.from(new Set([...selectedTimeslotIds, ...upcomingTimeslotIds]));
 
-  const [selectedTimeslotsResult, allReservationsResult] = await Promise.all([
+  const [selectedTimeslotsResult, allReservationsResult, upcomingRosterResult] = await Promise.all([
     selectedTimeslotIds.length
       ? admin.from("phaseone_event_timeslots")
           .select("id, event_id, label, starts_at, ends_at, status, sort_order, registration_capacity")
@@ -138,14 +139,20 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
       : Promise.resolve({ data: [], error: null }),
     timeslotIds.length
       ? admin.from("keluarga_registration_shifts")
-          .select("timeslot_id, registration:keluarga_registrations!inner(id, status)")
+          .select("timeslot_id, registration:keluarga_registrations!inner(id, volunteer_id, status)")
           .in("timeslot_id", timeslotIds)
           .in("registration.status", ["pending", "confirmed"])
       : Promise.resolve({ data: [], error: null }),
+    upcomingTimeslotIds.length
+      ? admin.from("phaseone_roster")
+          .select("id, timeslot_id, volunteer_id, registration_id, attendance_person_key, entry_method, source_assignment_status")
+          .in("timeslot_id", upcomingTimeslotIds)
+          .limit(20000)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (selectedTimeslotsResult.error || allReservationsResult.error) {
-    throw new Error("Registration shifts could not be loaded");
+  if (selectedTimeslotsResult.error || allReservationsResult.error || upcomingRosterResult.error) {
+    throw new Error("Registration shifts or roster placements could not be loaded");
   }
 
   // Include historic selections in application details, but only upcoming shifts in trackers.
@@ -170,16 +177,11 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
     shiftIdsByRegistration.set(selection.registration_id, current);
   }
 
-  const reservedByTimeslot = new Map<string, { reserved: number; pending: number; confirmed: number }>();
-  for (const item of allReservationsResult.data ?? []) {
-    const registration = Array.isArray(item.registration) ? item.registration[0] : item.registration;
-    if (!registration) continue;
-    const current = reservedByTimeslot.get(item.timeslot_id) ?? { reserved: 0, pending: 0, confirmed: 0 };
-    current.reserved += 1;
-    if (registration.status === "pending") current.pending += 1;
-    if (registration.status === "confirmed") current.confirmed += 1;
-    reservedByTimeslot.set(item.timeslot_id, current);
-  }
+  const reservedByTimeslot = recruitmentCountsByTimeslot(
+    allReservationsResult.data ?? [],
+    upcomingRosterResult.data ?? [],
+  );
+  const emptyRecruitment = { reserved: 0, pending: 0, confirmed: 0, manual: 0, recruited: 0 };
 
   const activeByVolunteer = new Map<string, typeof registrations>();
   for (const registration of registrations) {
@@ -201,7 +203,7 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
       .sort((left, right) => left.starts_at.localeCompare(right.starts_at) || left.sort_order - right.sort_order);
 
     const shiftViews = shifts.map((shift) => {
-      const reservation = reservedByTimeslot.get(shift.id) ?? { reserved: 0, pending: 0, confirmed: 0 };
+      const reservation = reservedByTimeslot.get(shift.id) ?? emptyRecruitment;
       const capacity = shift.registration_capacity;
       return {
         id: shift.id,
@@ -211,6 +213,8 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
         capacity,
         reserved: reservation.reserved,
         confirmed: reservation.confirmed,
+        manual: reservation.manual,
+        recruited: reservation.recruited,
         // Pending applications reserve capacity for new sign-ups, but must not
         // block staff from confirming an applicant while confirmed places remain.
         left: capacity === null ? null : Math.max(0, capacity - reservation.confirmed),
@@ -257,7 +261,7 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
       ? shiftViews.map((shift) =>
           shift.capacity === null
             ? shift.label + ": no cap"
-            : shift.label + ": " + shift.confirmed + "/" + shift.capacity + " confirmed",
+            : shift.label + ": " + shift.recruited + "/" + shift.capacity + " recruited",
         ).join(" · ")
       : "No shifts";
 
@@ -294,7 +298,7 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
     .filter((timeslot) => (timeslot.ends_at ?? timeslot.starts_at) >= todayStart)
     .sort((left, right) => left.starts_at.localeCompare(right.starts_at) || left.sort_order - right.sort_order)
     .map((timeslot) => {
-      const reservation = reservedByTimeslot.get(timeslot.id) ?? { reserved: 0, pending: 0, confirmed: 0 };
+      const reservation = reservedByTimeslot.get(timeslot.id) ?? emptyRecruitment;
       const capacity = timeslot.registration_capacity;
       const event = eventById.get(timeslot.event_id);
       return {
@@ -307,8 +311,12 @@ export default async function RegistrationsAdminPage({ searchParams }: PageProps
         reserved: reservation.reserved,
         pending: reservation.pending,
         confirmed: reservation.confirmed,
-        // Recruitment counts confirmed volunteers, not pending applications.
+        manual: reservation.manual,
+        recruited: reservation.recruited,
+        // Confirmed registration capacity remains governed by the review RPC.
         left: capacity === null ? null : Math.max(0, capacity - reservation.confirmed),
+        // Recruitment includes active manual roster placements; pending adds nothing.
+        remainingToRecruit: capacity === null ? null : Math.max(0, capacity - reservation.recruited),
       };
     });
 
