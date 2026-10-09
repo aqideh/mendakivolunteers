@@ -42,7 +42,7 @@ export default async function EventVolunteerLeadersPage({
     admin.from("phaseone_events").select("id, title").eq("id", id).maybeSingle(),
     admin
       .from("phaseone_event_volunteer_leaders")
-      .select("user_id, assigned_at")
+      .select("user_id, volunteer_id, assigned_at")
       .eq("event_id", id)
       .order("assigned_at", { ascending: true }),
     admin
@@ -106,6 +106,22 @@ export default async function EventVolunteerLeadersPage({
   );
 
   const query = await searchParams;
+  const search = (parameter(query, "search") ?? "").trim().slice(0, 80);
+  const safeSearch = search.replace(/[%,]/g, "");
+  const searchResult = safeSearch.length >= 2
+    ? await admin.schema("core").from("volunteers")
+      .select("id, display_name, primary_email_normalized, auth_user_id")
+      .ilike("display_name", "%" + safeSearch + "%").order("display_name").limit(20)
+    : { data: [], error: null };
+  const assignedVolunteerIds = (assignmentResult.data ?? [])
+    .map((row) => row.volunteer_id).filter((value): value is string => Boolean(value));
+  const assignedVolunteers = assignedVolunteerIds.length
+    ? await admin.schema("core").from("volunteers")
+      .select("id, display_name, primary_email_normalized, auth_user_id")
+      .in("id", assignedVolunteerIds)
+    : { data: [], error: null };
+  if (searchResult.error || assignedVolunteers.error) throw new Error("Volunteer search failed");
+  const assignedVolunteerSet = new Set(assignedVolunteerIds);
   const success = parameter(query, "success");
   const error = parameter(query, "error");
 
@@ -145,7 +161,7 @@ export default async function EventVolunteerLeadersPage({
                 and display the event attendance QR.
               </p>
             </div>
-            <span className="status-pill">{assigned.length} assigned</span>
+            <span className="status-pill">{assigned.length + assignedVolunteerIds.length} assigned</span>
           </div>
 
           <div className="table-wrap">
@@ -176,7 +192,19 @@ export default async function EventVolunteerLeadersPage({
                     </td>
                   </tr>
                 ))}
-                {assigned.length === 0 ? (
+                {(assignedVolunteers.data ?? []).map((volunteer) => (
+                  <tr key={volunteer.id}>
+                    <td><strong>{volunteer.display_name ?? "Volunteer"}</strong>
+                      <span className="table-subtext">{volunteer.primary_email_normalized ?? ""}</span></td>
+                    <td><span className="status-pill">{volunteer.auth_user_id ? "Assigned" : "Awaiting login"}</span></td>
+                    <td><form action={removeVolunteerLeader}>
+                      <input name="eventId" type="hidden" value={id} />
+                      <input name="volunteerId" type="hidden" value={volunteer.id} />
+                      <button className="button button-secondary" type="submit">Remove</button>
+                    </form></td>
+                  </tr>
+                ))}
+                {assigned.length + assignedVolunteerIds.length === 0 ? (
                   <tr><td colSpan={3}>No Volunteer Leaders are assigned to this event.</td></tr>
                 ) : null}
               </tbody>
@@ -189,12 +217,43 @@ export default async function EventVolunteerLeadersPage({
             <div>
               <h2 id="assign-leader-title">Assign a Volunteer Leader</h2>
               <p className="muted">
-                Only active accounts whose KELUARGA access level is Volunteer Leader
-                can be assigned.
+                Search existing volunteers and delegate attendance access for this event only. No staff promotion is needed.
               </p>
             </div>
           </div>
 
+          <form method="get" className="inline-form">
+            <div className="form-field">
+              <label htmlFor="volunteer-search">Search volunteers by name</label>
+              <input id="volunteer-search" name="search" type="search"
+                placeholder="e.g. Pendita Ismail" defaultValue={search} minLength={2} />
+            </div>
+            <button className="button button-secondary" type="submit">Search</button>
+          </form>
+          {safeSearch.length >= 2 ? (
+            <div className="table-wrap"><table className="content-table">
+              <thead><tr><th>Volunteer</th><th>Login</th><th>Action</th></tr></thead>
+              <tbody>
+                {(searchResult.data ?? []).map((volunteer) => (
+                  <tr key={volunteer.id}>
+                    <td><strong>{volunteer.display_name ?? "Volunteer"}</strong>
+                      <span className="table-subtext">{volunteer.primary_email_normalized ?? ""}</span></td>
+                    <td>{volunteer.auth_user_id ? "Linked" : "Awaiting login"}</td>
+                    <td>{assignedVolunteerSet.has(volunteer.id) ? "Already assigned" : (
+                      <form action={assignVolunteerLeader}>
+                        <input name="eventId" type="hidden" value={id} />
+                        <input name="volunteerId" type="hidden" value={volunteer.id} />
+                        <button className="button button-primary" type="submit">Assign</button>
+                      </form>
+                    )}</td>
+                  </tr>
+                ))}
+                {(searchResult.data ?? []).length === 0 ? (
+                  <tr><td colSpan={3}>No matching volunteers.</td></tr>
+                ) : null}
+              </tbody>
+            </table></div>
+          ) : null}
           {available.length > 0 ? (
             <form action={assignVolunteerLeader} className="inline-form">
               <input name="eventId" type="hidden" value={id} />
@@ -211,12 +270,7 @@ export default async function EventVolunteerLeadersPage({
               </div>
               <button className="button button-primary" type="submit">Assign to event</button>
             </form>
-          ) : (
-            <div className="notice">
-              No unassigned active Volunteer Leader accounts are available. An Admin
-              must create or change staff access before another leader can be assigned.
-            </div>
-          )}
+          ) : null}
         </section>
       </div>
     </div>
