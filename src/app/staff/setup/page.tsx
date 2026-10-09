@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 
 import { StaffInviteSetupForm } from "@/app/staff/setup/staff-invite-setup-form";
 import { BrandLockup } from "@/components/brand-lockup";
@@ -7,7 +8,8 @@ export const metadata: Metadata = {
   title: "Finish staff account setup",
 };
 
-export default function StaffSetupPage() {
+export default async function StaffSetupPage() {
+  await connection();
   return (
     <div className="site-shell">
       <header className="site-header">

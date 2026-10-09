@@ -595,6 +595,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
                   <Link href={`/admin/events/${id}/edit#roster`}>Roster setup</Link>
                   <Link href={`/admin/events/${id}/attendance/monitor`}>Live monitor</Link>
                   <Link href={`/admin/events/${id}/attendance/reconcile`}>Reconcile attendance</Link>
+                  {canManageEvent ? <a href={`/admin/events/${id}/roster/export`}>Export roster (Excel)</a> : null}
                   <a href={`/admin/events/${id}/attendance/export`}>Export attendance</a>
                   <a href="#attendance-audit">Attendance history</a>
                   {selectedTimeslot ? (
