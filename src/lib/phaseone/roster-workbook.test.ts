@@ -83,6 +83,29 @@ describe("programme roster Excel workbook", () => {
     expect(entries.get("xl/worksheets/sheet2.xml")).toContain('dimension ref="A1:H11"');
   });
 
+  it("orders worksheet XML elements as required by desktop Excel", () => {
+    const entries = unpack(createProgrammeRosterWorkbook(input));
+    const sheet = entries.get("xl/worksheets/sheet1.xml") ?? "";
+    const filterIndex = sheet.indexOf("<autoFilter ");
+    const mergeIndex = sheet.indexOf("<mergeCells ");
+    const optionsIndex = sheet.indexOf("<printOptions ");
+    expect(filterIndex).toBeGreaterThan(sheet.indexOf("</sheetData>"));
+    expect(mergeIndex).toBeGreaterThan(filterIndex);
+    expect(optionsIndex).toBeGreaterThan(mergeIndex);
+    expect(sheet).toContain("volunteer@example.com");
+    expect(sheet).toContain("Vegetarian; allergies: peanuts");
+  });
+
+  it("makes an actually empty roster explicit without hiding existing assignments", () => {
+    const entries = unpack(createProgrammeRosterWorkbook({
+      ...input,
+      shifts: [{ ...input.shifts[0], volunteers: [] }],
+    }));
+    expect(entries.get("xl/worksheets/sheet1.xml")).toContain("No volunteers assigned at time of export");
+    const filled = unpack(createProgrammeRosterWorkbook(input));
+    expect(filled.get("xl/worksheets/sheet1.xml")).not.toContain("No volunteers assigned at time of export");
+  });
+
   it("returns a printable empty roster for events without shifts", () => {
     const entries = unpack(createProgrammeRosterWorkbook({ ...input, shifts: [] }));
     expect(entries.has("xl/worksheets/sheet1.xml")).toBe(true);

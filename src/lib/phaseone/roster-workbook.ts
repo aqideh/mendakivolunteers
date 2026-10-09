@@ -93,7 +93,9 @@ function worksheet(sheet: ProgrammeRosterSheet, programme: ProgrammeRosterWorkbo
     const fields = volunteer
       ? [volunteer.name, volunteer.contactNumber, volunteer.email, volunteer.dateOfBirth,
         volunteer.tshirtSize, volunteer.dietaryRestrictions, volunteer.status, ""]
-      : ["", "", "", "", "", "", "", ""];
+      : index === 0 && sheet.volunteers.length === 0
+        ? ["No volunteers assigned at time of export", "", "", "", "", "", "", ""]
+        : ["", "", "", "", "", "", "", ""];
     const style = index % 2 === 0 ? 5 : 6;
     rows.push('<row r="' + rowIndex + '" ht="32" customHeight="1">' +
       fields.map((value, column) =>
@@ -114,10 +116,12 @@ function worksheet(sheet: ProgrammeRosterSheet, programme: ProgrammeRosterWorkbo
       .map((width, index) => '<col min="' + (index + 1) + '" max="' + (index + 1) +
         '" width="' + width + '" customWidth="1"/>').join("") + '</cols>' +
     '<sheetData>' + rows.join("") + '</sheetData>' +
+    // SpreadsheetML enforces element order: autoFilter MUST precede mergeCells.
+    // Reversing these elements makes desktop Excel repair and discard sheet data.
+    '<autoFilter ref="A6:H' + lastRow + '"/>' +
     '<mergeCells count="5">' + [1, 2, 3, 4, 5]
       .map((row) => '<mergeCell ref="A' + row + ':H' + row + '"/>').join("") +
       '</mergeCells>' +
-    '<autoFilter ref="A6:H' + lastRow + '"/>' +
     '<printOptions horizontalCentered="1"/>' +
     '<pageMargins left="0.25" right="0.25" top="0.42" bottom="0.48" header="0.18" footer="0.22"/>' +
     '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>' +
