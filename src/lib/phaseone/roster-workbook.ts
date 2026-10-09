@@ -1,5 +1,3 @@
-import "server-only";
-
 import { Buffer } from "node:buffer";
 
 export type ProgrammeRosterVolunteer = Readonly<{
