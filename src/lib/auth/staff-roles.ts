@@ -52,7 +52,7 @@ export const staffInviteRoleOptions: readonly Readonly<{
     value: "admin",
     label: "Admin",
     description:
-      "All KELUARGA access, staff access management, and MakLom administrator access.",
+      "All KELUARGA access and KELUARGA staff access management. MakLom permissions are assigned separately.",
   },
 ];
 

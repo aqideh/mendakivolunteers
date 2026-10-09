@@ -58,7 +58,7 @@ export function StaffRoleEditor({
         <p>Change <strong>{email}</strong> from <strong>{current?.label ?? role}</strong> to <strong>{next?.label ?? selectedRole}</strong>?</p>
         <p>{next?.description}</p>
         <p>This change takes effect immediately.</p>
-        {selectedRole === "admin" ? <p>Admin also grants MakLom administrator access.</p> : role === "admin" ? <p>MakLom administrator access will be removed.</p> : null}
+        <p>MakLom permissions are managed separately and will not change.</p>
         <div className="actions">
           <button className="button button-secondary" type="button" onClick={() => setConfirmOpen(false)}>Keep current role</button>
           <button className="button button-danger" type="button" onClick={save} disabled={pending}>Change to {next?.label ?? selectedRole}</button>
