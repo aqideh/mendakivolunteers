@@ -95,9 +95,7 @@ async function setStaffAccessLevel(
   return {
     ok: true,
     message:
-      role === "admin"
-        ? "Access updated. Admin access includes MakLom administrator access."
-        : "Access level updated.",
+      "Keluarga access level updated. MakLom access is managed separately.",
   };
 }
 
@@ -244,18 +242,14 @@ export async function inviteStaffMember(
     return {
       status: "success",
       message:
-        parsedRole.data === "admin"
-          ? "Existing account found. Admin access was granted and a password setup email was sent. Admin access includes MakLom administrator access."
-          : "Existing account found. Access was updated and a password setup email was sent.",
+        "Existing account found. Keluarga access updated and a password setup email was sent. MakLom access is managed separately.",
     };
   }
 
   return {
     status: "success",
     message:
-      parsedRole.data === "admin"
-        ? "Invitation sent. Admin access includes MakLom administrator access."
-        : "Invitation sent. The staff member can use the email link to choose a password and activate their account.",
+      "Invitation sent. The staff member can use the email link to choose a password and activate their account. MakLom access is managed separately.",
   };
 }
 
