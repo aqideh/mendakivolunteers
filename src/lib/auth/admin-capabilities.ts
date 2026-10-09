@@ -20,7 +20,7 @@ export function getAdminCapabilities(roles: readonly string[]): AdminCapabilitie
   const isAdmin = roles.includes("admin");
   const isVolTeam = roles.includes("volteam");
   const isStaff = roles.includes("staff");
-  const isVolunteerLeader = roles.includes("volunteer_leader");
+  const isVolunteerLeader = roles.includes("volunteer_leader") || roles.includes("scoped_attendance");
   const fullAdmin = isAdmin || isVolTeam;
 
   return {

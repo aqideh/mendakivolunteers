@@ -9,7 +9,8 @@ import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
 
 const assignmentSchema = z.object({
   eventId: z.string().uuid(),
-  userId: z.string().uuid(),
+  userId: z.string().uuid().optional(),
+  volunteerId: z.string().uuid().optional(),
 });
 
 function leadersPath(eventId: string) {
@@ -23,7 +24,8 @@ function withMessage(path: string, key: "error" | "success", message: string) {
 export async function assignVolunteerLeader(formData: FormData) {
   const parsed = assignmentSchema.safeParse({
     eventId: formData.get("eventId"),
-    userId: formData.get("userId"),
+    userId: formData.get("userId") || undefined,
+    volunteerId: formData.get("volunteerId") || undefined,
   });
 
   if (!parsed.success) {
@@ -34,69 +36,57 @@ export async function assignVolunteerLeader(formData: FormData) {
   const { userId: assignedBy } = await requireProgrammeManager(returnPath);
   const admin = getPhaseOneAdminClient();
 
-  const [eventResult, accountResult, roleResult] = await Promise.all([
-    admin
-      .from("phaseone_events")
-      .select("id")
-      .eq("id", parsed.data.eventId)
-      .maybeSingle(),
-    admin
-      .schema("core")
-      .from("user_accounts")
-      .select("id, status")
-      .eq("id", parsed.data.userId)
-      .maybeSingle(),
-    admin
-      .schema("core")
-      .from("user_roles")
-      .select("user_id")
-      .eq("user_id", parsed.data.userId)
-      .eq("role", "volunteer_leader")
-      .maybeSingle(),
-  ]);
-
-  if (eventResult.error || accountResult.error || roleResult.error) {
-    console.error("Unable to validate volunteer leader assignment", {
-      eventCode: eventResult.error?.code,
-      accountCode: accountResult.error?.code,
-      roleCode: roleResult.error?.code,
-      eventId: parsed.data.eventId,
-      targetUserId: parsed.data.userId,
-    });
-    redirect(withMessage(returnPath, "error", "Volunteer Leader assignment could not be verified."));
+  if (!parsed.data.volunteerId && !parsed.data.userId) {
+    redirect(withMessage(returnPath, "error", "Select a volunteer."));
   }
 
-  if (!eventResult.data) {
-    redirect(withMessage(returnPath, "error", "This event no longer exists."));
+  const { data: event, error: eventError } = await admin
+    .from("phaseone_events").select("id").eq("id", parsed.data.eventId).maybeSingle();
+  if (eventError || !event) {
+    redirect(withMessage(returnPath, "error", "This event is unavailable."));
   }
 
-  if (
-    !accountResult.data ||
-    accountResult.data.status !== "active" ||
-    !roleResult.data
-  ) {
-    redirect(withMessage(returnPath, "error", "Select an active account with Volunteer Leader access."));
-  }
-
-  const { error } = await admin
-    .from("phaseone_event_volunteer_leaders")
-    .upsert(
-      {
+  if (parsed.data.volunteerId) {
+    const { data: volunteer, error: volunteerError } = await admin
+      .schema("core").from("volunteers").select("id, auth_user_id")
+      .eq("id", parsed.data.volunteerId).maybeSingle();
+    if (volunteerError || !volunteer) {
+      redirect(withMessage(returnPath, "error", "This volunteer could not be found."));
+    }
+    if (volunteer.auth_user_id) {
+      const { data: account, error: accountError } = await admin
+        .schema("core").from("user_accounts").select("status")
+        .eq("id", volunteer.auth_user_id).maybeSingle();
+      if (accountError || account?.status !== "active") {
+        redirect(withMessage(returnPath, "error", "This volunteer's account is inactive."));
+      }
+    }
+    const { error } = await admin.from("phaseone_event_volunteer_leaders")
+      .upsert({
         event_id: parsed.data.eventId,
-        user_id: parsed.data.userId,
+        volunteer_id: volunteer.id,
         assigned_by: assignedBy,
         assigned_at: new Date().toISOString(),
-      },
-      { onConflict: "event_id,user_id" },
-    );
-
-  if (error) {
-    console.error("Unable to assign volunteer leader", {
-      code: error.code,
-      eventId: parsed.data.eventId,
-      targetUserId: parsed.data.userId,
-    });
-    redirect(withMessage(returnPath, "error", "Volunteer Leader could not be assigned."));
+      }, { onConflict: "event_id,volunteer_id" });
+    if (error) {
+      console.error("Unable to assign scoped volunteer", { code: error.code });
+      redirect(withMessage(returnPath, "error", "Volunteer could not be assigned."));
+    }
+  } else {
+    const { data: account, error: accountError } = await admin.schema("core")
+      .from("user_accounts").select("id, status")
+      .eq("id", parsed.data.userId!).maybeSingle();
+    const { data: role, error: roleError } = await admin.schema("core")
+      .from("user_roles").select("user_id")
+      .eq("user_id", parsed.data.userId!).eq("role", "volunteer_leader").maybeSingle();
+    if (accountError || roleError || account?.status !== "active" || !role) {
+      redirect(withMessage(returnPath, "error", "Select an active Volunteer Leader account."));
+    }
+    const { error } = await admin.from("phaseone_event_volunteer_leaders").upsert({
+      event_id: parsed.data.eventId, user_id: parsed.data.userId!,
+      assigned_by: assignedBy, assigned_at: new Date().toISOString(),
+    }, { onConflict: "event_id,user_id" });
+    if (error) redirect(withMessage(returnPath, "error", "Volunteer Leader could not be assigned."));
   }
 
   revalidatePath("/admin/events");
@@ -121,7 +111,7 @@ export async function removeVolunteerLeader(formData: FormData) {
     .from("phaseone_event_volunteer_leaders")
     .delete()
     .eq("event_id", parsed.data.eventId)
-    .eq("user_id", parsed.data.userId);
+    .eq(parsed.data.volunteerId ? "volunteer_id" : "user_id", (parsed.data.volunteerId ?? parsed.data.userId)!);
 
   if (error) {
     console.error("Unable to remove volunteer leader assignment", {

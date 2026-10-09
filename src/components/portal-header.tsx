@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { PortalNav } from "@/components/portal-nav";
+import { getAttendanceOperatorEventIds } from "@/lib/auth/event-access";
 import { createClient } from "@/lib/supabase/server";
 
 export async function PortalHeader({
@@ -37,6 +38,10 @@ export async function PortalHeader({
         roles.has("volteam") ||
         roles.has("staff") ||
         roles.has("volunteer_leader");
+      if (!canManageEvents && roles.has("volunteer")) {
+        const scopedEvents = await getAttendanceOperatorEventIds(userId, ["volunteer"]);
+        canManageEvents = Boolean(scopedEvents?.size);
+      }
       canAccessAdmin = roles.has("admin") || roles.has("volteam");
     }
   }
