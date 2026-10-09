@@ -6,6 +6,7 @@ import type { AppRole } from "@/types/database";
 
 const attendanceOperatorRoles = new Set<AppRole>([
   "volunteer_leader",
+  "volunteer",
   "staff",
   "volteam",
   "admin",
@@ -99,30 +100,28 @@ export async function requireAttendanceOperatorForEvent(
     return access;
   }
 
-  if (!access.roles.includes("volunteer_leader")) {
+  if (!access.roles.includes("volunteer_leader") && !access.roles.includes("volunteer")) {
     redirect("/dashboard?error=event_access_denied");
   }
 
   const admin = getPhaseOneAdminClient();
-  const { data: assignment, error } = await admin
-    .from("phaseone_event_volunteer_leaders")
-    .select("event_id")
-    .eq("event_id", eventId)
-    .eq("user_id", access.userId)
-    .maybeSingle();
+  const [{ data: assignments, error }, { data: volunteer, error: volunteerError }] =
+    await Promise.all([
+      admin.from("phaseone_event_volunteer_leaders")
+        .select("event_id, user_id, volunteer_id")
+        .eq("event_id", eventId),
+      admin.schema("core").from("volunteers").select("id")
+        .eq("auth_user_id", access.userId).maybeSingle(),
+    ]);
 
-  if (error) {
-    console.error("Unable to verify Volunteer Leader event assignment", {
-      code: error.code,
-      eventId,
-      userId: access.userId,
-    });
+  if (error || volunteerError) {
+    console.error("Unable to verify scoped event assignment", { eventId, code: error?.code ?? volunteerError?.code });
     redirect("/dashboard?error=event_authorization_unavailable");
   }
 
-  if (!assignment) {
-    redirect("/admin/events?error=event_assignment_required");
-  }
+  const assigned = (assignments ?? []).some((row) =>
+    row.user_id === access.userId || (volunteer && row.volunteer_id === volunteer.id));
+  if (!assigned) redirect("/admin/events?error=event_assignment_required");
 
   return access;
 }
@@ -135,25 +134,25 @@ export async function getAttendanceOperatorEventIds(
     return null;
   }
 
-  if (!roles.includes("volunteer_leader")) {
+  if (!roles.includes("volunteer_leader") && !roles.includes("volunteer")) {
     return new Set<string>();
   }
 
   const admin = getPhaseOneAdminClient();
-  const { data, error } = await admin
-    .from("phaseone_event_volunteer_leaders")
-    .select("event_id")
-    .eq("user_id", userId);
+  const [{ data: volunteer, error: volunteerError }, { data, error }] = await Promise.all([
+    admin.schema("core").from("volunteers").select("id")
+      .eq("auth_user_id", userId).maybeSingle(),
+    admin.from("phaseone_event_volunteer_leaders")
+      .select("event_id, user_id, volunteer_id").limit(5000),
+  ]);
 
-  if (error) {
-    console.error("Unable to load Volunteer Leader event assignments", {
-      code: error.code,
-      userId,
-    });
+  if (error || volunteerError) {
+    console.error("Unable to load scoped event assignments", { code: error?.code ?? volunteerError?.code });
     throw new Error("Event assignments could not be loaded");
   }
-
-  return new Set((data ?? []).map((assignment) => assignment.event_id));
+  return new Set((data ?? []).filter((row) =>
+    row.user_id === userId || (volunteer && row.volunteer_id === volunteer.id))
+    .map((row) => row.event_id));
 }
 
 export async function requireEventManager(next = "/admin/events") {
