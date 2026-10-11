@@ -420,21 +420,37 @@ export async function sendVolunteerOnboardingInvite(formData: FormData) {
     redirect(destination(formData, "error", "email_send"));
   }
 
-  if (originalUserMetadata) {
-    const restoreMetadataResult = await admin.auth.admin.updateUserById(
-      targetUser.id,
-      {
-        user_metadata: originalUserMetadata,
+  // GoTrue merges user_metadata. Restoring an object without email_purpose
+  // does NOT remove the flag: explicitly null it after the invitation is sent.
+  const restoreMetadataResult = await admin.auth.admin.updateUserById(
+    targetUser.id,
+    {
+      user_metadata: {
+        ...(originalUserMetadata ?? {}),
+        email_purpose: null,
       },
-    );
+    },
+  );
 
-    if (restoreMetadataResult.error) {
-      console.error("Volunteer onboarding email purpose cleanup failed", {
-        code: restoreMetadataResult.error.code,
-        status: restoreMetadataResult.error.status,
-        inviteId,
-      });
-    }
+  if (
+    restoreMetadataResult.error ||
+    !restoreMetadataResult.data.user ||
+    Object.prototype.hasOwnProperty.call(
+      restoreMetadataResult.data.user.user_metadata ?? {},
+      "email_purpose",
+    )
+  ) {
+    console.error("Volunteer onboarding email purpose cleanup failed", {
+      code: restoreMetadataResult.error?.code ?? "purpose_not_removed",
+      status: restoreMetadataResult.error?.status,
+      inviteId,
+    });
+    await admin
+      .schema("core")
+      .from("volunteer_onboarding_invites")
+      .update({ last_error: "email_purpose_cleanup_failed" })
+      .eq("id", inviteId);
+    redirect(destination(formData, "error", "email_purpose_cleanup"));
   }
 
   const sentAt = new Date().toISOString();
