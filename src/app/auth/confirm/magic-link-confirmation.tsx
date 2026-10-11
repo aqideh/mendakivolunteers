@@ -205,10 +205,8 @@ export function MagicLinkConfirmation() {
             "email_purpose",
           )
         ) {
-          const cleanedMetadata = { ...(currentUser.user.user_metadata ?? {}) };
-          delete cleanedMetadata.email_purpose;
           const { error: cleanupError } = await sessionClient.auth.updateUser({
-            data: cleanedMetadata,
+            data: { email_purpose: null },
           });
           if (cleanupError) {
             console.error("Unable to clean stale volunteer email purpose metadata", {
