@@ -107,6 +107,71 @@ describe("unified email sign-in", () => {
     });
   });
 
+  it("clears a stale accepted-onboarding purpose before sending a normal sign-in code", async () => {
+    listUsersMock.mockResolvedValue({
+      data: {
+        users: [{
+          id: "onboarded-volunteer",
+          email: "returning@example.test",
+          user_metadata: { full_name: "Returning Volunteer", email_purpose: "volunteer_onboarding" },
+        }],
+      },
+      error: null,
+    });
+    updateUserByIdMock.mockResolvedValue({
+      data: { user: {
+        id: "onboarded-volunteer",
+        user_metadata: { full_name: "Returning Volunteer" },
+      }},
+      error: null,
+    });
+
+    const result = await volunteerSignInActions.continueWithEmail(
+      { status: "idle", step: "email", message: "" },
+      formData("returning@example.test"),
+    );
+
+    expect(result.step).toBe("otp");
+    expect(updateUserByIdMock).toHaveBeenCalledWith(
+      "onboarded-volunteer",
+      { user_metadata: { email_purpose: null } },
+    );
+    expect(updateUserByIdMock.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY)
+      .toBeLessThan(signInWithOtpMock.mock.invocationCallOrder[0] ?? 0);
+    expect(signInWithOtpMock).toHaveBeenCalledWith({
+      email: "returning@example.test",
+      options: { shouldCreateUser: true },
+    });
+  });
+
+  it("does not send an OTP if the old onboarding flag remains after cleanup", async () => {
+    listUsersMock.mockResolvedValue({
+      data: { users: [{
+        id: "onboarded-volunteer",
+        email: "returning@example.test",
+        user_metadata: { email_purpose: "volunteer_onboarding" },
+      }] },
+      error: null,
+    });
+    updateUserByIdMock.mockResolvedValue({
+      data: { user: {
+        id: "onboarded-volunteer",
+        user_metadata: { email_purpose: "volunteer_onboarding" },
+      }},
+      error: null,
+    });
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await volunteerSignInActions.continueWithEmail(
+      { status: "idle", step: "email", message: "" },
+      formData("returning@example.test"),
+    );
+
+    expect(result.status).toBe("error");
+    expect(signInWithOtpMock).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
+
   it("routes every MENDAKI-domain address to the password step without checking account existence", async () => {
     const result = await volunteerSignInActions.continueWithEmail(
       { status: "idle", step: "email", message: "" },
