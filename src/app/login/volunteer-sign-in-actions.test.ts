@@ -136,8 +136,8 @@ describe("unified email sign-in", () => {
       "onboarded-volunteer",
       { user_metadata: { email_purpose: null } },
     );
-    expect(updateUserByIdMock.mock.invocationCallOrder[0])
-      .toBeLessThan(signInWithOtpMock.mock.invocationCallOrder[0]);
+    expect(updateUserByIdMock.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY)
+      .toBeLessThan(signInWithOtpMock.mock.invocationCallOrder[0] ?? 0);
     expect(signInWithOtpMock).toHaveBeenCalledWith({
       email: "returning@example.test",
       options: { shouldCreateUser: true },
