@@ -57,88 +57,14 @@ async function findAuthUserByEmail(email: string): Promise<User | null> {
   }
 }
 
-function withoutEmailPurpose(
-  metadata: Record<string, unknown> | undefined,
-): Record<string, unknown> {
-  const cleaned = { ...(metadata ?? {}) };
-  delete cleaned.email_purpose;
-  return cleaned;
-}
-
-async function prepareVolunteerEmailPurpose(email: string) {
-  const admin = getPhaseOneAdminClient();
-  const existingUser = await findAuthUserByEmail(email);
-
-  if (!existingUser) {
-    return { email_purpose: "volunteer_signup" };
-  }
-
-  const accountResult = await admin
-    .schema("core")
-    .from("user_accounts")
-    .select("id")
-    .eq("id", existingUser.id)
-    .maybeSingle();
-
-  if (accountResult.error) {
-    console.error("Unable to classify volunteer email purpose", {
-      code: accountResult.error.code,
-    });
-    return undefined;
-  }
-
-  if (accountResult.data) {
-    if (
-      Object.prototype.hasOwnProperty.call(
-        existingUser.user_metadata ?? {},
-        "email_purpose",
-      )
-    ) {
-      const cleanupResult = await admin.auth.admin.updateUserById(
-        existingUser.id,
-        {
-          user_metadata: withoutEmailPurpose(existingUser.user_metadata),
-        },
-      );
-
-      if (cleanupResult.error) {
-        console.error("Unable to clean stale volunteer email purpose metadata", {
-          code: cleanupResult.error.code,
-          status: cleanupResult.error.status,
-        });
-      }
-    }
-
-    return undefined;
-  }
-
-  if (existingUser.app_metadata?.onboarding_invite_pending === true) {
-    return undefined;
-  }
-
-  if (existingUser.user_metadata?.email_purpose !== "volunteer_signup") {
-    const metadataResult = await admin.auth.admin.updateUserById(
-      existingUser.id,
-      {
-        user_metadata: {
-          ...(existingUser.user_metadata ?? {}),
-          email_purpose: "volunteer_signup",
-        },
-      },
-    );
-
-    if (metadataResult.error) {
-      console.error("Unable to tag pending volunteer signup email", {
-        code: metadataResult.error.code,
-        status: metadataResult.error.status,
-      });
-    }
-  }
-
-  return undefined;
-}
-
-async function cleanupVolunteerEmailPurpose(user: User) {
+/**
+ * GoTrue MERGES metadata updates. Omitting a key does not delete it:
+ * sending an explicit null is required to remove email_purpose.
+ *
+ * A sign-in OTP must never be sent while an old onboarding-purpose flag
+ * can select the invitation body in the hosted Auth email template.
+ */
+async function cleanupVolunteerEmailPurpose(user: User): Promise<void> {
   if (
     !Object.prototype.hasOwnProperty.call(
       user.user_metadata ?? {},
@@ -149,16 +75,39 @@ async function cleanupVolunteerEmailPurpose(user: User) {
   }
 
   const admin = getPhaseOneAdminClient();
-  const cleanupResult = await admin.auth.admin.updateUserById(user.id, {
-    user_metadata: withoutEmailPurpose(user.user_metadata),
+  const result = await admin.auth.admin.updateUserById(user.id, {
+    user_metadata: { email_purpose: null },
   });
 
-  if (cleanupResult.error) {
-    console.error("Unable to clean volunteer email purpose metadata", {
-      code: cleanupResult.error.code,
-      status: cleanupResult.error.status,
+  if (
+    result.error ||
+    !result.data.user ||
+    Object.prototype.hasOwnProperty.call(
+      result.data.user.user_metadata ?? {},
+      "email_purpose",
+    )
+  ) {
+    console.error("Unable to remove stale volunteer email purpose before OTP", {
+      code: result.error?.code ?? "purpose_not_removed",
+      status: result.error?.status,
     });
+    throw new Error("Volunteer OTP email purpose could not be reset");
   }
+}
+
+async function prepareVolunteerEmailPurpose(email: string) {
+  const existingUser = await findAuthUserByEmail(email);
+
+  if (existingUser) {
+    // Existing users, including those with accepted or pending onboarding
+    // invitations, are requesting a sign-in CODE, not a new invitation.
+    // Fail closed rather than sending an activation email with no OTP.
+    await cleanupVolunteerEmailPurpose(existingUser);
+    return undefined;
+  }
+
+  // Only a newly created identity is eligible for the welcome-OTP branch.
+  return { email_purpose: "volunteer_signup" };
 }
 
 export async function continueWithEmail(
@@ -379,7 +328,17 @@ export async function verifyVolunteerEmailOtp(
     redirect("/login?error=account_setup_unavailable");
   }
 
-  await cleanupVolunteerEmailPurpose(verifyResult.data.user);
+  // The OTP request clears prior purpose before sending. A new signup can
+  // still carry a welcome purpose until verification; remove it at that point.
+  try {
+    await cleanupVolunteerEmailPurpose(verifyResult.data.user);
+  } catch {
+    // Authentication and canonical-volunteer linkage succeeded. Do not
+    // invalidate a live session merely because metadata hygiene failed.
+    console.error("Volunteer signed in, but email purpose cleanup needs attention", {
+      userId: verifyResult.data.user.id,
+    });
+  }
 
   let profileIncomplete = false;
   if (nextPath === "/dashboard") {
