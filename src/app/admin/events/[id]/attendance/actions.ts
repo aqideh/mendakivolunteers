@@ -236,6 +236,7 @@ async function loadAttendanceReadModel(
     usesInheritedSession: Boolean(
       effective?.session_id &&
       effective?.session_checked_in_at &&
+      effective?.continuation_type !== "origin" &&
       !direct?.signed_in_at
     ),
   };
