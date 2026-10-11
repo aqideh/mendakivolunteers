@@ -506,6 +506,7 @@ export default async function AttendancePage({ params, searchParams }: PageProps
         usesInheritedSession: Boolean(
           effectiveAttendance?.session_id &&
           effectiveAttendance.session_checked_in_at &&
+          effectiveAttendance.continuation_type !== "origin" &&
           !attendance?.signed_in_at
         ),
         filterText: [
