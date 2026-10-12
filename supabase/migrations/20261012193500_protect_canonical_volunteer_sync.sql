@@ -36,6 +36,7 @@ BEGIN
       RAISE EXCEPTION 'Volunteer name cannot be blank or a volunteer code' USING errcode = '22023';
     END IF;
     IF canonical.display_name IS DISTINCT FROM old_name
+       AND canonical.display_name IS DISTINCT FROM next_name
        AND canonical.display_name IS NOT NULL THEN
       RAISE EXCEPTION 'Canonical volunteer name changed; reload before correcting'
         USING errcode = 'P0001';
