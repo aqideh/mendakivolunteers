@@ -65,6 +65,7 @@ SELECT throws_ok(
     WHERE core_volunteer_id=(SELECT core_id FROM maklom_identity_test)
   $$,
   'P0001',
+  'Canonical volunteer name changed; reload before correcting',
   'a stale name edit requires an explicit resolution'
 );
 
@@ -116,6 +117,7 @@ SELECT throws_ok(
     WHERE core_volunteer_id=(SELECT core_id FROM maklom_identity_test)
   $$,
   '42501',
+  'Verified account email must be changed through account verification',
   'linked volunteers cannot have verified login email rewritten through MakLom'
 );
 
