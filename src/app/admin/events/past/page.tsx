@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { duplicateEvent } from "@/app/admin/events/actions";
-import { requireEventManager } from "@/lib/auth/event-access";
+import { hasProgrammeManagerRole, requireEventManager } from "@/lib/auth/event-access";
 import {
   getAdminEventEffectiveEnd,
   splitAdminEvents,
@@ -46,7 +46,8 @@ function pageHref(
 }
 
 export default async function PastEventsPage({ searchParams }: PageProps) {
-  await requireEventManager("/admin/events/past");
+  const { roles } = await requireEventManager("/admin/events/past");
+  const canManageProgramme = hasProgrammeManagerRole(roles);
   const admin = getPhaseOneAdminClient();
   const [eventsResult, timeslotsResult] = await Promise.all([
     admin
@@ -270,12 +271,14 @@ export default async function PastEventsPage({ searchParams }: PageProps) {
                             <a className="text-link" href={`/admin/events/${event.id}/report/export`}>
                               Download report
                             </a>
-                            <form action={duplicateEvent}>
-                              <input type="hidden" name="eventId" value={event.id} />
-                              <button className="text-link button-reset" type="submit">
-                                Duplicate event
-                              </button>
-                            </form>
+                            {canManageProgramme ? (
+                              <form action={duplicateEvent}>
+                                <input type="hidden" name="eventId" value={event.id} />
+                                <button className="text-link button-reset" type="submit">
+                                  Duplicate programme
+                                </button>
+                              </form>
+                            ) : null}
                             {event.is_published ? (
                               <Link className="text-link" href={`/journey/${event.slug}`} target="_blank">
                                 View event guide ↗
