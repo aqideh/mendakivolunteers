@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
+import { publicPageMetadata } from "@/lib/seo";
 
 import { RoleLanding } from "@/components/role-landing";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Volunteer as a Facilitator",
-  description:
-    "Empower parents to support learning at home through practical play-based tips, interactive workshops, hands-on activities and resources that build their confidence.",
-};
+export const metadata: Metadata = publicPageMetadata({
+  title: "Volunteer as a Facilitator in Singapore",
+  description: "Help families learn together through MENDAKI's parent and child learning programmes. Explore volunteer facilitator and befriender roles.",
+  path: "/volunteer/facilitator",
+});
 
 export default async function FacilitatorPage() {
   const heroImage = await getLandingPageImage("facilitator");

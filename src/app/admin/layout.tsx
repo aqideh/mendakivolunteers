@@ -1,4 +1,7 @@
 import "./admin-foundation.css";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 import { AdminShell } from "@/components/admin-shell";
 import { AdminQueryProvider } from "@/components/query/admin-query-provider";

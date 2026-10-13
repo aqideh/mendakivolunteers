@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PathwaysView } from "./pathways-view";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "My Volunteer Pathways",
   description:
     "Explore potential MENDAKI volunteering pathways and see how roles can develop over time.",

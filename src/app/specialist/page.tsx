@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { publicPageMetadata } from "@/lib/seo";
 
 import { RoleLanding } from "@/components/role-landing";
 import { formatSingaporeDateTime } from "@/lib/content/dates";
@@ -9,11 +10,11 @@ import { ProfessionalNetworkTabs } from "./professional-network-tabs";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Specialist | Keluarga MENDAKI",
-  description:
-    "Join a community of specialists who connect, share knowledge and give back through MENDAKI's Professional Networks.",
-};
+export const metadata: Metadata = publicPageMetadata({
+  title: "Join MENDAKI Professional Networks",
+  description: "Connect with MENDAKI Professional Networks in Singapore. Share your expertise, build professional connections and contribute to the community.",
+  path: "/specialist",
+});
 
 function eventDateLabel(startsAt: string | null, endsAt: string | null): string {
   if (!startsAt) return "Date to be announced";

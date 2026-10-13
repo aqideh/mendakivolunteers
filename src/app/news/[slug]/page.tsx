@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDate } from "@/lib/content/dates";
 import { getPublicNewsPostBySlug } from "@/lib/content/public-news";
+import { publicPageMetadata, absoluteSiteUrl, jsonLd } from "@/lib/seo";
 
 type NewsPageProps = {
   params: Promise<{ slug: string }>;
@@ -19,8 +20,12 @@ export async function generateMetadata({
   const data = await getPublicNewsPostBySlug(slug);
 
   return data
-    ? { title: data.title, description: data.summary }
-    : { title: "News post not found" };
+    ? publicPageMetadata({
+        title: data.title,
+        description: data.summary,
+        path: `/news/${encodeURIComponent(data.slug)}`,
+      })
+    : { title: "News post not found", robots: { index: false } };
 }
 
 export default async function NewsPostPage({ params }: NewsPageProps) {
@@ -39,6 +44,15 @@ export default async function NewsPostPage({ params }: NewsPageProps) {
   return (
     <div className="site-shell">
       <PortalHeader status="Volunteer news" />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: post.title,
+        description: post.summary,
+        datePublished: post.published_at ?? post.publish_at ?? undefined,
+        mainEntityOfPage: absoluteSiteUrl(`/news/${encodeURIComponent(post.slug)}`),
+        publisher: { "@type": "Organization", name: "Yayasan MENDAKI", url: "https://www.mendaki.org.sg/" },
+      }) }} />
       <main className="page-frame narrow-frame">
         <Link className="back-link" href="/news">
           ← All news

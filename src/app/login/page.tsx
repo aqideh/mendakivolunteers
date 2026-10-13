@@ -6,6 +6,7 @@ import { BrandLockup } from "@/components/brand-lockup";
 import { getSafeRedirectPath } from "@/lib/security/redirects";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Continue to Keluarga MENDAKI",
 };
 

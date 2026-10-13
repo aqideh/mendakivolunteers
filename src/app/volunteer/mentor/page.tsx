@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { publicPageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
@@ -9,11 +10,11 @@ import styles from "./mentor.module.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Volunteer as a Mentor",
-  description:
-    "Share your experience and build supportive relationships with youths. Help young people recognise their strengths, explore opportunities and set meaningful goals. Through ongoing conversations and activities, encourage them to take confident steps towards their future.",
-};
+export const metadata: Metadata = publicPageMetadata({
+  title: "Volunteer as a Youth Mentor in Singapore",
+  description: "Become a youth mentor with MENDAKI. Support young people in Singapore through mentoring, confidence-building and career exploration.",
+  path: "/volunteer/mentor",
+});
 
 const mekarPathways = [
   {

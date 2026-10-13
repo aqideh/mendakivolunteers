@@ -14,6 +14,8 @@ import { SkipToContent } from "@/components/skip-to-content";
 import { WebsiteAnalyticsTracker } from "@/components/website-analytics-tracker";
 import { keluargaTheme } from "@/lib/ui/theme";
 
+import { SITE_URL } from "@/lib/seo";
+
 import "./globals.css";
 import "./content.css";
 import "./phaseone.css";
@@ -36,6 +38,7 @@ const golosText = Golos_Text({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Keluarga MENDAKI — Volunteer App",
     template: "%s | Keluarga MENDAKI",

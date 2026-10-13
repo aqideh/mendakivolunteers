@@ -10,6 +10,8 @@ import {
   type ProfessionalNetworkTeamMember,
 } from "@/lib/content/professional-networks";
 
+import { publicPageMetadata } from "@/lib/seo";
+
 import styles from "./network.module.css";
 
 export const dynamic = "force-dynamic";
@@ -25,12 +27,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const network = getProfessionalNetwork(slug);
-  if (!network) return { title: "Professional Network" };
+  if (!network) return { title: "Professional Network", robots: { index: false } };
 
-  return {
-    title: `${network.name} | MENDAKI Professional Networks`,
+  return publicPageMetadata({
+    title: `${network.name} — MENDAKI Professional Networks`,
     description: network.description,
-  };
+    path: `/specialist/networks/${encodeURIComponent(network.slug)}`,
+  });
 }
 
 function MemberCard({

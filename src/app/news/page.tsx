@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { publicPageMetadata } from "@/lib/seo";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDate } from "@/lib/content/dates";
 import { getPublicNewsPosts } from "@/lib/content/public-news";
 
-export const metadata: Metadata = {
-  title: "Volunteer news",
-  description: "Updates and announcements for MENDAKI volunteers.",
-};
+export const metadata: Metadata = publicPageMetadata({
+  title: "MENDAKI Volunteer News",
+  description: "Read updates and announcements for MENDAKI volunteers in Singapore.",
+  path: "/news",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +25,8 @@ export default async function NewsPage() {
           <p className="eyebrow">News and announcements</p>
           <h1>Updates for the volunteer community.</h1>
           <p className="lede">
-            Portal content is managed by MENDAKI staff and is separate from
-            official volunteer records in YM Hub.
+            Read the latest updates, announcements and opportunities for the
+            MENDAKI volunteer community.
           </p>
         </section>
 
