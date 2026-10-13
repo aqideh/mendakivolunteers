@@ -34,7 +34,7 @@ function parameter(values: Record<string, string | string[] | undefined>, key: s
 const successMessages: Record<string, string> = {
   event_created: "Event guide created.",
   event_updated: "Event guide updated.",
-  event_duplicated: "Journey duplicated as a draft. Update its title, slug, dates and access settings before publishing.",
+  event_duplicated: "New programme saved as a draft. Review its title, dates, deadlines and links before publishing.",
   roster_imported: "Roster imported.",
   manual_event_created: "Manual Event Operations event created. Upload the roster below.",
 };
@@ -176,6 +176,12 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
           </div>
           <div className="actions km-programme-external-links">
             <Link className="button button-secondary" href="/admin/events">All events</Link>
+            {canManageProgramme ? (
+              <form action={duplicateEvent}>
+                <input type="hidden" name="eventId" value={event.id} />
+                <button className="button button-secondary" type="submit">Duplicate programme</button>
+              </form>
+            ) : null}
             {canManageProgramme ? (
               <Link className="button button-secondary" href={`/admin/events/${id}/leaders`}>
                 Volunteer Leaders
@@ -369,17 +375,6 @@ export default async function EditEventPage({ params, searchParams }: PageProps)
 
           </>}
         />
-        {canManageProgramme ? (
-          <details className="phaseone-disclosure phaseone-page-tools">
-            <summary>More event actions</summary>
-            <div className="phaseone-disclosure-body">
-              <form action={duplicateEvent}>
-                <input type="hidden" name="eventId" value={event.id} />
-                <button className="button button-secondary" type="submit">Duplicate event guide</button>
-              </form>
-            </div>
-          </details>
-        ) : null}
       </div>
     </div>
   );

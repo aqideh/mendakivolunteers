@@ -55,7 +55,7 @@ export async function duplicateEvent(formData: FormData) {
     admin
       .from("phaseone_events")
       .select(
-        "id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, self_attendance_enabled, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order",
+        "id, title, slug, venue, navigation_destination, attire_notes, preparation_notes, programme_rundown_url, briefing_url, briefing_available_at, whatsapp_url, sign_in_url, sign_out_url, self_attendance_enabled, opportunity_summary, opportunity_description, opportunity_image_url, opportunity_category, opportunity_eligibility, registration_deadline, opportunity_sort_order, operations_scope, credit_contribution_hours",
       )
       .eq("id", sourceId)
       .maybeSingle(),
@@ -108,7 +108,7 @@ export async function duplicateEvent(formData: FormData) {
         opportunity_image_url: source.opportunity_image_url,
         opportunity_category: source.opportunity_category,
         opportunity_eligibility: source.opportunity_eligibility,
-        registration_deadline: source.registration_deadline,
+        registration_deadline: null,
         opportunity_sort_order: source.opportunity_sort_order,
         is_opportunity_published: false,
         slug,
@@ -119,11 +119,14 @@ export async function duplicateEvent(formData: FormData) {
         preparation_notes: source.preparation_notes,
         programme_rundown_url: source.programme_rundown_url,
         briefing_url: source.briefing_url,
-        briefing_available_at: source.briefing_available_at,
-        whatsapp_url: source.whatsapp_url,
-        sign_in_url: source.sign_in_url,
-        sign_out_url: source.sign_out_url,
+        // Old registration, access and attendance links must never point at the new programme.
+        briefing_available_at: null,
+        whatsapp_url: null,
+        sign_in_url: null,
+        sign_out_url: null,
         self_attendance_enabled: source.self_attendance_enabled,
+        operations_scope: source.operations_scope,
+        credit_contribution_hours: source.credit_contribution_hours,
         is_published: false,
         created_by: userId,
         updated_by: userId,

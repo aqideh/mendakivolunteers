@@ -57,6 +57,9 @@ export function isPastAdminEvent(
   event: AdminEventSummary,
   now = new Date(),
 ): boolean {
+  // Unpublished programmes remain accessible in the current list for editing,
+  // even if their copied shift dates have already passed.
+  if (!event.is_published && !event.is_opportunity_published) return false;
   const effectiveEnd = getAdminEventEffectiveEnd(event);
   return Boolean(effectiveEnd && effectiveEnd < adminPastEventCutoffIso(now));
 }
