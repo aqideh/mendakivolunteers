@@ -25,8 +25,8 @@ export default async function NewsPage() {
           <p className="eyebrow">News and announcements</p>
           <h1>Updates for the volunteer community.</h1>
           <p className="lede">
-            Portal content is managed by MENDAKI staff and is separate from
-            official volunteer records in YM Hub.
+            Read the latest updates, announcements and opportunities for the
+            MENDAKI volunteer community.
           </p>
         </section>
 

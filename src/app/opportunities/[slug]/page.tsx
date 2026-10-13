@@ -10,6 +10,7 @@ import {
   formatTimeslotTimeRange,
 } from "@/lib/phaseone/packages";
 import { createClient } from "@/lib/supabase/server";
+import { publicPageMetadata, absoluteSiteUrl, hasUpcomingTimeslot, jsonLd } from "@/lib/seo";
 import { submitOpportunityRegistration } from "./actions";
 import { OpportunityAuthOverlay } from "./auth-overlay";
 import { OpportunityExploration } from "./opportunity-exploration";
@@ -125,12 +126,16 @@ async function loadProgramme(slug: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const programme = await loadProgramme(slug);
-  return programme
-    ? {
-        title: programme.event.title,
-        description: programme.event.opportunity_summary ?? undefined,
-      }
-    : { title: "Opportunity not found" };
+  if (!programme) return { title: "Opportunity not found", robots: { index: false } };
+  if (!hasUpcomingTimeslot(programme.timeslots)) {
+    return { title: programme.event.title, robots: { index: false, follow: false } };
+  }
+  return publicPageMetadata({
+    title: programme.event.title,
+    description: programme.event.opportunity_summary ??
+      "Explore this upcoming volunteer opportunity with Yayasan MENDAKI in Singapore.",
+    path: `/opportunities/${encodeURIComponent(programme.event.slug)}`,
+  });
 }
 
 export default async function OpportunityPage({ params, searchParams }: PageProps) {
@@ -216,6 +221,21 @@ export default async function OpportunityPage({ params, searchParams }: PageProp
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Volunteer opportunity" lite />
       {userId ? <OpportunityExploration slug={event.slug} /> : null}
+      {hasUpcomingTimeslot(timeslots) && firstTimeslot ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
+          "@context": "https://schema.org",
+          "@type": "Event",
+          name: event.title,
+          description: event.opportunity_summary ?? event.opportunity_description ?? event.title,
+          url: absoluteSiteUrl(`/opportunities/${encodeURIComponent(event.slug)}`),
+          startDate: firstTimeslot.starts_at,
+          endDate: lastTimeslot?.ends_at ?? lastTimeslot?.starts_at ?? firstTimeslot.starts_at,
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          eventStatus: "https://schema.org/EventScheduled",
+          organizer: { "@type": "Organization", name: "Yayasan MENDAKI", url: "https://www.mendaki.org.sg/" },
+          ...(event.venue ? { location: { "@type": "Place", name: event.venue, address: { "@type": "PostalAddress", addressCountry: "SG" } } } : {}),
+        }) }} />
+      ) : null}
       <main className="page-frame phaseone-opportunity-detail-frame">
         <Link className="back-link" href="/opportunities">
           ← All opportunities
