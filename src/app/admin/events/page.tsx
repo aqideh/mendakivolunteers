@@ -81,7 +81,7 @@ function MobileEventActions({
             <form action={duplicateEvent}>
               <input type="hidden" name="eventId" value={event.id} />
               <button className="text-link button-reset" type="submit">
-                Duplicate event guide
+                Duplicate programme
               </button>
             </form>
           ) : null}
@@ -132,7 +132,7 @@ function DesktopEventActions({
             <form action={duplicateEvent}>
               <input type="hidden" name="eventId" value={event.id} />
               <button className="text-link button-reset" type="submit">
-                Duplicate event
+                Duplicate programme
               </button>
             </form>
           ) : null}
