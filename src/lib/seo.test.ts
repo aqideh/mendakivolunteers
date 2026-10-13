@@ -11,7 +11,7 @@ describe("public SEO metadata", () => {
     });
     expect(result.alternates?.canonical).toBe("/volunteer/coach");
     expect(result.openGraph?.url).toBe(absoluteSiteUrl("/volunteer/coach"));
-    expect(result.twitter?.card).toBe("summary_large_image");
+    expect(result.twitter).toMatchObject({ card: "summary_large_image" });
   });
 
   it("escapes HTML-breaking characters in JSON-LD", () => {
