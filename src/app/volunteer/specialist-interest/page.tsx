@@ -6,6 +6,7 @@ import { PortalHeader } from "@/components/portal-header";
 import styles from "../role-landing.module.css";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Specialist Volunteer Interest",
 };
 

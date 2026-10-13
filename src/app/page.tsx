@@ -5,15 +5,17 @@ import type { CSSProperties } from "react";
 import { PortalHeader } from "@/components/portal-header";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
+import { publicPageMetadata, jsonLd, SITE_URL } from "@/lib/seo";
+
 import styles from "./landing.module.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Keluarga MENDAKI — Volunteer with MENDAKI",
-  description:
-    "Find your place to contribute with MENDAKI through coaching, facilitation, mentoring, specialist support, and community volunteering.",
-};
+export const metadata: Metadata = publicPageMetadata({
+  title: "Volunteer in Singapore",
+  description: "Volunteer with Yayasan MENDAKI in Singapore. Explore coaching, facilitation, youth mentoring, community events and professional volunteering opportunities.",
+  path: "/",
+});
 
 const volunteerPaths = [
   { title: "Coach", href: "/volunteer/coach" },
@@ -29,6 +31,14 @@ export default async function Home() {
   return (
     <div className="site-shell phaseone-shell">
       <PortalHeader status="Volunteers" lite />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
+        "@context": "https://schema.org",
+        "@graph": [
+          { "@type": "Organization", name: "Yayasan MENDAKI", url: "https://www.mendaki.org.sg/" },
+          { "@type": "WebSite", name: "Keluarga MENDAKI", url: SITE_URL,
+            publisher: { "@type": "Organization", name: "Yayasan MENDAKI" } },
+        ],
+      }) }} />
       <main className={`phaseone-frame ${styles.frame}`}>
         <section
           className={styles.hero}

@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { publicPageMetadata } from "@/lib/seo";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDate } from "@/lib/content/dates";
 import { getPublicNewsPosts } from "@/lib/content/public-news";
 
-export const metadata: Metadata = {
-  title: "Volunteer news",
-  description: "Updates and announcements for MENDAKI volunteers.",
-};
+export const metadata: Metadata = publicPageMetadata({
+  title: "MENDAKI Volunteer News",
+  description: "Read updates and announcements for MENDAKI volunteers in Singapore.",
+  path: "/news",
+});
 
 export const dynamic = "force-dynamic";
 
