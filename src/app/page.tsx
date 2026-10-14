@@ -5,6 +5,8 @@ import type { CSSProperties } from "react";
 
 import { PortalHeader } from "@/components/portal-header";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
+import { getUpcomingPhaseOneOpportunities, type KeluargaOpportunity } from "@/lib/phaseone/opportunities";
+import CommunityToast, { type CommunityToastProps } from "./community-toast";
 
 import { jsonLd, SITE_URL } from "@/lib/seo";
 
@@ -24,8 +26,85 @@ const volunteerPaths = [
   { title: "Join Professional Networks", href: "/specialist" },
 ];
 
+
+// A reviewed Malay translation can be added alongside this English copy.
+// Do not automatically translate public-facing volunteer recruitment copy.
+const COPY_VARIANT: "default" | "belonging" | "social-proof" = "default";
+
+function singaporeShortDate(value: string): string {
+  const parts = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    day: "numeric",
+    month: "short",
+  }).formatToParts(new Date(value));
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  return `${day} ${month}`;
+}
+
+function getToastCopy(
+  events: KeluargaOpportunity[],
+): Pick<CommunityToastProps, "message" | "cta" | "href"> | null {
+  if (events.length === 0) return null;
+  if (events.length > 1) {
+    return {
+      message: `${events.length} upcoming events need volunteers.`,
+      cta: "See events",
+      href: "/opportunities",
+    };
+  }
+
+  const event = events[0];
+  const date = singaporeShortDate(event.starts_at);
+  const deadline = event.registration_deadline;
+  const isFutureDeadline =
+    Boolean(deadline) &&
+    Number.isFinite(new Date(deadline!).getTime()) &&
+    new Date(deadline!).getTime() > Date.now();
+
+  let message = `${event.title} needs volunteers on ${date}.`;
+  if (isFutureDeadline && deadline) {
+    message += ` Sign up by ${singaporeShortDate(deadline)}.`;
+  }
+
+  if (COPY_VARIANT === "belonging") {
+    message = `Join your Keluarga at ${event.title} on ${date}.`;
+  }
+  if (COPY_VARIANT === "social-proof") {
+    // Stub only: when verified participant counts are supplied, test copy here.
+    // Until then, retain the factual default; never invent a volunteer count.
+  }
+
+  return {
+    message,
+    cta: "See how to help",
+    href: `/opportunities/${encodeURIComponent(event.slug)}`,
+  };
+}
+
+async function getCommunityToast(): Promise<CommunityToastProps | null> {
+  try {
+    const events = await getUpcomingPhaseOneOpportunities();
+    const copy = getToastCopy(events);
+    if (!copy) return null;
+
+    // Dismissal is scoped to the lead event title and number of other events.
+    const storageKey = `keluarga-community-toast:${JSON.stringify([
+      events[0].title,
+      events.length - 1,
+    ])}`;
+    return { ...copy, storageKey };
+  } catch {
+    // A database outage must not affect the homepage.
+    return null;
+  }
+}
+
 export default async function Home() {
-  const heroImage = await getLandingPageImage("home");
+  const [heroImage, toast] = await Promise.all([
+    getLandingPageImage("home"),
+    getCommunityToast(),
+  ]);
 
   return (
     <div className="site-shell phaseone-shell">
@@ -67,6 +146,7 @@ export default async function Home() {
             ))}
           </div>
         </section>
+        {toast && <CommunityToast {...toast} />}
       </main>
       <footer className="site-footer">
         © 2026{" "}
