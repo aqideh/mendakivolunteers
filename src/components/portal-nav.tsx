@@ -73,6 +73,7 @@ export function PortalNav({
             <Link
               key={href}
               href={href}
+              prefetch={false}
               aria-current={isCurrent ? "page" : undefined}
               onClick={() => setIsOpen(false)}
             >
