@@ -47,7 +47,8 @@ function getToastCopy(
   events: KeluargaOpportunity[],
   variant: CopyVariant = COPY_VARIANT,
 ): Pick<CommunityToastProps, "message" | "cta" | "href"> | null {
-  if (events.length === 0) return null;
+  const event = events[0];
+  if (!event) return null;
   if (events.length > 1) {
     return {
       message: `${events.length} upcoming events need volunteers.`,
@@ -56,7 +57,6 @@ function getToastCopy(
     };
   }
 
-  const event = events[0];
   const date = singaporeShortDate(event.starts_at);
   const deadline = event.registration_deadline;
   const isFutureDeadline =
@@ -88,11 +88,12 @@ async function getCommunityToast(): Promise<CommunityToastProps | null> {
   try {
     const events = await getUpcomingPhaseOneOpportunities();
     const copy = getToastCopy(events);
-    if (!copy) return null;
+    const first = events[0];
+    if (!copy || !first) return null;
 
     // Include other titles so a replacement event also resets the dismissal.
     const storageKey = `keluarga-community-toast:${JSON.stringify([
-      events[0].title,
+      first.title,
       events.length - 1,
       ...events.slice(1).map((event) => event.title),
     ])}`;
