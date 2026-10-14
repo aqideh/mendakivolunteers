@@ -12,6 +12,7 @@ import {
   getAdminEventFirstScheduledTimeslot,
   sortCurrentAdminEvents,
   splitAdminEvents,
+  type AdminEventSort,
   type AdminEventSummary,
 } from "@/lib/phaseone/admin-events";
 import { getPhaseOneAdminClient } from "@/lib/phaseone/admin";
@@ -29,6 +30,13 @@ export const dynamic = "force-dynamic";
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+const currentEventSorts = new Set<AdminEventSort>([
+  "date_asc",
+  "date_desc",
+  "name_asc",
+  "name_desc",
+]);
 
 function parameter(values: Record<string, string | string[] | undefined>, key: string) {
   const value = values[key];
@@ -190,9 +198,13 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
     ...event,
     timeslots: sortTimeslots(timeslotsByEvent.get(event.id) ?? []),
   })) as AdminEventSummary[];
-  const { current, past } = splitAdminEvents(allEvents);
-  const events = sortCurrentAdminEvents(current);
   const parameters = await searchParams;
+  const requestedSort = parameter(parameters, "sort") ?? "date_asc";
+  const sort: AdminEventSort = currentEventSorts.has(requestedSort as AdminEventSort)
+    ? (requestedSort as AdminEventSort)
+    : "date_asc";
+  const { current, past } = splitAdminEvents(allEvents);
+  const events = sortCurrentAdminEvents(current, sort);
   const errorMessage = parameter(parameters, "error");
 
   return (
@@ -249,6 +261,23 @@ export default async function EventsAdminPage({ searchParams }: PageProps) {
               : errorMessage}
           </div>
         ) : null}
+
+        <div className="phaseone-events-sortbar">
+          <form className="phaseone-events-sort-form" method="get">
+            <div className="form-field phaseone-events-sort-field">
+              <label htmlFor="sort">Sort events</label>
+              <select id="sort" name="sort" defaultValue={sort}>
+                <option value="date_asc">Soonest first</option>
+                <option value="date_desc">Latest first</option>
+                <option value="name_asc">Name A–Z</option>
+                <option value="name_desc">Name Z–A</option>
+              </select>
+            </div>
+            <button className="button button-secondary" type="submit">
+              Apply
+            </button>
+          </form>
+        </div>
 
         <section className="phaseone-events-mobile-list" aria-label="Current programmes and events">
           {events.map((event) => {
