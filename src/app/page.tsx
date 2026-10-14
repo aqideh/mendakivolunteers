@@ -29,7 +29,8 @@ const volunteerPaths = [
 
 // A reviewed Malay translation can be added alongside this English copy.
 // Do not automatically translate public-facing volunteer recruitment copy.
-const COPY_VARIANT: "default" | "belonging" | "social-proof" = "default";
+type CopyVariant = "default" | "belonging" | "social-proof";
+const COPY_VARIANT: CopyVariant = "default";
 
 function singaporeShortDate(value: string): string {
   const parts = new Intl.DateTimeFormat("en-SG", {
@@ -44,6 +45,7 @@ function singaporeShortDate(value: string): string {
 
 function getToastCopy(
   events: KeluargaOpportunity[],
+  variant: CopyVariant = COPY_VARIANT,
 ): Pick<CommunityToastProps, "message" | "cta" | "href"> | null {
   if (events.length === 0) return null;
   if (events.length > 1) {
@@ -67,10 +69,10 @@ function getToastCopy(
     message += ` Sign up by ${singaporeShortDate(deadline)}.`;
   }
 
-  if (COPY_VARIANT === "belonging") {
+  if (variant === "belonging") {
     message = `Join your Keluarga at ${event.title} on ${date}.`;
   }
-  if (COPY_VARIANT === "social-proof") {
+  if (variant === "social-proof") {
     // Stub only: when verified participant counts are supplied, test copy here.
     // Until then, retain the factual default; never invent a volunteer count.
   }
