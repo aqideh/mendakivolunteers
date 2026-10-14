@@ -7,6 +7,8 @@ import { FAQ_SECTIONS } from "@/lib/content/faq";
 
 import styles from "./faq.module.css";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   return getEditablePageMetadata("/faq");
 }
