@@ -1,12 +1,11 @@
 begin;
 do $guard$
-declare v_oid oid;
 begin
- select p.oid into v_oid from pg_proc p join pg_namespace n on n.oid=p.pronamespace
- where n.nspname='public' and p.proname='maklom_resolve_historical_attendance_times'
- and pg_get_function_identity_arguments(p.oid) =
- 'p_row_id text, p_expected_version bigint, p_effective_sign_in timestamp with time zone, p_effective_sign_out timestamp with time zone, p_sign_in_evidence_type text, p_sign_out_evidence_type text, p_reason_code text, p_reason_note text, p_batch_id text';
- if v_oid is null then raise exception 'Expected MakLom timing RPC signature not found'; end if;
+ if to_regprocedure(
+ 'public.maklom_resolve_historical_attendance_times(text,bigint,timestamptz,timestamptz,text,text,text,text,text)'
+ ) is null then
+   raise exception 'Expected MakLom timing RPC signature not found';
+ end if;
 end $guard$;
 
 create or replace function public.maklom_resolve_historical_attendance_times(
@@ -35,7 +34,7 @@ begin
     or v_row.committed_attendance_id is not null then
    raise exception 'Attendance already reviewed; use Correct attendance' using errcode='P1202';
  end if;
- if p_batch_id is distinct from v_row.batch_id then
+ if p_batch_id is not null and p_batch_id is distinct from v_row.batch_id then
    raise exception 'Attendance batch mismatch' using errcode='22023';
  end if;
  if p_sign_in_evidence_type='SOURCE_CAPTURED' and
