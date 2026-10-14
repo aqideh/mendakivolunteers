@@ -35,3 +35,204 @@
     padding-bottom: 2rem;
   }
 }
+
+/* Staff access: compact directory first, advanced controls on demand. */
+.staff-access-page .dashboard-header {
+  margin-bottom: 1rem;
+}
+
+.staff-directory-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.staff-directory-heading h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1.2rem;
+}
+
+.staff-directory-heading p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.staff-directory-count {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.staff-directory-toolbar {
+  display: grid;
+  grid-template-columns: minmax(13rem, 1.5fr) repeat(3, minmax(10rem, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.staff-directory-field {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.staff-directory-field label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.staff-directory-field :is(input, select),
+.staff-directory-role-control select {
+  min-width: 0;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #9dadb5;
+  border-radius: 0.55rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.staff-directory-table {
+  min-width: 49rem;
+}
+
+.staff-directory-table th,
+.staff-directory-table td {
+  padding: 0.48rem 0.7rem;
+  vertical-align: middle;
+}
+
+.staff-directory-table td {
+  font-size: 0.9rem;
+}
+
+.staff-directory-identity {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 10rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.staff-directory-identity span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.staff-directory-date {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.staff-directory-role-control {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 14rem;
+}
+
+.staff-directory-role-control select {
+  flex: 1 1 auto;
+}
+
+.staff-directory-role-control .button {
+  min-height: 2.75rem;
+  padding: 0.48rem 0.7rem;
+  flex: 0 0 auto;
+}
+
+.staff-directory-role-message {
+  max-width: 18rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+}
+
+.staff-directory-role-message[data-status="error"] {
+  color: var(--danger);
+}
+
+.staff-directory-role-message[data-status="success"] {
+  color: var(--success);
+}
+
+.staff-directory-setup summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.87rem;
+}
+
+.staff-directory-setup-body {
+  min-width: 14rem;
+  padding: 0.5rem 0 0.6rem;
+}
+
+.staff-directory-setup-body .form-grid {
+  gap: 0.5rem;
+}
+
+.staff-directory-setup-body .form-message {
+  min-height: 0;
+  margin: 0.3rem 0 0;
+}
+
+.staff-directory-setup-body .form-message:empty {
+  display: none;
+}
+
+.staff-directory-setup-body .button {
+  min-height: 2.75rem;
+}
+
+.staff-directory-setup-body .form-field input {
+  max-width: 18rem;
+}
+
+.staff-access-secondary {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.staff-access-disclosure {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.staff-access-disclosure > summary {
+  min-height: 3rem;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.staff-access-disclosure-body {
+  padding: 0 1rem 1rem;
+}
+
+.staff-access-disclosure-body .cms-form {
+  box-shadow: none;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 950px) {
+  .staff-directory-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .staff-directory-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
