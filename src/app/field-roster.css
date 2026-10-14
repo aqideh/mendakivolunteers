@@ -1262,6 +1262,19 @@
 @media (prefers-reduced-motion: reduce) { .km-roster-spinner { animation: none; } }
 @media (max-width: 700px) {
   .km-operations-workspace .phaseone-operations-header { align-items: start; flex-direction: column; gap: .7rem; }
+  .km-operations-workspace .km-operations-header-actions {
+    position: relative;
+    width: 100%;
+  }
+  .km-operations-workspace .km-operations-header-actions .km-operations-menu {
+    position: static;
+  }
+  .km-operations-workspace .km-operations-header-actions .km-operations-menu-panel {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+  }
   .km-roster-toolbar { padding: .7rem; }
   .km-roster-shift-row { align-items: start; flex-wrap: wrap; gap: .35rem; }
   .km-roster-shift { flex: 1 1 100%; display: grid; gap: .25rem; }
