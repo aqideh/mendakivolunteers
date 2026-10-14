@@ -118,10 +118,11 @@ drop trigger test_reject_checkout_audit on public.phaseone_attendance_audit;
 select set_config('request.jwt.claim.sub','7fa10000-0000-4000-8000-000000000002',true);
 select set_config('request.jwt.claims','{"sub":"7fa10000-0000-4000-8000-000000000002","role":"authenticated"}',true);
 set local role authenticated;
+-- Access-model deployments use different wording; permission denial is the contract.
 select throws_ok($q$select public.maklom_event_correct_direct_roster_attendance(
  '7fa10000-0000-4000-8000-000000000005',now(),
  '2026-08-27T06:00:00Z','2026-08-27T08:00:00Z','Unauthorised correction attempt')$q$,
- '42501','MakLom operations write access is required','a reader cannot call the correction RPC directly');
+ '42501',null::text,'a reader cannot call the correction RPC directly');
 reset role;
 select ok(not has_function_privilege('anon',
  'public.maklom_event_correct_direct_roster_attendance(uuid,timestamptz,timestamptz,timestamptz,text)','EXECUTE'),
