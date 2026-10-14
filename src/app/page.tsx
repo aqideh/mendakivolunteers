@@ -90,10 +90,11 @@ async function getCommunityToast(): Promise<CommunityToastProps | null> {
     const copy = getToastCopy(events);
     if (!copy) return null;
 
-    // Dismissal is scoped to the lead event title and number of other events.
+    // Include other titles so a replacement event also resets the dismissal.
     const storageKey = `keluarga-community-toast:${JSON.stringify([
       events[0].title,
       events.length - 1,
+      ...events.slice(1).map((event) => event.title),
     ])}`;
     return { ...copy, storageKey };
   } catch {
