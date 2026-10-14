@@ -2,7 +2,7 @@
 
 import { Modal } from "@mantine/core";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { updateStaffRole } from "@/app/admin/staff/actions";
 import {
@@ -24,10 +24,6 @@ export function StaffRoleEditor({ userId, email, role }: StaffRoleEditorProps) {
   const [outcome, setOutcome] = useState<"idle" | "success" | "error">("idle");
   const [pending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
-
-  useEffect(() => {
-    setSelectedRole(role);
-  }, [role]);
 
   function save() {
     if (pending || selectedRole === role) return;
