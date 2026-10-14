@@ -2,7 +2,7 @@
 
 import { Modal } from "@mantine/core";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { updateStaffRole } from "@/app/admin/staff/actions";
 import {
@@ -17,11 +17,7 @@ type StaffRoleEditorProps = Readonly<{
   role: StaffInviteRole;
 }>;
 
-export function StaffRoleEditor({
-  userId,
-  email,
-  role,
-}: StaffRoleEditorProps) {
+export function StaffRoleEditor({ userId, email, role }: StaffRoleEditorProps) {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<StaffInviteRole>(role);
   const [message, setMessage] = useState("");
@@ -29,10 +25,13 @@ export function StaffRoleEditor({
   const [pending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  useEffect(() => {
+    setSelectedRole(role);
+  }, [role]);
+
   function save() {
     if (pending || selectedRole === role) return;
     setConfirmOpen(false);
-
     setMessage("");
     setOutcome("idle");
     startTransition(async () => {
@@ -48,7 +47,7 @@ export function StaffRoleEditor({
   const next = getStaffRoleOption(selectedRole);
 
   return (
-    <div className="phaseone-admin-form">
+    <div className="staff-directory-role-editor">
       <Modal
         opened={confirmOpen}
         onClose={() => setConfirmOpen(false)}
@@ -64,42 +63,35 @@ export function StaffRoleEditor({
           <button className="button button-danger" type="button" onClick={save} disabled={pending}>Change to {next?.label ?? selectedRole}</button>
         </div>
       </Modal>
-      <div className="form-field">
-        <label htmlFor={`staff-role-${userId}`}>Access level</label>
-        <div className="actions">
-          <select
-            disabled={pending}
-            id={`staff-role-${userId}`}
-            onChange={(event) =>
-              setSelectedRole(event.target.value as StaffInviteRole)
-            }
-            value={selectedRole}
-          >
-            {staffInviteRoleOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <button
-            className="button button-secondary"
-            disabled={pending || selectedRole === role}
-            onClick={() => setConfirmOpen(true)}
-            type="button"
-          >
-            {pending ? "Updating…" : "Save"}
-          </button>
-        </div>
-      </div>
-      <span className="table-subtext">
-        {getStaffRoleOption(role)?.description}
-      </span>
-      {message ? (
-        <p
-          className="form-message"
-          data-status={outcome}
-          role={outcome === "error" ? "alert" : "status"}
+      <div className="staff-directory-role-control">
+        <label className="sr-only" htmlFor={"staff-role-" + userId}>Access level for {email}</label>
+        <select
+          disabled={pending}
+          id={"staff-role-" + userId}
+          onChange={(event) => {
+            setSelectedRole(event.target.value as StaffInviteRole);
+            setMessage("");
+          }}
+          value={selectedRole}
         >
+          {staffInviteRoleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <button
+          className="button button-secondary"
+          disabled={pending || selectedRole === role}
+          onClick={() => setConfirmOpen(true)}
+          type="button"
+        >
+          {pending ? "Saving…" : "Save"}
+        </button>
+      </div>
+      {message ? (
+        <p className="staff-directory-role-message" data-status={outcome}
+          role={outcome === "error" ? "alert" : "status"}>
           {message}
         </p>
       ) : null}
