@@ -51,7 +51,7 @@ function getToastCopy(
   if (!event) return null;
   if (events.length > 1) {
     return {
-      message: `${events.length} upcoming events need volunteers.`,
+      message: `Looking to help out at an event? Explore ${events.length} upcoming community events.`,
       cta: "See events",
       href: "/opportunities",
     };
@@ -64,9 +64,9 @@ function getToastCopy(
     Number.isFinite(new Date(deadline!).getTime()) &&
     new Date(deadline!).getTime() > Date.now();
 
-  let message = `${event.title} needs volunteers on ${date}.`;
+  let message = `Looking to help out at an event? ${event.title} is on ${date}.`;
   if (isFutureDeadline && deadline) {
-    message += ` Sign up by ${singaporeShortDate(deadline)}.`;
+    message += ` Registration deadline: ${singaporeShortDate(deadline)}.`;
   }
 
   if (variant === "belonging") {
