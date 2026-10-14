@@ -502,6 +502,11 @@ export default async function WebsiteAnalyticsPage({ searchParams }: PageProps) 
         </div>
       </header>
 
+      <nav aria-label="Website performance sections" className={styles.sectionTabs}>
+        <Link className={styles.selectedTab} href="/admin/website-analytics" aria-current="page">Analytics</Link>
+        <Link href="/admin/website-analytics/seo">Search &amp; SEO</Link>
+      </nav>
+
       <form className={styles.filters}>
         <div className={styles.presetLinks} aria-label="Date presets">
           <Link href="/admin/website-analytics?range=7">7 days</Link>

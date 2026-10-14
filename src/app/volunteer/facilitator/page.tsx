@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import { publicPageMetadata } from "@/lib/seo";
+import { getEditablePageMetadata } from "@/lib/seo-content";
 
 import { RoleLanding } from "@/components/role-landing";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = publicPageMetadata({
-  title: "Volunteer as a Facilitator in Singapore",
-  description: "Help families learn together through MENDAKI's parent and child learning programmes. Explore volunteer facilitator and befriender roles.",
-  path: "/volunteer/facilitator",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return getEditablePageMetadata("/volunteer/facilitator");
+}
 
 export default async function FacilitatorPage() {
   const heroImage = await getLandingPageImage("facilitator");

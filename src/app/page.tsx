@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
+import { getEditablePageMetadata } from "@/lib/seo-content";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import { PortalHeader } from "@/components/portal-header";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
-import { publicPageMetadata, jsonLd, SITE_URL } from "@/lib/seo";
+import { jsonLd, SITE_URL } from "@/lib/seo";
 
 import styles from "./landing.module.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = publicPageMetadata({
-  title: "Volunteer in Singapore",
-  description: "Volunteer with Yayasan MENDAKI in Singapore. Explore coaching, facilitation, youth mentoring, community events and professional volunteering opportunities.",
-  path: "/",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return getEditablePageMetadata("/");
+}
 
 const volunteerPaths = [
   { title: "Coach", href: "/volunteer/coach" },

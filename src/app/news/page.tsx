@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import { publicPageMetadata } from "@/lib/seo";
+import { getEditablePageMetadata } from "@/lib/seo-content";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
 import { formatSingaporeDate } from "@/lib/content/dates";
 import { getPublicNewsPosts } from "@/lib/content/public-news";
 
-export const metadata: Metadata = publicPageMetadata({
-  title: "MENDAKI Volunteer News",
-  description: "Read updates and announcements for MENDAKI volunteers in Singapore.",
-  path: "/news",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return getEditablePageMetadata("/news");
+}
 
 export const dynamic = "force-dynamic";
 
