@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { track } from "@vercel/analytics";
+import { createPortal } from "react-dom";
 
 import styles from "./community-toast.module.css";
 
@@ -38,6 +39,12 @@ export default function CommunityToast({
 
   if (!visible) return null;
 
+  // The homepage <main> has a filled transform animation (page-enter).
+  // Its descendants cannot use viewport-relative position: fixed.
+  // The site-shell has no transform and shares the existing z-index context.
+  const portalHost = document.querySelector<HTMLElement>(".site-shell");
+  if (!portalHost) return null;
+
   function dismiss() {
     setVisible(false);
     try {
@@ -53,7 +60,8 @@ export default function CommunityToast({
 
   return (
     <>
-      <aside className={styles.notice} aria-label="Community volunteering opportunities">
+      {createPortal(
+        <aside className={styles.notice} aria-label="Community volunteering opportunities">
         <span className={styles.dot} aria-hidden="true" />
         <div className={styles.body}>
           <p className={styles.message}>{message}</p>
@@ -73,7 +81,9 @@ export default function CommunityToast({
         >
           <span aria-hidden="true">×</span>
         </button>
-      </aside>
+        </aside>,
+        portalHost,
+      )}
       <div className={styles.spacer} aria-hidden="true" />
     </>
   );
