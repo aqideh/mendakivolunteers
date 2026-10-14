@@ -540,3 +540,24 @@
     padding: .75rem;
   }
 }
+
+.sectionTabs {
+  display: flex;
+  gap: .4rem;
+  margin-bottom: 1rem;
+  padding-bottom: .65rem;
+  border-bottom: 1px solid #dedede;
+}
+.sectionTabs a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: .55rem 1rem;
+  border-radius: .65rem;
+  color: #252525;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: .88rem;
+}
+.sectionTabs a:hover { background: #f2f2f2; }
+.sectionTabs .selectedTab { background: #171717; color: white; }
