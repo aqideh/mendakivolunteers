@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { publicPageMetadata } from "@/lib/seo";
+import { getEditablePageMetadata } from "@/lib/seo-content";
 import Link from "next/link";
 
 import { PortalHeader } from "@/components/portal-header";
@@ -7,11 +7,11 @@ import { FAQ_SECTIONS } from "@/lib/content/faq";
 
 import styles from "./faq.module.css";
 
-export const metadata: Metadata = publicPageMetadata({
-  title: "Volunteer FAQs",
-  description: "Find answers to common questions about volunteering, registration and getting involved with Keluarga MENDAKI in Singapore.",
-  path: "/faq",
-});
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return getEditablePageMetadata("/faq");
+}
 
 export default function FaqPage() {
   const hasFaqContent = FAQ_SECTIONS.some((section) => section.items.length > 0);

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { publicPageMetadata } from "@/lib/seo";
+import { getEditablePageMetadata } from "@/lib/seo-content";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
@@ -10,11 +10,9 @@ import styles from "./mentor.module.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = publicPageMetadata({
-  title: "Volunteer as a Youth Mentor in Singapore",
-  description: "Become a youth mentor with MENDAKI. Support young people in Singapore through mentoring, confidence-building and career exploration.",
-  path: "/volunteer/mentor",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return getEditablePageMetadata("/volunteer/mentor");
+}
 
 const mekarPathways = [
   {

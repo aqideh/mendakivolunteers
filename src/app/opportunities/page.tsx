@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { publicPageMetadata } from "@/lib/seo";
+import { getEditablePageMetadata } from "@/lib/seo-content";
 
 import { ContributorHero } from "@/app/opportunities/contributor-hero";
 import { OpportunityFilter } from "@/app/opportunities/opportunity-filter";
@@ -9,11 +9,9 @@ import { getUpcomingPhaseOneOpportunities } from "@/lib/phaseone/opportunities";
 import { loadOpportunitySocialProof } from "@/lib/phaseone/opportunity-social-proof";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = publicPageMetadata({
-  title: "Volunteer Opportunities in Singapore",
-  description: "Find upcoming MENDAKI volunteer opportunities in Singapore. Contribute at community events and register for suitable volunteering shifts.",
-  path: "/opportunities",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return getEditablePageMetadata("/opportunities");
+}
 
 export const dynamic = "force-dynamic";
 

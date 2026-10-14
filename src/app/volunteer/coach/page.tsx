@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import { publicPageMetadata } from "@/lib/seo";
+import { getEditablePageMetadata } from "@/lib/seo-content";
 
 import { RoleLanding } from "@/components/role-landing";
 import { getLandingPageImage } from "@/lib/content/landing-page-media";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = publicPageMetadata({
-  title: "Volunteer as a Coach in Singapore",
-  description: "Support primary and secondary school students with MENDAKI's educational programmes. Explore opportunities to volunteer as a learning coach.",
-  path: "/volunteer/coach",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return getEditablePageMetadata("/volunteer/coach");
+}
 
 export default async function CoachPage() {
   const heroImage = await getLandingPageImage("coach");
