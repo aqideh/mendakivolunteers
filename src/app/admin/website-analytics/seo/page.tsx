@@ -113,7 +113,7 @@ export default async function SeoConsolePage({ searchParams }: PageProps) {
         <section className={styles.panel}>
           <h2>Connect Google Search Console</h2>
           <p>Google search impressions, clicks, queries and indexing status require verified property access. No estimated or fabricated traffic is shown.</p>
-          <p>MENDAKI's Google property owner should add a read-only service account to the URL-prefix property <code>{SITE_URL + "/"}</code>, enable the Search Console API and URL Inspection API, then configure the three secure Vercel environment variables:</p>
+          <p>MENDAKI&apos;s Google property owner should add a read-only service account to the URL-prefix property <code>{SITE_URL + "/"}</code>, enable the Search Console API and URL Inspection API, then configure the three secure Vercel environment variables:</p>
           <p><code>GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL</code>, <code>GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY</code>, <code>GOOGLE_SEARCH_CONSOLE_SITE_URL</code>.</p>
           <p>Set the property URL to <code>{SITE_URL + "/"}</code>. The service account key must stay in server-side environment variables, never in the application or the admin form.</p>
         </section>
@@ -122,7 +122,7 @@ export default async function SeoConsolePage({ searchParams }: PageProps) {
       {report.value ? (
         <section className={styles.panel}>
           <h2>Google index status</h2>
-          <p className={styles.muted}>Inspect an approved public page; this checks Google's last known status, not instant indexing.</p>
+          <p className={styles.muted}>Inspect an approved public page; this checks Google&apos;s last known status, not instant indexing.</p>
           <div className={styles.inspectLinks}>
             {EDITABLE_SEO_PAGES.map((page) => <Link key={page.path} href={"/admin/website-analytics/seo?inspect=" + encodeURIComponent(page.path)}>{page.label}</Link>)}
           </div>
@@ -133,7 +133,7 @@ export default async function SeoConsolePage({ searchParams }: PageProps) {
 
       <section className={styles.panel}>
         <div className={styles.sectionHead}>
-          <div><h2>Page titles &amp; descriptions</h2><p>Adjust Google search snippets for Keluarga's eight main public pages.</p></div>
+          <div><h2>Page titles &amp; descriptions</h2><p>Adjust Google search snippets for Keluarga&apos;s eight main public pages.</p></div>
         </div>
         {params.saved && EDITABLE_SEO_PAGES.some((page) => page.path === params.saved) ? <p className={styles.notice} role="status">SEO metadata saved for {params.saved}.</p> : null}
         <div className={styles.editorList}>
